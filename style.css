@@ -35,12 +35,15 @@ html, body {
 .auth-content h1 { font-size: 55px; color: var(--primary); font-weight: 900; margin: 0; }
 
 /* NAWIGACJA DOLNA */
-.bottom-nav { 
-    min-height: var(--nav-height); flex-shrink: 0; 
-    background: var(--panel-bg); display: flex; 
-    justify-content: space-around; align-items: center; 
-    z-index: 15000; padding-bottom: env(safe-area-inset-bottom); 
-    box-shadow: 0 -10px 20px rgba(0,0,0,0.03); border-radius: 30px 30px 0 0;
+.bottom-nav {
+    position: fixed; /* Zawsze na wierzchu */
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    z-index: 99999; /* Musi być najwyższy! */
+    pointer-events: auto; /* Zapewnia klikalność */
 }
 .nav-item { 
     display: flex; flex-direction: column; align-items: center; 
@@ -50,9 +53,8 @@ html, body {
 .nav-item.active { color: var(--primary); }
 
 /* SEKCJE WIDOKÓW */
-.view-section { 
-    flex: 1; width: 100%; display: none; 
-    overflow-y: auto; position: relative; 
+.view-section {
+    padding-bottom: 90px; /* Miejsce na nav bar, żeby nie zasłaniał treści */
 }
 .view-section.active { display: block; }
 
