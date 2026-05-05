@@ -2,11 +2,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- PWA & Mobile Optimization -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#f4f6f8">
+    <meta name="theme-color" content="#ff5252">
 
-    <title>Waggle v21.27 🐾 Grand Reassembly</title>
+    <title>Waggle v21.28 🐾 Full Production</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -15,193 +16,105 @@
         :root { 
             --primary: #ff5252; --secondary: #34ace0; --bg-color: #f4f6f8; 
             --panel-bg: #ffffff; --text-color: #2c3e50; --border-color: #f1f2f6;
-            --text-muted: #a4b0be;
-            --male: #34ace0; --female: #ff5252; --gold: #ffb142; --danger: #ff5252;
-            --nav-height: 75px; 
-            --soft-shadow: 0 10px 25px rgba(149, 157, 165, 0.15);
+            --text-muted: #a4b0be; --danger: #ff5252; --gold: #ffb142;
+            --nav-height: 75px; --soft-shadow: 0 10px 25px rgba(149, 157, 165, 0.15);
         }
         
-        body.dark-mode { --bg-color: #121212; --panel-bg: #1e1e1e; --text-color: #e0e0e0; --border-color: #333333; --text-muted: #888888; }
-        body.dark-mode #map { filter: brightness(0.8) contrast(1.1); } 
-        body.dark-mode .alert-item { background: #3d1c1c; }
+        body { margin: 0; padding: 0; height: 100vh; width: 100vw; background: #e1e5eb; font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; justify-content: center; color: var(--text-color); }
+        #app-interface, #auth-screen { width: 100%; max-width: 480px; height: 100%; background: var(--bg-color); position: relative; overflow: hidden; display: flex; flex-direction: column; }
 
-        html, body { margin: 0; padding: 0; height: 100%; width: 100%; background: #e1e5eb; font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; justify-content: center; color: var(--text-color); }
-        #app-interface, #auth-screen { width: 100%; max-width: 480px; height: 100%; background: var(--bg-color); position: relative; overflow: hidden; display: flex; flex-direction: column; transition: background 0.3s;}
-
+        /* Loader & Modals */
         .modal { position: fixed; inset: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(3px); z-index: 20000; display: none; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box; }
-        .card { background: var(--panel-bg); width: 100%; max-width: 380px; border-radius: 28px; padding: 30px; text-align: center; position: relative; box-shadow: var(--soft-shadow); max-height: 85vh; overflow-y: auto; display:flex; flex-direction:column; }
-        .close-modal-btn { position: absolute; top: 15px; right: 15px; background: var(--bg-color); border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; color: var(--text-color); z-index: 10; display: flex; align-items: center; justify-content: center; }
+        .card { background: var(--panel-bg); width: 100%; max-width: 380px; border-radius: 28px; padding: 30px; text-align: center; position: relative; box-shadow: var(--soft-shadow); max-height: 85vh; overflow-y: auto; }
+        .close-modal-btn { position: absolute; top: 15px; right: 15px; background: var(--bg-color); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
 
-        #toast { position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%); background: var(--text-color); color: var(--bg-color); padding: 12px 24px; border-radius: 50px; z-index: 25000; display: none; font-weight: 800; font-size: 14px; box-shadow: var(--soft-shadow); text-align: center; }
-
-        .bottom-nav { min-height: var(--nav-height); flex-shrink: 0; background: var(--panel-bg); display: flex; justify-content: space-around; align-items: center; z-index: 15000; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -10px 20px rgba(0,0,0,0.03); border-radius: 30px 30px 0 0; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); cursor: pointer; flex: 1; border: none; background: none; outline: none; padding: 10px 0;}
+        /* Nav & Views */
+        .bottom-nav { height: var(--nav-height); background: var(--panel-bg); display: flex; justify-content: space-around; align-items: center; z-index: 15000; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -10px 20px rgba(0,0,0,0.03); border-radius: 30px 30px 0 0; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); cursor: pointer; flex: 1; border: none; background: none; font-size: 11px; font-weight: 800; }
         .nav-item.active { color: var(--primary); }
-        .nav-item span { font-size: 11px; font-weight: 800; transition: color 0.3s; }
         
-        .view-section { flex: 1; width: 100%; display: none; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; background: var(--bg-color); position: relative; min-height: 0; }
+        .view-section { flex: 1; width: 100%; display: none; overflow-y: auto; background: var(--bg-color); position: relative; }
         .view-section.active { display: block; }
 
+        /* Map Elements */
         #map { top: 0; left: 0; right: 0; bottom: 0; position: absolute; z-index: 1; }
-        #ctrl-panel { position: absolute; top: 15px; right: 15px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
-        .map-ctrl-btn { background: var(--panel-bg); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; color: var(--text-color); font-size: 18px; cursor: pointer; box-shadow: var(--soft-shadow); font-weight: 900; }
-        
-        /* SOS STYLES */
-        .sos-btn { position: absolute; top: 15px; left: 15px; z-index: 10000; background: var(--danger); color: white; border: 4px solid white; border-radius: 50%; width: 55px; height: 55px; font-weight: 900; box-shadow: var(--soft-shadow); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        @keyframes sos-pulse { 0% { fill-opacity: 0.2; stroke-width: 2; transform: scale(1); } 50% { fill-opacity: 0.6; stroke-width: 6; transform: scale(1.05); } 100% { fill-opacity: 0.2; stroke-width: 2; transform: scale(1); } }
-        .sos-pulse-anim { animation: sos-pulse 1.5s infinite ease-in-out; }
+        .sos-btn { position: absolute; top: 20px; left: 20px; z-index: 10000; background: var(--danger); color: white; border: 4px solid white; border-radius: 50%; width: 55px; height: 55px; font-weight: 900; box-shadow: var(--soft-shadow); }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        .sos-pulse { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--danger); border-radius: 50%; z-index: -1; animation: pulse 2s infinite; }
 
-        #walk-setup-panel { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 440px; z-index: 5000; background: var(--panel-bg); border-radius: 28px; padding: 18px; box-shadow: var(--soft-shadow); box-sizing: border-box;}
+        /* Post & List Items */
+        .post-card { background: var(--panel-bg); margin: 15px; border-radius: 24px; padding: 20px; box-shadow: var(--soft-shadow); }
+        .btn-main { background: var(--primary); color: white; border: none; font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        input, select, textarea { width: 100%; padding: 14px; border-radius: 16px; border: 2px solid var(--border-color); background: var(--bg-color); margin-bottom: 12px; box-sizing: border-box; font-family: inherit; }
         
-        .post-card { background: var(--panel-bg); margin: 15px; border-radius: 24px; padding: 20px; box-shadow: var(--soft-shadow); position:relative; overflow: hidden; }
-        .btn-main { background: var(--primary); color: white; border: none; font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; box-shadow: 0 8px 15px rgba(255, 82, 82, 0.2); font-size: 13px; }
-        .btn-outline { background: transparent; color: var(--text-color); border: 2px solid var(--border-color); font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; font-size: 13px; margin-top: 10px; }
-        input, select, textarea { width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: inherit; font-weight: 600; margin-bottom: 12px; box-sizing: border-box; outline: none; }
-        
-        .walk-card { background: var(--panel-bg); border-radius: 20px; padding: 15px; min-width: 100px; text-align: center; box-shadow: var(--soft-shadow); flex-shrink: 0; cursor: pointer; }
-        .walk-card img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; }
-        #stories-container { display: flex; gap: 15px; overflow-x: auto; padding: 10px 20px 25px 20px; margin: 0 -15px; scrollbar-width: none; }
-        #stories-container::-webkit-scrollbar { display: none; }
-
-        .badge-tag { padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; margin: 5px 3px; display: inline-block; background: var(--secondary); color: white; }
-        .tab-btn { flex: 1; padding: 12px; font-weight: 900; border: none; border-radius: 12px; background: transparent; color: var(--text-muted); cursor: pointer; }
-        .tab-btn.active { background: var(--panel-bg); color: var(--text-color); box-shadow: var(--soft-shadow); }
-        .tab-container { background: var(--border-color); border-radius: 16px; padding: 5px; display: flex; gap: 5px; margin-bottom: 15px; }
+        .badge-tag { padding: 4px 10px; border-radius: 50px; font-size: 10px; font-weight: 800; background: var(--secondary); color: white; margin-right: 5px; }
     </style>
 </head><body>
 
-    <script>
-        // WYMUSZENIE HTTPS DLA DOMENY
-        if (window.location.protocol === 'http:' && window.location.hostname === 'joinwaggle.com') {
-            window.location.href = window.location.href.replace('http:', 'https:');
-        }
-    </script>
-
     <div id="loader" style="position:fixed; inset:0; z-index:30000; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:32px;">Waggle🐾</div>
-    <div id="toast">Sukces!</div>
 
-    <div id="auth-screen" style="display:none; flex-direction:column; justify-content:center; padding:30px;">
-        <h1 style="font-size: 50px; margin: 0; text-align:center; color:var(--primary); font-weight:900;">Waggle.</h1>
-        <p style="text-align:center; margin-bottom:25px; font-weight:800; color:var(--text-muted);">Dołącz do stada! 🐕</p>
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" style="display:none; justify-content:center; padding:30px;">
+        <h1 style="text-align:center; color:var(--primary); font-size:45px; font-weight:900;">Waggle.</h1>
         <input type="email" id="authEmail" placeholder="E-mail">
         <input type="password" id="authPass" placeholder="Hasło">
         <button class="btn-main" onclick="handleLogin()">ZALOGUJ SIĘ</button>
-        <button class="btn-outline" onclick="handleRegister()">REJESTRACJA</button>
+        <button class="btn-main" style="background:var(--text-color)" onclick="handleRegister()">DOŁĄCZ DO STADA</button>
     </div>
 
+    <!-- MAIN APP -->
     <div id="app-interface" style="display:none;">
         
-        <!-- MAPA -->
         <section id="view-map" class="view-section active">
-            <button class="sos-btn" onclick="triggerSOS()">SOS</button>
-            <div id="ctrl-panel">
-                <button class="map-ctrl-btn" onclick="centerOnMe()">🎯</button>
-            </div>
+            <button class="sos-btn" onclick="triggerSOS()"><div class="sos-pulse"></div>SOS</button>
             <div id="map"></div>
-            
-            <div id="walk-setup-panel">
-                <div id="walk-inputs-group">
-                    <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
-                        <img id="myAvatarSmall" src="" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border: 2px solid var(--border-color);">
-                        <input type="text" id="statusInput" placeholder="Co u Was?" style="margin:0; flex:1;">
-                    </div>
-                    <select id="intent" style="margin-bottom:15px;">
-                        <option value="walk">🟢 Zwykły spacer</option>
-                        <option value="social">❤️ Chcemy się bawić!</option>
-                        <option value="training">🔵 Skupienie / Trening</option>
-                    </select>
-                </div>
-                <button class="btn-main" id="startBtn" onclick="startWalk()">WYJDŹ NA SPACER 🐾</button>
-                <button class="btn-main" id="stopBtn" onclick="stopWalk()" style="display:none; background:var(--text-color);">ZAKOŃCZ SPACER 🏁</button>
+            <div id="walk-setup-panel" style="position:absolute; bottom:15px; left:5%; width:90%; z-index:1000; background:white; padding:15px; border-radius:24px; box-shadow:var(--soft-shadow); box-sizing:border-box;">
+                <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom:8px;">
+                <button class="btn-main" id="startBtn" onclick="startWalk()">ROZPOCZNIJ SPACER 🐾</button>
+                <button class="btn-main" id="stopBtn" onclick="stopWalk()" style="display:none; background:var(--text-color)">ZAKOŃCZ 🏁</button>
             </div>
         </section>
 
-        <!-- TABLICA -->
         <section id="view-community" class="view-section">
-            <div style="padding:20px 20px 5px 20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
-                <h3 style="margin:0 0 15px 0; font-weight:900; font-size:22px;">Spacerują w okolicy</h3>
-                <div id="stories-container"></div>
-                <button class="btn-main" style="background:var(--secondary); margin-bottom:10px;" onclick="document.getElementById('post-creator-modal').style.display='flex'">➕ DODAJ POSTA</button>
-            </div>
-            <div id="posts-container" style="padding-bottom: 20px;"></div>
+            <div style="padding:20px;"><h3 style="font-weight:900; font-size:24px;">Tablica stada</h3></div>
+            <div id="posts-container"></div>
+            <button class="btn-main" style="position:fixed; bottom:90px; right:20px; width:60px; height:60px; border-radius:50%; font-size:24px; z-index:1000;" onclick="document.getElementById('post-modal').style.display='flex'">+</button>
         </section>
 
-        <!-- WIKI -->
         <section id="view-wiki" class="view-section">
-            <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
-                <div class="tab-container">
-                    <button id="tab-breeds" class="tab-btn active" onclick="toggleWikiTab('breeds')">RASY</button>
-                    <button id="tab-training" class="tab-btn" onclick="toggleWikiTab('training')">TRENING</button>
-                </div>
-            </div>
-            <div id="wiki-breeds-container" style="padding:0 15px 20px;"><div style="text-align:center; padding:20px; color:var(--text-muted);">🐾 Węszę w bazie...</div></div>
-            <div id="wiki-training-container" style="display:none; padding:0 15px 20px;"></div>
+            <div style="padding:20px;"><h3 style="font-weight:900; font-size:24px;">Encyklopedia</h3></div>
+            <div id="wiki-container"></div>
         </section>
 
-        <!-- CZAT -->
         <section id="view-chat" class="view-section">
-            <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
-                <h3 style="margin:0 0 15px 0; font-weight:900; font-size:22px;">Wiadomości</h3>
-            </div>
-            <div id="inbox-container" style="padding:0 10px;"></div>
-            
-            <div id="active-chat-container" style="display:none; position:absolute; inset:0; background:var(--bg-color); z-index:25000; flex-direction:column;">
-                <div style="padding:15px 20px; background:var(--panel-bg); display:flex; align-items:center; gap:15px; box-shadow:var(--soft-shadow);">
-                    <button onclick="closeActiveChat()" style="background:var(--bg-color); border:none; border-radius:50%; width:36px; height:36px; cursor:pointer; font-weight:900;">←</button>
-                    <b id="activeChatPartnerName" style="font-size:18px; font-weight:900;">Czat</b>
-                </div>
-                <div id="chatMessages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:10px;"></div>
-                <div style="padding:15px 20px; background:var(--panel-bg); display:flex; gap:10px; align-items:center;">
-                    <input type="text" id="chatInput" placeholder="Napisz wiadomość..." style="margin:0; border-radius:50px; flex:1;">
-                    <button onclick="sendMessage()" class="btn-main" style="width:auto; margin:0; padding:10px 24px; border-radius:50px;">OK</button>
-                </div>
-            </div>
+            <div style="padding:20px;"><h3 style="font-weight:900; font-size:24px;">Czat</h3></div>
+            <div id="chat-list"></div>
         </section>
 
-        <!-- PROFIL -->
         <section id="view-profile" class="view-section">
-            <div style="padding:30px 20px; text-align:center;">
-                <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:4px solid white; box-shadow:var(--soft-shadow);">
-                <h2 id="profileNameDisplay" style="margin:0; font-weight:900; font-size:26px;">...</h2>
-                <p id="profileInfoDisplay" style="color:var(--text-muted); font-weight:800; font-size:14px; margin-bottom: 25px;"></p>
-                
-                <button class="btn-main" onclick="openEditProfile()" style="background:var(--secondary); margin-bottom:10px;">EDYTUJ DANE</button>
-                <button class="btn-main" style="background:var(--border-color); color:var(--text-color);" onclick="handleLogout()">WYLOGUJ SIĘ</button>
+            <div style="padding:40px 20px; text-align:center;">
+                <div id="p-avatar" style="width:120px; height:120px; border-radius:50%; background:#ddd; margin:0 auto 15px; overflow:hidden; border:5px solid white; box-shadow:var(--soft-shadow);"></div>
+                <h2 id="p-name" style="margin:0; font-weight:900;">Ładowanie...</h2>
+                <p id="p-breed" style="color:var(--text-muted); font-weight:800;"></p>
+                <button class="btn-main" onclick="handleLogout()" style="background:var(--border-color); color:var(--text-color)">WYLOGUJ</button>
             </div>
         </section>
 
-        <!-- NAWIGACJA -->
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="switchView('map', this)"><span>📍 Mapa</span></button>
-            <button class="nav-item" onclick="switchView('community', this)"><span>📱 Tablica</span></button>
-            <button class="nav-item" onclick="switchView('wiki', this)"><span>📘 Wiedza</span></button>
-            <button class="nav-item" onclick="switchView('chat', this)"><span>💬 Czat</span></button>
-            <button class="nav-item" onclick="switchView('profile', this)"><span>👤 Profil</span></button>
+            <div class="nav-item active" onclick="switchView('map', this)">📍 Mapa</div>
+            <div class="nav-item" onclick="switchView('community', this)">📱 Tablica</div>
+            <div class="nav-item" onclick="switchView('wiki', this)">📘 Wiki</div>
+            <div class="nav-item" onclick="switchView('chat', this)">💬 Czat</div>
+            <div class="nav-item" onclick="switchView('profile', this)">👤 Profil</div>
         </nav>
     </div>
 
-    <!-- MODALE -->
-    <div id="post-creator-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <h3 style="font-weight:900;">Nowy Post</h3>
-        <select id="postCategory"><option value="info">ℹ️ Info</option><option value="alert">⚠️ ALERT</option><option value="event">📅 Ustawka</option></select>
-        <textarea id="postContent" placeholder="Napisz do stada..."></textarea>
-        <button class="btn-main" onclick="saveCommunityPost()">OPUBLIKUJ</button>
-    </div></div>
-
-    <div id="profile-setup-modal" class="modal"><div class="card"><h3 style="font-weight:900; font-size:24px;">Twój Profil</h3>
-        <input type="text" id="setupName" placeholder="Imię psa">
-        <input type="text" id="setupCity" placeholder="Miasto">
-        <input type="text" id="setupBreed" placeholder="Rasa">
-        <input type="text" id="setupAvatar" placeholder="Link do zdjęcia (URL)">
-        <button class="btn-main" onclick="saveProfileData()">ZAPISZ</button>
-    </div></div>
-
-    <div id="user-profile-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <img id="cardAvatar" src="" style="width:100px; height:100px; border-radius:50%; margin: 0 auto 15px; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
-        <h2 id="cardName" style="margin:0; font-weight:900; font-size:24px;"></h2>
-        <p id="cardBreed" style="font-weight:800; background:var(--bg-color); display:inline-block; padding:5px 15px; border-radius:50px; font-size:13px; margin:5px 0; color:var(--text-color);"></p>
-        <div id="cardEncyclopedia" style="display:none; padding:15px; background:#e8f5e9; color:#2e7d32; border-radius:16px; font-size:13px; text-align:left; margin-top:15px;"><b>🧠 Baza wiedzy:</b> <br><span id="cardEncyclopediaText"></span></div>
-        <button class="btn-main" id="cardMsgBtn" style="margin-top:15px; background:var(--secondary);">💬 WYŚLIJ WIADOMOŚĆ</button>
+    <!-- MODAL POST -->
+    <div id="post-modal" class="modal"><div class="card">
+        <button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
+        <h3 style="font-weight:900;">Nowy wpis</h3>
+        <textarea id="postContent" placeholder="Napisz coś do okolicy..."></textarea>
+        <button class="btn-main" onclick="savePost()">OPUBLIKUJ</button>
     </div></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -214,236 +127,105 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(); const auth = firebase.auth();
 
-        let map, currentUserUid, myLat, myLng, isWalking = false, isFollowing = true;
-        let lastLat = null, lastLng = null, myLocationMarker = null, activeSosMarkers = {};
-        let myDogProfile = {}; let currentChatId = null;
+        let map, userUid, myLat, myLng, isWalking = false, myMarker;
+        let lastLoggedLat, lastLoggedLng;
 
         auth.onAuthStateChanged(user => {
+            document.getElementById('loader').style.display = 'none';
             if (user) {
-                currentUserUid = user.uid;
-                db.collection("users").doc(user.uid).onSnapshot(doc => {
-                    document.getElementById('loader').style.display = 'none';
-                    if (doc.exists) { 
-                        myDogProfile = doc.data(); 
-                        startApp(); 
-                    } else { 
-                        document.getElementById('app-interface').style.display = 'none';
-                        document.getElementById('profile-setup-modal').style.display = 'flex'; 
-                    }
-                });
-            } else { 
-                document.getElementById('loader').style.display = 'none'; 
-                document.getElementById('auth-screen').style.display = 'flex'; 
+                userUid = user.uid;
+                document.getElementById('app-interface').style.display = 'flex';
+                initApp();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
             }
         });
 
-        function startApp() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('app-interface').style.display = 'flex';
-            
-            // Profil Wypełnianie
-            const defAv = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-            document.getElementById('myAvatarSmall').src = myDogProfile.avatar || defAv;
-            document.getElementById('profileAvatar').src = myDogProfile.avatar || defAv;
-            document.getElementById('profileNameDisplay').innerText = myDogProfile.name;
-            document.getElementById('profileInfoDisplay').innerText = `${myDogProfile.breed || 'Pies'} • ${myDogProfile.city || 'Miasto'}`;
-
+        function initApp() {
             initMap();
-            loadDynamicWiki();
+            loadWiki();
             loadPosts();
-            loadInbox();
+            db.collection("users").doc(userUid).onSnapshot(doc => {
+                if(doc.exists) {
+                    const d = doc.data();
+                    document.getElementById('p-name').innerText = d.name || "Piesek";
+                    document.getElementById('p-breed').innerText = d.breed || "Rasa nieustalona";
+                    if(d.avatar) document.getElementById('p-avatar').innerHTML = `<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover;">`;
+                }
+            });
         }
 
-        // --- MAPA, GPS i SOS ---
         function initMap() {
             if (map) return;
             map = L.map('map', { zoomControl: false }).setView([52.2297, 21.0122], 13);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
-            map.on('dragstart', () => { isFollowing = false; });
+            navigator.geolocation.watchPosition(pos => {
+                myLat = pos.coords.latitude; myLng = pos.coords.longitude;
+                if(!myMarker) {
+                    myMarker = L.circleMarker([myLat, myLng], { radius: 10, color: '#fff', fillColor: '#34ace0', fillOpacity: 1, weight: 3 }).addTo(map);
+                    map.setView([myLat, myLng], 15);
+                } else { myMarker.setLatLng([myLat, myLng]); }
 
-            if(navigator.geolocation) {
-                navigator.geolocation.watchPosition(pos => {
-                    myLat = pos.coords.latitude; myLng = pos.coords.longitude;
-                    
-                    if(!myLocationMarker) {
-                        map.setView([myLat, myLng], 15);
-                        myLocationMarker = L.marker([myLat, myLng], { 
-                            icon: L.divIcon({ className:'', html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid var(--secondary);overflow:hidden;background:white;"><img src="${myDogProfile.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150'}" style="width:100%;height:100%;object-fit:cover;"></div>`, iconSize:[40,40] }) 
-                        }).addTo(map);
-                    } else {
-                        myLocationMarker.setLatLng([myLat, myLng]);
+                if(isWalking) {
+                    const dist = lastLoggedLat ? getDist(lastLoggedLat, lastLoggedLng, myLat, myLng) : 999;
+                    if(dist > 0.01) { // 10 metrów dławik
+                        db.collection("walks").doc(userUid).set({ lat: myLat, lng: myLng, time: Date.now() }, {merge:true});
+                        lastLoggedLat = myLat; lastLoggedLng = myLng;
                     }
-                    if(isFollowing) map.panTo([myLat, myLng]);
+                }
+            }, null, { enableHighAccuracy: true });
+        }
 
-                    if (isWalking) {
-                        const dist = lastLat ? calculateDistance(lastLat, lastLng, myLat, myLng) : 999;
-                        if (dist > 0.01) { // 10 metrów dławik
-                            db.collection("walks").doc(currentUserUid).set({ uid: currentUserUid, name: myDogProfile.name, avatar: myDogProfile.avatar, lat: myLat, lng: myLng, intent: document.getElementById('intent').value, timestamp: Date.now() }, { merge: true });
-                            lastLat = myLat; lastLng = myLng;
-                        }
-                    }
-                }, err => console.log("Brak GPS", err), { enableHighAccuracy: true });
+        function getDist(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180; const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
+
+        function triggerSOS() {
+            const phone = prompt("🚨 Podaj numer telefonu do kontaktu SOS:");
+            if(phone) {
+                db.collection("emergency_alerts").add({ lat: myLat, lng: myLng, contact: phone, status: "active", time: Date.now(), userId: userUid });
+                alert("Sygnał SOS został wysłany do wszystkich w okolicy!");
             }
-
-            db.collection("walks").onSnapshot(snap => {
-                let sHTML = "";
-                snap.forEach(doc => {
-                    let d = doc.data();
-                    if(Date.now() - d.timestamp > 14400000) { db.collection("walks").doc(doc.id).delete(); return; }
-                    if(d.uid !== currentUserUid) {
-                        sHTML += `<div class="walk-card" onclick="openUserCard('${d.uid}')"><img src="${d.avatar}"><div style="font-weight:900; font-size:12px; margin-top:6px;">${d.name}</div></div>`;
-                    }
-                });
-                document.getElementById('stories-container').innerHTML = sHTML || "<p style='color:var(--text-muted); font-size:12px;'>Cisza w okolicy...</p>";
-            });
-
-            // Inicjalizacja SOS
-            db.collection("emergency_alerts").where("status", "==", "active").onSnapshot(snap => {
-                snap.docChanges().forEach(change => {
-                    const data = change.doc.data(); const id = change.doc.id;
-                    if (change.type === "added") {
-                        const circle = L.circle([data.lat, data.lng], { color: 'red', fillColor: '#ff5252', fillOpacity: 0.3, radius: 800, className: 'sos-pulse-anim' }).addTo(map);
-                        circle.bindPopup(`<b>🚨 ZAGINĄŁ PIES: ${data.dogName}!</b><br><a href="tel:${data.contact}" style="color:var(--danger); font-weight:bold;">Zadzwoń: ${data.contact}</a>`);
-                        activeSosMarkers[id] = circle;
-                    }
-                    if (change.type === "removed" && activeSosMarkers[id]) {
-                        map.removeLayer(activeSosMarkers[id]); delete activeSosMarkers[id];
-                    }
-                });
-            });
         }
 
-        function centerOnMe() { isFollowing = true; if(myLat) map.flyTo([myLat, myLng], 15); }
-        function calculateDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180; const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
+        function startWalk() { isWalking = true; document.getElementById('startBtn').style.display='none'; document.getElementById('stopBtn').style.display='block'; }
+        function stopWalk() { isWalking = false; db.collection("walks").doc(userUid).delete(); location.reload(); }
 
-        async function triggerSOS() {
-            const contact = prompt("🚨 SOS: Podaj numer telefonu do kontaktu:");
-            if (!contact) return;
-            await db.collection("emergency_alerts").add({ ownerId: currentUserUid, dogName: myDogProfile.name, contact: contact, lat: myLat, lng: myLng, timestamp: Date.now(), status: "active" });
-            showToast("Wysłano SOS na całą okolicę!");
-        }
-
-        function startWalk() { isWalking = true; document.getElementById('startBtn').style.display='none'; document.getElementById('stopBtn').style.display='block'; document.getElementById('walk-inputs-group').style.display='none'; lastLat=null; }
-        function stopWalk() { isWalking = false; db.collection("walks").doc(currentUserUid).delete().then(() => location.reload()); }
-
-        // --- WIKI DYNAMICZNE ---
-        function loadDynamicWiki() {
-            db.collection("wiki_breeds").orderBy("name").onSnapshot(snap => {
-                const cont = document.getElementById('wiki-breeds-container'); cont.innerHTML = "";
-                snap.forEach(doc => {
-                    const b = doc.data();
-                    let tagsH = (b.tags_pl||[]).map(t => `<span class="badge-tag">${t}</span>`).join('');
-                    cont.innerHTML += `<div class="post-card"><h3 style="margin:0 0 10px 0;">${b.name}</h3>${tagsH}<p style="color:var(--text-muted); font-size:14px; font-weight:600;">${b.desc_pl}</p></div>`;
-                });
-            });
-            db.collection("wiki_tips").onSnapshot(snap => {
-                const cont = document.getElementById('wiki-training-container'); cont.innerHTML = "";
-                snap.forEach(doc => {
-                    const t = doc.data();
-                    cont.innerHTML += `<div class="post-card"><div class="badge-tag" style="background:var(--gold);">PORADA</div><h3 style="margin:5px 0;">${t.title_pl}</h3><p style="color:var(--text-muted); font-size:14px; font-weight:600;">${t.desc_pl}</p></div>`;
-                });
-            });
-        }
-        function toggleWikiTab(t) {
-            document.getElementById('tab-breeds').classList.toggle('active', t==='breeds');
-            document.getElementById('tab-training').classList.toggle('active', t==='training');
-            document.getElementById('wiki-breeds-container').style.display = t==='breeds'?'block':'none';
-            document.getElementById('wiki-training-container').style.display = t==='training'?'block':'none';
-        }
-
-        // --- SPOŁECZNOŚĆ ---
-        function saveCommunityPost() {
-            let c = document.getElementById('postContent').value; if(!c) return;
-            db.collection("posts").add({ uid: currentUserUid, author: myDogProfile.name, content: c, category: document.getElementById('postCategory').value, timestamp: Date.now() }).then(() => {
-                document.getElementById('post-creator-modal').style.display='none'; document.getElementById('postContent').value = "";
-            });
-        }
-        function loadPosts() {
-            db.collection("posts").orderBy("timestamp", "desc").limit(20).onSnapshot(snap => {
+        function loadWiki() {
+            db.collection("wiki_breeds").onSnapshot(snap => {
                 let h = "";
                 snap.forEach(doc => {
-                    let p = doc.data();
-                    h += `<div class="post-card"><span class="badge-tag" style="background:var(--border-color); color:var(--text-color);">${p.category}</span><br><b style="font-size:16px;">${p.author}</b><p style="color:var(--text-muted); font-weight:600;">${p.content}</p></div>`;
+                    const d = doc.data();
+                    h += `<div class="post-card"><h4>${d.name}</h4><p style="font-size:13px; color:var(--text-muted)">${d.desc_pl}</p></div>`;
+                });
+                document.getElementById('wiki-container').innerHTML = h;
+            });
+        }
+
+        function loadPosts() {
+            db.collection("posts").orderBy("time", "desc").limit(20).onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    h += `<div class="post-card"><b style="color:var(--primary)">${d.author || 'Anonim'}</b><p style="margin:5px 0;">${d.content}</p></div>`;
                 });
                 document.getElementById('posts-container').innerHTML = h;
             });
         }
 
-        // --- CZAT ---
-        async function loadInbox() {
-            db.collection("messages").where("receiver", "==", currentUserUid).onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    let m = doc.data();
-                    h += `<div class="post-card" style="cursor:pointer; padding:15px;" onclick="openChat('${m.sender}')"><b style="color:var(--primary);">Nowa wiadomość</b><br><span style="color:var(--text-muted); font-size:14px;">${m.text}</span></div>`;
-                });
-                document.getElementById('inbox-container').innerHTML = h || "<p style='text-align:center; color:var(--text-muted); font-weight:800;'>Brak wiadomości.</p>";
-            });
-        }
-        function openChat(uid) {
-            currentChatId = uid;
-            document.getElementById('active-chat-container').style.display = 'flex';
-            db.collection("messages").onSnapshot(snap => {
-                let msgs = [];
-                snap.forEach(doc => { let m = doc.data(); if((m.sender===currentUserUid && m.receiver===uid) || (m.sender===uid && m.receiver===currentUserUid)) msgs.push(m); });
-                msgs.sort((a, b) => a.timestamp - b.timestamp);
-                let h = "";
-                msgs.forEach(m => {
-                    let isMe = m.sender === currentUserUid;
-                    h += `<div style="align-self:${isMe?'flex-end':'flex-start'}; background:${isMe?'var(--primary)':'var(--border-color)'}; color:${isMe?'#fff':'var(--text-color)'}; padding:12px 18px; border-radius:20px; font-weight:700; margin-bottom:8px; max-width:75%;">${m.text}</div>`;
-                });
-                document.getElementById('chatMessages').innerHTML = h;
-                document.getElementById('chatMessages').scrollTop = 99999;
-            });
-        }
-        function closeActiveChat() { document.getElementById('active-chat-container').style.display = 'none'; }
-        function sendMessage() {
-            let t = document.getElementById('chatInput').value; if(!t || !currentChatId) return;
-            db.collection("messages").add({ sender: currentUserUid, receiver: currentChatId, text: t, timestamp: Date.now() });
-            document.getElementById('chatInput').value = "";
+        function savePost() {
+            const c = document.getElementById('postContent').value; if(!c) return;
+            db.collection("posts").add({ content: c, time: Date.now(), author: userUid });
+            document.getElementById('post-modal').style.display = 'none';
         }
 
-        // --- PROFIL I USER CARD ---
-        function openEditProfile() {
-            document.getElementById('setupName').value = myDogProfile.name || "";
-            document.getElementById('setupBreed').value = myDogProfile.breed || "";
-            document.getElementById('setupCity').value = myDogProfile.city || "";
-            document.getElementById('setupAvatar').value = myDogProfile.avatar || "";
-            document.getElementById('profile-setup-modal').style.display = 'flex';
-        }
-        function saveProfileData() {
-            db.collection("users").doc(currentUserUid).set({
-                name: document.getElementById('setupName').value, breed: document.getElementById('setupBreed').value, city: document.getElementById('setupCity').value, avatar: document.getElementById('setupAvatar').value
-            }, {merge:true}).then(() => location.reload());
-        }
-
-        async function openUserCard(uid) {
-            const doc = await db.collection("users").doc(uid).get(); if(!doc.exists) return;
-            const d = doc.data();
-            document.getElementById('cardAvatar').src = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-            document.getElementById('cardName').innerText = d.name;
-            document.getElementById('cardBreed').innerText = d.breed || 'Pies';
-            
-            const encSnap = await db.collection("wiki_breeds").where("name", "==", d.breed).get();
-            if (!encSnap.empty) {
-                document.getElementById('cardEncyclopediaText').innerText = encSnap.docs[0].data().desc_pl;
-                document.getElementById('cardEncyclopedia').style.display = 'block';
-            } else { document.getElementById('cardEncyclopedia').style.display = 'none'; }
-
-            document.getElementById('cardMsgBtn').onclick = () => { document.getElementById('user-profile-modal').style.display='none'; switchView('chat', document.querySelectorAll('.nav-item')[3]); openChat(uid); };
-            document.getElementById('user-profile-modal').style.display = 'flex';
-        }
-
-        // --- UTILS ---
         function switchView(v, el) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.getElementById('view-' + v).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
-            if(v === 'map' && map) setTimeout(() => map.invalidateSize(), 200);
+            if(v==='map') setTimeout(()=>map.invalidateSize(), 200);
         }
-        function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+
         function handleLogin() { auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(e => alert(e.message)); }
         function handleRegister() { auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(e => alert(e.message)); }
         function handleLogout() { auth.signOut().then(() => location.reload()); }
