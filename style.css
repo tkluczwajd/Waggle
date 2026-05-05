@@ -1,236 +1,80 @@
-/* --- 1. ZMIENNE I RESET --- */
 :root { 
-    --primary: #ff5252; 
-    --secondary: #34ace0; 
-    --bg-color: #f4f6f8; 
-    --panel-bg: #ffffff; 
-    --text-color: #2c3e50; 
-    --border-color: #f1f2f6;
-    --text-muted: #a4b0be; 
-    --danger: #ff5252; 
-    --gold: #ffb142;
-    --nav-height: 80px; 
+    --primary: #ff5252; --secondary: #34ace0; --bg-color: #f4f6f8; 
+    --panel-bg: #ffffff; --text-color: #2c3e50; --border-color: #f1f2f6;
+    --text-muted: #a4b0be; --danger: #ff5252; --gold: #ffb142;
+    --nav-height: 85px; 
     --soft-shadow: 0 10px 25px rgba(149, 157, 165, 0.15);
 }
 
 html, body { 
-    margin: 0; 
-    padding: 0; 
-    height: 100%; 
-    width: 100%; 
-    background: #e1e5eb; /* Szare tło na komputerze */
-    font-family: 'Nunito', sans-serif; 
-    overflow: hidden; 
-    display: flex; 
-    justify-content: center; 
-    color: var(--text-color); 
+    margin: 0; padding: 0; height: 100%; width: 100%; 
+    background: #e1e5eb; font-family: 'Nunito', sans-serif; 
+    overflow: hidden; display: flex; justify-content: center; 
 }
 
-/* --- 2. GŁÓWNY KONTENER (Makieta telefonu) --- */
+/* KONTENER TELEFONU */
 .screen-container { 
-    width: 100%; 
-    max-width: 480px; 
-    height: 100%; 
-    background: var(--bg-color); 
-    position: relative; 
-    overflow: hidden; 
-    display: none; /* Domyślnie ukryte, przełączane przez auth.js */
-    flex-direction: column; 
+    width: 100%; max-width: 480px; height: 100vh; 
+    background: var(--bg-color); position: relative; 
+    overflow: hidden; display: none; flex-direction: column; 
     box-shadow: 0 0 50px rgba(0,0,0,0.1);
 }
 
-/* Pokaż odpowiedni kontener */
-#app-interface.active, #auth-screen.active {
-    display: flex !important;
-}
+#app-interface.active, #auth-screen.active { display: flex !important; }
 
-/* --- 3. WIDOKI SEKCJI --- */
+/* SYSTEM WIDOKÓW */
 .view-section { 
-    flex: 1; 
-    width: 100%; 
-    height: 100%;
-    display: none; 
-    overflow-y: auto; 
-    position: absolute; /* Nakładają się na siebie jak warstwy */
-    top: 0;
-    left: 0;
-    bottom: var(--nav-height); /* Nie wchodzą pod dolny pasek */
-    background: var(--bg-color); /* Nieprzezroczyste tło przykrywa mapę! */
-    box-sizing: border-box;
-    z-index: 10;
+    position: absolute; top: 0; left: 0; width: 100%; 
+    height: calc(100% - var(--nav-height)); 
+    display: none; background: var(--bg-color); 
+    overflow-y: auto; z-index: 10;
 }
 
-/* Specjalny przypadek dla mapy - przezroczyste tło */
-#view-map {
-    background: transparent;
-    z-index: 5; /* Mapa zawsze na spodzie */
-}
+.view-section.active { display: block; }
 
-/* Aktywny widok wysuwa się na wierzch */
-.view-section.active { 
-    display: block; 
-    z-index: 20; 
-}
+/* FIX MAPY */
+#view-map { height: 100%; z-index: 5; background: transparent; }
+#view-map.active { display: flex !important; }
+#map { position: absolute; inset: 0; z-index: 1; }
 
-/* --- 4. MAPA I KONTROLKI WIDOKU MAPY --- */
-#map { 
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0; 
-    z-index: 1; 
-}
-
-#ctrl-panel { 
-    position: absolute; 
-    top: 15px; 
-    left: 15px; 
-    z-index: 1000; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
-}
-
-#top-widgets { 
-    position: absolute; 
-    top: 15px; 
-    right: 15px; 
-    z-index: 10000; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 8px; 
-}
-
-.map-ctrl-btn { 
-    background: var(--panel-bg); 
-    width: 44px; 
-    height: 44px; 
-    border-radius: 50%; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border: none; 
-    font-size: 18px; 
-    cursor: pointer; 
-    box-shadow: var(--soft-shadow); 
-}
-.map-ctrl-btn.danger { background: var(--danger); color: white; }
-
-.top-pill { 
-    background: var(--panel-bg); 
-    padding: 10px 16px; 
-    border-radius: 50px; 
-    font-size: 13px; 
-    font-weight: 800; 
-    box-shadow: var(--soft-shadow); 
-    display: flex; 
-    align-items: center; 
-    gap: 6px; 
-}
-
-/* Panel "Wyjdź na spacer" nad dolnym paskiem */
-#walk-setup-panel { 
-    position: absolute; 
-    bottom: 20px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    width: 90%; 
-    z-index: 1000; 
-    background: var(--panel-bg); 
-    border-radius: 28px; 
-    padding: 18px; 
-    box-shadow: var(--soft-shadow); 
-    box-sizing: border-box; 
-}
-
-/* --- 5. NAWIGACJA DOLNA --- */
+/* NAWIGACJA */
 .bottom-nav { 
-    position: absolute; /* Trzyma się dołu kontenera aplikacji, nie okna przeglądarki */
-    bottom: 0; 
-    left: 0; 
-    width: 100%; 
-    height: var(--nav-height); 
-    background: var(--panel-bg); 
-    display: flex; 
-    justify-content: space-around; 
-    align-items: center; 
-    z-index: 99999; /* Zawsze nad wszystkim */
-    padding-bottom: env(safe-area-inset-bottom); 
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.05); 
-    border-radius: 30px 30px 0 0;
+    position: absolute; bottom: 0; left: 0; width: 100%; 
+    height: var(--nav-height); background: var(--panel-bg); 
+    display: flex; justify-content: space-around; align-items: center; 
+    z-index: 999999; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); 
+    border-radius: 30px 30px 0 0; padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-item { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    gap: 4px; 
-    color: var(--text-muted); 
-    cursor: pointer; 
-    flex: 1; 
-    border: none; 
-    background: none; 
-    font-size: 11px; 
-    font-weight: 800; 
+    cursor: pointer; flex: 1; height: 100%; display: flex; 
+    flex-direction: column; justify-content: center; align-items: center; 
+    color: var(--text-muted); font-size: 11px; font-weight: 800; transition: 0.3s;
 }
 .nav-item.active { color: var(--primary); }
 
-/* --- 6. KOMPONENTY WSPÓLNE --- */
-.post-card { 
-    background: var(--panel-bg); 
-    margin: 15px; 
-    border-radius: 24px; 
-    padding: 20px; 
-    box-shadow: var(--soft-shadow); 
-    position: relative; 
-}
-.post-card h4 { margin: 0 0 10px 0; color: var(--primary); }
-.post-card p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-color); }
-.post-card img { width: 100%; border-radius: 16px; margin-top: 10px; }
+/* WIDGETY MAPY */
+#top-widgets { position: absolute; top: 15px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+#ctrl-panel { position: absolute; top: 15px; left: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+.top-pill { background: var(--panel-bg); padding: 10px 16px; border-radius: 50px; font-size: 13px; font-weight: 800; box-shadow: var(--soft-shadow); }
+.map-ctrl-btn { background: var(--panel-bg); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; box-shadow: var(--soft-shadow); cursor: pointer; }
+.map-ctrl-btn.danger { background: var(--danger); color: white; }
 
-.btn-main { 
-    background: var(--primary); 
-    color: white; 
-    border: none; 
-    font-weight: 800; 
-    padding: 16px; 
-    border-radius: 50px; 
-    width: 100%; 
-    cursor: pointer; 
-    text-transform: uppercase; 
-}
+#walk-setup-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 1000; background: var(--panel-bg); border-radius: 28px; padding: 18px; box-shadow: var(--soft-shadow); }
 
-.btn-outline { 
-    background: transparent; color: var(--text-color); border: 2px solid var(--border-color); 
-    font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; 
-}
+/* KOMPONENTY */
+.post-card { background: white; margin: 15px; border-radius: 24px; padding: 20px; box-shadow: var(--soft-shadow); }
+.btn-main { background: var(--primary); color: white; border: none; font-weight: 800; padding: 16px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; }
+.btn-outline { background: transparent; color: var(--text-color); border: 2px solid var(--border-color); font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; margin-top: 10px; }
+input { width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--border-color); background: var(--bg-color); margin-bottom: 12px; box-sizing: border-box; outline: none; font-family: inherit; }
 
-input, textarea, select { 
-    width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--border-color); 
-    background: var(--bg-color); margin-bottom: 12px; box-sizing: border-box; outline: none; font-family: inherit; font-weight: 600;
-}
-
-/* --- 7. STORIES --- */
-#stories-container { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
-#stories-container::-webkit-scrollbar { display: none; }
-
-.walk-card { 
-    background: var(--panel-bg); border-radius: 18px; padding: 10px; 
-    min-width: 80px; text-align: center; box-shadow: var(--soft-shadow); flex-shrink: 0; cursor: pointer;
-}
-.walk-card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-
-/* --- 8. CZAT OVERLAY --- */
-.chat-overlay {
-    position: absolute; inset: 0; background: var(--bg-color); 
-    z-index: 100000; display: none; flex-direction: column;
-}
-.chat-header { padding: 15px 20px; background: var(--panel-bg); display: flex; align-items: center; gap: 15px; box-shadow: var(--soft-shadow); }
+.chat-overlay { position: absolute; inset: 0; background: var(--bg-color); z-index: 100000; display: none; flex-direction: column; }
+.chat-header { padding: 15px 20px; background: white; display: flex; align-items: center; gap: 15px; box-shadow: var(--soft-shadow); }
 #chatMessages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-.chat-footer { padding: 15px; background: var(--panel-bg); display: flex; gap: 10px; }
+.chat-footer { padding: 15px; background: white; display: flex; gap: 10px; }
 
-/* --- 9. PROFIL --- */
-.profile-header { padding: 30px 20px; text-align: center; }
-#profileAvatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: var(--soft-shadow); background: #eee; }
+#loader { position: fixed; inset: 0; z-index: 2000000; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 32px; }
 
-/* --- 10. SYSTEMOWE --- */
-#loader { position: fixed; inset: 0; z-index: 200000; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 32px; }
-#toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--text-color); color: var(--bg-color); padding: 12px 24px; border-radius: 50px; z-index: 150000; display: none; font-weight: 800; }
+#stories-container { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
+.walk-card { background: white; border-radius: 18px; padding: 10px; min-width: 80px; text-align: center; box-shadow: var(--soft-shadow); flex-shrink: 0; }
+.walk-card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
