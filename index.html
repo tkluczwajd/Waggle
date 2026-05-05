@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#f4f6f8">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1068/1068827.png">
 
-    <title>Waggle v21.15 🐾 Smart Text Wrapping</title>
+    <title>Waggle v21.16 🐾 Complete Edition</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -30,10 +30,6 @@
             --border-color: #333333; --text-muted: #888888;
         }
         body.dark-mode #map { filter: brightness(0.8) contrast(1.1); } 
-        body.dark-mode .alert-item { background: #3d1c1c; }
-        body.dark-mode .routine-tag { background: #332b1a; color: #f39c12; }
-        body.dark-mode .badge-tag { background: #332b1a; color: #f39c12; }
-        body.dark-mode .encyclopedia-box { background: #1c3626; color: #2ecc71; }
 
         html, body { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
@@ -76,12 +72,9 @@
         #top-widgets { position: absolute; top: 15px; right: 15px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
         .top-pill { background: var(--panel-bg); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 800; border: none; box-shadow: var(--soft-shadow); cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--text-color); transition: 0.3s;}
         
-        .danger-pill { background: var(--danger) !important; color: white !important; animation: pulse-red 1.5s infinite; }
-        @keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
         #walk-setup-panel { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 440px; z-index: 5000; background: var(--panel-bg); border-radius: 28px; padding: 18px; border: none; box-shadow: var(--soft-shadow); box-sizing: border-box; transition: 0.3s;}
         
-        /* POPRAWKA ZAWINIĘCIA TEKSTU */
+        /* Tekst poprawiony - v21.16 */
         .post-card { background: var(--panel-bg); margin: 15px; border-radius: 24px; padding: 20px; box-shadow: var(--soft-shadow); position:relative; overflow: hidden; transition: 0.3s;}
         .post-card p, .post-card b, .comment-item div { 
             word-break: normal; 
@@ -93,32 +86,27 @@
             text-align: left;
         }
         
-        .delete-btn { position:absolute; top:15px; right:15px; background:none; border:none; font-size:16px; cursor:pointer; opacity:0.6; padding:5px;}
-
-        .btn-main { background: var(--primary); color: white; border: none; font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; box-shadow: 0 8px 15px rgba(255, 82, 82, 0.2); transition: 0.2s; font-size: 13px; letter-spacing: 0.5px; flex-shrink: 0;}
+        .btn-main { background: var(--primary); color: white; border: none; font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; box-shadow: 0 8px 15px rgba(255, 82, 82, 0.2); transition: 0.2s; font-size: 13px; flex-shrink: 0;}
         .btn-outline { background: transparent; color: var(--text-color); border: 2px solid var(--border-color); font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; font-size: 13px; transition: 0.2s; flex-shrink: 0;}
         
         input, select, textarea { width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: inherit; font-weight: 600; margin-bottom: 12px; box-sizing: border-box; outline: none; transition: 0.3s; flex-shrink: 0;}
 
         .walk-card { background: var(--panel-bg); border-radius: 20px; padding: 10px; min-width: 80px; text-align: center; box-shadow: var(--soft-shadow); border: none; flex-shrink: 0; cursor: pointer; transition: 0.3s;}
-        .walk-card img { 
-            width: 45px; height: 45px; min-width: 45px; min-height: 45px; 
-            aspect-ratio: 1/1; border-radius: 50%; object-fit: cover; 
-            background: var(--bg-color); flex-shrink: 0; box-sizing: border-box;
-        }
+        .walk-card img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
         
         #stories-container { display: flex; gap: 15px; overflow-x: auto; padding: 10px 15px 15px 15px; margin: 0 -15px; scrollbar-width: none; }
 
-        .encyclopedia-box { padding: 15px; border-radius: 16px; font-size: 13px; font-weight: 700; text-align: left; margin-top: 12px; overflow-wrap: break-word; }
         .badge-tag { padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; margin: 5px 3px; display: inline-block; }
-
         .filter-btn { padding: 8px 18px; border-radius: 50px; font-size: 12px; font-weight: 800; border: none; background: var(--border-color); color: var(--text-color); cursor: pointer; white-space: nowrap; transition: 0.2s; }
         .filter-btn.active { background: var(--text-color); color: var(--bg-color); }
-        .post-tag { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; background: var(--border-color); margin-bottom: 10px; display: inline-block; color: var(--text-color); }
         
         .tab-btn { flex: 1; padding: 12px; font-weight: 900; border: none; border-radius: 12px; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--panel-bg); color: var(--text-color); box-shadow: var(--soft-shadow); }
         .tab-container { background: var(--border-color); border-radius: 16px; padding: 5px; display: flex; gap: 5px; margin-bottom: 15px; transition: 0.3s;}
+
+        /* Pogoda modal */
+        .weather-day { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+        .weather-day:last-child { border: none; }
     </style>
 </head>
 <body>
@@ -126,37 +114,20 @@
     <div id="loader" style="position:fixed; inset:0; z-index:30000; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:32px;">Waggle🐾</div>
     <div id="toast">Sukces!</div>
 
-    <div id="lightbox-modal" onclick="this.style.display='none'">
-        <button class="lightbox-close">✕</button>
-        <img id="lightbox-img" src="">
-    </div>
-
-    <div id="auth-screen" style="display:none; flex-direction:column; justify-content:center; padding:30px;">
-        <h1 style="font-size: 50px; margin: 0; text-align:center; color:var(--primary); font-weight:900;">Waggle.</h1>
-        <p style="text-align:center; margin-bottom:25px; font-weight:800; color:var(--text-muted);" data-i18n="auth_subtitle">Dołącz do stada! 🐕</p>
-        <input type="email" id="authEmail" placeholder="E-mail">
-        <input type="password" id="authPass" placeholder="Hasło" onkeypress="if(event.key === 'Enter') handleLogin()" data-i18n="auth_pass">
-        <button class="btn-main" onclick="handleLogin()" data-i18n="btn_login">ZALOGUJ SIĘ</button>
-        <button class="btn-outline" onclick="handleRegister()" data-i18n="btn_register" style="margin-top:10px;">REJESTRACJA</button>
-    </div>
-
     <div id="app-interface" style="display:none;">
         <section id="view-map" class="view-section active">
             <div id="ctrl-panel">
-                <button id="btn-center" class="map-ctrl-btn" onclick="centerOnMe()">🎯</button>
+                <button class="map-ctrl-btn" onclick="centerOnMe()">🎯</button>
                 <button class="map-ctrl-btn" style="background:var(--danger); color:white;" onclick="document.getElementById('alert-modal').style.display='flex'">⚠️</button>
             </div>
             <div id="top-widgets">
-                <div class="top-pill" onclick="showWeatherAlert()"><span id="weather-icon">☀️</span> <span id="weather-temp">--°C</span></div>
-                <div id="active-alert-pill" class="top-pill" onclick="openAlertHub()" style="display:none;">⚠️ Szukam zagrożeń...</div>
+                <div class="top-pill" onclick="showWeatherForecast()"><span id="weather-icon">☀️</span> <span id="weather-temp">--°C</span></div>
             </div>
             <div id="map"></div>
             <div id="walk-setup-panel">
-                <div id="walk-inputs-group">
-                    <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
-                        <img id="myAvatarSmall" src="" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border: 2px solid var(--border-color); flex-shrink:0;">
-                        <input type="text" id="statusInput" placeholder="Co u Was?" style="margin:0; flex:1;">
-                    </div>
+                <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+                    <img id="myAvatarSmall" src="" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border: 2px solid var(--border-color); flex-shrink:0;">
+                    <input type="text" id="statusInput" placeholder="Co u Was?" style="margin:0; flex:1;">
                 </div>
                 <button class="btn-main" id="startBtn" onclick="startWalk()">WYJDŹ NA SPACER 🐾</button>
                 <button class="btn-main" id="stopBtn" onclick="stopWalk()" style="display:none; background:var(--text-color);">ZAKOŃCZ SPACER 🏁</button>
@@ -164,13 +135,10 @@
         </section>
 
         <section id="view-community" class="view-section">
-            <div style="padding:20px 20px 5px 20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; font-weight:900; font-size:22px;">W okolicy</h3>
-                    <button onclick="openSearchModal()" style="background:var(--panel-bg); color:var(--text-color); border:none; border-radius:50px; font-size:13px; padding:8px 16px; cursor:pointer; font-weight:800; box-shadow:var(--soft-shadow);">🔎 SZUKAJ</button>
-                </div>
+            <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
+                <h3 style="margin:0 0 15px 0; font-weight:900;">W okolicy</h3>
                 <div id="stories-container"></div>
-                <button class="btn-main" style="background:var(--secondary); margin-bottom:10px;" onclick="document.getElementById('post-creator-modal').style.display='flex'">➕ DODAJ POSTA</button>
+                <button class="btn-main" style="background:var(--secondary);" onclick="document.getElementById('post-creator-modal').style.display='flex'">➕ DODAJ POSTA</button>
             </div>
             <div id="posts-container" style="padding-bottom: 20px;"></div>
         </section>
@@ -194,7 +162,11 @@
             <div style="padding:30px 20px; text-align:center;">
                 <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:4px solid white; box-shadow:var(--soft-shadow);">
                 <h2 id="profileNameDisplay" style="margin:0; font-weight:900;">...</h2>
-                <button class="btn-main" style="background:var(--border-color); color:var(--text-color); margin-top:20px;" onclick="handleLogout()">WYLOGUJ SIĘ</button>
+                <div id="stat-row" style="display:flex; justify-content:space-around; margin: 20px 0;">
+                   <div class="stat"><b>KM:</b> <span id="statDist">0</span></div>
+                   <div class="stat"><b>Stado:</b> <span id="statFriends">0</span></div>
+                </div>
+                <button class="btn-main" style="background:var(--border-color); color:var(--text-color);" onclick="handleLogout()">WYLOGUJ SIĘ</button>
             </div>
         </section>
 
@@ -207,8 +179,9 @@
         </nav>
     </div>
 
+    <!-- Modale -->
     <div id="post-creator-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <h3 style="font-weight:900;">Nowy Post</h3>
+        <h3>Nowy Post</h3>
         <textarea id="postContent" placeholder="Napisz do stada..."></textarea>
         <div style="display:flex; gap:10px; margin-bottom:12px;">
             <button class="btn-outline" style="flex:1;" onclick="document.getElementById('postCamInput').click()">📷 APARAT</button>
@@ -218,6 +191,18 @@
         </div>
         <button class="btn-main" onclick="saveCommunityPost()">OPUBLIKUJ</button>
     </div></div>
+
+    <div id="weather-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
+        <h3 style="margin-top:0;">Prognoza na 3 dni</h3>
+        <div id="weather-forecast-list"></div>
+    </div></div>
+
+    <div id="auth-screen" class="view-section" style="padding:40px; justify-content:center; display:flex;">
+        <h1 style="color:var(--primary); font-size:48px; font-weight:900;">Waggle.</h1>
+        <input type="email" id="authEmail" placeholder="E-mail">
+        <input type="password" id="authPass" placeholder="Hasło">
+        <button class="btn-main" onclick="handleLogin()">Zaloguj się</button>
+    </div>
 
     <script src="wiki.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -229,10 +214,9 @@
         const firebaseConfig = { apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", authDomain: "waggle-app-31ffa.firebaseapp.com", projectId: "waggle-app-31ffa", storageBucket: "waggle-app-31ffa.firebasestorage.app", messagingSenderId: "711707392068", appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(); const auth = firebase.auth();
-        const IMGBB_API_KEY = "af2b35f5ca54dd9c8fc91595fe525de9"; 
 
-        var map, currentUserUid, myDogProfile;
-        var myLat, myLng, isWalking = false;
+        var map, currentUserUid, myDogProfile, myLat, myLng;
+        var isWalking = false;
         var lastGpsUpdateTimestamp = 0;
 
         auth.onAuthStateChanged(user => {
@@ -249,22 +233,10 @@
             document.getElementById('app-interface').style.display = 'flex';
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('profileNameDisplay').innerText = myDogProfile.name;
+            document.getElementById('myAvatarSmall').src = myDogProfile.avatar || "https://images.unsplash.com/photo-1552053831-71594a27632d?w=100";
+            document.getElementById('profileAvatar').src = myDogProfile.avatar || "https://images.unsplash.com/photo-1552053831-71594a27632d?w=200";
             renderExternalWiki();
             initMap();
-        }
-
-        function renderExternalWiki() {
-            if(typeof WaggleWiki === 'undefined') return;
-            let breedsHtml = "";
-            WaggleWiki.breeds.forEach(b => {
-                breedsHtml += `<div class="post-card"><h3>${b.name}</h3><p>${b.desc}</p></div>`;
-            });
-            document.getElementById('wiki-breeds-container').innerHTML = breedsHtml;
-            let trainingHtml = "";
-            WaggleWiki.training.forEach(t => {
-                trainingHtml += `<div class="post-card"><h3>${t.title}</h3><p>${t.desc}</p></div>`;
-            });
-            document.getElementById('wiki-training-container').innerHTML = trainingHtml;
         }
 
         function initMap() {
@@ -272,11 +244,62 @@
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
             navigator.geolocation.watchPosition(pos => {
                 myLat = pos.coords.latitude; myLng = pos.coords.longitude;
+                updateWeather(myLat, myLng);
                 if(isWalking && (Date.now() - lastGpsUpdateTimestamp > 15000)) {
-                    db.collection("walks").doc(currentUserUid).set({ lat: myLat, lng: myLng, timestamp: Date.now(), name: myDogProfile.name });
+                    db.collection("walks").doc(currentUserUid).set({ lat: myLat, lng: myLng, timestamp: Date.now(), name: myDogProfile.name, avatar: myDogProfile.avatar });
                     lastGpsUpdateTimestamp = Date.now();
                 }
             });
+            db.collection("walks").onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => {
+                    let d = doc.data();
+                    h += `<div class="walk-card"><img src="${d.avatar || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100'}"><div>${d.name}</div></div>`;
+                });
+                document.getElementById('stories-container').innerHTML = h;
+            });
+            db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => {
+                    let p = doc.data();
+                    h += `<div class="post-card"><b>${p.author}</b><p>${p.content}</p></div>`;
+                });
+                document.getElementById('posts-container').innerHTML = h;
+            });
+        }
+
+        async function updateWeather(lat, lon) {
+            try {
+                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode&forecast_days=3&timezone=auto`);
+                const d = await r.json();
+                document.getElementById('weather-temp').innerText = Math.round(d.current_weather.temperature) + "°C";
+                window.weatherData = d.daily;
+            } catch(e) {}
+        }
+
+        function showWeatherForecast() {
+            if(!window.weatherData) return;
+            let h = "";
+            for(let i=0; i<3; i++) {
+                let date = new Date(window.weatherData.time[i]).toLocaleDateString('pl-PL', {weekday: 'short', day: 'numeric'});
+                h += `<div class="weather-day"><b>${date}</b> <span>${Math.round(window.weatherData.temperature_2m_min[i])}° / ${Math.round(window.weatherData.temperature_2m_max[i])}°C</span></div>`;
+            }
+            document.getElementById('weather-forecast-list').innerHTML = h;
+            document.getElementById('weather-modal').style.display = 'flex';
+        }
+
+        function renderExternalWiki() {
+            if(typeof WaggleWiki === 'undefined') return;
+            let breedsHtml = "";
+            WaggleWiki.breeds.forEach(b => {
+                breedsHtml += `<div class="post-card"><h3 style="margin:0;">${b.name}</h3><p>${b.desc}</p></div>`;
+            });
+            document.getElementById('wiki-breeds-container').innerHTML = breedsHtml;
+            let trainingHtml = "";
+            WaggleWiki.training.forEach(t => {
+                trainingHtml += `<div class="post-card"><h3 style="margin:0;">${t.title}</h3><p>${t.desc}</p></div>`;
+            });
+            document.getElementById('wiki-training-container').innerHTML = trainingHtml;
         }
 
         function switchView(v, el) {
@@ -297,6 +320,13 @@
         function handleLogout() { auth.signOut().then(() => location.reload()); }
         function startWalk() { isWalking = true; document.getElementById('startBtn').style.display='none'; document.getElementById('stopBtn').style.display='block'; }
         function stopWalk() { isWalking = false; db.collection("walks").doc(currentUserUid).delete().then(() => location.reload()); }
+        function saveCommunityPost() { 
+            let c = document.getElementById('postContent').value;
+            if(!c) return;
+            db.collection("posts").add({ author: myDogProfile.name, content: c, timestamp: Date.now() });
+            document.getElementById('post-creator-modal').style.display='none';
+            document.getElementById('postContent').value = "";
+        }
     </script>
 </body>
 </html>
