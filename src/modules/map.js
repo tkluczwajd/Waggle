@@ -7,7 +7,7 @@ let alertMarkers = {};
 
 export function initMap() {
     if (state.map) return;
-    state.map = L.map('map', { zoomControl: false }).setView([52.2297, 21.0122], 14);
+    state.map = L.map('map', { zoomControl: false }).setView([52.2, 21.0], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(state.map);
 
     navigator.geolocation.watchPosition(pos => {
@@ -17,14 +17,15 @@ export function initMap() {
         if (!myMarker) {
             myMarker = L.circleMarker([latitude, longitude], { radius: 10, color: '#fff', fillColor: '#34ace0', fillOpacity: 1, weight: 3 }).addTo(state.map);
             state.map.setView([latitude, longitude], 15);
-            getWeather(latitude, longitude); // Przywrócona POGODA
+            getWeather(latitude, longitude);
         } else {
             myMarker.setLatLng([latitude, longitude]);
         }
+        if(state.isFollowing) state.map.panTo([latitude, longitude]);
     }, null, { enableHighAccuracy: true });
 
     listenForWalks();
-    listenForAlerts(); // Przywrócone ALERTY
+    listenForAlerts();
 }
 
 async function getWeather(lat, lon) {
@@ -32,21 +33,19 @@ async function getWeather(lat, lon) {
         const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
         const d = await r.json();
         document.getElementById('weather-temp').innerText = `${Math.round(d.current_weather.temperature)}°C`;
-    } catch(e) { console.error("Weather error", e); }
+    } catch(e) {}
 }
 
 function listenForAlerts() {
     const unsub = db.collection("alerts").onSnapshot(snap => {
-        // Usuwamy stare
         Object.values(alertMarkers).forEach(m => state.map.removeLayer(m));
         alertMarkers = {};
-        
         snap.forEach(doc => {
             const a = doc.data();
-            const marker = L.marker([a.lat, a.lng], {
+            const m = L.marker([a.lat, a.lng], {
                 icon: L.divIcon({ className: '', html: `<div style="background:red; color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:2px solid white;">⚠️</div>` })
             }).addTo(state.map).bindPopup(a.text);
-            alertMarkers[doc.id] = marker;
+            alertMarkers[doc.id] = m;
         });
     });
     addListener(unsub);
@@ -55,18 +54,28 @@ function listenForAlerts() {
 function listenForWalks() {
     const unsub = db.collection("walks").onSnapshot(snap => {
         let html = "";
+        const activeUids = new Set();
         snap.forEach(doc => {
             const d = doc.data();
             if(d.uid !== state.user.uid) {
+                activeUids.add(d.uid);
                 html += `<div class="walk-card" onclick="window.centerOnTarget(${d.lat}, ${d.lng})">
                     <img src="${d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150'}">
                     <div>${d.name}</div>
                 </div>`;
+                if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
+                else {
+                    dogMarkers[d.uid] = L.marker([d.lat, d.lng], {
+                        icon: L.divIcon({ className: '', html: `<img src="${d.avatar}" style="width:40px;height:40px;border-radius:50%;border:2px solid white;">`, iconSize: [40, 40] })
+                    }).addTo(state.map);
+                }
             }
         });
-        document.getElementById('stories-container').innerHTML = html;
+        Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
+        document.getElementById('stories-container').innerHTML = html || "<p style='font-size:12px;'>Cisza w okolicy.</p>";
     });
     addListener(unsub);
 }
 
-export function centerOnMe() { state.map.flyTo([state.location.lat, state.location.lng], 15); }
+export function centerOnMe() { state.isFollowing = true; state.map.flyTo([state.location.lat, state.location.lng], 15); }
+window.centerOnTarget = (lat, lng) => { state.isFollowing = false; state.map.flyTo([lat, lng], 16); };
