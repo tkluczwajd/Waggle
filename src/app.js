@@ -1,22 +1,32 @@
-import { state, clearListeners, addListener } from './core/state.js';
-import { auth, db } from './core/firebase.js';
+import { state, clearListeners } from './core/state.js';
+import { auth } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
-import { initMap, centerOnMe } from './modules/map.js';
+import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
 import { startWalk, stopWalk } from './modules/walk.js';
-import { loadPosts, saveCommunityPost } from './modules/posts.js';
-import { loadInbox, sendMessage } from './modules/chat.js';
+import { loadPosts, saveCommunityPost, openLightbox } from './modules/posts.js';
+import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
 
-// INICJALIZACJA APLIKACJI (Wywoływana z auth.js po zalogowaniu)
+// --- NAMESPACE DLA HTML ---
+// Dzięki temu onclick="Waggle.openChat()" zadziała w modułach
+window.Waggle = {
+    openChat,
+    centerOnTarget,
+    openLightbox,
+    closeActiveChat
+};
+
 export function initApp() {
     console.log("Waggle Engine: Ready 🐾");
     initMap();
     loadPosts();
     loadInbox();
-    loadDynamicWiki();
 }
 
-// NAWIGACJA
 function switchView(viewId) {
+    // 🔥 KLUCZ: Sprzątamy stare nasłuchiwanie przy zmianie zakładki
+    // Zapobiega to nakładaniu się postów i wiadomości
+    clearListeners(); 
+
     document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
     const target = document.getElementById('view-' + viewId);
     if(target) target.classList.add('active');
@@ -26,10 +36,15 @@ function switchView(viewId) {
         if(n.dataset.view === viewId) n.classList.add('active');
     });
 
-    if(viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 200);
+    // Re-inicjalizacja danych dla konkretnego widoku po czyszczeniu
+    if (viewId === 'community') loadPosts();
+    if (viewId === 'chat') loadInbox();
+    if (viewId === 'map' && state.map) {
+        initMap(); // Upewniamy się, że mapa żyje
+        setTimeout(() => state.map.invalidateSize(), 200);
+    }
 }
 
-// LISTENERY PRZYCISKÓW
 document.addEventListener('click', async (e) => {
     const navItem = e.target.closest('.nav-item');
     if (navItem) switchView(navItem.dataset.view);
@@ -37,41 +52,25 @@ document.addEventListener('click', async (e) => {
     if (e.target.id === 'centerBtn') centerOnMe();
     if (e.target.id === 'startWalkBtn') startWalk();
     if (e.target.id === 'stopWalkBtn') stopWalk();
-    if (e.target.id === 'logoutBtn') auth.signOut().then(() => location.reload());
+    if (e.target.id === 'logoutBtn') auth.signOut();
     
     if (e.target.id === 'addPostBtn') {
         const text = prompt("Co u pieska?");
-        if(text) await saveCommunityPost(text, null);
+        // Walidacja zgodnie z review
+        if(text && text.length > 2 && text.length < 500) {
+            await saveCommunityPost(text, null).catch(err => console.error("Post error:", err));
+        } else if (text) {
+            alert("Post musi mieć od 2 do 500 znaków.");
+        }
     }
 
     if (e.target.id === 'sendMsgBtn') {
         const input = document.getElementById('chatInput');
-        sendMessage(input.value);
-        input.value = "";
-    }
-
-    if (e.target.id === 'closeChatBtn') {
-        document.getElementById('chat-window').style.display = 'none';
-        state.currentChatId = null;
+        if (input.value.trim()) {
+            sendMessage(input.value.trim());
+            input.value = "";
+        }
     }
 });
-
-// WIKI Z BAZY
-function loadDynamicWiki() {
-    db.collection("wiki_breeds").orderBy("name").limit(20).get().then(snap => {
-        let html = "";
-        snap.forEach(doc => {
-            const d = doc.data();
-            html += `<div class="post-card"><h4>${d.name}</h4><p>${d.desc_pl || d.content}</p></div>`;
-        });
-        document.getElementById('wiki-container').innerHTML = html || "<p>Brak wpisów.</p>";
-    });
-}
-
-// GLOBALNY FIX DLA LIGHTBOXA
-window.openLightbox = (url) => {
-    document.getElementById('lightbox-img').src = url;
-    document.getElementById('lightbox-modal').style.display = 'flex';
-};
 
 initAuth();
