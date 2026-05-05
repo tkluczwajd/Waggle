@@ -3,531 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#f4f6f8">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1068/1068827.png">
-
-    <title>Waggle v21.34 🐾 Full Restoration</title>
-    
+    <title>Waggle v22.0 🐾 Professional</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
-    
-    <style>
-        :root { 
-            --primary: #ff5252; --secondary: #34ace0; --bg-color: #f4f6f8; 
-            --panel-bg: #ffffff; --text-color: #2c3e50; --border-color: #f1f2f6;
-            --text-muted: #a4b0be; --male: #34ace0; --female: #ff5252; --gold: #ffb142; --danger: #ff5252;
-            --nav-height: 75px; 
-            --soft-shadow: 0 10px 25px rgba(149, 157, 165, 0.15);
-        }
-        
-        /* TRYB CIEMNY */
-        body.dark-mode { 
-            --bg-color: #121212; --panel-bg: #1e1e1e; --text-color: #e0e0e0; 
-            --border-color: #333333; --text-muted: #888888;
-        }
-        body.dark-mode #map { filter: brightness(0.8) contrast(1.1); } 
-        body.dark-mode .alert-item { background: #3d1c1c; }
-
-        html, body { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
-            background: #e1e5eb; font-family: 'Nunito', sans-serif; 
-            overflow: hidden; display: flex; justify-content: center; color: var(--text-color); 
-        }
-
-        /* TWARDA BLOKADA EKRANÓW - klucz do braku nakładania się */
-        #app-interface, #auth-screen { 
-            width: 100%; max-width: 480px; height: 100%; 
-            background: var(--bg-color); position: relative; 
-            overflow: hidden; display: none; /* JS przełączy na flex */
-            flex-direction: column; transition: background 0.3s;
-        }
-
-        /* MODALE I KARTY */
-        .modal { position: fixed; inset: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(3px); z-index: 20000; display: none; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box; }
-        .card { background: var(--panel-bg); width: 100%; max-width: 380px; border-radius: 28px; padding: 30px; text-align: center; position: relative; box-shadow: var(--soft-shadow); max-height: 85vh; overflow-y: auto; display:flex; flex-direction:column; }
-        .close-modal-btn { position: absolute; top: 15px; right: 15px; background: var(--bg-color); border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; color: var(--text-color); z-index: 10; display: flex; align-items: center; justify-content: center; }
-
-        #toast { position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%); background: var(--text-color); color: var(--bg-color); padding: 12px 24px; border-radius: 50px; z-index: 25000; display: none; font-weight: 800; font-size: 14px; box-shadow: var(--soft-shadow); text-align: center; }
-
-        /* NAWIGACJA */
-        .bottom-nav { 
-            min-height: var(--nav-height); flex-shrink: 0; 
-            background: var(--panel-bg); display: flex; 
-            justify-content: space-around; align-items: center; 
-            z-index: 15000; padding-bottom: env(safe-area-inset-bottom); 
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.03); border-radius: 30px 30px 0 0;
-        }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); cursor: pointer; flex: 1; border: none; background: none; outline: none; padding: 10px 0;}
-        .nav-item.active { color: var(--primary); }
-        .nav-item span { font-size: 11px; font-weight: 800; }
-        .blinking-nav span { animation: pulse-text 1.2s infinite; color: var(--danger); }
-        @keyframes pulse-text { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-        .view-section { flex: 1; width: 100%; display: none; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; background: var(--bg-color); position: relative; min-height: 0; }
-        .view-section.active { display: block; }
-
-        /* MAPA */
-        #map { top: 0; left: 0; right: 0; bottom: 0; position: absolute; z-index: 1; }
-        #ctrl-panel { position: absolute; top: 15px; left: 15px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
-        .map-ctrl-btn { background: var(--panel-bg); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; color: var(--text-color); font-size: 18px; cursor: pointer; box-shadow: var(--soft-shadow); font-weight: 900; }
-        
-        #top-widgets { position: absolute; top: 15px; right: 15px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
-        .top-pill { background: var(--panel-bg); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 800; border: none; box-shadow: var(--soft-shadow); cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--text-color); }
-        .danger-pill { background: var(--danger) !important; color: white !important; animation: pulse-red 1.5s infinite; }
-        @keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        #walk-setup-panel { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 440px; z-index: 5000; background: var(--panel-bg); border-radius: 28px; padding: 18px; box-shadow: var(--soft-shadow); box-sizing: border-box; }
-        
-        /* POSTY I KOMENTARZE */
-        .post-card { background: var(--panel-bg); margin: 15px; border-radius: 24px; padding: 20px; box-shadow: var(--soft-shadow); position:relative; overflow: hidden; }
-        .post-card p, .post-card b { word-break: break-word; white-space: pre-wrap; }
-        .delete-btn { position:absolute; top:15px; right:15px; background:none; border:none; font-size:16px; cursor:pointer; opacity:0.6; }
-
-        .btn-main { background: var(--primary); color: white; border: none; font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; box-shadow: 0 8px 15px rgba(255, 82, 82, 0.2); font-size: 13px; }
-        .btn-outline { background: transparent; color: var(--text-color); border: 2px solid var(--border-color); font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; font-size: 13px; margin-top: 10px; }
-        
-        input, select, textarea { width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: inherit; font-weight: 600; margin-bottom: 12px; box-sizing: border-box; outline: none; }
-
-        /* STORIES */
-        .walk-card { background: var(--panel-bg); border-radius: 20px; padding: 15px; min-width: 100px; text-align: center; box-shadow: var(--soft-shadow); flex-shrink: 0; cursor: pointer; }
-        .walk-card img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: var(--bg-color); }
-        #stories-container { display: flex; gap: 15px; overflow-x: auto; padding: 10px 20px 25px 20px; margin: 0 -15px; scrollbar-width: none; }
-        #stories-container::-webkit-scrollbar { display: none; }
-
-        /* TAGI I WIKI */
-        .badge-tag { padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; margin: 5px 3px; display: inline-block; background: var(--secondary); color: white; }
-        .routine-tag { padding: 6px 14px; border-radius: 50px; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 8px; text-transform: uppercase; background: var(--border-color); color: var(--gold); }
-        .tab-btn { flex: 1; padding: 12px; font-weight: 900; border: none; border-radius: 12px; background: transparent; color: var(--text-muted); cursor: pointer; }
-        .tab-btn.active { background: var(--panel-bg); color: var(--text-color); box-shadow: var(--soft-shadow); }
-        .tab-container { background: var(--border-color); border-radius: 16px; padding: 5px; display: flex; gap: 5px; margin-bottom: 15px; }
-
-        /* LIGHTBOX */
-        #lightbox-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 35000; align-items: center; justify-content: center; backdrop-filter: blur(10px); cursor: pointer; }
-        #lightbox-img { max-width: 95%; max-height: 85vh; border-radius: 20px; object-fit: contain; }
-
-        /* WIELKOŚĆ CZCIONKI */
-        body.font-medium { font-size: 1.1em; }
-        body.font-large { font-size: 1.2em; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <script>
-        // REDIREKCJA HTTPS DLA DOMENY
-        if (window.location.protocol === 'http:' && window.location.hostname === 'joinwaggle.com') {
-            window.location.href = window.location.href.replace('http:', 'https:');
-        }
-    </script>
-
-    <div id="loader" style="position:fixed; inset:0; z-index:30000; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:32px;">Waggle🐾</div>
+    <div id="loader">Waggle🐾</div>
     <div id="toast">Sukces!</div>
 
-    <div id="lightbox-modal" onclick="this.style.display='none'">
-        <img id="lightbox-img" src="">
-    </div>
-
-    <div id="auth-screen">
-        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:30px;">
-            <h1 style="font-size: 50px; margin: 0; text-align:center; color:var(--primary); font-weight:900;">Waggle.</h1>
-            <p style="text-align:center; margin-bottom:25px; font-weight:800; color:var(--text-muted);" data-i18n="auth_subtitle">Dołącz do stada! 🐕</p>
+    <!-- EKRAN LOGOWANIA -->
+    <div id="auth-screen" class="screen-container">
+        <div class="auth-content">
+            <h1>Waggle.</h1>
+            <p data-i18n="auth_subtitle">Dołącz do stada! 🐕</p>
             <input type="email" id="authEmail" placeholder="E-mail">
-            <input type="password" id="authPass" placeholder="Hasło" data-i18n="auth_pass">
-            <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:15px; text-align:left;">
-                <input type="checkbox" id="legalTerms" style="width:20px; height:20px;">
-                <label for="legalTerms" style="font-size:12px; font-weight:700; color:var(--text-muted);" data-i18n="auth_terms">Akceptuję Regulamin oraz Politykę Prywatności aplikacji Waggle.</label>
-            </div>
-            <button class="btn-main" onclick="handleLogin()" data-i18n="btn_login">ZALOGUJ SIĘ</button>
-            <button class="btn-outline" onclick="handleRegister()" data-i18n="btn_register">REJESTRACJA</button>
+            <input type="password" id="authPass" placeholder="Hasło">
+            <button class="btn-main" id="loginBtn" data-i18n="btn_login">ZALOGUJ SIĘ</button>
+            <button class="btn-outline" id="registerBtn" data-i18n="btn_register">REJESTRACJA</button>
         </div>
     </div>
 
-    <div id="app-interface">
+    <!-- GŁÓWNY INTERFEJS -->
+    <div id="app-interface" class="screen-container">
         <section id="view-map" class="view-section active">
             <div id="ctrl-panel">
-                <button id="btn-center" class="map-ctrl-btn" onclick="centerOnMe()">🎯</button>
-                <button class="map-ctrl-btn" style="background:var(--danger); color:white;" onclick="document.getElementById('alert-modal').style.display='flex'">⚠️</button>
-            </div>
-            <div id="top-widgets">
-                <div class="top-pill" onclick="showWeatherAlert()"><span id="weather-icon">☀️</span> <span id="weather-temp">--°C</span></div>
-                <div id="active-alert-pill" class="top-pill" onclick="openAlertHub()" style="display:none;" data-i18n="alert_checking">⚠️ Szukam zagrożeń...</div>
+                <button class="map-ctrl-btn" id="centerBtn">🎯</button>
+                <button class="map-ctrl-btn danger" id="triggerAlertBtn">⚠️</button>
             </div>
             <div id="map"></div>
             <div id="walk-setup-panel">
                 <div id="walk-inputs-group">
-                    <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
-                        <img id="myAvatarSmall" src="" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150'" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border: 2px solid var(--border-color);">
-                        <input type="text" id="statusInput" placeholder="Co u Was?" style="margin:0; flex:1;" data-i18n="input_status">
-                    </div>
-                    <select id="intent" style="margin-bottom:15px;">
-                        <option value="walk" data-i18n="opt_walk">🟢 Zwykły spacer</option>
-                        <option value="social" data-i18n="opt_social">❤️ Chcemy się bawić!</option>
-                        <option value="training" data-i18n="opt_training">🔵 Skupienie / Trening</option>
-                    </select>
+                    <input type="text" id="statusInput" placeholder="Co u Was?">
                 </div>
-                <button class="btn-main" id="startBtn" onclick="startWalk()" data-i18n="btn_start_walk">WYJDŹ NA SPACER 🐾</button>
-                <button class="btn-main" id="stopBtn" onclick="stopWalk()" style="display:none; background:var(--text-color);" data-i18n="btn_stop_walk">ZAKOŃCZ SPACER 🏁</button>
+                <button class="btn-main" id="startWalkBtn" data-i18n="btn_start_walk">WYJDŹ NA SPACER 🐾</button>
+                <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ 🏁</button>
             </div>
         </section>
 
         <section id="view-community" class="view-section">
-            <div style="padding:20px 20px 5px 20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; font-weight:900; font-size:22px;" data-i18n="title_nearby">W okolicy</h3>
-                    <button onclick="openSearchModal()" style="background:var(--panel-bg); color:var(--text-color); border:none; border-radius:50px; font-size:13px; padding:8px 16px; cursor:pointer; font-weight:800; box-shadow:var(--soft-shadow);" data-i18n="btn_search">🔎 SZUKAJ</button>
-                </div>
+            <div class="sticky-header">
+                <h3 data-i18n="title_nearby">W okolicy</h3>
                 <div id="stories-container"></div>
-                <button class="btn-main" style="background:var(--secondary); margin-top:15px;" onclick="document.getElementById('post-creator-modal').style.display='flex'" data-i18n="btn_add_post">➕ DODAJ POSTA</button>
+                <button class="btn-main" id="addPostBtn">➕ DODAJ POSTA</button>
             </div>
-            <div id="posts-container" style="padding-bottom: 20px;"></div>
-        </section>
-
-        <section id="view-wiki" class="view-section">
-            <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
-                <div class="tab-container">
-                    <button id="tab-breeds" class="tab-btn active" onclick="toggleWikiTab('breeds')" data-i18n="tab_breeds">RASY</button>
-                    <button id="tab-training" class="tab-btn" onclick="toggleWikiTab('training')" data-i18n="tab_training">TRENING</button>
-                </div>
-            </div>
-            <div id="wiki-breeds-container" style="padding:0 15px 20px;"></div>
-            <div id="wiki-training-container" style="display:none; padding:0 15px 20px;"></div>
+            <div id="posts-container"></div>
         </section>
 
         <section id="view-chat" class="view-section">
-            <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
-                <div class="tab-container">
-                    <button id="tab-inbox" class="tab-btn active" onclick="toggleChatTab('inbox')" data-i18n="tab_chats">ROZMOWY</button>
-                    <button id="tab-friends" class="tab-btn" onclick="toggleChatTab('friends')" data-i18n="tab_pack">STADO</button>
+            <div id="inbox-container"></div>
+            <!-- Aktywne okno czatu (nakładka) -->
+            <div id="chat-window" class="chat-overlay">
+                <div class="chat-header">
+                    <button id="closeChatBtn">←</button>
+                    <b id="chatPartnerName">Czat</b>
                 </div>
-            </div>
-            <div id="inbox-container" style="padding:0 10px;"></div>
-            <div id="friends-container" style="display:none; padding:0 10px;"></div>
-            
-            <div id="active-chat-container" style="display:none; position:absolute; inset:0; background:var(--bg-color); z-index:25000; flex-direction:column;">
-                <div style="padding:15px 20px; background:var(--panel-bg); display:flex; align-items:center; gap:15px; box-shadow:var(--soft-shadow);">
-                    <button onclick="closeActiveChat()" style="background:var(--bg-color); border:none; border-radius:50%; width:36px; height:36px; cursor:pointer; font-weight:900;">←</button>
-                    <b id="activeChatPartnerName" style="font-size:18px; font-weight:900;">Czat</b>
-                </div>
-                <div id="chatMessages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:10px;"></div>
-                <div style="padding:15px; background:var(--panel-bg); display:flex; gap:10px;">
-                    <input type="text" id="chatInput" placeholder="Napisz wiadomość..." style="margin:0; border-radius:50px; flex:1;" oninput="saveChatDraft()">
-                    <button onclick="sendMessage()" class="btn-main" style="width:auto; margin:0; padding:10px 20px; border-radius:50px;">OK</button>
+                <div id="chatMessages"></div>
+                <div class="chat-footer">
+                    <input type="text" id="chatInput" placeholder="Napisz wiadomość...">
+                    <button id="sendMsgBtn">OK</button>
                 </div>
             </div>
         </section>
 
         <section id="view-profile" class="view-section">
-            <div style="padding:30px 20px; text-align:center;">
-                <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:4px solid white; box-shadow:var(--soft-shadow);">
-                <h2 id="profileNameDisplay" style="margin:0; font-weight:900; font-size:26px;">...</h2>
-                <p id="profileInfoDisplay" style="color:var(--text-muted); font-weight:800; font-size:14px;"></p>
-                <div style="display:flex; justify-content:space-around; background:var(--panel-bg); border-radius:24px; padding:20px 10px; margin:20px 0; box-shadow: var(--soft-shadow);">
-                    <div class="stat-item"><span id="statWalks" style="display:block; font-size:20px; font-weight:900; color:var(--primary);">0</span><small data-i18n="stat_walks">Spacery</small></div>
-                    <div class="stat-item"><span id="statDist" style="display:block; font-size:20px; font-weight:900; color:var(--secondary);">0</span><small>KM</small></div>
-                    <div class="stat-item"><span id="statFriends" style="display:block; font-size:20px; font-weight:900; color:var(--gold);">0</span><small data-i18n="stat_pack">Stado</small></div>
+            <div class="profile-header">
+                <img id="profileAvatar" src="">
+                <h2 id="profileNameDisplay">...</h2>
+                <div class="stats-bar">
+                    <div><b id="statWalks">0</b><br><small>Spacerów</small></div>
+                    <div><b id="statDist">0.0</b><br><small>KM</small></div>
                 </div>
-                <button class="btn-main" onclick="openEditProfile()" style="background:var(--secondary); margin-bottom:10px;" data-i18n="btn_edit_profile">EDYTUJ DANE</button>
-                <button class="btn-main" onclick="document.getElementById('settings-modal').style.display='flex'" style="background:#576574; margin-bottom:10px;" data-i18n="btn_settings">⚙️ USTAWIENIA</button>
-                <button class="btn-main" style="background:var(--border-color); color:var(--text-color);" onclick="handleLogout()" data-i18n="btn_logout">WYLOGUJ SIĘ</button>
+                <button class="btn-main" id="logoutBtn">WYLOGUJ SIĘ</button>
             </div>
         </section>
 
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="switchView('map', this)"><span data-i18n="nav_map">📍 Mapa</span></button>
-            <button id="nav-btn-community" class="nav-item" onclick="switchView('community', this)"><span data-i18n="nav_board">📱 Tablica</span></button>
-            <button class="nav-item" onclick="switchView('wiki', this)"><span data-i18n="nav_wiki">📘 Wiedza</span></button>
-            <button id="nav-btn-chat" class="nav-item" onclick="switchView('chat', this)"><span data-i18n="nav_chat">💬 Czat</span></button>
-            <button class="nav-item" onclick="switchView('profile', this)"><span data-i18n="nav_profile">👤 Profil</span></button>
+            <button class="nav-item active" data-view="map">📍<span data-i18n="nav_map">Mapa</span></button>
+            <button class="nav-item" data-view="community">📱<span data-i18n="nav_board">Tablica</span></button>
+            <button class="nav-item" data-view="chat">💬<span data-i18n="nav_chat">Czat</span></button>
+            <button class="nav-item" data-view="profile">👤<span data-i18n="nav_profile">Profil</span></button>
         </nav>
     </div>
 
-    <div id="post-creator-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <h3 style="font-weight:900;">Nowy Post</h3>
-        <select id="postCategory"><option value="info">ℹ️ Info</option><option value="alert">⚠️ ALERT</option><option value="event">📅 Ustawka</option></select>
-        <textarea id="postContent" placeholder="Napisz coś do stada..."></textarea>
-        <div id="postImagePreviewContainer" style="display:none; margin-bottom:12px;"><img id="postImagePreview" style="width:100%; border-radius:12px;"></div>
-        <button class="btn-outline" onclick="document.getElementById('postImageInput').click()">📷 DODAJ ZDJĘCIE</button>
-        <input type="file" id="postImageInput" accept="image/*" style="display:none;" onchange="uploadPostImage(event)">
-        <button class="btn-main" style="margin-top:10px;" onclick="saveCommunityPost()">OPUBLIKUJ</button>
-    </div></div>
-
-    <div id="alert-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <h3 style="color:var(--danger); font-weight:900;">⚠️ Zgłoś Zagrożenie</h3>
-        <input type="text" id="alertTextInput" placeholder="Co się stało? (np. Szkło)">
-        <button class="btn-main" style="background:var(--danger);" onclick="saveAlert()">POSTAW ZNACZNIK</button>
-    </div></div>
-
-    <div id="profile-setup-modal" class="modal"><div class="card"><h3 style="font-weight:900;">Profil Psa</h3>
-        <input type="text" id="setupName" placeholder="Imię psa">
-        <input type="text" id="setupBreed" placeholder="Rasa">
-        <input type="text" id="setupCity" placeholder="Miasto">
-        <button class="btn-main" onclick="saveProfileData()">ZAPISZ I ZACZNIJ</button>
-    </div></div>
-
-    <div id="settings-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <h3 style="font-weight:900;" data-i18n="settings_title">Ustawienia</h3>
-        <select id="settingTheme"><option value="light">Tryb Jasny</option><option value="dark">Tryb Ciemny</option></select>
-        <select id="settingLang" style="margin-top:10px;"><option value="pl">Polski</option><option value="en">English</option></select>
-        <button class="btn-main" style="margin-top:20px;" onclick="saveSettings()">ZAPISZ</button>
-    </div></div>
-
+    <!-- SKRYPTY -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <script>
-        // FIREBASE I API
-        const firebaseConfig = { apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", authDomain: "waggle-app-31ffa.firebaseapp.com", projectId: "waggle-app-31ffa", storageBucket: "waggle-app-31ffa.firebasestorage.app", messagingSenderId: "711707392068", appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); const auth = firebase.auth();
-        const IMGBB_API_KEY = "af2b35f5ca54dd9c8fc91595fe525de9";
-
-        // i18n
-        const i18n = {
-            pl: { auth_subtitle: "Dołącz do stada! 🐕", auth_pass: "Hasło", auth_terms: "Akceptuję Regulamin.", btn_login: "ZALOGUJ SIĘ", btn_register: "REJESTRACJA", nav_map: "📍 Mapa", nav_board: "📱 Tablica", nav_chat: "💬 Czat", nav_profile: "👤 Profil", nav_wiki: "📘 Wiedza", input_status: "Co u Was?", opt_walk: "🟢 Zwykły spacer", btn_start_walk: "WYJDŹ NA SPACER 🐾", btn_stop_walk: "ZAKOŃCZ SPACER 🏁", title_nearby: "W okolicy", btn_add_post: "➕ DODAJ POSTA", stat_walks: "Spacery", stat_pack: "Stado", settings_title: "Ustawienia", tab_chats: "ROZMOWY", tab_pack: "STADO", tab_breeds: "RASY", tab_training: "TRENING" },
-            en: { auth_subtitle: "Join the pack! 🐕", auth_pass: "Password", auth_terms: "I accept terms.", btn_login: "LOG IN", btn_register: "REGISTER", nav_map: "📍 Map", nav_board: "📱 Board", nav_chat: "💬 Chat", nav_profile: "👤 Profile", nav_wiki: "📘 Wiki", input_status: "What's up?", opt_walk: "🟢 Just walking", btn_start_walk: "START WALK 🐾", btn_stop_walk: "STOP WALK 🏁", title_nearby: "Nearby", btn_add_post: "➕ ADD POST", stat_walks: "Walks", stat_pack: "Pack", settings_title: "Settings", tab_chats: "CHATS", tab_pack: "PACK", tab_breeds: "BREEDS", tab_training: "TRAINING" }
-        };
-
-        var map, currentUserUid, myDogProfile, myLat, myLng, isWalking = false, myMarker = null, isFollowing = true, currentChatId = null, chatDrafts = {}, pendingPostImage = "";
-
-        // MONITOROWANIE SESJI I TWARDA BLOKADA EKRANÓW
-        auth.onAuthStateChanged(user => {
-            document.getElementById('loader').style.display = 'none';
-            if (user) {
-                currentUserUid = user.uid;
-                db.collection("users").doc(user.uid).onSnapshot(doc => {
-                    if (doc.exists) { 
-                        myDogProfile = doc.data(); 
-                        document.getElementById('auth-screen').style.display = 'none';
-                        document.getElementById('app-interface').style.display = 'flex';
-                        startApp(); 
-                    } else { 
-                        document.getElementById('profile-setup-modal').style.display = 'flex'; 
-                    }
-                });
-            } else { 
-                document.getElementById('app-interface').style.display = 'none';
-                document.getElementById('auth-screen').style.display = 'flex'; 
-            }
-        });
-
-        function startApp() {
-            let lang = localStorage.getItem('waggle_lang') || 'pl';
-            applyLanguage(lang);
-            updateProfileUI();
-            initMap();
-            loadPosts();
-            loadWikiBreeds();
-            loadInbox();
-        }
-
-        function applyLanguage(lang) {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if(i18n[lang][key]) el.innerText = i18n[lang][key];
-            });
-        }
-
-        function updateProfileUI() {
-            document.getElementById('profileNameDisplay').innerText = myDogProfile.name;
-            document.getElementById('profileInfoDisplay').innerText = `${myDogProfile.breed} • ${myDogProfile.city}`;
-            document.getElementById('statWalks').innerText = myDogProfile.walkCount || 0;
-            document.getElementById('statDist').innerText = ((myDogProfile.walkCount || 0) * 1.2).toFixed(1);
-            document.getElementById('profileAvatar').src = myDogProfile.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-            document.getElementById('myAvatarSmall').src = myDogProfile.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-        }
-
-        // MAPA I GPS
-        function initMap() {
-            if (map) return;
-            map = L.map('map', { zoomControl: false }).setView([52.2297, 21.0122], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
-            map.on('dragstart', () => isFollowing = false);
-
-            navigator.geolocation.watchPosition(pos => {
-                myLat = pos.coords.latitude; myLng = pos.coords.longitude;
-                if(!myMarker) {
-                    myMarker = L.circleMarker([myLat, myLng], { radius: 10, color: '#fff', fillColor: '#34ace0', fillOpacity: 1, weight: 3 }).addTo(map);
-                    map.setView([myLat, myLng], 15);
-                } else { myMarker.setLatLng([myLat, myLng]); }
-                if(isFollowing) map.panTo([myLat, myLng]);
-
-                if(isWalking) {
-                    db.collection("walks").doc(currentUserUid).set({ lat: myLat, lng: myLng, name: myDogProfile.name, avatar: myDogProfile.avatar, timestamp: Date.now(), uid: currentUserUid }, {merge:true});
-                }
-                getWeather(myLat, myLng);
-            }, null, {enableHighAccuracy: true});
-
-            db.collection("walks").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    if(d.uid !== currentUserUid) {
-                        h += `<div class="walk-card" onclick="map.flyTo([${d.lat}, ${d.lng}], 16)">
-                            <img src="${d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150'}">
-                            <div style="font-weight:900; font-size:12px;">${d.name}</div>
-                        </div>`;
-                    }
-                });
-                document.getElementById('stories-container').innerHTML = h || "<small>Cisza...</small>";
-            });
-        }
-
-        function centerOnMe() { isFollowing = true; map.flyTo([myLat, myLng], 15); }
-
-        // KOMPRESJA I UPLOAD OBRAZÓW (LOGIKA Z v21.13)
-        function compressAndUpload(file, callback) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = e => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    const MAX = 600;
-                    if(w > MAX) { h = Math.round((h * MAX)/w); w = MAX; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    canvas.toBlob(blob => {
-                        let fd = new FormData();
-                        fd.append("image", blob);
-                        fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: fd })
-                        .then(r => r.json()).then(d => callback(d.data.url));
-                    }, 'image/jpeg', 0.7);
-                };
-            };
-        }
-
-        function uploadPostImage(e) {
-            let f = e.target.files[0]; if(!f) return;
-            document.getElementById('postImagePreviewContainer').style.display = 'block';
-            document.getElementById('postImagePreview').src = "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif";
-            compressAndUpload(f, url => { pendingPostImage = url; document.getElementById('postImagePreview').src = url; });
-        }
-
-        // SPACER, POSTY, CZAT
-        function startWalk() { isWalking = true; document.getElementById('startBtn').style.display='none'; document.getElementById('stopBtn').style.display='block'; }
-        function stopWalk() { 
-            isWalking = false; 
-            db.collection("walks").doc(currentUserUid).delete(); 
-            db.collection("users").doc(currentUserUid).update({ walkCount: firebase.firestore.FieldValue.increment(1) });
-            location.reload(); 
-        }
-
-        function saveCommunityPost() {
-            const c = document.getElementById('postContent').value;
-            db.collection("posts").add({ author: myDogProfile.name, content: c, imageUrl: pendingPostImage, timestamp: Date.now() });
-            document.getElementById('post-creator-modal').style.display='none';
-        }
-
-        function loadPosts() {
-            db.collection("posts").orderBy("timestamp", "desc").limit(20).onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    const p = doc.data();
-                    let img = p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px;" onclick="openLightbox('${p.imageUrl}')">` : "";
-                    h += `<div class="post-card"><b>${p.author}</b><p>${p.content}</p>${img}</div>`;
-                });
-                document.getElementById('posts-container').innerHTML = h;
-            });
-        }
-
-        function loadInbox() {
-            db.collection("messages").where("receiver", "==", currentUserUid).orderBy("timestamp", "desc").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    const m = doc.data();
-                    h += `<div class="post-card" onclick="openChat('${m.sender}', '${m.senderName}')"><b>Od: ${m.senderName}</b><br><small>${m.text}</small></div>`;
-                });
-                document.getElementById('inbox-container').innerHTML = h || "<p>Brak wiadomości.</p>";
-            });
-        }
-
-        function openChat(uid, name) {
-            currentChatId = uid;
-            document.getElementById('activeChatPartnerName').innerText = name;
-            document.getElementById('active-chat-container').style.display = 'flex';
-            db.collection("messages").orderBy("timestamp", "asc").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    const m = doc.data();
-                    if((m.sender===currentUserUid && m.receiver===uid) || (m.sender===uid && m.receiver===currentUserUid)) {
-                        let isMe = m.sender === currentUserUid;
-                        h += `<div style="align-self:${isMe?'flex-end':'flex-start'}; background:${isMe?'var(--primary)':'var(--border-color)'}; color:${isMe?'#fff':'var(--text-color)'}; padding:10px 15px; border-radius:15px; max-width:75%; margin-bottom:5px;">${m.text}</div>`;
-                    }
-                });
-                document.getElementById('chatMessages').innerHTML = h;
-                document.getElementById('chatMessages').scrollTop = 9999;
-            });
-        }
-
-        function sendMessage() {
-            let t = document.getElementById('chatInput').value; if(!t) return;
-            db.collection("messages").add({ sender: currentUserUid, senderName: myDogProfile.name, receiver: currentChatId, text: t, timestamp: Date.now() });
-            document.getElementById('chatInput').value = "";
-        }
-
-        function closeActiveChat() { document.getElementById('active-chat-container').style.display = 'none'; }
-
-        // UTILS
-        function switchView(v, el) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById('view-' + v).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-            if(v==='map') setTimeout(() => map.invalidateSize(), 200);
-        }
-
-        function openLightbox(url) { document.getElementById('lightbox-img').src = url; document.getElementById('lightbox-modal').style.display = 'flex'; }
-        async function getWeather(lat, lon) { try { const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`); const d = await r.json(); document.getElementById('weather-temp').innerText = `${Math.round(d.current_weather.temperature)}°C`; } catch(e){} }
-        function showWeatherAlert() { alert("Pogoda z Twojego GPS 🛰️"); }
-
-        function handleLogin() { auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(e => alert(e.message)); }
-        function handleRegister() { 
-            if(!document.getElementById('legalTerms').checked) { alert("Zaakceptuj regulamin!"); return; }
-            auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(e => alert(e.message)); 
-        }
-        function handleLogout() { auth.signOut().then(() => location.reload()); }
-        
-        function saveProfileData() {
-            const d = { name: document.getElementById('setupName').value, breed: document.getElementById('setupBreed').value, city: document.getElementById('setupCity').value, walkCount: 0 };
-            db.collection("users").doc(currentUserUid).set(d).then(() => location.reload());
-        }
-
-        function saveSettings() {
-            localStorage.setItem('waggle_lang', document.getElementById('settingLang').value);
-            location.reload();
-        }
-
-        function loadWikiBreeds() {
-            db.collection("wiki_breeds").orderBy("name").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    const b = doc.data();
-                    h += `<div class="post-card"><h3>${b.name}</h3><p style="font-size:13px; color:var(--text-muted);">${b.desc_pl}</p></div>`;
-                });
-                document.getElementById('wiki-breeds-container').innerHTML = h;
-            });
-        }
-
-        function toggleWikiTab(t) {
-            document.getElementById('tab-breeds').classList.toggle('active', t==='breeds');
-            document.getElementById('tab-training').classList.toggle('active', t==='training');
-            document.getElementById('wiki-breeds-container').style.display = t==='breeds'?'block':'none';
-            document.getElementById('wiki-training-container').style.display = t==='training'?'block':'none';
-        }
-
-        function toggleChatTab(t) {
-            document.getElementById('tab-inbox').classList.toggle('active', t==='inbox');
-            document.getElementById('tab-friends').classList.toggle('active', t==='friends');
-            document.getElementById('inbox-container').style.display = t==='inbox'?'block':'none';
-            document.getElementById('friends-container').style.display = t==='friends'?'block':'none';
-        }
-    </script>
+    
+    <!-- GŁÓWNY MODUŁ -->
+    <script type="module" src="src/app.js"></script>
 </body>
 </html>
