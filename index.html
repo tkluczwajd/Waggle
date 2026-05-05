@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#f4f6f8">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1068/1068827.png">
 
-    <title>Waggle v21.16 🐾 Complete Edition</title>
+    <title>Waggle v21.18 🐾 The Beast (Full Restore)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -29,7 +29,6 @@
             --bg-color: #121212; --panel-bg: #1e1e1e; --text-color: #e0e0e0; 
             --border-color: #333333; --text-muted: #888888;
         }
-        body.dark-mode #map { filter: brightness(0.8) contrast(1.1); } 
 
         html, body { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
@@ -55,7 +54,7 @@
             justify-content: space-around; align-items: center; 
             z-index: 15000; padding-bottom: env(safe-area-inset-bottom); 
             box-sizing: border-box; box-shadow: 0 -10px 20px rgba(0,0,0,0.03); 
-            border-radius: 30px 30px 0 0; transition: background 0.3s;
+            border-radius: 30px 30px 0 0;
         }
         
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); cursor: pointer; flex: 1; border: none; background: none; outline: none; padding: 10px 0;}
@@ -74,8 +73,8 @@
         
         #walk-setup-panel { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 440px; z-index: 5000; background: var(--panel-bg); border-radius: 28px; padding: 18px; border: none; box-shadow: var(--soft-shadow); box-sizing: border-box; transition: 0.3s;}
         
-        /* Tekst poprawiony - v21.16 */
-        .post-card { background: var(--panel-bg); margin: 15px; border-radius: 24px; padding: 20px; box-shadow: var(--soft-shadow); position:relative; overflow: hidden; transition: 0.3s;}
+        /* FIX TEKSTU */
+        .post-card { background: var(--panel-bg); margin: 15px; border-radius: 24px; padding: 20px; box-shadow: var(--soft-shadow); position:relative; overflow: hidden; text-align: left;}
         .post-card p, .post-card b, .comment-item div { 
             word-break: normal; 
             overflow-wrap: break-word; 
@@ -89,30 +88,37 @@
         .btn-main { background: var(--primary); color: white; border: none; font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; box-shadow: 0 8px 15px rgba(255, 82, 82, 0.2); transition: 0.2s; font-size: 13px; flex-shrink: 0;}
         .btn-outline { background: transparent; color: var(--text-color); border: 2px solid var(--border-color); font-weight: 800; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer; text-transform: uppercase; font-size: 13px; transition: 0.2s; flex-shrink: 0;}
         
-        input, select, textarea { width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: inherit; font-weight: 600; margin-bottom: 12px; box-sizing: border-box; outline: none; transition: 0.3s; flex-shrink: 0;}
+        input, select, textarea { width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: inherit; font-weight: 600; margin-bottom: 12px; box-sizing: border-box; outline: none;}
 
-        .walk-card { background: var(--panel-bg); border-radius: 20px; padding: 10px; min-width: 80px; text-align: center; box-shadow: var(--soft-shadow); border: none; flex-shrink: 0; cursor: pointer; transition: 0.3s;}
+        .walk-card { background: var(--panel-bg); border-radius: 20px; padding: 10px; min-width: 80px; text-align: center; box-shadow: var(--soft-shadow); border: none; flex-shrink: 0; cursor: pointer;}
         .walk-card img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
         
         #stories-container { display: flex; gap: 15px; overflow-x: auto; padding: 10px 15px 15px 15px; margin: 0 -15px; scrollbar-width: none; }
 
-        .badge-tag { padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; margin: 5px 3px; display: inline-block; }
+        .badge-tag { padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; margin: 5px 3px; display: inline-block; background: var(--border-color); color: var(--text-color); }
         .filter-btn { padding: 8px 18px; border-radius: 50px; font-size: 12px; font-weight: 800; border: none; background: var(--border-color); color: var(--text-color); cursor: pointer; white-space: nowrap; transition: 0.2s; }
         .filter-btn.active { background: var(--text-color); color: var(--bg-color); }
         
-        .tab-btn { flex: 1; padding: 12px; font-weight: 900; border: none; border-radius: 12px; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .tab-btn { flex: 1; padding: 12px; font-weight: 900; border: none; border-radius: 12px; background: transparent; color: var(--text-muted); cursor: pointer; }
         .tab-btn.active { background: var(--panel-bg); color: var(--text-color); box-shadow: var(--soft-shadow); }
-        .tab-container { background: var(--border-color); border-radius: 16px; padding: 5px; display: flex; gap: 5px; margin-bottom: 15px; transition: 0.3s;}
+        .tab-container { background: var(--border-color); border-radius: 16px; padding: 5px; display: flex; gap: 5px; margin-bottom: 15px;}
 
-        /* Pogoda modal */
         .weather-day { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
-        .weather-day:last-child { border: none; }
     </style>
 </head>
 <body>
 
     <div id="loader" style="position:fixed; inset:0; z-index:30000; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:32px;">Waggle🐾</div>
     <div id="toast">Sukces!</div>
+
+    <div id="auth-screen" style="display:none; flex-direction:column; justify-content:center; padding:30px;">
+        <h1 style="font-size: 50px; margin: 0; text-align:center; color:var(--primary); font-weight:900;">Waggle.</h1>
+        <p style="text-align:center; margin-bottom:25px; font-weight:800; color:var(--text-muted);">Dołącz do stada! 🐕</p>
+        <input type="email" id="authEmail" placeholder="E-mail">
+        <input type="password" id="authPass" placeholder="Hasło">
+        <button class="btn-main" onclick="handleLogin()">ZALOGUJ SIĘ</button>
+        <button class="btn-outline" onclick="handleRegister()" style="margin-top:10px;">REJESTRACJA</button>
+    </div>
 
     <div id="app-interface" style="display:none;">
         <section id="view-map" class="view-section active">
@@ -130,7 +136,7 @@
                     <input type="text" id="statusInput" placeholder="Co u Was?" style="margin:0; flex:1;">
                 </div>
                 <button class="btn-main" id="startBtn" onclick="startWalk()">WYJDŹ NA SPACER 🐾</button>
-                <button class="btn-main" id="stopBtn" onclick="stopWalk()" style="display:none; background:var(--text-color);">ZAKOŃCZ SPACER 🏁</button>
+                <button class="btn-main" id="stopBtn" style="display:none; background:var(--text-color);" onclick="stopWalk()">ZAKOŃCZ SPACER 🏁</button>
             </div>
         </section>
 
@@ -138,7 +144,7 @@
             <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
                 <h3 style="margin:0 0 15px 0; font-weight:900;">W okolicy</h3>
                 <div id="stories-container"></div>
-                <button class="btn-main" style="background:var(--secondary);" onclick="document.getElementById('post-creator-modal').style.display='flex'">➕ DODAJ POSTA</button>
+                <button class="btn-main" style="background:var(--secondary); margin-top:15px;" onclick="document.getElementById('post-creator-modal').style.display='flex'">➕ DODAJ POSTA</button>
             </div>
             <div id="posts-container" style="padding-bottom: 20px;"></div>
         </section>
@@ -161,10 +167,13 @@
         <section id="view-profile" class="view-section">
             <div style="padding:30px 20px; text-align:center;">
                 <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:4px solid white; box-shadow:var(--soft-shadow);">
-                <h2 id="profileNameDisplay" style="margin:0; font-weight:900;">...</h2>
-                <div id="stat-row" style="display:flex; justify-content:space-around; margin: 20px 0;">
-                   <div class="stat"><b>KM:</b> <span id="statDist">0</span></div>
-                   <div class="stat"><b>Stado:</b> <span id="statFriends">0</span></div>
+                <h2 id="profileNameDisplay" style="margin:0; font-weight:900; font-size:26px;">...</h2>
+                <p id="profileInfoDisplay" style="color:var(--text-muted); margin-top:4px; font-weight:800; font-size:14px;"></p>
+                <div id="profileBadges" style="margin: 15px 0;"></div>
+                <div style="display:flex; justify-content:space-around; background:var(--panel-bg); border-radius:24px; padding:20px 10px; margin-bottom:20px; box-shadow: var(--soft-shadow);">
+                    <div class="stat-item"><span id="statWalks" style="font-weight:900; display:block;">0</span><small style="color:var(--text-muted); font-weight:700;">Spacery</small></div>
+                    <div class="stat-item"><span id="statDist" style="font-weight:900; display:block; color:var(--secondary);">0</span><small style="color:var(--text-muted); font-weight:700;">KM</small></div>
+                    <div class="stat-item"><span id="statFriends" style="font-weight:900; display:block; color:var(--gold);">0</span><small style="color:var(--text-muted); font-weight:700;">Stado</small></div>
                 </div>
                 <button class="btn-main" style="background:var(--border-color); color:var(--text-color);" onclick="handleLogout()">WYLOGUJ SIĘ</button>
             </div>
@@ -179,9 +188,8 @@
         </nav>
     </div>
 
-    <!-- Modale -->
     <div id="post-creator-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <h3>Nowy Post</h3>
+        <h3 style="font-weight:900;">Nowy Post</h3>
         <textarea id="postContent" placeholder="Napisz do stada..."></textarea>
         <div style="display:flex; gap:10px; margin-bottom:12px;">
             <button class="btn-outline" style="flex:1;" onclick="document.getElementById('postCamInput').click()">📷 APARAT</button>
@@ -193,16 +201,15 @@
     </div></div>
 
     <div id="weather-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
-        <h3 style="margin-top:0;">Prognoza na 3 dni</h3>
+        <h3 style="margin-top:0; font-weight:900;">Prognoza na 3 dni</h3>
         <div id="weather-forecast-list"></div>
     </div></div>
 
-    <div id="auth-screen" class="view-section" style="padding:40px; justify-content:center; display:flex;">
-        <h1 style="color:var(--primary); font-size:48px; font-weight:900;">Waggle.</h1>
-        <input type="email" id="authEmail" placeholder="E-mail">
-        <input type="password" id="authPass" placeholder="Hasło">
-        <button class="btn-main" onclick="handleLogin()">Zaloguj się</button>
-    </div>
+    <div id="alert-modal" class="modal"><div class="card"><button class="close-modal-btn" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
+        <h3 style="color:var(--danger); font-weight:900;">⚠️ Zgłoś Zagrożenie</h3>
+        <input type="text" id="alertTextInput" placeholder="Co się stało? (np. Szkło)">
+        <button class="btn-main" style="background:var(--danger);" onclick="saveAlert()">POSTAW ZNACZNIK</button>
+    </div></div>
 
     <script src="wiki.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -218,53 +225,79 @@
         var map, currentUserUid, myDogProfile, myLat, myLng;
         var isWalking = false;
         var lastGpsUpdateTimestamp = 0;
+        var walkMarkers = {};
 
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUserUid = user.uid;
                 db.collection("users").doc(user.uid).onSnapshot(doc => {
                     document.getElementById('loader').style.display = 'none';
-                    if (doc.exists) { myDogProfile = doc.data(); startApp(); } 
+                    if (doc.exists) { 
+                        myDogProfile = doc.data(); 
+                        startApp(); 
+                    } else {
+                        // Jeśli dokumentu nie ma, wyloguj dla bezpieczeństwa
+                        auth.signOut();
+                    }
                 });
-            } else { document.getElementById('loader').style.display = 'none'; document.getElementById('auth-screen').style.display = 'flex'; }
+            } else { 
+                document.getElementById('loader').style.display = 'none'; 
+                document.getElementById('auth-screen').style.display = 'flex'; 
+                document.getElementById('app-interface').style.display = 'none';
+            }
         });
 
         function startApp() {
             document.getElementById('app-interface').style.display = 'flex';
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('profileNameDisplay').innerText = myDogProfile.name;
+            document.getElementById('profileInfoDisplay').innerText = `${myDogProfile.breed} • ${myDogProfile.city}`;
             document.getElementById('myAvatarSmall').src = myDogProfile.avatar || "https://images.unsplash.com/photo-1552053831-71594a27632d?w=100";
             document.getElementById('profileAvatar').src = myDogProfile.avatar || "https://images.unsplash.com/photo-1552053831-71594a27632d?w=200";
+            
+            document.getElementById('statWalks').innerText = myDogProfile.walkCount || 0;
+            document.getElementById('statDist').innerText = ((myDogProfile.walkCount || 0) * 1.2).toFixed(1);
+            document.getElementById('statFriends').innerText = (myDogProfile.friends || []).length;
+            
             renderExternalWiki();
             initMap();
+            loadPosts();
         }
 
         function initMap() {
+            if (map) return;
             map = L.map('map', { zoomControl: false }).setView([50.2, 19.0], 14);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+
             navigator.geolocation.watchPosition(pos => {
                 myLat = pos.coords.latitude; myLng = pos.coords.longitude;
                 updateWeather(myLat, myLng);
+                
                 if(isWalking && (Date.now() - lastGpsUpdateTimestamp > 15000)) {
-                    db.collection("walks").doc(currentUserUid).set({ lat: myLat, lng: myLng, timestamp: Date.now(), name: myDogProfile.name, avatar: myDogProfile.avatar });
+                    db.collection("walks").doc(currentUserUid).set({ 
+                        uid: currentUserUid, lat: myLat, lng: myLng, 
+                        timestamp: Date.now(), name: myDogProfile.name, 
+                        avatar: myDogProfile.avatar 
+                    });
                     lastGpsUpdateTimestamp = Date.now();
                 }
-            });
+            }, null, {enableHighAccuracy: true});
+
             db.collection("walks").onSnapshot(snap => {
-                let h = "";
+                let storiesH = "";
                 snap.forEach(doc => {
                     let d = doc.data();
-                    h += `<div class="walk-card"><img src="${d.avatar || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100'}"><div>${d.name}</div></div>`;
+                    storiesH += `<div class="walk-card" onclick="map.flyTo([${d.lat}, ${d.lng}], 16)">
+                        <img src="${d.avatar || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100'}">
+                        <div style="font-size:10px; font-weight:800;">${d.name}</div>
+                    </div>`;
+                    
+                    if (d.uid !== currentUserUid) {
+                        if (walkMarkers[d.uid]) walkMarkers[d.uid].setLatLng([d.lat, d.lng]);
+                        else walkMarkers[d.uid] = L.marker([d.lat, d.lng]).addTo(map).bindPopup(d.name);
+                    }
                 });
-                document.getElementById('stories-container').innerHTML = h;
-            });
-            db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    let p = doc.data();
-                    h += `<div class="post-card"><b>${p.author}</b><p>${p.content}</p></div>`;
-                });
-                document.getElementById('posts-container').innerHTML = h;
+                document.getElementById('stories-container').innerHTML = storiesH || "Cisza w okolicy...";
             });
         }
 
@@ -292,14 +325,25 @@
             if(typeof WaggleWiki === 'undefined') return;
             let breedsHtml = "";
             WaggleWiki.breeds.forEach(b => {
-                breedsHtml += `<div class="post-card"><h3 style="margin:0;">${b.name}</h3><p>${b.desc}</p></div>`;
+                breedsHtml += `<div class="post-card"><h3>${b.name}</h3><p>${b.desc}</p></div>`;
             });
             document.getElementById('wiki-breeds-container').innerHTML = breedsHtml;
             let trainingHtml = "";
             WaggleWiki.training.forEach(t => {
-                trainingHtml += `<div class="post-card"><h3 style="margin:0;">${t.title}</h3><p>${t.desc}</p></div>`;
+                trainingHtml += `<div class="post-card"><h3>${t.title}</h3><p>${t.desc}</p></div>`;
             });
             document.getElementById('wiki-training-container').innerHTML = trainingHtml;
+        }
+
+        function loadPosts() {
+            db.collection("posts").orderBy("timestamp", "desc").limit(20).onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => {
+                    let p = doc.data();
+                    h += `<div class="post-card"><b>${p.author}</b><p>${p.content}</p></div>`;
+                });
+                document.getElementById('posts-container').innerHTML = h || "Brak postów.";
+            });
         }
 
         function switchView(v, el) {
@@ -307,6 +351,7 @@
             document.getElementById('view-' + v).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
+            if (v === 'map' && map) setTimeout(() => map.invalidateSize(), 200);
         }
 
         function toggleWikiTab(t) {
@@ -316,10 +361,20 @@
             document.getElementById('tab-training').classList.toggle('active', t==='training');
         }
 
-        function handleLogin() { auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value); }
+        function handleLogin() { 
+            let e = document.getElementById('authEmail').value;
+            let p = document.getElementById('authPass').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+        }
+        function handleRegister() { alert("Skontaktuj się z adminem lub użyj istniejącego konta (v21.18 Test)."); }
         function handleLogout() { auth.signOut().then(() => location.reload()); }
         function startWalk() { isWalking = true; document.getElementById('startBtn').style.display='none'; document.getElementById('stopBtn').style.display='block'; }
-        function stopWalk() { isWalking = false; db.collection("walks").doc(currentUserUid).delete().then(() => location.reload()); }
+        function stopWalk() { 
+            isWalking = false; 
+            db.collection("walks").doc(currentUserUid).delete();
+            db.collection("users").doc(currentUserUid).update({ walkCount: firebase.firestore.FieldValue.increment(1) });
+            location.reload(); 
+        }
         function saveCommunityPost() { 
             let c = document.getElementById('postContent').value;
             if(!c) return;
@@ -327,6 +382,8 @@
             document.getElementById('post-creator-modal').style.display='none';
             document.getElementById('postContent').value = "";
         }
+        function showToast(m) { let t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+        function centerOnMe() { if (myLat) map.flyTo([myLat, myLng], 15); }
     </script>
 </body>
 </html>
