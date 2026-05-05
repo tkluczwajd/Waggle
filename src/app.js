@@ -5,15 +5,9 @@ import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, openLightbox } from './modules/posts.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
+import { WIKI } from './data/wikiData.js'; // IMPORT LOKALNEJ BAZY WIEDZY
 
-// --- FUNDAMENT: WYSTAWIAMY FUNKCJE DO OKNA (Żeby HTML je widział) ---
-window.Waggle = {
-    openChat,
-    centerOnTarget,
-    openLightbox,
-    closeActiveChat,
-    switchView: (v) => switchView(v)
-};
+window.Waggle = { openChat, centerOnTarget, openLightbox, closeActiveChat };
 
 export function initApp() {
     console.log("Waggle Engine: Ready 🐾");
@@ -25,81 +19,98 @@ export function initApp() {
 }
 
 function switchView(viewId) {
-    console.log("Przełączam na:", viewId);
     clearListeners(); 
+    document.querySelectorAll('.view-section').forEach(v => {
+        v.classList.remove('active');
+        v.style.display = 'none';
+    });
 
-    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
     const target = document.getElementById('view-' + viewId);
-    if(target) target.classList.add('active');
+    if(target) {
+        target.classList.add('active');
+        target.style.display = (viewId === 'map') ? 'flex' : 'block';
+    }
 
     document.querySelectorAll('.nav-item').forEach(n => {
         n.classList.remove('active');
         if(n.getAttribute('data-view') === viewId) n.classList.add('active');
     });
 
-    if (viewId === 'map' && state.map) {
-        setTimeout(() => state.map.invalidateSize(), 300);
-    }
-    
-    // Odśwież dane przy wejściu w widok
+    if (viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 300);
     if (viewId === 'community') loadPosts();
     if (viewId === 'chat') loadInbox();
-    if (viewId === 'wiki') loadDynamicWiki();
 }
 
-// --- CENTRALNY OBSŁUGIWACZ KLIKNIĘĆ (Fix na toporną nawigację) ---
 document.addEventListener('click', async (e) => {
-    // Nawigacja (łapie kliknięcie w ikonę lub tekst)
     const navItem = e.target.closest('.nav-item');
-    if (navItem) {
-        const view = navItem.getAttribute('data-view');
-        switchView(view);
-    }
+    if (navItem) switchView(navItem.getAttribute('data-view'));
 
-    // Przyciski akcji
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
-    if (e.target.closest('#stopWalkBtn')) {
-        stopWalk();
-        setTimeout(updateStatsUI, 500);
-    }
+    if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
     
-    // Wylogowanie (Fix!)
+    // FIX LOGOWANIA: Używam unikalnych nazw zmiennych (emailStr, passStr)
+    if (e.target.closest('#loginBtn')) {
+        console.log("Próba logowania...");
+        const emailStr = document.getElementById('authEmail').value.trim();
+        const passStr = document.getElementById('authPass').value;
+        auth.signInWithEmailAndPassword(emailStr, passStr).catch(err => alert("Błąd: " + err.message));
+    }
+
+    // FIX WYLOGOWANIA
     if (e.target.closest('#logoutBtn')) {
-        console.log("Wylogowuję...");
-        auth.signOut().then(() => window.location.reload());
+        console.log("Wylogowywanie...");
+        auth.signOut().then(() => {
+            window.location.reload();
+        });
     }
 
     if (e.target.closest('#addPostBtn')) {
         const text = prompt("Co słychać u pieska?");
-        if(text && text.length > 2) {
-            await saveCommunityPost(text, null).catch(err => console.error(err));
-        }
+        if(text && text.length > 2) await saveCommunityPost(text, null).catch(console.error);
     }
 
     if (e.target.closest('#sendMsgBtn')) {
         const input = document.getElementById('chatInput');
-        if (input.value.trim()) {
-            sendMessage(input.value.trim());
-            input.value = "";
-        }
+        if (input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
     }
 });
 
+// WIKI POBIERANE Z LOKALNEGO PLIKU ZAMIAST Z FIREBASE
 function loadDynamicWiki() {
-    db.collection("wiki_breeds").orderBy("name").limit(20).get().then(snap => {
-        let html = "";
-        snap.forEach(doc => {
-            const d = doc.data();
-            html += `<div class="post-card"><h4>${d.name}</h4><p>${d.desc_pl || d.content}</p></div>`;
-        });
-        const container = document.getElementById('wiki-container');
-        if (container) container.innerHTML = html || "<p style='padding:20px;'>Brak wpisów w bazie wiedzy.</p>";
-    }).catch(err => console.error("Wiki error:", err));
+    let html = "<div style='padding: 20px;'>";
+    
+    html += "<h3 style='color:var(--primary);'>🐕 Rasy Psów</h3>";
+    WIKI.breeds.forEach(b => {
+        html += `<div class="post-card" style="margin: 10px 0;">
+            <b style="font-size:16px;">${b.name}</b>
+            <p style="margin: 5px 0 10px 0;">${b.desc}</p>
+            <small style="color:var(--secondary); font-weight:800;">Energia: ${b.energy} • Szkolenie: ${b.training}</small>
+        </div>`;
+    });
+
+    html += "<h3 style='color:var(--primary); margin-top:20px;'>🎓 Szkolenie</h3>";
+    WIKI.training.forEach(t => {
+        html += `<div class="post-card" style="margin: 10px 0; border-left: 4px solid var(--secondary);">
+            <b>${t.title}</b><p style="margin-top:5px;">${t.desc}</p>
+        </div>`;
+    });
+
+    html += "<h3 style='color:var(--primary); margin-top:20px;'>⚠️ Sytuacje na spacerze</h3>";
+    WIKI.situations.forEach(s => {
+        html += `<div class="post-card" style="margin: 10px 0; border-left: 4px solid var(--danger);">
+            <b>${s.title}</b><p style="margin-top:5px;">${s.desc}</p>
+        </div>`;
+    });
+
+    html += "</div>";
+    
+    const container = document.getElementById('wiki-container');
+    if (container) container.innerHTML = html;
 }
 
 function updateStatsUI() {
-    if (!state.profile) return; // Zabezpieczenie przed błędem
+    if (!state.profile) return; 
     document.getElementById('profileNameDisplay').innerText = state.profile.name || "Twój Pies";
     document.getElementById('profileAvatar').src = state.profile.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
     document.getElementById('statWalks').innerText = state.profile.walkCount || 0;
