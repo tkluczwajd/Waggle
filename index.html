@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Waggle v22.1 🐾 Fix Edition</title>
+    <title>Waggle v22.2 🐾 Full UI</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -12,7 +12,6 @@
     <div id="loader">Waggle🐾</div>
     <div id="toast"></div>
 
-    <!-- EKRAN LOGOWANIA -->
     <div id="auth-screen" class="screen-container">
         <div class="auth-content">
             <h1>Waggle.</h1>
@@ -24,41 +23,56 @@
         </div>
     </div>
 
-    <!-- INTERFEJS -->
     <div id="app-interface" class="screen-container">
+        
         <section id="view-map" class="view-section active">
+            <div id="top-widgets">
+                <div class="top-pill">☀️ <span id="weather-temp">--°C</span></div>
+                <div id="active-alert-pill" class="top-pill" style="display:none; background:var(--danger); color:white;">⚠️ Alerty!</div>
+            </div>
+
             <div id="ctrl-panel">
                 <button class="map-ctrl-btn" id="centerBtn">🎯</button>
                 <button class="map-ctrl-btn danger" id="triggerAlertBtn">⚠️</button>
             </div>
+
             <div id="map"></div>
+
             <div id="walk-setup-panel">
-                <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
+                <div id="walk-inputs-group">
+                    <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
+                </div>
                 <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER 🐾</button>
                 <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ 🏁</button>
             </div>
         </section>
 
         <section id="view-community" class="view-section">
-            <div style="padding: 20px; background: white; position: sticky; top: 0; z-index: 10;">
+            <div style="padding: 20px; background: var(--bg-color); position: sticky; top: 0; z-index: 100;">
                 <h3 style="margin:0;">W okolicy</h3>
                 <div id="stories-container"></div>
-                <button class="btn-main" id="addPostBtn" style="margin-top:10px;">➕ DODAJ POSTA</button>
+                <button class="btn-main" id="addPostBtn" style="margin-top:15px;">➕ DODAJ POSTA</button>
             </div>
             <div id="posts-container"></div>
         </section>
 
         <section id="view-wiki" class="view-section">
-            <div style="padding: 20px;"><h3>Psia Wiedza</h3></div>
-            <div id="wiki-container"></div>
+            <div style="padding: 20px; background: var(--bg-color); position: sticky; top: 0; z-index: 100;">
+                <h3 style="margin:0;">Psia Wiedza</h3>
+            </div>
+            <div id="wiki-container">
+                </div>
         </section>
 
         <section id="view-chat" class="view-section">
-            <div style="padding: 20px;"><h3>Wiadomości</h3></div>
+            <div style="padding: 20px; background: var(--bg-color); position: sticky; top: 0; z-index: 100;">
+                <h3 style="margin:0;">Wiadomości</h3>
+            </div>
             <div id="inbox-container"></div>
+
             <div id="chat-window" class="chat-overlay">
                 <div class="chat-header">
-                    <button id="closeChatBtn">←</button>
+                    <button id="closeChatBtn" onclick="window.closeActiveChat()">←</button>
                     <b id="chatPartnerName">Czat</b>
                 </div>
                 <div id="chatMessages"></div>
@@ -71,22 +85,31 @@
 
         <section id="view-profile" class="view-section">
             <div class="profile-header">
-                <img id="profileAvatar" src="" style="width:100px; height:100px; border-radius:50%;">
+                <img id="profileAvatar" src="" style="background:#eee">
                 <h2 id="profileNameDisplay">...</h2>
-                <div class="stats-bar" style="display: flex; justify-content: space-around; margin: 20px 0;">
-                    <div><b id="statWalks">0</b><br><small>Spacery</small></div>
-                    <div><b>0.0</b><br><small>KM</small></div>
+                
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <b id="statWalks" style="font-size: 20px; color: var(--primary);">0</b><br>
+                        <small>Spacerów</small>
+                    </div>
+                    <div class="stat-item">
+                        <b id="statDist" style="font-size: 20px; color: var(--secondary);">0.0</b><br>
+                        <small>KM</small>
+                    </div>
                 </div>
-                <button class="btn-main" id="logoutBtn">WYLOGUJ SIĘ</button>
+
+                <button class="btn-main" id="editProfileBtn" style="background:var(--secondary); margin-bottom: 10px;">EDYTUJ PROFIL</button>
+                <button class="btn-main" id="logoutBtn" style="background:var(--border-color); color:var(--text-color);">WYLOGUJ SIĘ</button>
             </div>
         </section>
 
         <nav class="bottom-nav">
-            <div class="nav-item active" data-view="map">📍<span>Mapa</span></div>
-            <div class="nav-item" data-view="community">📱<span>Tablica</span></div>
-            <div class="nav-item" data-view="wiki">📘<span>Wiedza</span></div>
-            <div class="nav-item" data-view="chat">💬<span>Czat</span></div>
-            <div class="nav-item" data-view="profile">👤<span>Profil</span></div>
+            <button class="nav-item active" data-view="map">📍<span>Mapa</span></button>
+            <button class="nav-item" data-view="community">📱<span>Tablica</span></button>
+            <button class="nav-item" data-view="wiki">📘<span>Wiedza</span></button>
+            <button class="nav-item" data-view="chat">💬<span>Czat</span></button>
+            <button class="nav-item" data-view="profile">👤<span>Profil</span></button>
         </nav>
     </div>
 
@@ -94,6 +117,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
     <script type="module" src="src/app.js"></script>
 </body>
 </html>
