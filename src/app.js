@@ -155,4 +155,4 @@ function loadSettings() {
     document.body.classList.add('font-' + font);
 }
 
-initAuth();
+initAuth(); 
