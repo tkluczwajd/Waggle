@@ -11,12 +11,11 @@
 <body>
     <div id="loader" style="position:fixed; inset:0; z-index:30000; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:32px;">Waggle🐾</div>
     <div id="toast"></div>
-
     <div id="lightbox-modal" onclick="this.style.display='none'">
         <img id="lightbox-img" src="">
     </div>
 
-    <!-- 🌟 EKRAN LOGOWANIA (W NOWEJ KARCIE) -->
+    <!-- EKRAN LOGOWANIA -->
     <div id="auth-screen" class="screen-container">
         <div class="auth-card">
             <h1 class="logo-title">Waggle.</h1>
@@ -36,8 +35,6 @@
 
     <!-- INTERFEJS APLIKACJI -->
     <div id="app-interface" class="screen-container">
-        
-        <!-- WIDOK: MAPA -->
         <section id="view-map" class="view-section active">
             <div id="map-ui-layer">
                 <div id="top-widgets">
@@ -57,7 +54,6 @@
             <div id="map"></div>
         </section>
 
-        <!-- WIDOK: TABLICA -->
         <section id="view-community" class="view-section">
             <div class="sticky-header">
                 <h3 style="margin:0;">W okolicy</h3>
@@ -67,7 +63,6 @@
             <div id="posts-container"></div>
         </section>
 
-        <!-- 🌟 WIDOK: WIEDZA (POPRAWIONE ZAKŁADKI) -->
         <section id="view-wiki" class="view-section">
             <div class="sticky-header" style="padding-bottom: 10px;">
                 <h3 style="margin:0;">Psia Wiedza</h3>
@@ -80,20 +75,15 @@
             <div id="wiki-content" style="padding:0 10px;"></div>
         </section>
 
-        <!-- WIDOK: CZAT -->
         <section id="view-chat" class="view-section">
-            <div class="sticky-header">
-                <h3 style="margin:0;">Wiadomości</h3>
-            </div>
+            <div class="sticky-header"><h3 style="margin:0;">Wiadomości</h3></div>
             <div id="inbox-container"></div>
-            
             <div id="chat-window" class="chat-overlay">
                 <div class="chat-header">
                     <button id="closeChatBtn" class="icon-btn">⬅️</button>
                     <b id="chatPartnerName" style="font-size: 18px;">Czat</b>
                 </div>
                 <div id="chatMessages"></div>
-                <!-- 🌟 POPRAWIONE POLE WPISYWANIA CZATU -->
                 <div class="chat-footer">
                     <input type="text" id="chatInput" placeholder="Napisz wiadomość..." style="margin:0; border-radius:50px; flex:1;">
                     <button id="sendMsgBtn" class="btn-main" style="width: auto; margin:0; padding: 14px 24px; border-radius:50px;">WYŚLIJ</button>
@@ -101,7 +91,6 @@
             </div>
         </section>
 
-        <!-- WIDOK: PROFIL -->
         <section id="view-profile" class="view-section">
             <div class="profile-header" style="padding:30px 20px; text-align:center;">
                 <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
@@ -110,7 +99,6 @@
                     <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small style="color:var(--text-muted); font-weight:700;">Spacerów</small></div>
                     <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary);">0.0</b><br><small style="color:var(--text-muted); font-weight:700;">KM</small></div>
                 </div>
-                
                 <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 10px;">
                     <button class="btn-main" id="openEditProfileBtn" style="background: var(--secondary);">✏️ EDYTUJ PROFIL</button>
                     <button class="btn-main" id="openSettingsBtn" style="background: #576574;">⚙️ USTAWIENIA</button>
@@ -126,6 +114,25 @@
             <button class="nav-item" data-view="chat">💬<span>Czat</span></button>
             <button class="nav-item" data-view="profile">👤<span>Profil</span></button>
         </nav>
+    </div>
+
+    <!-- 🌟 MODAL: DODAWANIE POSTA (Zastępuje prompt) -->
+    <div id="post-creator-modal" class="modal">
+        <div class="card">
+            <button class="close-modal-btn">✕</button>
+            <h3 style="font-weight:900; margin-top:0;">Nowy Post</h3>
+            <textarea id="postContent" placeholder="Co słychać u pieska?" style="min-height: 120px; resize: none;"></textarea>
+            <button class="btn-main" id="publishPostBtn">OPUBLIKUJ</button>
+        </div>
+    </div>
+
+    <!-- 🌟 MODAL: ZAGROŻENIA W OKOLICY (Zastępuje alert) -->
+    <div id="alert-hub-modal" class="modal">
+        <div class="card">
+            <button class="close-modal-btn">✕</button>
+            <h3 style="color:var(--danger); font-weight:900; margin-top:0;">⚠️ Zagrożenia</h3>
+            <div id="alert-hub-list" style="max-height: 350px; overflow-y: auto; text-align: left; margin-top: 10px; padding-right: 10px;"></div>
+        </div>
     </div>
 
     <!-- MODAL: EDYCJA PROFILU -->
@@ -146,12 +153,11 @@
         </div>
     </div>
 
-    <!-- MODAL: USTAWIENIA -->
+    <!-- MODAL: USTAWIENIA (Z przywróconymi dźwiękami) -->
     <div id="settings-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
             <h3 style="font-weight:900; margin-top:0;">Ustawienia</h3>
-            
             <div style="text-align:left; margin-bottom:15px;">
                 <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Wygląd</label>
                 <select id="settingTheme">
@@ -159,7 +165,6 @@
                     <option value="dark">🌙 Ciemny</option>
                 </select>
             </div>
-            
             <div style="text-align:left; margin-bottom:20px;">
                 <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Wielkość tekstu</label>
                 <select id="settingFontSize">
@@ -168,12 +173,15 @@
                     <option value="18px">Duża</option>
                 </select>
             </div>
-
-            <div class="legal-checkbox-container" style="margin-bottom:20px;">
+            <div class="legal-checkbox-container">
                 <input type="checkbox" id="settingSearchable">
-                <label for="settingSearchable">Chcę być widoczny na mapie dla innych psów.</label>
+                <label for="settingSearchable" style="font-size:13px; font-weight:700;">Chcę być widoczny na mapie dla innych psów.</label>
             </div>
-
+            <!-- 🌟 PRZYWRÓCONY DŹWIĘK I WIBRACJE -->
+            <div class="legal-checkbox-container" style="margin-bottom:20px;">
+                <input type="checkbox" id="settingNotifs">
+                <label for="settingNotifs" style="font-size:13px; font-weight:700;">Dźwięki i wibracje</label>
+            </div>
             <button class="btn-main" id="saveSettingsBtn">ZAPISZ USTAWIENIA</button>
         </div>
     </div>
@@ -187,7 +195,7 @@
         </div>
     </div>
 
-    <!-- MODAL: DODAWANIE ALERTU -->
+    <!-- MODAL: DODAWANIE ALERTU NA MAPIE -->
     <div id="alert-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
