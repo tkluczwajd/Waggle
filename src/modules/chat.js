@@ -1,4 +1,4 @@
-import { state, addListener, clearListeners } from '../core/state.js';
+import { state, ListenerManager } from '../core/state.js';
 import { db } from '../core/firebase.js';
 
 export function loadInbox() {
@@ -21,13 +21,12 @@ export function loadInbox() {
             const container = document.getElementById('inbox-container');
             if(container) container.innerHTML = html || "<p style='padding:20px;'>Brak rozmów.</p>";
         }, err => console.error("Inbox error:", err));
-    addListener(unsub);
+        
+    // ZMIANA: Skrzynka ma swój własny nasłuch w tle
+    ListenerManager.register('inbox', unsub);
 }
 
 export function openChat(partnerUid, partnerName) {
-    // 🔥 Sprzątamy przed otwarciem nowej rozmowy
-    clearListeners(); 
-
     state.currentChatId = partnerUid;
     const chatId = [state.user.uid, partnerUid].sort().join('_');
     document.getElementById('chatPartnerName').innerText = partnerName;
@@ -47,20 +46,18 @@ export function openChat(partnerUid, partnerName) {
             const box = document.getElementById('chatMessages');
             box.innerHTML = html;
             box.scrollTop = box.scrollHeight;
-        }, err => {
-            console.error("Chat error:", err);
-            if(err.message.includes("index")) {
-                console.warn("Musisz utworzyć indeks w Firebase! Link znajdziesz w konsoli.");
-            }
         });
-    addListener(unsub);
+        
+    // ZMIANA: Aktywny czat ma oddzielny proces
+    ListenerManager.register('activeChat', unsub);
 }
 
 export function closeActiveChat() {
-    clearListeners(); // 🔥 Zabijamy nasłuchiwanie wiadomości po wyjściu z czatu
+    // Zabijamy TYLKO proces wiadomości dla zamkniętego okna, żeby oszczędzać transfer
+    ListenerManager.clear('activeChat'); 
     document.getElementById('chat-window').style.display = 'none';
     state.currentChatId = null;
-    loadInbox(); // Wracamy do widoku listy rozmów
+    loadInbox();
 }
 
 export function sendMessage(text) {
