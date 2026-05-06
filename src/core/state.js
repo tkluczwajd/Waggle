@@ -1,3 +1,4 @@
+// --- NOWY, BEZPIECZNY STAN APLIKACJI ---
 export const state = {
     user: null,
     profile: null,
@@ -6,31 +7,42 @@ export const state = {
     map: null,
     isFollowing: true,
     currentChatId: null,
-    listeners: {} // ZMIANA: To teraz obiekt, a nie tablica!
+    // Precyzyjny obiekt zamiast jednego worka (tablicy)
+    listeners: {
+        walks: null,
+        posts: null,
+        activeChat: null,
+        inbox: null,
+        alerts: null,
+        authProfile: null
+    }
 };
 
-// NOWOŚĆ: Inteligentne dodawanie nasłuchu
-export function setListener(name, unsub) {
-    // Jeśli nasłuch o tej nazwie już działa, zabij go przed odpaleniem nowego (zapobiega dublowaniu)
-    if (state.listeners[name]) {
-        state.listeners[name]();
-    }
-    state.listeners[name] = unsub;
-}
+// --- NOWY MENEDŻER LISTENERÓW ---
+export const ListenerManager = {
+    // Rejestruje nowy listener pod konkretną nazwą
+    register: function(name, unsubscribeFunction) {
+        if (state.listeners[name]) {
+            state.listeners[name](); // Zabij stary nasłuch, jeśli istnieje
+        }
+        state.listeners[name] = unsubscribeFunction;
+    },
 
-// NOWOŚĆ: Ubijanie konkretnego nasłuchu
-export function clearListener(name) {
-    if (state.listeners[name]) {
-        state.listeners[name]();
-        delete state.listeners[name];
-    }
-}
+    // Zabija tylko JEDEN konkretny nasłuchiwacz
+    clear: function(name) {
+        if (state.listeners[name]) {
+            state.listeners[name]();
+            state.listeners[name] = null;
+        }
+    },
 
-// Zostawiamy to TYLKO do twardego wylogowania
-export function clearAllListeners() {
-    console.log("Hard reset: ubijam wszystkie procesy Firebase.");
-    Object.keys(state.listeners).forEach(key => {
-        state.listeners[key]();
-    });
-    state.listeners = {};
-}
+    // Zabija wszystkie (używane TYLKO przy wylogowywaniu)
+    clearAll: function() {
+        Object.keys(state.listeners).forEach(key => {
+            if (state.listeners[key]) {
+                state.listeners[key]();
+                state.listeners[key] = null;
+            }
+        });
+    }
+};
