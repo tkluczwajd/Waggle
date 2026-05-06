@@ -1,4 +1,4 @@
-import { state, ListenerManager } from './core/state.js';
+import { state, clearListeners } from './core/state.js';
 import { auth, db } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
@@ -21,12 +21,7 @@ export function initApp() {
 }
 
 function switchView(viewId) {
-    // INTELIGENTNE ZARZĄDZANIE: Zabijamy tylko transferożerne posty, jeśli nie jesteśmy na tablicy.
-    // Mapa (walks), Alerty i Skrzynka Odbiorcza (inbox) mogą oddychać w tle!
-    if (viewId !== 'community') {
-        ListenerManager.clear('posts');
-    }
-
+    clearListeners(); 
     document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     
@@ -48,40 +43,56 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
 
-    // ALERTY I POGODA
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
+    
     if (e.target.closest('#saveAlertBtn')) {
         const text = document.getElementById('alertTextInput').value;
         if (text && state.location.lat) {
             db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid })
-            .then(() => { document.getElementById('alert-modal').style.display = 'none'; document.getElementById('alertTextInput').value = ''; alert("Znacznik dodany na mapę!"); });
+            .then(() => {
+                document.getElementById('alert-modal').style.display = 'none';
+                document.getElementById('alertTextInput').value = '';
+            });
         }
     }
-    if (e.target.closest('#weatherWidgetBtn')) { document.getElementById('weather-modal').style.display = 'flex'; loadWeatherForecast(); }
 
-    // LOGOWANIE
-    if (e.target.closest('#loginBtn')) { auth.signInWithEmailAndPassword(document.getElementById('authEmail').value.trim(), document.getElementById('authPass').value).catch(err => alert("Błąd: " + err.message)); }
+    if (e.target.closest('#weatherWidgetBtn')) {
+        document.getElementById('weather-modal').style.display = 'flex';
+        loadWeatherForecast();
+    }
+
+    if (e.target.closest('#loginBtn')) {
+        const mail = document.getElementById('authEmail').value.trim();
+        const pass = document.getElementById('authPass').value;
+        auth.signInWithEmailAndPassword(mail, pass).catch(err => alert("Błąd: " + err.message));
+    }
     if (e.target.closest('#registerBtn')) {
         if(!document.getElementById('legalTerms').checked) return alert("Zaakceptuj regulamin.");
         auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value.trim(), document.getElementById('authPass').value).catch(err => alert("Błąd: " + err.message));
     }
-    if (e.target.closest('#logoutBtn')) {
-        ListenerManager.clearAll();
-        auth.signOut().then(() => window.location.reload());
+    if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
+
+    // 🌟 PIĘKNE DODAWANIE POSTA (Bez prompt()!)
+    if (e.target.closest('#addPostBtn')) {
+        document.getElementById('post-creator-modal').style.display = 'flex';
+    }
+    if (e.target.closest('#publishPostBtn')) {
+        const text = document.getElementById('postContent').value.trim();
+        if(text.length > 2) {
+            await saveCommunityPost(text, null).catch(console.error);
+            document.getElementById('post-creator-modal').style.display = 'none';
+            document.getElementById('postContent').value = '';
+        } else {
+            alert("Post musi mieć minimum 3 znaki.");
+        }
     }
 
-    // POSTY I CZAT
-    if (e.target.closest('#addPostBtn')) {
-        const text = prompt("Co słychać u pieska?");
-        if(text && text.length > 2) await saveCommunityPost(text, null).catch(console.error);
-    }
     if (e.target.closest('#sendMsgBtn')) {
         const input = document.getElementById('chatInput');
         if (input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
     }
     if (e.target.closest('#closeChatBtn')) closeActiveChat();
 
-    // WIKI ZAKŁADKI
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
@@ -89,7 +100,6 @@ document.addEventListener('click', async (e) => {
         renderWiki(currentWikiTab);
     }
 
-    // PROFIL & USTAWIENIA
     if (e.target.closest('#openEditProfileBtn')) {
         const p = state.profile || {};
         document.getElementById('setupName').value = p.name || "";
@@ -100,23 +110,35 @@ document.addEventListener('click', async (e) => {
     }
     if (e.target.closest('#saveProfileBtn')) {
         const d = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim(), breed: document.getElementById('setupBreed').value.trim(), routine: document.getElementById('setupRoutine').value };
-        db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(() => { state.profile = {...state.profile, ...d}; document.getElementById('profile-setup-modal').style.display = 'none'; updateStatsUI(); });
+        db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(() => {
+            state.profile = {...state.profile, ...d};
+            document.getElementById('profile-setup-modal').style.display = 'none';
+            updateStatsUI();
+        });
     }
 
     if (e.target.closest('#openSettingsBtn')) {
         document.getElementById('settingTheme').value = localStorage.getItem('waggle_theme') || 'light';
         document.getElementById('settingFontSize').value = localStorage.getItem('waggle_font') || '14px';
         document.getElementById('settingSearchable').checked = state.profile?.isSearchable !== false;
+        document.getElementById('settingNotifs').checked = localStorage.getItem('waggle_notifs') !== 'false';
         document.getElementById('settings-modal').style.display = 'flex';
     }
+    
     if (e.target.closest('#saveSettingsBtn')) {
         const theme = document.getElementById('settingTheme').value;
         const font = document.getElementById('settingFontSize').value;
         const isSearchable = document.getElementById('settingSearchable').checked;
-        localStorage.setItem('waggle_theme', theme); localStorage.setItem('waggle_font', font);
+        const notifs = document.getElementById('settingNotifs').checked;
+
+        localStorage.setItem('waggle_theme', theme);
+        localStorage.setItem('waggle_font', font);
+        localStorage.setItem('waggle_notifs', notifs ? 'true' : 'false');
+        
         db.collection("users").doc(state.user.uid).set({ isSearchable }, { merge: true }).then(() => {
             if (state.profile) state.profile.isSearchable = isSearchable;
-            loadSettings(); document.getElementById('settings-modal').style.display = 'none'; alert("Ustawienia zapisane!");
+            loadSettings(); 
+            document.getElementById('settings-modal').style.display = 'none';
         });
     }
 });
@@ -126,8 +148,7 @@ async function loadWeatherForecast() {
     try {
         const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.location.lat}&longitude=${state.location.lng}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`);
         const d = await r.json();
-        let html = "";
-        const dni = ["Niedziela", "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota"];
+        let html = ""; const dni = ["Niedziela", "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota"];
         for(let i=0; i<3; i++) {
             const dataObj = new Date(d.daily.time[i]);
             const nazwaDnia = i === 0 ? "Dzisiaj" : (i === 1 ? "Jutro" : dni[dataObj.getDay()]);
@@ -135,7 +156,7 @@ async function loadWeatherForecast() {
             html += `<div style="padding:15px; background:var(--bg-color); border-radius:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--soft-shadow);"><b style="font-size:16px;">${nazwaDnia}</b><span style="font-weight:800; color:var(--text-muted);">↓${min}°C &nbsp; <span style="color:var(--danger);">↑${max}°C</span></span></div>`;
         }
         document.getElementById('weather-forecast-content').innerHTML = html;
-    } catch(e) { document.getElementById('weather-forecast-content').innerHTML = "Błąd serwera pogodowego."; }
+    } catch(e) { document.getElementById('weather-forecast-content').innerHTML = "Błąd serwera."; }
 }
 
 function renderWiki(tab) {
@@ -157,7 +178,8 @@ function updateStatsUI() {
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
     const font = localStorage.getItem('waggle_font') || '14px';
-    if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+    if (theme === 'dark') document.body.classList.add('dark-mode');
+    else document.body.classList.remove('dark-mode');
     document.documentElement.style.setProperty('--base-font-size', font);
 }
 
