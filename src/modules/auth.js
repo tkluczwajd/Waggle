@@ -1,11 +1,11 @@
 import { auth, db } from "../core/firebase.js";
-import { state, ListenerManager } from "../core/state.js";
-import { initApp } from "../app.js";
+import { state, addListener, clearListeners } from "../core/state.js";
 
-export function initAuth() {
+export function initAuth(onReady) {
     auth.onAuthStateChanged(user => {
-        ListenerManager.clearAll(); // Twardy reset procesów tła
-        document.getElementById("loader").style.display = "none";
+        clearListeners(); 
+        const loader = document.getElementById("loader");
+        if (loader) loader.style.display = "none";
 
         if (user) {
             state.user = user;
@@ -13,24 +13,29 @@ export function initAuth() {
                 if (doc.exists) {
                     state.profile = doc.data();
                 } else {
-                    state.profile = { name: "Piesek", walkCount: 0 };
+                    state.profile = { name: "Piesek", walkCount: 0, isSearchable: true };
                 }
-                document.getElementById("auth-screen").style.display = "none";
-                document.getElementById("app-interface").style.display = "flex";
-                initApp();
+                
+                const authScreen = document.getElementById("auth-screen");
+                const appUI = document.getElementById("app-interface");
+                if (authScreen) authScreen.style.display = "none";
+                if (appUI) appUI.style.display = "flex";
+                
+                // Odpalenie głównej aplikacji po udanym logowaniu
+                if (typeof onReady === 'function') onReady();
             }, err => {
-                console.error("Auth error:", err);
-                document.getElementById("app-interface").style.display = "flex";
-                initApp();
+                console.error("Błąd bazy danych:", err);
+                if (typeof onReady === 'function') onReady();
             });
             
-            // Rejestracja nasłuchu profilu użytkownika
-            ListenerManager.register('authProfile', unsub);
+            addListener(unsub);
         } else {
             state.user = null;
             state.profile = null;
-            document.getElementById("app-interface").style.display = "none";
-            document.getElementById("auth-screen").style.display = "flex";
+            const authScreen = document.getElementById("auth-screen");
+            const appUI = document.getElementById("app-interface");
+            if (appUI) appUI.style.display = "none";
+            if (authScreen) authScreen.style.display = "flex";
         }
     });
 }
