@@ -1,3 +1,5 @@
+// src/core/state.js
+
 export const state = {
     user: null,
     profile: null,
@@ -9,16 +11,20 @@ export const state = {
     listeners: []
 };
 
-// Funkcja dodająca połączenie (nasłuchiwanie) do listy
+// Nowy standard funkcji
 export function addListener(unsub) {
     state.listeners.push(unsub);
 }
 
-// Funkcja "sprzątająca" - zabija stare nasłuchiwania przy zmianie widoku
 export function clearListeners() {
-    console.log("Cleaning up listeners: ", state.listeners.length);
     state.listeners.forEach(unsub => {
         if (typeof unsub === 'function') unsub();
     });
     state.listeners = [];
 }
+
+// "Most" kompatybilności dla starszych plików (np. posts.js, chat.js)
+export const ListenerManager = {
+    add: addListener,
+    clear: clearListeners
+};
