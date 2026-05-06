@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Waggle 2026 🐾 Full Version</title>
+    <title>Waggle 🐾 Premium UI</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -16,15 +16,17 @@
         <img id="lightbox-img" src="">
     </div>
 
-    <!-- EKRAN LOGOWANIA -->
+    <!-- EKRAN LOGOWANIA (POPRAWIONY WYGLĄD) -->
     <div id="auth-screen" class="screen-container">
         <div class="auth-content">
-            <h1 style="font-size: 55px; color: var(--primary); font-weight: 900; margin: 0;">Waggle.</h1>
-            <p>Dołącz do stada! 🐕</p>
+            <h1 class="logo-title">Waggle.</h1>
+            <p style="margin-bottom: 30px; font-size: 18px; color: var(--text-color);">Dołącz do stada! 🐕</p>
             <input type="email" id="authEmail" placeholder="E-mail">
             <input type="password" id="authPass" placeholder="Hasło">
-            <button class="btn-main" id="loginBtn">ZALOGUJ SIĘ</button>
-            <button class="btn-outline" id="registerBtn">REJESTRACJA</button>
+            <div style="margin-top: 20px;">
+                <button class="btn-main" id="loginBtn">ZALOGUJ SIĘ</button>
+                <button class="btn-outline" id="registerBtn">REJESTRACJA</button>
+            </div>
         </div>
     </div>
 
@@ -33,69 +35,92 @@
         
         <!-- WIDOK: MAPA -->
         <section id="view-map" class="view-section active">
-            <div id="top-widgets">
-                <div class="top-pill">☀️ <span id="weather-temp">--°C</span></div>
-                <div id="active-alert-pill" class="top-pill" style="display:none; background:var(--danger); color:white;">⚠️ Alerty!</div>
-            </div>
-            <div id="ctrl-panel">
-                <button class="map-ctrl-btn" id="centerBtn">🎯</button>
-                <button class="map-ctrl-btn danger" id="triggerAlertBtn">⚠️</button>
+            <!-- Gwarantowane wyświetlanie widgetów -->
+            <div id="map-ui-layer">
+                <div id="top-widgets">
+                    <div class="top-pill">☀️ <span id="weather-temp">--°C</span></div>
+                    <div id="active-alert-pill" class="top-pill" style="display:none; background:var(--danger); color:white;">⚠️ Alerty!</div>
+                </div>
+                <div id="ctrl-panel">
+                    <button class="map-ctrl-btn" id="centerBtn">🎯</button>
+                    <button class="map-ctrl-btn danger" id="triggerAlertBtn">⚠️</button>
+                </div>
+                <div id="walk-setup-panel">
+                    <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
+                    <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER 🐾</button>
+                    <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ 🏁</button>
+                </div>
             </div>
             <div id="map"></div>
-            <div id="walk-setup-panel">
-                <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
-                <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER 🐾</button>
-                <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ 🏁</button>
-            </div>
         </section>
 
         <!-- WIDOK: TABLICA -->
         <section id="view-community" class="view-section">
-            <div style="padding: 20px; background: white; position: sticky; top: 0; z-index: 100;">
+            <div class="sticky-header">
                 <h3 style="margin:0;">W okolicy</h3>
                 <div id="stories-container"></div>
-                <button class="btn-main" id="addPostBtn" style="margin-top:15px;">➕ DODAJ POSTA</button>
+                <button class="btn-main" id="addPostBtn" style="margin-top:15px; padding: 12px;">➕ DODAJ POSTA</button>
             </div>
             <div id="posts-container"></div>
         </section>
 
-        <!-- WIDOK: WIEDZA -->
+        <!-- WIDOK: WIEDZA (Z ZAKŁADKAMI) -->
         <section id="view-wiki" class="view-section">
-            <div style="padding: 20px; background: white; position: sticky; top: 0; z-index: 100;">
-                <h3 style="margin:0;">Psia Wiedza</h3>
+            <div class="sticky-header" style="padding-bottom: 0;">
+                <h3 style="margin:0 0 15px 0;">Psia Wiedza</h3>
+                <div class="wiki-tabs">
+                    <button class="wiki-tab-btn active" data-tab="rasy">Rasy Psów</button>
+                    <button class="wiki-tab-btn" data-tab="szkolenie">Szkolenie</button>
+                    <button class="wiki-tab-btn" data-tab="sytuacje">Sytuacje</button>
+                </div>
             </div>
-            <div id="wiki-container"></div>
+            <div id="wiki-content" style="padding-top: 10px;"></div>
         </section>
 
-        <!-- WIDOK: CZAT -->
+        <!-- WIDOK: CZAT (POPRAWIONY UX) -->
         <section id="view-chat" class="view-section">
-            <div style="padding: 20px; background: white; position: sticky; top: 0; z-index: 100;">
+            <div class="sticky-header">
                 <h3 style="margin:0;">Wiadomości</h3>
             </div>
             <div id="inbox-container"></div>
+            
             <div id="chat-window" class="chat-overlay">
                 <div class="chat-header">
-                    <button id="closeChatBtn">←</button>
-                    <b id="chatPartnerName">Czat</b>
+                    <button id="closeChatBtn" class="icon-btn">⬅️</button>
+                    <b id="chatPartnerName" style="font-size: 18px;">Czat</b>
                 </div>
                 <div id="chatMessages"></div>
                 <div class="chat-footer">
                     <input type="text" id="chatInput" placeholder="Napisz wiadomość...">
-                    <button id="sendMsgBtn">OK</button>
+                    <button id="sendMsgBtn" class="btn-main" style="width: auto; padding: 0 20px;">Wyślij</button>
                 </div>
             </div>
         </section>
 
-        <!-- WIDOK: PROFIL -->
+        <!-- WIDOK: PROFIL (EDYCJA I CZCIONKA) -->
         <section id="view-profile" class="view-section">
-            <div class="profile-header" style="text-align: center; padding: 30px 20px;">
+            <div class="profile-header">
                 <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow);">
                 <h2 id="profileNameDisplay" style="margin: 15px 0 5px 0;">...</h2>
-                <div class="stats-bar" style="display: flex; justify-content: space-around; background: white; border-radius: 20px; padding: 20px; margin: 20px 0; box-shadow: var(--soft-shadow);">
-                    <div><b id="statWalks" style="font-size: 20px; color: var(--primary);">0</b><br><small>Spacerów</small></div>
-                    <div><b id="statDist" style="font-size: 20px; color: var(--secondary);">0.0</b><br><small>KM</small></div>
+                <div class="stats-bar">
+                    <div><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small>Spacerów</small></div>
+                    <div><b id="statDist" class="stat-num" style="color: var(--secondary);">0.0</b><br><small>KM</small></div>
                 </div>
-                <button class="btn-main" id="logoutBtn" style="background:var(--border-color); color:var(--text-color);">WYLOGUJ SIĘ</button>
+                
+                <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 20px;">
+                    <button class="btn-main" id="editProfileBtn" style="background: var(--secondary);">✏️ EDYTUJ PROFIL</button>
+                    
+                    <div class="font-settings" style="background: white; padding: 15px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--soft-shadow);">
+                        <b style="font-size: 14px;">Wielkość czcionki:</b>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="font-btn" data-size="14px">A</button>
+                            <button class="font-btn" data-size="16px">A+</button>
+                            <button class="font-btn" data-size="18px">A++</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-outline" id="logoutBtn" style="color: var(--danger); border-color: var(--danger);">WYLOGUJ SIĘ</button>
+                </div>
             </div>
         </section>
 
