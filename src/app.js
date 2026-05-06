@@ -1,4 +1,4 @@
-import { state, clearAllListeners } from './core/state.js';
+import { state, ListenerManager } from './core/state.js';
 import { auth, db } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
@@ -12,7 +12,7 @@ window.Waggle = { openChat, closeActiveChat, centerOnTarget, openLightbox };
 let currentWikiTab = 'rasy';
 
 export function initApp() {
-    loadSettings();
+    loadSettings(); 
     initMap();
     loadPosts();
     loadInbox();
@@ -21,12 +21,10 @@ export function initApp() {
 }
 
 function switchView(viewId) {
-    // USUNIĘTO BRUTALNE clearListeners()!
-    // Firebase w tle nadal nasłuchuje powiadomień, mapy i czatu.
-    
-    // Jeśli wychodzimy z czatu, ubijamy tylko nasłuch aktywnej rozmowy, żeby nie zjadał transferu
-    if (viewId !== 'chat') {
-        closeActiveChat();
+    // INTELIGENTNE ZARZĄDZANIE: Zabijamy tylko transferożerne posty, jeśli nie jesteśmy na tablicy.
+    // Mapa (walks), Alerty i Skrzynka Odbiorcza (inbox) mogą oddychać w tle!
+    if (viewId !== 'community') {
+        ListenerManager.clear('posts');
     }
 
     document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
@@ -36,46 +34,43 @@ function switchView(viewId) {
     document.querySelector(`.nav-item[data-view="${viewId}"]`).classList.add('active');
 
     if (viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 300);
-    
-    // Wymuszamy odświeżenie widoku (listener sam nadpisze stare dane dzięki setListener)
     if (viewId === 'community') loadPosts();
     if (viewId === 'chat') loadInbox();
 }
 
 document.addEventListener('click', async (e) => {
-    // ... ZAMYKANIE MODALI I NAWIGACJA ...
     if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
+
     const navItem = e.target.closest('.nav-item');
     if (navItem) switchView(navItem.getAttribute('data-view'));
 
-    // ... MAPA ...
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
 
-    // ... ALERTY I POGODA ...
+    // ALERTY I POGODA
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
     if (e.target.closest('#saveAlertBtn')) {
         const text = document.getElementById('alertTextInput').value;
         if (text && state.location.lat) {
             db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid })
-            .then(() => { document.getElementById('alert-modal').style.display = 'none'; document.getElementById('alertTextInput').value = ''; alert("Znacznik dodany!"); });
+            .then(() => { document.getElementById('alert-modal').style.display = 'none'; document.getElementById('alertTextInput').value = ''; alert("Znacznik dodany na mapę!"); });
         }
     }
     if (e.target.closest('#weatherWidgetBtn')) { document.getElementById('weather-modal').style.display = 'flex'; loadWeatherForecast(); }
 
-    // ... LOGOWANIE I WYLOGOWANIE ...
+    // LOGOWANIE
     if (e.target.closest('#loginBtn')) { auth.signInWithEmailAndPassword(document.getElementById('authEmail').value.trim(), document.getElementById('authPass').value).catch(err => alert("Błąd: " + err.message)); }
     if (e.target.closest('#registerBtn')) {
         if(!document.getElementById('legalTerms').checked) return alert("Zaakceptuj regulamin.");
         auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value.trim(), document.getElementById('authPass').value).catch(err => alert("Błąd: " + err.message));
     }
     if (e.target.closest('#logoutBtn')) {
-        clearAllListeners(); // TWARDY RESET przy wylogowaniu
+        ListenerManager.clearAll();
         auth.signOut().then(() => window.location.reload());
     }
 
-    // ... POSTY I CZAT ...
+    // POSTY I CZAT
     if (e.target.closest('#addPostBtn')) {
         const text = prompt("Co słychać u pieska?");
         if(text && text.length > 2) await saveCommunityPost(text, null).catch(console.error);
@@ -86,7 +81,7 @@ document.addEventListener('click', async (e) => {
     }
     if (e.target.closest('#closeChatBtn')) closeActiveChat();
 
-    // ... WIKI ...
+    // WIKI ZAKŁADKI
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
@@ -94,7 +89,7 @@ document.addEventListener('click', async (e) => {
         renderWiki(currentWikiTab);
     }
 
-    // ... PROFIL ...
+    // PROFIL & USTAWIENIA
     if (e.target.closest('#openEditProfileBtn')) {
         const p = state.profile || {};
         document.getElementById('setupName').value = p.name || "";
@@ -108,7 +103,6 @@ document.addEventListener('click', async (e) => {
         db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(() => { state.profile = {...state.profile, ...d}; document.getElementById('profile-setup-modal').style.display = 'none'; updateStatsUI(); });
     }
 
-    // ... USTAWIENIA ...
     if (e.target.closest('#openSettingsBtn')) {
         document.getElementById('settingTheme').value = localStorage.getItem('waggle_theme') || 'light';
         document.getElementById('settingFontSize').value = localStorage.getItem('waggle_font') || '14px';
@@ -126,9 +120,6 @@ document.addEventListener('click', async (e) => {
         });
     }
 });
-
-// ... FUNKCJE POGODY, WIKI, UI ZOSTAWIAJ BEZ ZMIAN (dokładnie to co mieliśmy w poprzedniej wersji) ...
-// (Pominąłem je tu dla zwięzłości, masz je w swoim obecnym app.js)
 
 async function loadWeatherForecast() {
     if(!state.location.lat) { document.getElementById('weather-forecast-content').innerHTML = "Brak dostępu do GPS."; return; }
