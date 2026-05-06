@@ -15,7 +15,6 @@
         <img id="lightbox-img" src="">
     </div>
 
-    <!-- EKRAN LOGOWANIA -->
     <div id="auth-screen" class="screen-container">
         <div class="auth-card">
             <h1 class="logo-title">Waggle.</h1>
@@ -33,7 +32,6 @@
         </div>
     </div>
 
-    <!-- INTERFEJS APLIKACJI -->
     <div id="app-interface" class="screen-container">
         <section id="view-map" class="view-section active">
             <div id="map-ui-layer">
@@ -116,17 +114,26 @@
         </nav>
     </div>
 
-    <!-- 🌟 MODAL: DODAWANIE POSTA (Zastępuje prompt) -->
     <div id="post-creator-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
             <h3 style="font-weight:900; margin-top:0;">Nowy Post</h3>
-            <textarea id="postContent" placeholder="Co słychać u pieska?" style="min-height: 120px; resize: none;"></textarea>
+            <textarea id="postContent" placeholder="Co słychać u pieska?" style="min-height: 100px; resize: none;"></textarea>
+            
+            <div id="post-image-preview-container" style="display:none; position:relative; margin-bottom:15px;">
+                <img id="post-image-preview" src="" style="width:100%; border-radius:15px; max-height:200px; object-fit:cover;">
+                <button id="removePostImageBtn" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.5); color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer;">✕</button>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button class="btn-outline" id="addPhotoBtn" style="margin-top:0; flex:1;">📷 DODAJ ZDJĘCIE</button>
+                <input type="file" id="postImageInput" accept="image/*" style="display:none;">
+            </div>
+
             <button class="btn-main" id="publishPostBtn">OPUBLIKUJ</button>
         </div>
     </div>
 
-    <!-- 🌟 MODAL: ZAGROŻENIA W OKOLICY (Zastępuje alert) -->
     <div id="alert-hub-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
@@ -135,7 +142,6 @@
         </div>
     </div>
 
-    <!-- MODAL: EDYCJA PROFILU -->
     <div id="profile-setup-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
@@ -153,7 +159,6 @@
         </div>
     </div>
 
-    <!-- MODAL: USTAWIENIA (Z przywróconymi dźwiękami) -->
     <div id="settings-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
@@ -177,7 +182,6 @@
                 <input type="checkbox" id="settingSearchable">
                 <label for="settingSearchable" style="font-size:13px; font-weight:700;">Chcę być widoczny na mapie dla innych psów.</label>
             </div>
-            <!-- 🌟 PRZYWRÓCONY DŹWIĘK I WIBRACJE -->
             <div class="legal-checkbox-container" style="margin-bottom:20px;">
                 <input type="checkbox" id="settingNotifs">
                 <label for="settingNotifs" style="font-size:13px; font-weight:700;">Dźwięki i wibracje</label>
@@ -186,7 +190,6 @@
         </div>
     </div>
 
-    <!-- MODAL: POGODA (3 DNI) -->
     <div id="weather-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
@@ -195,7 +198,6 @@
         </div>
     </div>
 
-    <!-- MODAL: DODAWANIE ALERTU NA MAPIE -->
     <div id="alert-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
