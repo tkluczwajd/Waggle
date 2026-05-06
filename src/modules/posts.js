@@ -3,6 +3,14 @@ import { state, addListener } from '../core/state.js';
 
 const IMGBB_KEY = "af2b35f5ca54dd9c8fc91595fe525de9"; 
 
+// Globalna funkcja do usuwania postów (dostępna z poziomu HTML)
+window.Waggle = window.Waggle || {};
+window.Waggle.deletePost = (id) => {
+    if(confirm('Na pewno usunąć ten post?')) {
+        db.collection("posts").doc(id).delete();
+    }
+};
+
 export function loadPosts() {
     const unsub = db.collection("posts").orderBy("timestamp", "desc").limit(30).onSnapshot(snap => { 
         let html = ""; 
@@ -27,7 +35,9 @@ export function loadPosts() {
         if(!html) {
             html = `<div style="text-align:center; padding:40px 20px; color:var(--text-muted);"><h3>Cisza na osiedlu</h3></div>`; 
         }
-        document.getElementById('posts-container').innerHTML = html; 
+        
+        const container = document.getElementById('posts-container');
+        if(container) container.innerHTML = html; 
     });
     addListener(unsub);
 }
@@ -43,7 +53,6 @@ export async function uploadImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                // Maksymalna szerokość 800px dla szybkości
                 if(w > 800) { h = Math.round((h * 800)/w); w = 800; }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
@@ -62,6 +71,7 @@ export async function uploadImage(file) {
 }
 
 export async function saveCommunityPost(content, imageUrl = null) {
+    if (!state.user || !state.profile) return;
     return db.collection("posts").add({ 
         uid: state.user.uid, 
         author: state.profile.name || "Piesek", 
@@ -70,4 +80,14 @@ export async function saveCommunityPost(content, imageUrl = null) {
         imageUrl, 
         timestamp: fb.firestore.FieldValue.serverTimestamp() 
     });
+}
+
+// BRAKUJĄCA FUNKCJA - to ona blokowała apkę!
+export function openLightbox(url) {
+    const img = document.getElementById('lightbox-img');
+    const modal = document.getElementById('lightbox-modal');
+    if (img && modal) {
+        img.src = url;
+        modal.style.display = 'flex';
+    }
 }
