@@ -3,135 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Waggle 🐾 Premium UI</title>
+    <title>Waggle v22 🐾 Powrót Króla</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loader">Waggle🐾</div>
+    <div id="loader" style="position:fixed; inset:0; z-index:30000; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:32px;">Waggle🐾</div>
     <div id="toast"></div>
 
-    <div id="lightbox-modal" onclick="this.style.display='none'">
-        <img id="lightbox-img" src="">
+    <div id="lightbox-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:35000; align-items:center; justify-content:center;" onclick="this.style.display='none'">
+        <img id="lightbox-img" src="" style="max-width:95%; max-height:85vh; border-radius:20px;">
     </div>
 
-    <!-- EKRAN LOGOWANIA (POPRAWIONY WYGLĄD) -->
-    <div id="auth-screen" class="screen-container">
-        <div class="auth-content">
-            <h1 class="logo-title">Waggle.</h1>
-            <p style="margin-bottom: 30px; font-size: 18px; color: var(--text-color);">Dołącz do stada! 🐕</p>
-            <input type="email" id="authEmail" placeholder="E-mail">
-            <input type="password" id="authPass" placeholder="Hasło">
-            <div style="margin-top: 20px;">
-                <button class="btn-main" id="loginBtn">ZALOGUJ SIĘ</button>
-                <button class="btn-outline" id="registerBtn">REJESTRACJA</button>
-            </div>
+    <!-- EKRAN LOGOWANIA (Z regulaminem z v21.13) -->
+    <div id="auth-screen" style="display:none; flex-direction:column; justify-content:center; padding:30px;">
+        <h1 style="font-size: 55px; margin: 0; text-align:center; color:var(--primary); font-weight:900;">Waggle.</h1>
+        <p style="text-align:center; margin-bottom:25px; font-weight:800; color:var(--text-muted);">Dołącz do stada! 🐕</p>
+        <input type="email" id="authEmail" placeholder="E-mail">
+        <input type="password" id="authPass" placeholder="Hasło">
+        
+        <div class="legal-checkbox-container">
+            <input type="checkbox" id="legalTerms">
+            <label for="legalTerms">Akceptuję Regulamin oraz Politykę Prywatności aplikacji Waggle.</label>
         </div>
+
+        <button class="btn-main" id="loginBtn">ZALOGUJ SIĘ</button>
+        <button class="btn-outline" id="registerBtn">REJESTRACJA</button>
     </div>
 
     <!-- INTERFEJS APLIKACJI -->
-    <div id="app-interface" class="screen-container">
+    <div id="app-interface" style="display:none;">
         
-        <!-- WIDOK: MAPA -->
         <section id="view-map" class="view-section active">
-            <!-- Gwarantowane wyświetlanie widgetów -->
-            <div id="map-ui-layer">
-                <div id="top-widgets">
-                    <div class="top-pill">☀️ <span id="weather-temp">--°C</span></div>
-                    <div id="active-alert-pill" class="top-pill" style="display:none; background:var(--danger); color:white;">⚠️ Alerty!</div>
-                </div>
-                <div id="ctrl-panel">
-                    <button class="map-ctrl-btn" id="centerBtn">🎯</button>
-                    <button class="map-ctrl-btn danger" id="triggerAlertBtn">⚠️</button>
-                </div>
-                <div id="walk-setup-panel">
-                    <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
-                    <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER 🐾</button>
-                    <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ 🏁</button>
-                </div>
+            <div id="ctrl-panel">
+                <button id="centerBtn" class="map-ctrl-btn">🎯</button>
+                <button class="map-ctrl-btn" style="background:var(--danger); color:white;">⚠️</button>
+            </div>
+            <div id="top-widgets">
+                <div class="top-pill"><span id="weather-temp">--°C</span></div>
             </div>
             <div id="map"></div>
+            <div id="walk-setup-panel">
+                <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
+                <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER 🐾</button>
+                <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ SPACER 🏁</button>
+            </div>
         </section>
 
-        <!-- WIDOK: TABLICA -->
         <section id="view-community" class="view-section">
-            <div class="sticky-header">
-                <h3 style="margin:0;">W okolicy</h3>
+            <div style="padding:20px 20px 5px 20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
+                <h3 style="margin:0; font-weight:900; font-size:22px;">W okolicy</h3>
                 <div id="stories-container"></div>
-                <button class="btn-main" id="addPostBtn" style="margin-top:15px; padding: 12px;">➕ DODAJ POSTA</button>
+                <button class="btn-main" id="addPostBtn" style="background:var(--secondary); margin-bottom:10px;">➕ DODAJ POSTA</button>
             </div>
-            <div id="posts-container"></div>
+            <div id="posts-container" style="padding-bottom: 20px;"></div>
         </section>
 
-        <!-- WIDOK: WIEDZA (Z ZAKŁADKAMI) -->
         <section id="view-wiki" class="view-section">
-            <div class="sticky-header" style="padding-bottom: 0;">
-                <h3 style="margin:0 0 15px 0;">Psia Wiedza</h3>
-                <div class="wiki-tabs">
-                    <button class="wiki-tab-btn active" data-tab="rasy">Rasy Psów</button>
-                    <button class="wiki-tab-btn" data-tab="szkolenie">Szkolenie</button>
-                    <button class="wiki-tab-btn" data-tab="sytuacje">Sytuacje</button>
+            <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
+                <div class="tab-container">
+                    <button class="tab-btn active wiki-tab" data-tab="rasy">RASY</button>
+                    <button class="tab-btn wiki-tab" data-tab="trening">TRENING</button>
+                    <button class="tab-btn wiki-tab" data-tab="sytuacje">SYTUACJE</button>
                 </div>
             </div>
-            <div id="wiki-content" style="padding-top: 10px;"></div>
+            <div id="wiki-container" style="padding:0 15px 20px;"></div>
         </section>
 
-        <!-- WIDOK: CZAT (POPRAWIONY UX) -->
         <section id="view-chat" class="view-section">
-            <div class="sticky-header">
-                <h3 style="margin:0;">Wiadomości</h3>
-            </div>
-            <div id="inbox-container"></div>
-            
-            <div id="chat-window" class="chat-overlay">
-                <div class="chat-header">
-                    <button id="closeChatBtn" class="icon-btn">⬅️</button>
-                    <b id="chatPartnerName" style="font-size: 18px;">Czat</b>
+            <div style="padding:20px; background:var(--bg-color); position: sticky; top:0; z-index:100;">
+                <div class="tab-container">
+                    <button class="tab-btn active">ROZMOWY</button>
+                    <button class="tab-btn">STADO</button>
                 </div>
-                <div id="chatMessages"></div>
-                <div class="chat-footer">
-                    <input type="text" id="chatInput" placeholder="Napisz wiadomość...">
-                    <button id="sendMsgBtn" class="btn-main" style="width: auto; padding: 0 20px;">Wyślij</button>
+            </div>
+            <div id="inbox-container" style="padding:0 10px;"></div>
+            
+            <!-- Modal Czat z v21.13 -->
+            <div id="active-chat-container" style="display:none; position:absolute; inset:0; background:var(--bg-color); z-index:25000; flex-direction:column;">
+                <div style="padding:15px 20px; background:var(--panel-bg); display:flex; align-items:center; gap:15px; box-shadow:var(--soft-shadow);">
+                    <button id="closeChatBtn" style="background:var(--bg-color); border:none; border-radius:50%; width:36px; height:36px; cursor:pointer; font-weight:900; color:var(--text-color); display:flex; align-items:center; justify-content:center;">←</button>
+                    <b id="activeChatPartnerName" style="font-size:18px; font-weight:900;">Czat</b>
+                </div>
+                <div id="chatMessages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:10px;"></div>
+                <div style="padding:15px 20px; background:var(--panel-bg); display:flex; gap:10px; align-items:center; box-shadow:0 -10px 20px rgba(0,0,0,0.03); flex-shrink: 0;">
+                    <input type="text" id="chatInput" placeholder="Napisz wiadomość..." style="margin:0; border-radius:50px; flex:1;">
+                    <button id="sendMsgBtn" class="btn-main" style="width:auto; margin:0; padding:10px 24px; border-radius:50px; flex-shrink: 0;">OK</button>
                 </div>
             </div>
         </section>
 
-        <!-- WIDOK: PROFIL (EDYCJA I CZCIONKA) -->
         <section id="view-profile" class="view-section">
-            <div class="profile-header">
-                <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow);">
-                <h2 id="profileNameDisplay" style="margin: 15px 0 5px 0;">...</h2>
-                <div class="stats-bar">
-                    <div><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small>Spacerów</small></div>
-                    <div><b id="statDist" class="stat-num" style="color: var(--secondary);">0.0</b><br><small>KM</small></div>
+            <div style="padding:30px 20px; text-align:center;">
+                <img id="profileAvatar" src="" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150'" style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:4px solid white; box-shadow:var(--soft-shadow);">
+                <h2 id="profileNameDisplay" style="margin:0; font-weight:900; font-size:26px;">...</h2>
+                
+                <div style="display:flex; justify-content:space-around; background:var(--panel-bg); border-radius:24px; padding:20px 10px; margin:20px 0; box-shadow: var(--soft-shadow);">
+                    <div style="display:flex; flex-direction:column;"><span id="statWalks" style="font-size:24px; font-weight:900; color:var(--primary);">0</span><span style="color:var(--text-muted); font-size:12px; font-weight:700;">Spacery</span></div>
+                    <div style="display:flex; flex-direction:column;"><span id="statDist" style="font-size:24px; font-weight:900; color:var(--secondary);">0</span><span style="color:var(--text-muted); font-size:12px; font-weight:700;">KM</span></div>
                 </div>
                 
-                <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 20px;">
-                    <button class="btn-main" id="editProfileBtn" style="background: var(--secondary);">✏️ EDYTUJ PROFIL</button>
-                    
-                    <div class="font-settings" style="background: white; padding: 15px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--soft-shadow);">
-                        <b style="font-size: 14px;">Wielkość czcionki:</b>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="font-btn" data-size="14px">A</button>
-                            <button class="font-btn" data-size="16px">A+</button>
-                            <button class="font-btn" data-size="18px">A++</button>
-                        </div>
-                    </div>
-
-                    <button class="btn-outline" id="logoutBtn" style="color: var(--danger); border-color: var(--danger);">WYLOGUJ SIĘ</button>
-                </div>
+                <button class="btn-main" id="openEditProfileBtn" style="background:var(--secondary); margin-bottom:10px;">✏️ EDYTUJ DANE</button>
+                <button class="btn-main" id="openSettingsBtn" style="background:#576574; margin-bottom:15px;">⚙️ USTAWIENIA</button>
+                <button class="btn-main" id="logoutBtn" style="background:var(--border-color); color:var(--text-color);">WYLOGUJ SIĘ</button>
             </div>
         </section>
 
-        <!-- NAWIGACJA DOLNA -->
         <nav class="bottom-nav">
-            <div class="nav-item active" data-view="map">📍<span>Mapa</span></div>
-            <div class="nav-item" data-view="community">📱<span>Tablica</span></div>
-            <div class="nav-item" data-view="wiki">📘<span>Wiedza</span></div>
-            <div class="nav-item" data-view="chat">💬<span>Czat</span></div>
-            <div class="nav-item" data-view="profile">👤<span>Profil</span></div>
+            <button class="nav-item active" data-view="map"><span>📍 Mapa</span></button>
+            <button class="nav-item" data-view="community"><span>📱 Tablica</span></button>
+            <button class="nav-item" data-view="wiki"><span>📘 Wiedza</span></button>
+            <button class="nav-item" data-view="chat"><span>💬 Czat</span></button>
+            <button class="nav-item" data-view="profile"><span>👤 Profil</span></button>
         </nav>
+    </div>
+
+    <!-- MODAL: EDYCJA PROFILU -->
+    <div id="profile-setup-modal" class="modal">
+        <div class="card">
+            <h3 style="font-weight:900; font-size:24px; margin-top:0;">Profil Psa</h3>
+            <input type="text" id="setupName" placeholder="Imię psa">
+            <input type="text" id="setupCity" placeholder="Miasto">
+            <input list="dog-breeds" id="setupBreed" placeholder="Rasa">
+            <datalist id="dog-breeds">
+                <option value="Kundelek"><option value="Golden Retriever"><option value="Owczarek niemiecki"><option value="Husky"><option value="Mops"><option value="York"><option value="Beagle"><option value="Buldog">
+            </datalist>
+            <select id="setupRoutine">
+                <option value="brak">Kiedy zwykle spacerujecie?</option>
+                <option value="Rano">Rano 🌅</option>
+                <option value="Popołudniu">Popołudniu ☀️</option>
+                <option value="Wieczorem">Wieczorem 🌙</option>
+            </select>
+            <button class="btn-main" id="saveProfileBtn">ZAPISZ</button>
+        </div>
+    </div>
+
+    <!-- MODAL: USTAWIENIA (Motyw i Czcionka) -->
+    <div id="settings-modal" class="modal">
+        <div class="card">
+            <button class="close-modal-btn">✕</button>
+            <h3 style="font-weight:900; margin-top:0;">Ustawienia</h3>
+            
+            <div style="text-align:left; margin-bottom:15px;">
+                <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Motyw</label>
+                <select id="settingTheme">
+                    <option value="light">☀️ Jasny</option>
+                    <option value="dark">🌙 Ciemny</option>
+                </select>
+            </div>
+            
+            <div style="text-align:left; margin-bottom:15px;">
+                <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Wielkość tekstu</label>
+                <select id="settingFontSize">
+                    <option value="small">Mała (Domyślna)</option>
+                    <option value="medium">Średnia</option>
+                    <option value="large">Duża</option>
+                </select>
+            </div>
+
+            <button class="btn-main" id="saveSettingsBtn" style="margin-top:20px;">ZAPISZ USTAWIENIA</button>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
