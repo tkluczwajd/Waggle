@@ -1,44 +1,36 @@
-// --- NOWY, BEZPIECZNY STAN APLIKACJI ---
-const state = {
+export const state = {
     user: null,
-    dogProfile: null,
-    // Zamiast arraya listeners: [], wprowadzamy precyzyjny obiekt:
-    listeners: {
-        walks: null,
-        posts: null,
-        chat: null,
-        inbox: null,
-        alerts: null
-    }
+    profile: null,
+    location: { lat: null, lng: null },
+    isWalking: false,
+    map: null,
+    isFollowing: true,
+    currentChatId: null,
+    listeners: {} // ZMIANA: To teraz obiekt, a nie tablica!
 };
 
-// --- NOWY MENEDŻER LISTENERÓW ---
-const ListenerManager = {
-    // Rejestruje nowy listener pod konkretną nazwą (np. 'walks')
-    register: function(name, unsubscribeFunction) {
-        // Jeśli pod tą nazwą działa już jakiś nasłuchiwacz, zabij go najpierw
-        if (state.listeners[name]) {
-            state.listeners[name]();
-        }
-        // Zapisz nowy
-        state.listeners[name] = unsubscribeFunction;
-    },
-
-    // Zabija tylko JEDEN konkretny nasłuchiwacz (np. przy zamykaniu czatu)
-    clear: function(name) {
-        if (state.listeners[name]) {
-            state.listeners[name](); // Wywołanie funkcji unsubscribe z Firebase
-            state.listeners[name] = null;
-        }
-    },
-
-    // Zabija wszystkie (używane TYLKO przy wylogowywaniu użytkownika)
-    clearAll: function() {
-        Object.keys(state.listeners).forEach(key => {
-            if (state.listeners[key]) {
-                state.listeners[key]();
-                state.listeners[key] = null;
-            }
-        });
+// NOWOŚĆ: Inteligentne dodawanie nasłuchu
+export function setListener(name, unsub) {
+    // Jeśli nasłuch o tej nazwie już działa, zabij go przed odpaleniem nowego (zapobiega dublowaniu)
+    if (state.listeners[name]) {
+        state.listeners[name]();
     }
-};
+    state.listeners[name] = unsub;
+}
+
+// NOWOŚĆ: Ubijanie konkretnego nasłuchu
+export function clearListener(name) {
+    if (state.listeners[name]) {
+        state.listeners[name]();
+        delete state.listeners[name];
+    }
+}
+
+// Zostawiamy to TYLKO do twardego wylogowania
+export function clearAllListeners() {
+    console.log("Hard reset: ubijam wszystkie procesy Firebase.");
+    Object.keys(state.listeners).forEach(key => {
+        state.listeners[key]();
+    });
+    state.listeners = {};
+}
