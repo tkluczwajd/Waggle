@@ -39,7 +39,7 @@ html, body {
 .sticky-header { padding: 20px; background: var(--panel-bg); position: sticky; top: 0; z-index: 100; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
 
 /* MAPA */
-#view-map { height: 100%; z-index: 5; background: transparent; overflow: hidden; padding-bottom: 0;}
+#view-map { z-index: 5; background: transparent; overflow: hidden; padding-bottom: 0;}
 #view-map.active { display: flex !important; }
 #map { position: absolute; inset: 0; z-index: 1; }
 #map-ui-layer { position: absolute; inset: 0; z-index: 1000; pointer-events: none; } 
