@@ -262,6 +262,20 @@
             <button class="btn-outline" id="actionProfileBtn" onclick="Waggle.showToast('Profile innych użytkowników wkrótce!')">🐾 Zobacz pełny profil</button>
         </div>
     </div>
+    <div id="comments-modal" class="modal">
+        <div class="card" style="height: 70vh; display: flex; flex-direction: column;">
+            <button class="close-modal-btn">✕</button>
+            <h3 style="margin-top:0;">Komentarze</h3>
+            
+            <div id="comments-list" style="flex:1; overflow-y:auto; margin-bottom: 15px; padding-right: 5px;">
+                </div>
+            
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="commentInput" placeholder="Napisz komentarz..." style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                <button class="btn-main" id="sendCommentBtn" style="width:auto; padding:0 20px;">WYŚLIJ</button>
+            </div>
+        </div>
+    </div>
 </body>
     
 </html>
