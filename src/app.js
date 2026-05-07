@@ -22,24 +22,6 @@ window.Waggle.showToast = (msg) => {
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.style.display='none',300); }, 3500);
 }
 
-// BAZA WIEDZY WBUDOWANA (Gwarancja działania)
-const WIKI_DATA = {
-    rasy: [
-        {title: "Golden Retriever", desc: "Łagodny, inteligentny i oddany. Idealny pies rodzinny, wymaga dużo ruchu."},
-        {title: "Owczarek Niemiecki", desc: "Lojalny, odważny. Świetny stróż, wymaga konsekwencji w szkoleniu."},
-        {title: "Mops", desc: "Towarzyski, wesoły. Z racji budowy pyska źle znosi upały i wysiłek fizyczny."},
-        {title: "Kundelek", desc: "Unikalny miks genów! Zazwyczaj zdrowsze i o wyjątkowym charakterze."}
-    ],
-    trening: [
-        {title: "Luźna smycz (Zasada Drzewa)", desc: "Gdy pies napina smycz, zatrzymaj się. Rusz dopiero gdy smycz się rozluźni."},
-        {title: "Awaryjne Przywołanie", desc: "Wołaj psa wesołym tonem, a gdy przybiegnie – nagradzaj jak za wygraną w lotto!"}
-    ],
-    sytuacje: [
-        {title: "Mijanie innego psa", desc: "Zawsze pozwalaj psom minąć się łukiem, a nie na wprost. Nie zmuszaj do witania."},
-        {title: "Pies zjada śmieci", desc: "Naucz komendy 'Zostaw'. Zawsze wymieniaj śmieci z ziemi na coś znacznie pyszniejszego z ręki."}
-    ]
-};
-
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
@@ -232,17 +214,30 @@ document.addEventListener('change', (e) => {
 
 function renderWiki(tab) {
     let html = "";
-    const items = WIKI_DATA[tab] || WIKI_DATA['rasy']; 
+    
+    // Zaciągamy dane prosto z naszego pięknego pliku WIKI (zaimportowanego na górze app.js)
+    const items = WIKI[tab] || WIKI['rasy']; 
+    
     items.forEach(item => {
+        let tagsHtml = "";
+        
+        // Jeśli dany wpis ma tagi, renderujemy ładne pigułki
+        if(item.tags) {
+            item.tags.forEach(tag => {
+                tagsHtml += `<span style="display:inline-block; background:var(--panel-bg); color:var(--text-color); font-size:11px; font-weight:800; padding:4px 8px; border-radius:12px; margin-right:6px; margin-top:5px; border: 1px solid var(--border-color);">${tag}</span>`;
+            });
+        }
+
         html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px;">
-                    <b style="font-size: 16px; color: var(--text-color);">${item.title}</b>
-                    <p style="margin-top:8px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.4;">${item.desc}</p>
+                    <b style="font-size: 16px; color: var(--text-color);">${item.title}</b><br>
+                    ${tagsHtml}
+                    <p style="margin-top:10px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.4;">${item.desc}</p>
                  </div>`;
     });
+    
     const container = document.getElementById('wiki-content');
     if (container) container.innerHTML = html;
 }
-
 function updateStatsUI() {
     if (!state.profile) return; 
     document.getElementById('profileNameDisplay').innerText = state.profile.name || "Piesek";
