@@ -61,22 +61,22 @@ export function initApp() {
     loadInbox();
     updateStatsUI();
     fetchWeather(); 
+
+    // --- SEEDING: Odkomentuj linię poniżej raz, by wgrać wiedzę ---
+    // seedWiki(); 
 }
 
 function fetchWeather() {
     if(state.location && state.location.lat) {
-        // Pobieramy dane bieżące + prognozę na 3 dni
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.location.lat}&longitude=${state.location.lng}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
         .then(r=>r.json()).then(d => {
             const tempEl = document.getElementById('weather-temp');
             if(tempEl) tempEl.innerText = `${Math.round(d.current_weather.temperature)}°C`;
             
-            // Renderowanie okienka prognozy na 3 dni
             const contentEl = document.getElementById('weather-forecast-content');
             if(contentEl) {
                 let forecastHtml = `<div style="text-align:center; margin-bottom:15px;"><b style="font-size:20px;">Dziś: ${Math.round(d.current_weather.temperature)}°C ${getWeatherIcon(d.current_weather.weathercode)}</b></div>`;
                 forecastHtml += `<div style="display:flex; justify-content:space-around; border-top:1px solid var(--border-color); padding-top:15px;">`;
-                
                 for(let i=0; i<3; i++) {
                     const date = new Date(d.daily.time[i]).toLocaleDateString('pl-PL', {weekday: 'short'});
                     forecastHtml += `
@@ -213,7 +213,7 @@ document.addEventListener('change', (e) => {
     }
 });
 
-// --- NOWY SILNIK WIEDZY (FIRESTORE) ---
+// --- SILNIK WIEDZY (FIRESTORE) ---
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -295,20 +295,29 @@ function loadSettings() {
     document.documentElement.style.setProperty('--base-font-size', font);
 }
 
-// --- SEEDING (URUCHOM RAZ I USUŃ) ---
+// --- POPRAWIONY SEEDING ---
 async function seedWiki() {
-    const categories = ['rasy', 'trening', 'sytuacje'];
-    for (const cat of categories) {
-        const items = WIKI[cat] || [];
+    // Mapowanie angielskich nazw z pliku na polskie kategorie w bazie
+    const mapping = {
+        'rasy': WIKI.breeds,
+        'trening': WIKI.training,
+        'sytuacje': WIKI.situations
+    };
+    
+    for (const [category, items] of Object.entries(mapping)) {
+        if (!items) continue;
         for (const item of items) {
             await db.collection("wiki").add({
-                ...item, category: cat, likes: [], createdAt: Date.now()
+                title: item.name || item.title,
+                desc: item.desc,
+                tags: item.tags || (item.energy ? [item.energy] : []),
+                category: category,
+                likes: [],
+                createdAt: Date.now()
             });
         }
     }
     window.Waggle.showToast("✅ Wiedza wgrana do bazy!");
 }
-
-seedWiki(); // <--- ODKOMENTUJ TO RAZ, ODŚWIEŻ STRONĘ I ZAKOMENTUJ PONOWNIE!
 
 initAuth(initApp);
