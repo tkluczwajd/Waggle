@@ -5,7 +5,7 @@ const IMGBB_KEY = "af2b35f5ca54dd9c8fc91595fe525de9";
 
 export let currentFilter = 'all';
 let currentPosts = []; 
-let currentCommentsUnsub = null; // Przechowuje nasłuchiwacz komentarzy
+let currentCommentsUnsub = null; 
 
 export function setPostFilter(filter) {
     currentFilter = filter;
@@ -59,10 +59,9 @@ function renderPosts() {
             </div>`;
         }
 
-        // --- LOGIKA LAJKÓW ---
         const likesCount = p.likes ? p.likes.length : 0;
         const hasLiked = p.likes && p.likes.includes(state.user?.uid);
-        const commentCount = p.commentCount || 0; // Opcjonalnie
+        const commentCount = p.commentCount || 0; // ODCZYT LICZNIKA KOMENTARZY
 
         html += `<div class="post-card" style="${cardStyle}">
                     ${eventBanner}
@@ -75,7 +74,7 @@ function renderPosts() {
                             ${hasLiked ? '❤️' : '🤍'} ${likesCount > 0 ? likesCount : 'Lubię to'}
                         </span>
                         <span style="font-size:13px; color:var(--text-muted); font-weight:800; cursor:pointer;" onclick="window.Waggle.openPostComments('${p.id}')">
-                            💬 Komentarze
+                            💬 ${commentCount > 0 ? commentCount + ' Komentarze' : 'Komentarze'}
                         </span>
                     </div>
                 </div>`; 
@@ -86,7 +85,6 @@ function renderPosts() {
     if(container) container.innerHTML = html; 
 }
 
-// Obsługa kliknięcia "Lubię to" pod Postem
 export function togglePostLike(postId) {
     if (!state.user) return;
     const ref = db.collection("posts").doc(postId);
@@ -100,14 +98,12 @@ export function togglePostLike(postId) {
     });
 }
 
-// Obsługa okienka z Komentarzami
 export function openPostComments(postId) {
-    state.currentCommentPostId = postId; // Zapisujemy ID posta w pamięci globalnej
+    state.currentCommentPostId = postId; 
     document.getElementById('comments-modal').style.display = 'flex';
     
-    if(currentCommentsUnsub) currentCommentsUnsub(); // Odpinamy stary nasłuch
+    if(currentCommentsUnsub) currentCommentsUnsub(); 
     
-    // Podpinamy nasłuchiwanie nowych komentarzy z Firebase w czasie rzeczywistym
     currentCommentsUnsub = db.collection("posts").doc(postId).collection("comments").orderBy("timestamp", "asc").onSnapshot(snap => {
         let html = "";
         snap.forEach(doc => {
@@ -126,19 +122,25 @@ export function openPostComments(postId) {
         const list = document.getElementById('comments-list');
         if(list) {
             list.innerHTML = html || "<p style='text-align:center; color:var(--text-muted); padding-top:20px;'>Brak komentarzy. Bądź pierwszy!</p>";
-            list.scrollTop = list.scrollHeight; // Zjeżdżamy na sam dół listy
+            list.scrollTop = list.scrollHeight; 
         }
     });
 }
 
-// Dodawanie nowego komentarza
 export function addPostComment(text) {
     if(!state.user || !state.currentCommentPostId || !text.trim()) return;
-    db.collection("posts").doc(state.currentCommentPostId).collection("comments").add({
+    const postId = state.currentCommentPostId;
+    
+    db.collection("posts").doc(postId).collection("comments").add({
         uid: state.user.uid,
         author: state.profile?.name || "Piesek",
         text: text.trim(),
         timestamp: fb.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        // ZWIĘKSZAMY LICZNIK KOMENTARZY W POŚCIE
+        db.collection("posts").doc(postId).update({
+            commentCount: fb.firestore.FieldValue.increment(1)
+        });
     });
 }
 
@@ -173,7 +175,8 @@ export async function saveCommunityPost(content, imageUrl = null, isEvent = fals
         imageUrl, 
         isEvent,
         eventDate,
-        likes: [], // Inicjujemy puste lajki
+        likes: [], 
+        commentCount: 0, // Zaczynamy od 0 komentarzy
         timestamp: fb.firestore.FieldValue.serverTimestamp() 
     });
 }
