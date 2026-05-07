@@ -7,6 +7,7 @@ let alertMarkers = {};
 let activeAlertsList = []; 
 let dismissedAlerts = JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
 let parksLoaded = false; 
+export let nearbyPlaces = []; // Zmienna eksportowana do użycia w liście miejsc
 
 export function initMap() {
     if (state.map) return;
@@ -17,7 +18,6 @@ export function initMap() {
         const { latitude, longitude } = pos.coords;
         state.location = { lat: latitude, lng: longitude };
         
-        // Zbuduj ikonę ze swoim zdjęciem profilowym
         const myAvatarSrc = state.profile?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
         const myIcon = L.divIcon({ 
             className: '', 
@@ -103,19 +103,46 @@ window.showAllAlertsPopup = function(nearbyAlerts) {
 
 async function loadParks(lat, lng) {
     if (parksLoaded) return; parksLoaded = true;
-    const query = `[out:json];(node["leisure"="park"](around:3000,${lat},${lng});way["leisure"="park"](around:3000,${lat},${lng});node["leisure"="dog_park"](around:3000,${lat},${lng});way["leisure"="dog_park"](around:3000,${lat},${lng}););out center;`;
+    const query = `[out:json];(node["leisure"="park"](around:5000,${lat},${lng});way["leisure"="park"](around:5000,${lat},${lng});node["leisure"="dog_park"](around:5000,${lat},${lng});way["leisure"="dog_park"](around:5000,${lat},${lng}););out center;`;
+    
     try {
         const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
         const data = await res.json();
+        
+        nearbyPlaces = []; // Czyścimy przed załadowaniem
         const parkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🌳</div>', iconSize: [24,24] });
         const dogParkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🐕</div>', iconSize: [24,24] });
+
         data.elements.forEach(el => {
             const pLat = el.lat || el.center.lat; const pLon = el.lon || el.center.lon;
             const isDogPark = el.tags && el.tags.leisure === 'dog_park';
             const name = el.tags && el.tags.name ? el.tags.name : (isDogPark ? "Wybieg dla psów" : "Park / Zielen");
+            
+            // Obliczamy dystans dla listy
+            const distance = getDistance(lat, lng, pLat, pLon);
+            
+            // Zapisujemy miejsce do użycia w widoku "Miejsca"
+            nearbyPlaces.push({
+                name: name,
+                isDogPark: isDogPark,
+                lat: pLat,
+                lng: pLon,
+                distance: distance
+            });
+
+            // Rysujemy na mapie
             L.marker([pLat, pLon], { icon: isDogPark ? dogParkIcon : parkIcon }).addTo(state.map)
              .bindPopup(`<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLon}" target="_blank" style="color:var(--secondary); font-weight:800; text-decoration:none; display:inline-block; margin-top:5px;">Nawiguj tutaj 🧭</a>`);
         });
+
+        // Sortujemy miejsca od najbliższego
+        nearbyPlaces.sort((a, b) => a.distance - b.distance);
+        
+        // Jeśli widok "places" jest aktywny, od razu go wyrenderuj
+        if (window.Waggle && window.Waggle.renderPlaces) {
+            window.Waggle.renderPlaces();
+        }
+
     } catch(err) { parksLoaded = false; }
 }
 
@@ -131,13 +158,11 @@ function listenForWalks() {
             const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
             const bColor = isMe ? 'var(--primary)' : 'white';
             
-            // Pasek na górze (Ty też się tu pojawiasz!)
             html += `<div class="walk-card" onclick="window.Waggle.centerOnTarget(${d.lat}, ${d.lng})">
                         <img src="${avatarSrc}" style="border: 3px solid ${bColor};">
                         <div style="font-size:12px; font-weight:900; margin-top:5px;">${isMe ? 'Ty' : d.name}</div>
                      </div>`;
             
-            // Markery na mapie (tylko Inni, Ty masz swój świecący marker zrobiony wyżej)
             if(!isMe) {
                 if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
                 else dogMarkers[d.uid] = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: '', html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, iconSize: [40, 40] }) }).addTo(state.map);
