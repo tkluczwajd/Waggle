@@ -10,20 +10,29 @@ export function initMap() {
     state.map = L.map('map', { zoomControl: false }).setView([52.2, 21.0], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(state.map);
 
-    navigator.geolocation.watchPosition(pos => {
+navigator.geolocation.watchPosition(pos => {
         const { latitude, longitude } = pos.coords;
         state.location = { lat: latitude, lng: longitude };
+        
+        // Zbuduj ikonę ze swoim zdjęciem profilowym
+        const myAvatarSrc = state.profile?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+        const myIcon = L.divIcon({ 
+            className: '', 
+            html: `<div style="width:50px;height:50px;border-radius:50%;border:3px solid var(--secondary);box-shadow: 0 0 20px var(--secondary);overflow:hidden;background:white;"><img src="${myAvatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, 
+            iconSize: [50, 50] 
+        });
+
         if (!myMarker) {
-            myMarker = L.circleMarker([latitude, longitude], { radius: 10, color: '#fff', fillColor: '#34ace0', fillOpacity: 1, weight: 3 }).addTo(state.map);
+            myMarker = L.marker([latitude, longitude], { icon: myIcon, zIndexOffset: 1000 }).addTo(state.map);
             state.map.setView([latitude, longitude], 15);
             loadParksAndRuns(latitude, longitude); 
-        } else { myMarker.setLatLng([latitude, longitude]); }
+        } else { 
+            myMarker.setLatLng([latitude, longitude]).setIcon(myIcon); 
+        }
+        
         if(state.isFollowing && state.map) state.map.panTo([latitude, longitude]);
         updateAlertHubUI(); 
     }, err => console.warn("GPS Error:", err), { enableHighAccuracy: true });
-
-    listenForWalks(); listenForAlerts(); 
-}
 
 function getDistance(lat1, lon1, lat2, lon2) { 
     const R = 6371; const dLat = (lat2-lat1) * Math.PI / 180; const dLon = (lon2-lon1) * Math.PI / 180; 
