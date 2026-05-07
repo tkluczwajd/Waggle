@@ -1,162 +1,144 @@
-import { state, clearListeners } from './core/state.js';
-import { auth, db } from './core/firebase.js';
-import { initAuth } from './modules/auth.js';
-import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
-import { startWalk, stopWalk } from './modules/walk.js';
-import { loadPosts, saveCommunityPost, uploadImage, openLightbox } from './modules/posts.js';
-import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
-import { WIKI } from './data/wikiData.js'; 
+import { state, addListener } from '../core/state.js';
+import { db } from '../core/firebase.js';
 
-window.Waggle = { openChat, closeActiveChat, centerOnTarget, openLightbox, deletePost: (id) => db.collection("posts").doc(id).delete() };
+let myMarker = null; let dogMarkers = {}; let alertMarkers = {};
+let activeAlertsList = []; let dismissedAlerts = JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
+let parksLoaded = false; 
 
-let pendingImageFile = null;
+export function initMap() {
+    if (state.map) return;
+    state.map = L.map('map', { zoomControl: false }).setView([52.2, 21.0], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(state.map);
 
-export function initApp() {
-    loadSettings(); 
-    initMap();
-    loadPosts();
-    loadInbox();
-    updateStatsUI();
+    navigator.geolocation.watchPosition(pos => {
+        const { latitude, longitude } = pos.coords;
+        state.location = { lat: latitude, lng: longitude };
+        if (!myMarker) {
+            myMarker = L.circleMarker([latitude, longitude], { radius: 10, color: '#fff', fillColor: '#34ace0', fillOpacity: 1, weight: 3 }).addTo(state.map);
+            state.map.setView([latitude, longitude], 15);
+            loadParksAndRuns(latitude, longitude); 
+        } else { myMarker.setLatLng([latitude, longitude]); }
+        if(state.isFollowing && state.map) state.map.panTo([latitude, longitude]);
+        updateAlertHubUI(); 
+    }, err => console.warn("GPS Error:", err), { enableHighAccuracy: true });
+
+    listenForWalks(); listenForAlerts(); 
 }
 
-function switchView(viewId) {
-    clearListeners(); 
-    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('view-' + viewId).classList.add('active');
-    document.querySelector(`.nav-item[data-view="${viewId}"]`).classList.add('active');
-    if (viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 300);
-    if (viewId === 'community') loadPosts();
-    if (viewId === 'chat') loadInbox();
-    if (viewId === 'wiki') renderWiki('rasy');
+function getDistance(lat1, lon1, lat2, lon2) { 
+    const R = 6371; const dLat = (lat2-lat1) * Math.PI / 180; const dLon = (lon2-lon1) * Math.PI / 180; 
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
 }
 
-document.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
-    const navItem = e.target.closest('.nav-item');
-    if (navItem) switchView(navItem.getAttribute('data-view'));
+function listenForAlerts() {
+    const unsub = db.collection("alerts").onSnapshot(snap => {
+        Object.values(alertMarkers).forEach(m => state.map.removeLayer(m));
+        alertMarkers = {}; activeAlertsList = [];
 
-    // UŻYwamy e.target.closest żeby kliknięcie W TEKST przycisku też działało!
-    if (e.target.closest('#centerBtn')) centerOnMe();
-    if (e.target.closest('#startWalkBtn')) startWalk();
-    if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
-    if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
-
-    if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
-    
-    if (e.target.closest('#removePostImageBtn')) {
-        pendingImageFile = null;
-        document.getElementById('post-image-preview-container').style.display = 'none';
-    }
-
-    if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
-
-    if (e.target.closest('#publishPostBtn')) {
-        const btn = e.target.closest('#publishPostBtn');
-        const text = document.getElementById('postContent').value.trim();
-        if(text.length < 3) return alert("Napisz coś więcej!");
-
-        btn.disabled = true; btn.innerText = "WYSYŁANIE...";
-        try {
-            let finalUrl = null;
-            if(pendingImageFile) finalUrl = await uploadImage(pendingImageFile);
-            await saveCommunityPost(text, finalUrl);
-            
-            document.getElementById('post-creator-modal').style.display = 'none';
-            document.getElementById('postContent').value = '';
-            pendingImageFile = null;
-            document.getElementById('post-image-preview-container').style.display = 'none';
-        } catch(err) { alert("Błąd wysyłania!"); } 
-        finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
-    }
-
-    // WIKI (renderowanie zakładek)
-    if (e.target.classList.contains('wiki-tab-btn')) {
-        document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        renderWiki(e.target.getAttribute('data-tab'));
-    }
-
-    // PRZYCISKI PROFILU (Teraz w 100% działają)
-    if (e.target.closest('#openEditProfileBtn')) {
-        const p = state.profile || {};
-        document.getElementById('setupName').value = p.name || "";
-        document.getElementById('setupCity').value = p.city || "";
-        document.getElementById('setupBreed').value = p.breed || "";
-        document.getElementById('setupRoutine').value = p.routine || "brak";
-        document.getElementById('profile-setup-modal').style.display = 'flex';
-    }
-    if (e.target.closest('#saveProfileBtn')) {
-        const d = { 
-            name: document.getElementById('setupName').value.trim(), 
-            city: document.getElementById('setupCity').value.trim(), 
-            breed: document.getElementById('setupBreed').value.trim(), 
-            routine: document.getElementById('setupRoutine').value 
-        };
-        db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(() => {
-            state.profile = {...state.profile, ...d};
-            document.getElementById('profile-setup-modal').style.display = 'none';
-            updateStatsUI();
+        snap.forEach(doc => {
+            const a = doc.data();
+            if(Date.now() - a.createdAt < 86400000) {
+                const marker = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: `<div style="background:var(--danger); color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:18px; border:3px solid white; box-shadow:var(--soft-shadow); box-sizing: border-box;">⚠️</div>`, iconSize:[32,32] }) })
+                .addTo(state.map).bindPopup(`<b>Zagrożenie:</b><br>${a.text}`);
+                alertMarkers[doc.id] = marker; activeAlertsList.push({ id: doc.id, ...a });
+            }
         });
-    }
-
-    if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
-    
-    if (e.target.closest('#saveSettingsBtn')) {
-        const theme = document.getElementById('settingTheme').value;
-        const font = document.getElementById('settingFontSize').value;
-        localStorage.setItem('waggle_theme', theme);
-        localStorage.setItem('waggle_font', font);
-        loadSettings(); 
-        document.getElementById('settings-modal').style.display = 'none';
-    }
-
-    if (e.target.closest('#loginBtn')) auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(err => alert(err.message));
-    if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
-});
-
-document.addEventListener('change', (e) => {
-    if(e.target.id === 'postImageInput') {
-        const file = e.target.files[0];
-        if(file) {
-            pendingImageFile = file;
-            const reader = new FileReader();
-            reader.onload = (ex) => {
-                document.getElementById('post-image-preview').src = ex.target.result;
-                document.getElementById('post-image-preview-container').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-});
-
-function renderWiki(tab) {
-    let html = "";
-    const items = WIKI[tab] || [];
-    items.forEach(item => {
-        html += `<div class="post-card"><b>${item.name || item.title}</b><p style="margin-top:5px; font-weight:600; font-size:13px; color:var(--text-muted);">${item.desc}</p></div>`;
+        updateAlertHubUI();
     });
-    const container = document.getElementById('wiki-content');
-    if (container) container.innerHTML = html;
+    addListener(unsub);
 }
 
-function updateStatsUI() {
-    if (!state.profile) return; 
-    document.getElementById('profileNameDisplay').innerText = state.profile.name || "Piesek";
-    document.getElementById('statWalks').innerText = state.profile.walkCount || 0;
-    document.getElementById('statDist').innerText = ((state.profile.walkCount || 0) * 1.2).toFixed(1);
+function updateAlertHubUI() {
+    if (!state.location.lat) return;
+    const nearby = activeAlertsList.filter(a => getDistance(state.location.lat, state.location.lng, a.lat, a.lng) < 5);
+    const unread = nearby.filter(a => !dismissedAlerts.includes(a.id));
+    const pill = document.getElementById('active-alert-pill');
     
-    // Gwarancja pokazania awatara
-    const avatarEl = document.getElementById('profileAvatar');
-    if(avatarEl) avatarEl.src = state.profile.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+    if (!pill) return;
+    if (nearby.length > 0) {
+        pill.style.display = 'flex';
+        pill.onclick = () => showAllAlertsPopup(nearby);
+        if (unread.length > 0) {
+            pill.style.background = 'var(--danger)'; pill.style.color = 'white';
+            pill.innerHTML = `⚠️ ${unread.length} NOWE ZAGROŻENIA!`;
+            pill.style.animation = 'pulse-red 1.5s infinite'; 
+        } else {
+            pill.style.background = 'var(--panel-bg)'; pill.style.color = 'var(--danger)';
+            pill.innerHTML = `⚠️ ${nearby.length} w okolicy`; pill.style.animation = 'none';
+        }
+    } else { pill.style.display = 'none'; }
 }
 
-function loadSettings() {
-    const theme = localStorage.getItem('waggle_theme') || 'light';
-    const font = localStorage.getItem('waggle_font') || '14px';
-    if (theme === 'dark') document.body.classList.add('dark-mode');
-    else document.body.classList.remove('dark-mode');
-    document.documentElement.style.setProperty('--base-font-size', font);
+window.showAllAlertsPopup = function(nearbyAlerts) {
+    let html = "";
+    nearbyAlerts.forEach(a => {
+        const dist = getDistance(state.location.lat, state.location.lng, a.lat, a.lng).toFixed(1);
+        
+        // ZNACZNIK CZASU DLA ALERTU
+        const diffMin = Math.round((Date.now() - a.createdAt) / 60000);
+        let timeText = diffMin < 60 ? `${diffMin} min temu` : `${Math.floor(diffMin/60)} godz. temu`;
+
+        html += `<div style="padding: 15px; border-radius: 16px; background: var(--bg-color); margin-bottom: 10px; border-left: 4px solid var(--danger);">
+                    <b style="color: var(--danger); font-size: 15px;">${a.text}</b><br>
+                    <small style="color: var(--text-muted); font-weight: 800;">Około ${dist} km stąd • ${timeText}</small>
+                 </div>`;
+        if(!dismissedAlerts.includes(a.id)) dismissedAlerts.push(a.id);
+    });
+    document.getElementById('alert-hub-list').innerHTML = html;
+    document.getElementById('alert-hub-modal').style.display = 'flex';
+    localStorage.setItem('dismissedAlerts', JSON.stringify(dismissedAlerts));
+    updateAlertHubUI();
+};
+
+async function loadParks(lat, lng) {
+    if (parksLoaded) return; parksLoaded = true;
+    const query = `[out:json];(node["leisure"="park"](around:3000,${lat},${lng});way["leisure"="park"](around:3000,${lat},${lng});node["leisure"="dog_park"](around:3000,${lat},${lng});way["leisure"="dog_park"](around:3000,${lat},${lng}););out center;`;
+    try {
+        const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        const parkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🌳</div>', iconSize: [24,24] });
+        const dogParkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🐕</div>', iconSize: [24,24] });
+
+        data.elements.forEach(el => {
+            const pLat = el.lat || el.center.lat; const pLon = el.lon || el.center.lon;
+            const isDogPark = el.tags && el.tags.leisure === 'dog_park';
+            const name = el.tags && el.tags.name ? el.tags.name : (isDogPark ? "Wybieg dla psów" : "Park / Zielen");
+            L.marker([pLat, pLon], { icon: isDogPark ? dogParkIcon : parkIcon })
+             .addTo(state.map)
+             .bindPopup(`<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLon}" target="_blank" style="color:var(--secondary); font-weight:800; text-decoration:none; display:inline-block; margin-top:5px;">Nawiguj tutaj 🧭</a>`);
+        });
+    } catch(err) { parksLoaded = false; }
 }
 
-initAuth(initApp);
+function loadParksAndRuns(lat, lng) { loadParks(lat, lng); }
+
+function listenForWalks() {
+    const unsub = db.collection("walks").onSnapshot(snap => {
+        let html = ""; const activeUids = new Set();
+        snap.forEach(doc => {
+            const d = doc.data();
+            activeUids.add(d.uid);
+            const isMe = (d.uid === state.user.uid);
+            
+            const bColor = isMe ? 'var(--primary)' : 'white';
+            const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+            
+            html += `<div class="walk-card" onclick="Waggle.centerOnTarget(${d.lat}, ${d.lng})">
+                        <img src="${avatarSrc}" style="border: 3px solid ${bColor};">
+                        <div style="font-size:12px; font-weight:900; margin-top:5px;">${isMe ? 'Ty' : d.name}</div>
+                     </div>`;
+            
+            if(!isMe) {
+                if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
+                else dogMarkers[d.uid] = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: '', html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, iconSize: [40, 40] }) }).addTo(state.map);
+            }
+        });
+        
+        Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
+        document.getElementById('stories-container').innerHTML = html || "<p style='font-size:12px;'>Cisza w okolicy.</p>";
+    }); addListener(unsub);
+}
+
+export function centerOnMe() { state.isFollowing = true; state.map.flyTo([state.location.lat, state.location.lng], 15); }
+export function centerOnTarget(lat, lng) { state.isFollowing = false; state.map.flyTo([lat, lng], 16); document.querySelector('.nav-item[data-view="map"]').click(); }
