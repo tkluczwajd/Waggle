@@ -35,7 +35,6 @@ function listenForAlerts() {
     const unsub = db.collection("alerts").onSnapshot(snap => {
         Object.values(alertMarkers).forEach(m => state.map.removeLayer(m));
         alertMarkers = {}; activeAlertsList = [];
-
         snap.forEach(doc => {
             const a = doc.data();
             if(Date.now() - a.createdAt < 86400000) {
@@ -54,14 +53,12 @@ function updateAlertHubUI() {
     const nearby = activeAlertsList.filter(a => getDistance(state.location.lat, state.location.lng, a.lat, a.lng) < 5);
     const unread = nearby.filter(a => !dismissedAlerts.includes(a.id));
     const pill = document.getElementById('active-alert-pill');
-    
     if (!pill) return;
     if (nearby.length > 0) {
         pill.style.display = 'flex';
-        pill.onclick = () => showAllAlertsPopup(nearby);
+        pill.onclick = () => window.showAllAlertsPopup(nearby);
         if (unread.length > 0) {
-            pill.style.background = 'var(--danger)'; pill.style.color = 'white';
-            pill.innerHTML = `⚠️ ${unread.length} NOWE ZAGROŻENIA!`;
+            pill.style.background = 'var(--danger)'; pill.innerHTML = `⚠️ ${unread.length} NOWE ZAGROŻENIA!`;
             pill.style.animation = 'pulse-red 1.5s infinite'; 
         } else {
             pill.style.background = 'var(--panel-bg)'; pill.style.color = 'var(--danger)';
@@ -74,11 +71,8 @@ window.showAllAlertsPopup = function(nearbyAlerts) {
     let html = "";
     nearbyAlerts.forEach(a => {
         const dist = getDistance(state.location.lat, state.location.lng, a.lat, a.lng).toFixed(1);
-        
-        // ZNACZNIK CZASU DLA ALERTU
         const diffMin = Math.round((Date.now() - a.createdAt) / 60000);
         let timeText = diffMin < 60 ? `${diffMin} min temu` : `${Math.floor(diffMin/60)} godz. temu`;
-
         html += `<div style="padding: 15px; border-radius: 16px; background: var(--bg-color); margin-bottom: 10px; border-left: 4px solid var(--danger);">
                     <b style="color: var(--danger); font-size: 15px;">${a.text}</b><br>
                     <small style="color: var(--text-muted); font-weight: 800;">Około ${dist} km stąd • ${timeText}</small>
@@ -99,13 +93,11 @@ async function loadParks(lat, lng) {
         const data = await res.json();
         const parkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🌳</div>', iconSize: [24,24] });
         const dogParkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🐕</div>', iconSize: [24,24] });
-
         data.elements.forEach(el => {
             const pLat = el.lat || el.center.lat; const pLon = el.lon || el.center.lon;
             const isDogPark = el.tags && el.tags.leisure === 'dog_park';
             const name = el.tags && el.tags.name ? el.tags.name : (isDogPark ? "Wybieg dla psów" : "Park / Zielen");
-            L.marker([pLat, pLon], { icon: isDogPark ? dogParkIcon : parkIcon })
-             .addTo(state.map)
+            L.marker([pLat, pLon], { icon: isDogPark ? dogParkIcon : parkIcon }).addTo(state.map)
              .bindPopup(`<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLon}" target="_blank" style="color:var(--secondary); font-weight:800; text-decoration:none; display:inline-block; margin-top:5px;">Nawiguj tutaj 🧭</a>`);
         });
     } catch(err) { parksLoaded = false; }
@@ -119,22 +111,22 @@ function listenForWalks() {
         snap.forEach(doc => {
             const d = doc.data();
             activeUids.add(d.uid);
-            const isMe = (d.uid === state.user.uid);
-            
-            const bColor = isMe ? 'var(--primary)' : 'white';
+            const isMe = (d.uid === state.user?.uid);
             const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+            const bColor = isMe ? 'var(--primary)' : 'white';
             
-            html += `<div class="walk-card" onclick="Waggle.centerOnTarget(${d.lat}, ${d.lng})">
+            // Pasek na górze (Ty też się tu pojawiasz!)
+            html += `<div class="walk-card" onclick="window.Waggle.centerOnTarget(${d.lat}, ${d.lng})">
                         <img src="${avatarSrc}" style="border: 3px solid ${bColor};">
                         <div style="font-size:12px; font-weight:900; margin-top:5px;">${isMe ? 'Ty' : d.name}</div>
                      </div>`;
             
+            // Markery na mapie (tylko Inni, Ty masz kropkę GPS)
             if(!isMe) {
                 if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
                 else dogMarkers[d.uid] = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: '', html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, iconSize: [40, 40] }) }).addTo(state.map);
             }
         });
-        
         Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
         document.getElementById('stories-container').innerHTML = html || "<p style='font-size:12px;'>Cisza w okolicy.</p>";
     }); addListener(unsub);
