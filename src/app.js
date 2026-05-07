@@ -1,10 +1,10 @@
 import { state, clearListeners } from './core/state.js';
 import { auth, db, fb } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
-import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; // Dodano nearbyPlaces
+import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; 
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
-import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
+import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers } from './modules/chat.js';
 
 window.Waggle = window.Waggle || {};
 window.Waggle.showToast = (msg) => {
@@ -37,6 +37,7 @@ window.Waggle.openLightbox = openLightbox;
 window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
 window.Waggle.togglePostLike = togglePostLike;
 window.Waggle.openPostComments = openPostComments;
+window.Waggle.searchUsers = searchUsers;
 
 window.Waggle.openUserMenu = (uid, name, avatar) => {
     if(uid === state.user.uid) return; 
@@ -51,7 +52,6 @@ window.Waggle.openUserMenu = (uid, name, avatar) => {
     document.getElementById('user-action-modal').style.display = 'flex';
 };
 
-// NOWOŚĆ: Funkcja Renderująca Miejsca dla Psów
 window.Waggle.renderPlaces = () => {
     const container = document.getElementById('places-container');
     if (!container) return;
@@ -76,14 +76,12 @@ window.Waggle.renderPlaces = () => {
                         <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${type} • ${place.distance.toFixed(1)} km stąd</span>
                     </div>
                 </div>
-                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color};" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color};" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$$${place.lat},${place.lng}', '_blank')">Prowadź</button>
             </div>
         `;
     });
-    
     container.innerHTML = html;
 };
-
 
 let pendingImageFile = null;
 
@@ -136,8 +134,15 @@ function switchView(viewId) {
     if (viewId === 'community') loadPosts();
     if (viewId === 'chat') loadInbox();
     if (viewId === 'wiki') renderWiki('rasy'); 
-    if (viewId === 'places') window.Waggle.renderPlaces(); // ODPALANIE WIDOKU MIEJSC
+    if (viewId === 'places') window.Waggle.renderPlaces();
 }
+
+// Zdarzenia INPUT dla Wyszukiwarki psów na żywo
+document.addEventListener('input', (e) => {
+    if (e.target.id === 'userSearchInput') {
+        window.Waggle.searchUsers(e.target.value);
+    }
+});
 
 document.addEventListener('change', (e) => {
     if(e.target.id === 'postImageInput') {
@@ -233,6 +238,21 @@ document.addEventListener('click', async (e) => {
         }
     }
 
+    // --- PRZYCISKI ZAKŁADEK W CZACIE ---
+    if (e.target.closest('#chatTabInbox')) {
+        document.getElementById('chatTabInbox').style.background = 'white';
+        document.getElementById('chatTabSearch').style.background = 'transparent';
+        document.getElementById('userSearchInput').style.display = 'none';
+        loadInbox();
+    }
+    if (e.target.closest('#chatTabSearch')) {
+        document.getElementById('chatTabSearch').style.background = 'white';
+        document.getElementById('chatTabInbox').style.background = 'transparent';
+        document.getElementById('userSearchInput').style.display = 'block';
+        document.getElementById('userSearchInput').value = '';
+        window.Waggle.searchUsers(''); // Odpalenie podpowiedzi o wyszukiwaniu
+    }
+
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
@@ -276,7 +296,30 @@ document.addEventListener('click', async (e) => {
         if (input && input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
     }
     if (e.target.closest('#closeChatBtn')) closeActiveChat();
-    if (e.target.closest('#loginBtn')) auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(err => alert(err.message));
+    
+    // --- NAPRAWA LOGOWANIA I REJESTRACJI ---
+    if (e.target.closest('#loginBtn')) {
+        const email = document.getElementById('authEmail').value;
+        const pass = document.getElementById('authPass').value;
+        auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+    }
+    
+    if (e.target.closest('#registerBtn')) {
+        const email = document.getElementById('authEmail').value;
+        const pass = document.getElementById('authPass').value;
+        auth.createUserWithEmailAndPassword(email, pass)
+            .then(() => {
+                // Po rejestracji dodajmy profil z pustymi danymi, żeby był w bazie "users" i mógł być wyszukiwany!
+                db.collection("users").doc(auth.currentUser.uid).set({
+                    name: "Nowy Piesek",
+                    city: "",
+                    breed: ""
+                });
+                window.location.reload();
+            })
+            .catch(err => alert("Błąd rejestracji: " + err.message));
+    }
+    
     if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
 });
 
