@@ -17,10 +17,12 @@ export function loadPosts() {
             }
 
             const avatarSrc = p.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-            let postImgHtml = p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%; border-radius:16px; margin:15px 0; box-shadow:var(--soft-shadow); cursor:pointer;" onclick="window.Waggle.openLightbox('${p.imageUrl}')">` : "";
+            
+            // TUTAJ ZMIANA: height: 200px i object-fit: cover sprawia, że zdjęcia są równe i nie zżerają ekranu
+            let postImgHtml = p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%; height:200px; object-fit:cover; border-radius:16px; margin:15px 0; box-shadow:var(--soft-shadow); cursor:pointer;" onclick="window.Waggle.openLightbox('${p.imageUrl}')">` : "";
+            
             let delBtn = (p.uid === state.user?.uid || isAdmin) ? `<button onclick="window.Waggle.deletePost('${doc.id}')" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; padding:5px;">🗑️</button>` : "";
             
-            // Klikalny nagłówek z awatarem
             let userHeader = `<button onclick="window.Waggle.openUserMenu('${p.uid}', '${p.author || 'Piesek'}', '${avatarSrc}')" style="background:none; border:none; padding:0; cursor:pointer; text-align:left; display:flex; align-items:center; gap:12px; width:100%;">
                 <img src="${avatarSrc}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
                 <div style="line-height:1.2;">
@@ -36,7 +38,7 @@ export function loadPosts() {
                         ${postImgHtml}
                         <div style="border-top: 1px solid var(--border-color); margin-top: 15px; padding-top: 12px; display:flex; gap: 20px;">
                             <span style="font-size:13px; color:var(--text-muted); font-weight:800; cursor:pointer;" onclick="window.Waggle.showToast('Lubię to! ❤️')">🤍 Lubię to</span>
-                            <span style="font-size:13px; color:var(--text-muted); font-weight:800; cursor:pointer;" onclick="window.Waggle.showToast('Komentarze w budowie!')">💬 Pokaż komentarze</span>
+                            <span style="font-size:13px; color:var(--text-muted); font-weight:800; cursor:pointer;" onclick="window.Waggle.showToast('Funkcja komentarzy wkrótce!')">💬 Pokaż komentarze</span>
                         </div>
                     </div>`; 
         }); 
@@ -77,7 +79,6 @@ export async function saveCommunityPost(content, imageUrl = null) {
     });
 }
 
-// BRAKUJĄCA FUNKCJA - to ona wyrzucała błąd z Twojego screena!
 export function openLightbox(url) {
     const img = document.getElementById('lightbox-img');
     const modal = document.getElementById('lightbox-modal');
