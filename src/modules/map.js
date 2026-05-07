@@ -1,8 +1,11 @@
 import { state, addListener } from '../core/state.js';
 import { db } from '../core/firebase.js';
 
-let myMarker = null; let dogMarkers = {}; let alertMarkers = {};
-let activeAlertsList = []; let dismissedAlerts = JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
+let myMarker = null; 
+let dogMarkers = {}; 
+let alertMarkers = {};
+let activeAlertsList = []; 
+let dismissedAlerts = JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
 let parksLoaded = false; 
 
 export function initMap() {
@@ -10,7 +13,7 @@ export function initMap() {
     state.map = L.map('map', { zoomControl: false }).setView([52.2, 21.0], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(state.map);
 
-navigator.geolocation.watchPosition(pos => {
+    navigator.geolocation.watchPosition(pos => {
         const { latitude, longitude } = pos.coords;
         state.location = { lat: latitude, lng: longitude };
         
@@ -33,6 +36,10 @@ navigator.geolocation.watchPosition(pos => {
         if(state.isFollowing && state.map) state.map.panTo([latitude, longitude]);
         updateAlertHubUI(); 
     }, err => console.warn("GPS Error:", err), { enableHighAccuracy: true });
+
+    listenForWalks(); 
+    listenForAlerts(); 
+}
 
 function getDistance(lat1, lon1, lat2, lon2) { 
     const R = 6371; const dLat = (lat2-lat1) * Math.PI / 180; const dLon = (lon2-lon1) * Math.PI / 180; 
@@ -130,7 +137,7 @@ function listenForWalks() {
                         <div style="font-size:12px; font-weight:900; margin-top:5px;">${isMe ? 'Ty' : d.name}</div>
                      </div>`;
             
-            // Markery na mapie (tylko Inni, Ty masz kropkę GPS)
+            // Markery na mapie (tylko Inni, Ty masz swój świecący marker zrobiony wyżej)
             if(!isMe) {
                 if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
                 else dogMarkers[d.uid] = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: '', html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, iconSize: [40, 40] }) }).addTo(state.map);
@@ -138,7 +145,8 @@ function listenForWalks() {
         });
         Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
         document.getElementById('stories-container').innerHTML = html || "<p style='font-size:12px;'>Cisza w okolicy.</p>";
-    }); addListener(unsub);
+    }); 
+    addListener(unsub);
 }
 
 export function centerOnMe() { state.isFollowing = true; state.map.flyTo([state.location.lat, state.location.lng], 15); }
