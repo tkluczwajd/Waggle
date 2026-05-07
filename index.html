@@ -163,7 +163,17 @@
 
             <input type="text" id="setupName" placeholder="Imię psa">
             <input type="text" id="setupCity" placeholder="Miasto">
-            <input type="text" id="setupBreed" placeholder="Rasa">
+            <select id="setupBreed" style="margin-bottom: 10px;">
+                <option value="">Wybierz rasę...</option>
+                <option value="Kundelek">Kundelek</option>
+                <option value="Golden Retriever">Golden Retriever</option>
+                <option value="Owczarek Niemiecki">Owczarek Niemiecki</option>
+                <option value="Buldog Francuski">Buldog Francuski</option>
+                <option value="Labrador">Labrador</option>
+                <option value="York">Yorkshire Terrier</option>
+                <option value="Mops">Mops</option>
+                <option value="Inna rasa">Inna rasa</option>
+            </select>
             <select id="setupRoutine">
                 <option value="brak">Kiedy zwykle spacerujecie?</option>
                 <option value="Rano">Rano 🌅</option>
@@ -228,5 +238,15 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script type="module" src="/src/app.js?v=999"></script>
+    <div id="user-action-modal" class="modal">
+        <div class="card" style="text-align:center;">
+            <button class="close-modal-btn">✕</button>
+            <img id="actionUserAvatar" src="" style="width:90px;height:90px;border-radius:50%;margin-bottom:15px;object-fit:cover;border:3px solid var(--secondary); box-shadow:var(--soft-shadow);">
+            <h3 id="actionUserName" style="margin-top:0;font-weight:900;font-size:24px;">Piesek</h3>
+            <button class="btn-main" id="actionMsgBtn" style="margin-bottom:15px; background:var(--secondary);">💬 Napisz na Priv</button>
+            <button class="btn-outline" id="actionProfileBtn" onclick="Waggle.showToast('Profile innych użytkowników wkrótce!')">🐾 Zobacz pełny profil</button>
+        </div>
+    </div>
 </body>
+    
 </html>
