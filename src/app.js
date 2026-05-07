@@ -5,8 +5,8 @@ import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox } from './modules/posts.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
+import { WIKI } from './data/wikiData.js'; // Zaciągamy poprawną WIKI
 
-// SYSTEM POWIADOMIEŃ (Zastępuje brzydkie "alert()" z systemu)
 window.Waggle = window.Waggle || {};
 window.Waggle.showToast = (msg) => {
     let toast = document.getElementById('waggle-toast');
@@ -28,15 +28,14 @@ window.Waggle.centerOnTarget = centerOnTarget;
 window.Waggle.openLightbox = openLightbox;
 window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
 
-// NOWOŚĆ: Otwieranie profilu użytkownika
 window.Waggle.openUserMenu = (uid, name, avatar) => {
-    if(uid === state.user.uid) return; // Nie otwieraj swojego własnego profilu na tablicy
+    if(uid === state.user.uid) return; 
     document.getElementById('actionUserName').innerText = name;
     document.getElementById('actionUserAvatar').src = avatar;
     const msgBtn = document.getElementById('actionMsgBtn');
     msgBtn.onclick = () => {
         document.getElementById('user-action-modal').style.display = 'none';
-        document.querySelector('.nav-item[data-view="chat"]').click(); // Przełącz na czat
+        document.querySelector('.nav-item[data-view="chat"]').click(); 
         window.Waggle.openChat(uid, name);
     };
     document.getElementById('user-action-modal').style.display = 'flex';
@@ -50,7 +49,7 @@ export function initApp() {
     loadPosts();
     loadInbox();
     updateStatsUI();
-    fetchWeather(); // Pobieranie pogody
+    fetchWeather(); 
 }
 
 function fetchWeather() {
@@ -59,9 +58,13 @@ function fetchWeather() {
         .then(r=>r.json()).then(d => {
             const tempEl = document.getElementById('weather-temp');
             if(tempEl) tempEl.innerText = `${Math.round(d.current_weather.temperature)}°C`;
+            
+            // Wypełnienie modalnego okienka z pogodą!
+            const contentEl = document.getElementById('weather-forecast-content');
+            if(contentEl) contentEl.innerHTML = `<p style="font-size:16px; font-weight:800; text-align:center;">Aktualnie: ${Math.round(d.current_weather.temperature)}°C</p><p style="text-align:center; color:var(--text-muted); font-size:12px;">Wiatr: ${d.current_weather.windspeed} km/h</p>`;
         }).catch(e=>console.warn("Błąd pogody:", e));
     } else {
-        setTimeout(fetchWeather, 3000); // Spróbuj ponownie jeśli GPS jeszcze nie złapał
+        setTimeout(fetchWeather, 3000); 
     }
 }
 
@@ -75,7 +78,7 @@ function switchView(viewId) {
     if (viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 300);
     if (viewId === 'community') loadPosts();
     if (viewId === 'chat') loadInbox();
-    if (viewId === 'wiki') renderWiki('rasy'); // Wiki ładuje się zawsze!
+    if (viewId === 'wiki') renderWiki('rasy'); 
 }
 
 document.addEventListener('click', async (e) => {
@@ -87,7 +90,9 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
     
-    // Zgłaszanie alertu
+    // OTWIERANIE POGODY
+    if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
+
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
     if (e.target.closest('#saveAlertBtn')) {
         const textInput = document.getElementById('alertTextInput');
@@ -96,14 +101,13 @@ document.addEventListener('click', async (e) => {
             .then(() => {
                 document.getElementById('alert-modal').style.display = 'none';
                 textInput.value = '';
-                window.Waggle.showToast("Zagrożenie zgłoszone pomyślnie! ⚠️"); // Zmiana na ładny Toast
+                window.Waggle.showToast("Zagrożenie zgłoszone pomyślnie! ⚠️"); 
             }).catch(err => window.Waggle.showToast("Błąd zapisu: " + err.message));
         } else {
             window.Waggle.showToast("Brak GPS lub tekstu.");
         }
     }
 
-    // Klikanie w filtry na tablicy
     if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
         const btn = e.target.closest('.top-pill');
         document.querySelectorAll('#view-community .top-pill').forEach(b => {
@@ -113,7 +117,6 @@ document.addEventListener('click', async (e) => {
         window.Waggle.showToast(`Filtrowanie: ${btn.innerText.trim()} (Wkrótce)`);
     }
 
-    // Obsługa dodawania posta ze zdjęciem
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
     if (e.target.closest('#removePostImageBtn')) {
         pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
@@ -137,14 +140,12 @@ document.addEventListener('click', async (e) => {
         finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
     }
 
-    // Zakładki w Wiki
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         renderWiki(e.target.getAttribute('data-tab'));
     }
 
-    // Zapisywanie profilu
     if (e.target.closest('#openEditProfileBtn')) {
         const p = state.profile || {};
         document.getElementById('setupName').value = p.name || "";
@@ -214,14 +215,11 @@ document.addEventListener('change', (e) => {
 
 function renderWiki(tab) {
     let html = "";
-    
-    // Zaciągamy dane prosto z naszego pięknego pliku WIKI (zaimportowanego na górze app.js)
-    const items = WIKI[tab] || WIKI['rasy']; 
+    // UŻYWAMY POPRAWNEJ NAZWY WIKI
+    const items = WIKI[tab] || WIKI['rasy'] || []; 
     
     items.forEach(item => {
         let tagsHtml = "";
-        
-        // Jeśli dany wpis ma tagi, renderujemy ładne pigułki
         if(item.tags) {
             item.tags.forEach(tag => {
                 tagsHtml += `<span style="display:inline-block; background:var(--panel-bg); color:var(--text-color); font-size:11px; font-weight:800; padding:4px 8px; border-radius:12px; margin-right:6px; margin-top:5px; border: 1px solid var(--border-color);">${tag}</span>`;
@@ -229,7 +227,7 @@ function renderWiki(tab) {
         }
 
         html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px;">
-                    <b style="font-size: 16px; color: var(--text-color);">${item.title}</b><br>
+                    <b style="font-size: 16px; color: var(--text-color);">${item.title || item.name}</b><br>
                     ${tagsHtml}
                     <p style="margin-top:10px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.4;">${item.desc}</p>
                  </div>`;
@@ -238,6 +236,7 @@ function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (container) container.innerHTML = html;
 }
+
 function updateStatsUI() {
     if (!state.profile) return; 
     document.getElementById('profileNameDisplay').innerText = state.profile.name || "Piesek";
