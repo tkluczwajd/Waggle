@@ -62,8 +62,6 @@ export function initApp() {
     updateStatsUI();
     fetchWeather(); 
 
-    // --- SEEDING: Odkomentuj linię poniżej raz, by wgrać wiedzę ---
-    // seedWiki(); 
 }
 
 function fetchWeather() {
