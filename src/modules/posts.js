@@ -21,13 +21,11 @@ export function loadPosts() {
             let delBtn = (p.uid === state.user?.uid || isAdmin) ? `<button onclick="window.Waggle.deletePost('${doc.id}')" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; padding:5px;">🗑️</button>` : "";
             
             // Klikalny nagłówek z awatarem
-            let userHeader = `<button onclick="window.Waggle.openUserMenu('${p.uid}', '${p.author || 'Piesek'}', '${avatarSrc}')" style="background:none; border:none; padding:0; cursor:pointer; text-align:left;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <img src="${avatarSrc}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
-                    <div style="line-height:1.2;">
-                        <b style="font-size:16px; color:var(--text-color);">${p.author || 'Piesek'}</b><br>
-                        <small style="color:var(--text-muted); font-size:11px; font-weight:700;">${timeString}</small>
-                    </div>
+            let userHeader = `<button onclick="window.Waggle.openUserMenu('${p.uid}', '${p.author || 'Piesek'}', '${avatarSrc}')" style="background:none; border:none; padding:0; cursor:pointer; text-align:left; display:flex; align-items:center; gap:12px; width:100%;">
+                <img src="${avatarSrc}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
+                <div style="line-height:1.2;">
+                    <b style="font-size:16px; color:var(--text-color);">${p.author || 'Piesek'}</b><br>
+                    <small style="color:var(--text-muted); font-size:11px; font-weight:700;">${timeString}</small>
                 </div>
             </button>`;
 
@@ -77,4 +75,11 @@ export async function saveCommunityPost(content, imageUrl = null) {
         uid: state.user.uid, author: state.profile.name || "Piesek", avatar: state.profile.avatar || "", 
         content, imageUrl, timestamp: fb.firestore.FieldValue.serverTimestamp() 
     });
+}
+
+// BRAKUJĄCA FUNKCJA - to ona wyrzucała błąd z Twojego screena!
+export function openLightbox(url) {
+    const img = document.getElementById('lightbox-img');
+    const modal = document.getElementById('lightbox-modal');
+    if (img && modal) { img.src = url; modal.style.display = 'flex'; }
 }
