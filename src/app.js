@@ -3,7 +3,7 @@ import { auth, db, fb } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
 import { startWalk, stopWalk } from './modules/walk.js';
-import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter } from './modules/posts.js';
+import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
 
 window.Waggle = window.Waggle || {};
@@ -30,11 +30,14 @@ function getWeatherIcon(code) {
     return '🌡️';
 }
 
+// Rejestrujemy funkcje z posts.js do okna przeglądarki
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
 window.Waggle.openLightbox = openLightbox;
 window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
+window.Waggle.togglePostLike = togglePostLike;
+window.Waggle.openPostComments = openPostComments;
 
 window.Waggle.openUserMenu = (uid, name, avatar) => {
     if(uid === state.user.uid) return; 
@@ -102,9 +105,7 @@ function switchView(viewId) {
     if (viewId === 'wiki') renderWiki('rasy'); 
 }
 
-// Zdarzenia CHNAGE (np. Checkboxy i pliki)
 document.addEventListener('change', (e) => {
-    // Podgląd zdjęcia do wpisu
     if(e.target.id === 'postImageInput') {
         const file = e.target.files[0];
         if(file) {
@@ -117,8 +118,6 @@ document.addEventListener('change', (e) => {
             reader.readAsDataURL(file);
         }
     }
-    
-    // Checkbox "Ustawki" pokazuje lub ukrywa datę
     if (e.target.id === 'isEventCheckbox') {
         const detailsInput = document.getElementById('eventDetailsInput');
         detailsInput.style.display = e.target.checked ? 'block' : 'none';
@@ -148,28 +147,18 @@ document.addEventListener('click', async (e) => {
         }
     }
 
-    // --- FILTRY NA TABLICY ---
     if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
         const btn = e.target.closest('.top-pill');
         const filterName = btn.innerText.trim();
-        
-        // Zmień styl aktywnych przycisków
         document.querySelectorAll('#view-community .top-pill').forEach(b => {
             b.style.background = 'transparent'; b.style.color = 'var(--text-color)';
         });
         btn.style.background = 'var(--text-color)'; btn.style.color = 'white';
-
-        // Odpal filtr w posts.js
-        if (filterName.includes('Wszystko')) {
-            setPostFilter('all');
-        } else if (filterName.includes('Ustawki')) {
-            setPostFilter('events');
-        } else {
-            window.Waggle.showToast(`Filtr ${filterName} wkrótce!`);
-        }
+        if (filterName.includes('Wszystko')) setPostFilter('all');
+        else if (filterName.includes('Ustawki')) setPostFilter('events');
+        else window.Waggle.showToast(`Filtr ${filterName} wkrótce!`);
     }
 
-    // --- PUBLIKACJA POSTA / USTAWKI ---
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
     if (e.target.closest('#removePostImageBtn')) {
         pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
@@ -194,16 +183,21 @@ document.addEventListener('click', async (e) => {
         try {
             let finalUrl = null;
             if(pendingImageFile) finalUrl = await uploadImage(pendingImageFile);
-            
-            // Wysyłamy do bazy wszystkie dane
             await saveCommunityPost(text, finalUrl, isEvent, eventDate);
-            
             document.getElementById('post-creator-modal').style.display = 'none';
-            pendingImageFile = null; 
-            document.getElementById('post-image-preview-container').style.display = 'none';
-            window.Waggle.showToast(isEvent ? "Ustawka opublikowana na Tablicy! 📅" : "Post opublikowany! 🎉");
+            pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
+            window.Waggle.showToast(isEvent ? "Ustawka opublikowana! 📅" : "Post opublikowany! 🎉");
         } catch(err) { window.Waggle.showToast("Błąd wysyłania!"); } 
         finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
+    }
+
+    // --- WYSYŁANIE KOMENTARZA POD POSTEM ---
+    if (e.target.closest('#sendCommentBtn')) {
+        const input = document.getElementById('commentInput');
+        if (input && input.value.trim()) {
+            addPostComment(input.value.trim());
+            input.value = ""; // Wyczyść pole
+        }
     }
 
     if (e.target.classList.contains('wiki-tab-btn')) {
@@ -253,7 +247,6 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
 });
 
-// --- SILNIK WIEDZY (FIRESTORE) ---
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
