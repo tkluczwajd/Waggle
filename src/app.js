@@ -7,7 +7,6 @@ import { loadPosts, saveCommunityPost, uploadImage, openLightbox } from './modul
 import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
 import { WIKI } from './data/wikiData.js'; 
 
-// KLUCZOWE: Wystawienie funkcji do okna dla przycisków w HTML
 window.Waggle = { 
     openChat, 
     closeActiveChat, 
@@ -37,7 +36,6 @@ function switchView(viewId) {
     if (viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 300);
     if (viewId === 'community') loadPosts();
     if (viewId === 'chat') loadInbox();
-    // Inicjalizacja Wiki po wejściu w zakładkę
     if (viewId === 'wiki') renderWiki('rasy');
 }
 
@@ -49,6 +47,9 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
+    
+    // Alerty
+    if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
     if (e.target.closest('#saveAlertBtn')) {
         const textInput = document.getElementById('alertTextInput');
         if (textInput && textInput.value && state.location.lat) {
@@ -61,7 +62,6 @@ document.addEventListener('click', async (e) => {
             }).then(() => {
                 document.getElementById('alert-modal').style.display = 'none';
                 textInput.value = '';
-                // POTWIERDZENIE DLA CIEBIE, ŻE DZIAŁA:
                 alert("Zagrożenie zgłoszone! Pojawi się na mapie u wszystkich.");
             }).catch(err => alert("Błąd zapisu: " + err.message));
         } else {
@@ -69,10 +69,13 @@ document.addEventListener('click', async (e) => {
         }
     }
 
+    // Dodawanie zdjęć i postów
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
-    
+    if (e.target.closest('#removePostImageBtn')) {
+        pendingImageFile = null;
+        document.getElementById('post-image-preview-container').style.display = 'none';
+    }
     if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
-
     if (e.target.closest('#publishPostBtn')) {
         const btn = e.target.closest('#publishPostBtn');
         const text = document.getElementById('postContent').value.trim();
@@ -90,20 +93,25 @@ document.addEventListener('click', async (e) => {
         finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
     }
 
+    // Wiki
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         renderWiki(e.target.getAttribute('data-tab'));
     }
 
+    // Otwieranie edycji profilu
     if (e.target.closest('#openEditProfileBtn')) {
         const p = state.profile || {};
         document.getElementById('setupName').value = p.name || "";
         document.getElementById('setupCity').value = p.city || "";
         document.getElementById('setupBreed').value = p.breed || "";
+        const routineSelect = document.getElementById('setupRoutine');
+        if (routineSelect) routineSelect.value = p.routine || "brak";
         document.getElementById('profile-setup-modal').style.display = 'flex';
     }
     
+    // Zapisywanie profilu ze zdjęciem awatara
     if (e.target.closest('#saveProfileBtn')) {
         const btn = e.target.closest('#saveProfileBtn');
         btn.innerText = "ZAPISYWANIE...";
@@ -112,9 +120,10 @@ document.addEventListener('click', async (e) => {
         const d = { 
             name: document.getElementById('setupName').value.trim(), 
             city: document.getElementById('setupCity').value.trim(), 
-            breed: document.getElementById('setupBreed').value.trim(), 
-            routine: document.getElementById('setupRoutine').value 
+            breed: document.getElementById('setupBreed').value.trim() 
         };
+        const routineSelect = document.getElementById('setupRoutine');
+        if(routineSelect) d.routine = routineSelect.value;
 
         const avatarInput = document.getElementById('setupAvatarInput');
         
@@ -128,7 +137,7 @@ document.addEventListener('click', async (e) => {
             });
         };
 
-        if (avatarInput.files.length > 0) {
+        if (avatarInput && avatarInput.files.length > 0) {
             uploadImage(avatarInput.files[0]).then(url => {
                 d.avatar = url;
                 saveToDb(d);
@@ -140,13 +149,21 @@ document.addEventListener('click', async (e) => {
         } else {
             saveToDb(d);
         }
-    });
     }
 
     if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
+    if (e.target.closest('#saveSettingsBtn')) {
+        const theme = document.getElementById('settingTheme').value;
+        const font = document.getElementById('settingFontSize').value;
+        localStorage.setItem('waggle_theme', theme);
+        localStorage.setItem('waggle_font', font);
+        loadSettings(); 
+        document.getElementById('settings-modal').style.display = 'none';
+    }
+
     if (e.target.closest('#sendMsgBtn')) {
         const input = document.getElementById('chatInput');
-        if (input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
+        if (input && input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
     }
     if (e.target.closest('#closeChatBtn')) closeActiveChat();
 
@@ -171,17 +188,15 @@ document.addEventListener('change', (e) => {
 
 function renderWiki(tab) {
     let html = "";
-    // Awaryjne dane, gdyby WIKI się nie załadowało z pliku
     const safeWiki = WIKI || {
         rasy: [{title: "Wkrótce", desc: "Baza ras w budowie..."}],
         trening: [{title: "Pies ciągnie na smyczy", desc: "Zatrzymuj się za każdym razem gdy pies ciągnie. Ruszaj dopiero gdy smycz się rozluźni."}],
         sytuacje: [{title: "Pierwsze spotkanie psów", desc: "Pozwól psom podejść bokiem, nie na wprost. Zachowaj luźną smycz."}]
     };
     
-    const items = safeWiki[tab] || safeWiki['trening']; // Domyślnie trening, jak na starym screenie
+    const items = safeWiki[tab] || safeWiki['trening']; 
     
     items.forEach(item => {
-        // Stylowanie kart wiedzy jak na Twoim starym screenie
         html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px;">
                     <b style="font-size: 16px; color: var(--text-color);">${item.name || item.title}</b>
                     <p style="margin-top:8px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.4;">${item.desc}</p>
@@ -200,7 +215,6 @@ function updateStatsUI() {
     document.getElementById('statWalks').innerText = walks;
     document.getElementById('statDist').innerText = (walks * 1.2).toFixed(1);
     
-    // Obliczanie listka
     let level = "🌱 Nowik";
     if (walks >= 5) level = "🐕 Spacerowicz";
     if (walks >= 20) level = "🐺 Weteran Osiedla";
