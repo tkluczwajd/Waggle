@@ -1,5 +1,5 @@
 import { state, clearListeners } from './core/state.js';
-import { auth, db, fb } from './core/firebase.js'; // Dodano fb dla increment
+import { auth, db, fb } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
 import { startWalk, stopWalk } from './modules/walk.js';
@@ -18,19 +18,27 @@ window.Waggle.showToast = (msg) => {
         document.body.appendChild(toast);
     }
     toast.innerText = msg;
-    toast.style.opacity = '1';
-    toast.style.display = 'block';
+    toast.style.opacity = '1'; toast.style.display = 'block';
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.style.display='none',300); }, 3500);
 }
 
-// Globalne funkcje pomocnicze
+// Funkcja pomocnicza dla ikonek pogody
+function getWeatherIcon(code) {
+    if (code === 0) return '☀️';
+    if (code <= 3) return '⛅';
+    if (code <= 48) return '🌫️';
+    if (code <= 55 || (code >= 61 && code <= 65) || (code >= 80 && code <= 82)) return '🌧️';
+    if (code <= 77) return '❄️';
+    if (code >= 95) return '⛈️';
+    return '🌡️';
+}
+
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
 window.Waggle.openLightbox = openLightbox;
 window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
 
-// Funkcja otwierająca menu interakcji z innym użytkownikiem
 window.Waggle.openUserMenu = (uid, name, avatar) => {
     if(uid === state.user.uid) return; 
     document.getElementById('actionUserName').innerText = name;
@@ -57,12 +65,31 @@ export function initApp() {
 
 function fetchWeather() {
     if(state.location && state.location.lat) {
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.location.lat}&longitude=${state.location.lng}&current_weather=true`)
+        // Pobieramy dane bieżące + prognozę na 3 dni
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.location.lat}&longitude=${state.location.lng}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
         .then(r=>r.json()).then(d => {
             const tempEl = document.getElementById('weather-temp');
             if(tempEl) tempEl.innerText = `${Math.round(d.current_weather.temperature)}°C`;
+            
+            // Renderowanie okienka prognozy na 3 dni
             const contentEl = document.getElementById('weather-forecast-content');
-            if(contentEl) contentEl.innerHTML = `<p style="font-size:16px; font-weight:800; text-align:center;">Aktualnie: ${Math.round(d.current_weather.temperature)}°C</p><p style="text-align:center; color:var(--text-muted); font-size:12px;">Wiatr: ${d.current_weather.windspeed} km/h</p>`;
+            if(contentEl) {
+                let forecastHtml = `<div style="text-align:center; margin-bottom:15px;"><b style="font-size:20px;">Dziś: ${Math.round(d.current_weather.temperature)}°C ${getWeatherIcon(d.current_weather.weathercode)}</b></div>`;
+                forecastHtml += `<div style="display:flex; justify-content:space-around; border-top:1px solid var(--border-color); padding-top:15px;">`;
+                
+                for(let i=0; i<3; i++) {
+                    const date = new Date(d.daily.time[i]).toLocaleDateString('pl-PL', {weekday: 'short'});
+                    forecastHtml += `
+                        <div style="text-align:center;">
+                            <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted);">${date}</div>
+                            <div style="font-size:24px; margin:5px 0;">${getWeatherIcon(d.daily.weathercode[i])}</div>
+                            <div style="font-size:14px; font-weight:900;">${Math.round(d.daily.temperature_2m_max[i])}°</div>
+                            <div style="font-size:10px; color:var(--text-muted);">${Math.round(d.daily.temperature_2m_min[i])}°</div>
+                        </div>`;
+                }
+                forecastHtml += `</div>`;
+                contentEl.innerHTML = forecastHtml;
+            }
         }).catch(e=>console.warn("Weather error:", e));
     } else {
         setTimeout(fetchWeather, 3000); 
@@ -92,7 +119,6 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
     if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
 
-    // Alerty
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
     if (e.target.closest('#saveAlertBtn')) {
         const textInput = document.getElementById('alertTextInput');
@@ -106,7 +132,6 @@ document.addEventListener('click', async (e) => {
         }
     }
 
-    // Posty i Zdjęcia
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
     if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
     if (e.target.closest('#publishPostBtn')) {
@@ -120,21 +145,18 @@ document.addEventListener('click', async (e) => {
             await saveCommunityPost(text, finalUrl);
             document.getElementById('post-creator-modal').style.display = 'none';
             document.getElementById('postContent').value = '';
-            pendingImageFile = null;
-            document.getElementById('post-image-preview-container').style.display = 'none';
+            pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
             window.Waggle.showToast("Opublikowano! 🎉");
         } catch(err) { window.Waggle.showToast("Błąd wysyłania!"); } 
         finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
     }
 
-    // Wiki Zakładki
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         renderWiki(e.target.getAttribute('data-tab'));
     }
 
-    // Profil i Ustawienia
     if (e.target.closest('#openEditProfileBtn')) {
         const p = state.profile || {};
         document.getElementById('setupName').value = p.name || "";
@@ -224,7 +246,7 @@ function renderWiki(tab) {
                             ${hasLiked ? '❤️' : '🤍'} ${likesCount}
                         </span>
                         <span style="font-size:13px; color:var(--text-muted); font-weight:800; cursor:pointer;" 
-                              onclick="Waggle.showToast('Komentarze wbudowane wkrótce!')">
+                              onclick="window.Waggle.showToast('Sekcja dyskusji wkrótce!')">
                             💬 Komentarze
                         </span>
                     </div>
@@ -280,16 +302,13 @@ async function seedWiki() {
         const items = WIKI[cat] || [];
         for (const item of items) {
             await db.collection("wiki").add({
-                ...item,
-                category: cat,
-                likes: [],
-                createdAt: Date.now()
+                ...item, category: cat, likes: [], createdAt: Date.now()
             });
         }
     }
     window.Waggle.showToast("✅ Wiedza wgrana do bazy!");
 }
 
-// seedWiki(); // Odkomentuj to raz, odśwież stronę i usuń tę linię!
+// seedWiki(); // <--- ODKOMENTUJ TO RAZ, ODŚWIEŻ STRONĘ I ZAKOMENTUJ PONOWNIE!
 
 initAuth(initApp);
