@@ -7,7 +7,9 @@ let alertMarkers = {};
 let activeAlertsList = []; 
 let dismissedAlerts = JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
 let parksLoaded = false; 
-export let nearbyPlaces = []; // Zmienna eksportowana do użycia w liście miejsc
+
+// NOWOŚĆ: używamy "const", żeby referencja się nigdy nie zerwała
+export const nearbyPlaces = []; 
 
 export function initMap() {
     if (state.map) return;
@@ -109,7 +111,7 @@ async function loadParks(lat, lng) {
         const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
         const data = await res.json();
         
-        nearbyPlaces = []; // Czyścimy przed załadowaniem
+        nearbyPlaces.length = 0; // POPRAWKA: Bezpieczne czyszczenie listy
         const parkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🌳</div>', iconSize: [24,24] });
         const dogParkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🐕</div>', iconSize: [24,24] });
 
@@ -117,32 +119,22 @@ async function loadParks(lat, lng) {
             const pLat = el.lat || el.center.lat; const pLon = el.lon || el.center.lon;
             const isDogPark = el.tags && el.tags.leisure === 'dog_park';
             const name = el.tags && el.tags.name ? el.tags.name : (isDogPark ? "Wybieg dla psów" : "Park / Zielen");
-            
-            // Obliczamy dystans dla listy
             const distance = getDistance(lat, lng, pLat, pLon);
             
-            // Zapisujemy miejsce do użycia w widoku "Miejsca"
             nearbyPlaces.push({
-                name: name,
-                isDogPark: isDogPark,
-                lat: pLat,
-                lng: pLon,
-                distance: distance
+                name: name, isDogPark: isDogPark, lat: pLat, lng: pLon, distance: distance
             });
 
-            // Rysujemy na mapie
             L.marker([pLat, pLon], { icon: isDogPark ? dogParkIcon : parkIcon }).addTo(state.map)
              .bindPopup(`<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLon}" target="_blank" style="color:var(--secondary); font-weight:800; text-decoration:none; display:inline-block; margin-top:5px;">Nawiguj tutaj 🧭</a>`);
         });
 
-        // Sortujemy miejsca od najbliższego
         nearbyPlaces.sort((a, b) => a.distance - b.distance);
         
-        // Jeśli widok "places" jest aktywny, od razu go wyrenderuj
+        // Zmuszamy widok "miejsc" do odświeżenia, jeśli pobierze dane z opóźnieniem
         if (window.Waggle && window.Waggle.renderPlaces) {
             window.Waggle.renderPlaces();
         }
-
     } catch(err) { parksLoaded = false; }
 }
 
@@ -158,6 +150,7 @@ function listenForWalks() {
             const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
             const bColor = isMe ? 'var(--primary)' : 'white';
             
+            // Pasek na górze Tablicy!
             html += `<div class="walk-card" onclick="window.Waggle.centerOnTarget(${d.lat}, ${d.lng})">
                         <img src="${avatarSrc}" style="border: 3px solid ${bColor};">
                         <div style="font-size:12px; font-weight:900; margin-top:5px;">${isMe ? 'Ty' : d.name}</div>
@@ -169,7 +162,10 @@ function listenForWalks() {
             }
         });
         Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
-        document.getElementById('stories-container').innerHTML = html || "<p style='font-size:12px;'>Cisza w okolicy.</p>";
+        
+        // Renderujemy do paska na tablicy
+        const sc = document.getElementById('stories-container');
+        if(sc) sc.innerHTML = html || "<p style='font-size:12px; color:var(--text-muted);'>Cisza w okolicy. Wyjdź jako pierwszy!</p>";
     }); 
     addListener(unsub);
 }
