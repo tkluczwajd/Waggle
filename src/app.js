@@ -3,11 +3,9 @@ import { auth, db, fb } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
 import { startWalk, stopWalk } from './modules/walk.js';
-import { loadPosts, saveCommunityPost, uploadImage, openLightbox } from './modules/posts.js';
+import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter } from './modules/posts.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
-import { WIKI } from './data/wikiData.js'; 
 
-// --- SYSTEM POWIADOMIEŃ WAGGLE ---
 window.Waggle = window.Waggle || {};
 window.Waggle.showToast = (msg) => {
     let toast = document.getElementById('waggle-toast');
@@ -22,7 +20,6 @@ window.Waggle.showToast = (msg) => {
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.style.display='none',300); }, 3500);
 }
 
-// Funkcja pomocnicza dla ikonek pogody
 function getWeatherIcon(code) {
     if (code === 0) return '☀️';
     if (code <= 3) return '⛅';
@@ -61,7 +58,6 @@ export function initApp() {
     loadInbox();
     updateStatsUI();
     fetchWeather(); 
-
 }
 
 function fetchWeather() {
@@ -70,7 +66,6 @@ function fetchWeather() {
         .then(r=>r.json()).then(d => {
             const tempEl = document.getElementById('weather-temp');
             if(tempEl) tempEl.innerText = `${Math.round(d.current_weather.temperature)}°C`;
-            
             const contentEl = document.getElementById('weather-forecast-content');
             if(contentEl) {
                 let forecastHtml = `<div style="text-align:center; margin-bottom:15px;"><b style="font-size:20px;">Dziś: ${Math.round(d.current_weather.temperature)}°C ${getWeatherIcon(d.current_weather.weathercode)}</b></div>`;
@@ -107,6 +102,29 @@ function switchView(viewId) {
     if (viewId === 'wiki') renderWiki('rasy'); 
 }
 
+// Zdarzenia CHNAGE (np. Checkboxy i pliki)
+document.addEventListener('change', (e) => {
+    // Podgląd zdjęcia do wpisu
+    if(e.target.id === 'postImageInput') {
+        const file = e.target.files[0];
+        if(file) {
+            pendingImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ex) => {
+                document.getElementById('post-image-preview').src = ex.target.result;
+                document.getElementById('post-image-preview-container').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    
+    // Checkbox "Ustawki" pokazuje lub ukrywa datę
+    if (e.target.id === 'isEventCheckbox') {
+        const detailsInput = document.getElementById('eventDetailsInput');
+        detailsInput.style.display = e.target.checked ? 'block' : 'none';
+    }
+});
+
 document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
     const navItem = e.target.closest('.nav-item');
@@ -130,21 +148,60 @@ document.addEventListener('click', async (e) => {
         }
     }
 
+    // --- FILTRY NA TABLICY ---
+    if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
+        const btn = e.target.closest('.top-pill');
+        const filterName = btn.innerText.trim();
+        
+        // Zmień styl aktywnych przycisków
+        document.querySelectorAll('#view-community .top-pill').forEach(b => {
+            b.style.background = 'transparent'; b.style.color = 'var(--text-color)';
+        });
+        btn.style.background = 'var(--text-color)'; btn.style.color = 'white';
+
+        // Odpal filtr w posts.js
+        if (filterName.includes('Wszystko')) {
+            setPostFilter('all');
+        } else if (filterName.includes('Ustawki')) {
+            setPostFilter('events');
+        } else {
+            window.Waggle.showToast(`Filtr ${filterName} wkrótce!`);
+        }
+    }
+
+    // --- PUBLIKACJA POSTA / USTAWKI ---
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
-    if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
+    if (e.target.closest('#removePostImageBtn')) {
+        pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
+    }
+    if (e.target.closest('#addPostBtn')) {
+        document.getElementById('postContent').value = '';
+        document.getElementById('isEventCheckbox').checked = false;
+        document.getElementById('eventDetailsInput').style.display = 'none';
+        document.getElementById('post-creator-modal').style.display = 'flex';
+    }
+    
     if (e.target.closest('#publishPostBtn')) {
         const btn = e.target.closest('#publishPostBtn');
         const text = document.getElementById('postContent').value.trim();
+        const isEvent = document.getElementById('isEventCheckbox').checked;
+        const eventDate = document.getElementById('eventDate').value;
+        
         if(text.length < 3) return window.Waggle.showToast("Napisz coś więcej!");
+        if(isEvent && !eventDate) return window.Waggle.showToast("Wybierz datę i godzinę ustawki!");
+
         btn.disabled = true; btn.innerText = "WYSYŁANIE...";
         try {
             let finalUrl = null;
             if(pendingImageFile) finalUrl = await uploadImage(pendingImageFile);
-            await saveCommunityPost(text, finalUrl);
+            
+            // Wysyłamy do bazy wszystkie dane
+            await saveCommunityPost(text, finalUrl, isEvent, eventDate);
+            
             document.getElementById('post-creator-modal').style.display = 'none';
-            document.getElementById('postContent').value = '';
-            pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
-            window.Waggle.showToast("Opublikowano! 🎉");
+            pendingImageFile = null; 
+            document.getElementById('post-image-preview-container').style.display = 'none';
+            window.Waggle.showToast(isEvent ? "Ustawka opublikowana na Tablicy! 📅" : "Post opublikowany! 🎉");
         } catch(err) { window.Waggle.showToast("Błąd wysyłania!"); } 
         finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
     }
@@ -196,21 +253,6 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
 });
 
-document.addEventListener('change', (e) => {
-    if(e.target.id === 'postImageInput') {
-        const file = e.target.files[0];
-        if(file) {
-            pendingImageFile = file;
-            const reader = new FileReader();
-            reader.onload = (ex) => {
-                document.getElementById('post-image-preview').src = ex.target.result;
-                document.getElementById('post-image-preview-container').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-});
-
 // --- SILNIK WIEDZY (FIRESTORE) ---
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
@@ -242,10 +284,6 @@ function renderWiki(tab) {
                         <span style="font-size:13px; cursor:pointer; font-weight:800; color: ${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" 
                               onclick="Waggle.likeWiki('${id}')">
                             ${hasLiked ? '❤️' : '🤍'} ${likesCount}
-                        </span>
-                        <span style="font-size:13px; color:var(--text-muted); font-weight:800; cursor:pointer;" 
-                              onclick="window.Waggle.showToast('Sekcja dyskusji wkrótce!')">
-                            💬 Komentarze
                         </span>
                     </div>
                 </div>`;
@@ -291,31 +329,6 @@ function loadSettings() {
     if (theme === 'dark') document.body.classList.add('dark-mode');
     else document.body.classList.remove('dark-mode');
     document.documentElement.style.setProperty('--base-font-size', font);
-}
-
-// --- POPRAWIONY SEEDING ---
-async function seedWiki() {
-    // Mapowanie angielskich nazw z pliku na polskie kategorie w bazie
-    const mapping = {
-        'rasy': WIKI.breeds,
-        'trening': WIKI.training,
-        'sytuacje': WIKI.situations
-    };
-    
-    for (const [category, items] of Object.entries(mapping)) {
-        if (!items) continue;
-        for (const item of items) {
-            await db.collection("wiki").add({
-                title: item.name || item.title,
-                desc: item.desc,
-                tags: item.tags || (item.energy ? [item.energy] : []),
-                category: category,
-                likes: [],
-                createdAt: Date.now()
-            });
-        }
-    }
-    window.Waggle.showToast("✅ Wiedza wgrana do bazy!");
 }
 
 initAuth(initApp);
