@@ -52,11 +52,18 @@
             <div id="map"></div>
         </section>
 
-        <section id="view-community" class="view-section">
+<section id="view-community" class="view-section">
             <div class="sticky-header">
-                <h3 style="margin:0;">W okolicy</h3>
-                <div id="stories-container"></div>
-                <button class="btn-main" id="addPostBtn" style="margin-top:15px; padding: 12px; background:var(--secondary);">➕ DODAJ POSTA</button>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0;">W okolicy</h3>
+                </div>
+                <div style="display:flex; gap:10px; overflow-x:auto; padding:10px 0; margin-top:10px; scrollbar-width:none;">
+                    <button class="top-pill" style="background:var(--text-color); color:white; border:none; margin:0;">Wszystko</button>
+                    <button class="top-pill" style="border:none; margin:0;">📅 Ustawki</button>
+                    <button class="top-pill" style="border:none; margin:0;">⚠️ Alerty</button>
+                    <button class="top-pill" style="border:none; margin:0;">ℹ️ Info</button>
+                </div>
+                <button class="btn-main" id="addPostBtn" style="margin-top:10px; padding: 12px; background:var(--secondary);">➕ DODAJ POSTA</button>
             </div>
             <div id="posts-container"></div>
         </section>
