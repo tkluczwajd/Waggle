@@ -23,7 +23,7 @@ export function loadInbox() {
         }, err => console.error("Inbox error:", err));
         
     // ZMIANA: Skrzynka ma swój własny nasłuch w tle
-    ListenerManager.register('inbox', unsub);
+    ListenerManager.add('inbox', unsub);
 }
 
 export function openChat(partnerUid, partnerName) {
@@ -49,7 +49,7 @@ export function openChat(partnerUid, partnerName) {
         });
         
     // ZMIANA: Aktywny czat ma oddzielny proces
-    ListenerManager.register('activeChat', unsub);
+    ListenerManager.add('activeChat', unsub);
 }
 
 export function closeActiveChat() {
