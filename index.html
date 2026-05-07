@@ -123,21 +123,36 @@
         </nav>
     </div>
 
-    <div id="post-creator-modal" class="modal">
+<div id="post-creator-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
-            <h3 style="font-weight:900; margin-top:0;">Nowy Post</h3>
-            <textarea id="postContent" placeholder="Co słychać u pieska?" style="min-height: 100px; resize: none;"></textarea>
+            <h3 style="margin-top:0;">Dodaj Wpis</h3>
             
-            <div id="post-image-preview-container" style="display:none; position:relative; margin-bottom:15px;">
-                <img id="post-image-preview" src="" style="width:100%; border-radius:15px; max-height:200px; object-fit:cover;">
-                <button id="removePostImageBtn" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.5); color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer;">✕</button>
+            <textarea id="postContent" placeholder="Co u Was słychać? (np. Idziemy o 18:00 do parku, kto chętny?)" style="width:100%; height:80px; margin-bottom:10px;"></textarea>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:var(--text-color); cursor:pointer;">
+                    <input type="checkbox" id="isEventCheckbox" style="width:18px; height:18px;">
+                    📅 To jest Ustawka / Wydarzenie
+                </label>
+                <div id="eventDetailsInput" style="display:none; margin-top:10px; background:var(--panel-bg); padding:10px; border-radius:8px;">
+                    <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Kiedy i o której?</label>
+                    <input type="datetime-local" id="eventDate" style="width:100%; margin-top:5px; padding:10px; border:1px solid var(--border-color); border-radius:8px;">
+                </div>
             </div>
 
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button class="btn-outline" id="addPhotoBtn" style="margin-top:0; flex:1;">📷 DODAJ ZDJĘCIE</button>
-                <input type="file" id="postImageInput" accept="image/*" style="display:none;">
+            <div id="post-image-preview-container" style="display:none; position:relative; margin-bottom:10px;">
+                <img id="post-image-preview" src="" style="width:100%; border-radius:8px;">
+                <button id="removePostImageBtn" style="position:absolute; top:5px; right:5px; background:var(--danger); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer;">✕</button>
             </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn-outline" id="addPhotoBtn" style="flex:1;">📷 Zdjęcie</button>
+                <button class="btn-main" id="publishPostBtn" style="flex:1;">OPUBLIKUJ</button>
+            </div>
+            <input type="file" id="postImageInput" accept="image/*" style="display:none;">
+        </div>
+    </div>
 
             <button class="btn-main" id="publishPostBtn">OPUBLIKUJ</button>
         </div>
