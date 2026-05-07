@@ -309,6 +309,6 @@ async function seedWiki() {
     window.Waggle.showToast("✅ Wiedza wgrana do bazy!");
 }
 
-// seedWiki(); // <--- ODKOMENTUJ TO RAZ, ODŚWIEŻ STRONĘ I ZAKOMENTUJ PONOWNIE!
+seedWiki(); // <--- ODKOMENTUJ TO RAZ, ODŚWIEŻ STRONĘ I ZAKOMENTUJ PONOWNIE!
 
 initAuth(initApp);
