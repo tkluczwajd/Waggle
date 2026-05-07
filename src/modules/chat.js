@@ -1,15 +1,23 @@
 import { db, fb } from '../core/firebase.js';
 import { state, ListenerManager } from '../core/state.js';
 
+let currentChatUnsub = null; // Zmienna pilnująca otwartego okna czatu
+
 export function loadInbox() {
     if (!state.user) return;
+    
+    // Zdejmujemy orderBy z bazy, aby ominać błąd brakującego indeksu Firebase!
     const unsub = db.collection("chats")
         .where("users", "array-contains", state.user.uid)
-        .orderBy("lastUpdate", "desc")
         .onSnapshot(snap => {
+            let chatsList = [];
+            snap.forEach(doc => chatsList.push({ id: doc.id, ...doc.data() }));
+            
+            // Sortujemy czaty w pamięci telefonu od najnowszego
+            chatsList.sort((a, b) => (b.lastUpdate || 0) - (a.lastUpdate || 0));
+
             let html = "";
-            snap.forEach(doc => {
-                const d = doc.data();
+            chatsList.forEach(d => {
                 const partnerUid = d.users.find(u => u !== state.user.uid);
                 const partnerName = d.names ? d.names[partnerUid] : 'Nieznajomy';
                 
@@ -28,7 +36,6 @@ export function loadInbox() {
     ListenerManager.add(unsub);
 }
 
-// NOWOŚĆ: Wyszukiwarka psów
 export function searchUsers(query) {
     if(!query || query.length < 2) {
         document.getElementById('inbox-container').innerHTML = "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Wpisz min. 2 litery (imię, rasę lub miasto)...</p>";
@@ -40,7 +47,7 @@ export function searchUsers(query) {
         let html = "";
         snap.forEach(doc => {
             const u = doc.data();
-            if(doc.id === state.user.uid) return; // Nie szukaj siebie samego
+            if(doc.id === state.user.uid) return; 
             
             const matchName = u.name && u.name.toLowerCase().includes(q);
             const matchBreed = u.breed && u.breed.toLowerCase().includes(q);
@@ -71,7 +78,10 @@ export async function openChat(partnerUid, partnerName) {
     document.getElementById('chatPartnerName').innerText = partnerName;
     document.getElementById('chat-window').style.display = 'flex';
     
-    const unsub = db.collection("chats").doc(chatId).collection("messages")
+    // Jeśli mieliśmy otwarty inny czat, odpinamy go
+    if(currentChatUnsub) currentChatUnsub();
+    
+    currentChatUnsub = db.collection("chats").doc(chatId).collection("messages")
         .orderBy("time", "asc").limit(50).onSnapshot(snap => {
             let html = "";
             snap.forEach(mDoc => {
@@ -80,25 +90,33 @@ export async function openChat(partnerUid, partnerName) {
                 html += `<div style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; background: ${isMe ? 'var(--primary)' : 'var(--panel-bg)'}; color: ${isMe ? 'white' : 'var(--text-color)'}; padding: 10px 15px; border-radius: 15px; max-width: 80%; margin-bottom: 5px; font-weight: 600; box-shadow:var(--soft-shadow);">${m.text}</div>`;
             });
             const msgBox = document.getElementById('chatMessages');
-            msgBox.innerHTML = html;
+            msgBox.innerHTML = html || "<p style='text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;'>Napisz pierwszą wiadomość!</p>";
             msgBox.scrollTop = msgBox.scrollHeight;
         });
-    ListenerManager.add(unsub);
 }
 
 export function sendMessage(text) {
     if (!state.currentChatId) return;
     const msg = { sender: state.user.uid, text, time: Date.now() };
+    
+    const partnerUid = state.currentChatId.replace(state.user.uid, "").replace("_", "");
+    const partnerName = document.getElementById('chatPartnerName').innerText;
+    const myName = state.profile?.name || "Piesek";
+
     db.collection("chats").doc(state.currentChatId).collection("messages").add(msg);
     db.collection("chats").doc(state.currentChatId).set({
         lastMsg: text,
         lastUpdate: Date.now(),
         users: state.currentChatId.split("_"),
-        names: { [state.user.uid]: state.profile.name, [state.currentChatId.replace(state.user.uid, "").replace("_", "")]: document.getElementById('chatPartnerName').innerText }
+        names: { [state.user.uid]: myName, [partnerUid]: partnerName }
     }, { merge: true });
 }
 
 export function closeActiveChat() {
     document.getElementById('chat-window').style.display = 'none';
     state.currentChatId = null;
+    if(currentChatUnsub) {
+        currentChatUnsub();
+        currentChatUnsub = null;
+    }
 }
