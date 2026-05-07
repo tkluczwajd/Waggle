@@ -87,12 +87,42 @@ document.addEventListener('click', async (e) => {
     }
     
     if (e.target.closest('#saveProfileBtn')) {
-        const d = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim(), breed: document.getElementById('setupBreed').value.trim() };
-        db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(() => {
-            state.profile = {...state.profile, ...d};
-            document.getElementById('profile-setup-modal').style.display = 'none';
-            updateStatsUI();
-        });
+        const btn = e.target.closest('#saveProfileBtn');
+        btn.innerText = "ZAPISYWANIE...";
+        btn.disabled = true;
+
+        const d = { 
+            name: document.getElementById('setupName').value.trim(), 
+            city: document.getElementById('setupCity').value.trim(), 
+            breed: document.getElementById('setupBreed').value.trim(), 
+            routine: document.getElementById('setupRoutine').value 
+        };
+
+        const avatarInput = document.getElementById('setupAvatarInput');
+        
+        const saveToDb = (data) => {
+            db.collection("users").doc(state.user.uid).set(data, {merge:true}).then(() => {
+                state.profile = {...state.profile, ...data};
+                document.getElementById('profile-setup-modal').style.display = 'none';
+                updateStatsUI();
+                btn.innerText = "ZAPISZ";
+                btn.disabled = false;
+            });
+        };
+
+        if (avatarInput.files.length > 0) {
+            uploadImage(avatarInput.files[0]).then(url => {
+                d.avatar = url;
+                saveToDb(d);
+            }).catch(err => {
+                alert("Błąd wgrywania zdjęcia.");
+                btn.innerText = "ZAPISZ";
+                btn.disabled = false;
+            });
+        } else {
+            saveToDb(d);
+        }
+    });
     }
 
     if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
