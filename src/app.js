@@ -1,7 +1,7 @@
 import { state, clearListeners } from './core/state.js';
 import { auth, db, fb } from './core/firebase.js';
 import { initAuth } from './modules/auth.js';
-import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
+import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; // Dodano nearbyPlaces
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
@@ -30,7 +30,6 @@ function getWeatherIcon(code) {
     return '🌡️';
 }
 
-// Rejestrujemy funkcje z posts.js do okna przeglądarki
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
@@ -51,6 +50,40 @@ window.Waggle.openUserMenu = (uid, name, avatar) => {
     };
     document.getElementById('user-action-modal').style.display = 'flex';
 };
+
+// NOWOŚĆ: Funkcja Renderująca Miejsca dla Psów
+window.Waggle.renderPlaces = () => {
+    const container = document.getElementById('places-container');
+    if (!container) return;
+    
+    if (nearbyPlaces.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy (do 5km)... 🧭</p>';
+        return;
+    }
+
+    let html = "";
+    nearbyPlaces.forEach(place => {
+        const icon = place.isDogPark ? '🐕' : '🌳';
+        const type = place.isDogPark ? 'Wybieg dla psów' : 'Park';
+        const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
+        
+        html += `
+            <div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <div style="font-size:30px;">${icon}</div>
+                    <div>
+                        <b style="font-size:16px; color:var(--text-color);">${place.name}</b><br>
+                        <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${type} • ${place.distance.toFixed(1)} km stąd</span>
+                    </div>
+                </div>
+                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color};" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$${place.lat},${place.lng}', '_blank')">Prowadź</button>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+};
+
 
 let pendingImageFile = null;
 
@@ -103,6 +136,7 @@ function switchView(viewId) {
     if (viewId === 'community') loadPosts();
     if (viewId === 'chat') loadInbox();
     if (viewId === 'wiki') renderWiki('rasy'); 
+    if (viewId === 'places') window.Waggle.renderPlaces(); // ODPALANIE WIDOKU MIEJSC
 }
 
 document.addEventListener('change', (e) => {
@@ -191,12 +225,11 @@ document.addEventListener('click', async (e) => {
         finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
     }
 
-    // --- WYSYŁANIE KOMENTARZA POD POSTEM ---
     if (e.target.closest('#sendCommentBtn')) {
         const input = document.getElementById('commentInput');
         if (input && input.value.trim()) {
             addPostComment(input.value.trim());
-            input.value = ""; // Wyczyść pole
+            input.value = ""; 
         }
     }
 
