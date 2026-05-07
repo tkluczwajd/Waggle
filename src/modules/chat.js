@@ -3,7 +3,6 @@ import { state, ListenerManager } from '../core/state.js';
 
 export function loadInbox() {
     if (!state.user) return;
-    // Zmiana register -> add
     const unsub = db.collection("chats")
         .where("users", "array-contains", state.user.uid)
         .orderBy("lastUpdate", "desc")
@@ -11,15 +10,59 @@ export function loadInbox() {
             let html = "";
             snap.forEach(doc => {
                 const d = doc.data();
-                const partnerName = d.names[d.users.find(u => u !== state.user.uid)];
-                html += `<div class="post-card" onclick="window.Waggle.openChat('${d.users.find(u => u !== state.user.uid)}', '${partnerName}')">
-                            <b>${partnerName}</b><br><small>${d.lastMsg || 'Kliknij, aby pisać'}</small>
-                         </div>`;
+                const partnerUid = d.users.find(u => u !== state.user.uid);
+                const partnerName = d.names ? d.names[partnerUid] : 'Nieznajomy';
+                
+                html += `
+                <div class="post-card" style="display:flex; align-items:center; gap:15px; margin-bottom:10px; cursor:pointer;" onclick="window.Waggle.openChat('${partnerUid}', '${partnerName}')">
+                    <div style="width:50px; height:50px; border-radius:50%; background:var(--panel-bg); display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:var(--soft-shadow);">🐾</div>
+                    <div style="flex:1;">
+                        <b style="font-size:16px;">${partnerName}</b><br>
+                        <small style="color:var(--text-muted);">${d.lastMsg || 'Kliknij, aby pisać'}</small>
+                    </div>
+                </div>`;
             });
             const container = document.getElementById('inbox-container');
-            if (container) container.innerHTML = html || "<p style='text-align:center; padding:20px;'>Brak wiadomości.</p>";
+            if (container) container.innerHTML = html || "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Brak rozmów. Przejdź do zakładki STADO i poznaj kogoś!</p>";
         });
     ListenerManager.add(unsub);
+}
+
+// NOWOŚĆ: Wyszukiwarka psów
+export function searchUsers(query) {
+    if(!query || query.length < 2) {
+        document.getElementById('inbox-container').innerHTML = "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Wpisz min. 2 litery (imię, rasę lub miasto)...</p>";
+        return;
+    }
+    const q = query.toLowerCase();
+    
+    db.collection("users").get().then(snap => {
+        let html = "";
+        snap.forEach(doc => {
+            const u = doc.data();
+            if(doc.id === state.user.uid) return; // Nie szukaj siebie samego
+            
+            const matchName = u.name && u.name.toLowerCase().includes(q);
+            const matchBreed = u.breed && u.breed.toLowerCase().includes(q);
+            const matchCity = u.city && u.city.toLowerCase().includes(q);
+            
+            if(matchName || matchBreed || matchCity) {
+                const avatar = u.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+                html += `
+                <div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="window.Waggle.openUserMenu('${doc.id}', '${u.name || 'Piesek'}', '${avatar}')">
+                        <img src="${avatar}" style="width:50px;height:50px;border-radius:50%;object-fit:cover; border:2px solid var(--border-color);">
+                        <div style="line-height:1.2;">
+                            <b style="font-size:16px;">${u.name || 'Piesek'}</b><br>
+                            <small style="color:var(--text-muted); font-size:12px; font-weight:800;">${u.breed || 'Rasa nieznana'} • ${u.city || 'Miasto nieznane'}</small>
+                        </div>
+                    </div>
+                    <button class="btn-main" style="width:auto; padding:8px 15px; font-size:12px;" onclick="window.Waggle.openChat('${doc.id}', '${u.name || 'Piesek'}')">💬 Napisz</button>
+                </div>`;
+            }
+        });
+        document.getElementById('inbox-container').innerHTML = html || "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Nie znaleziono piesków spełniających kryteria.</p>";
+    });
 }
 
 export async function openChat(partnerUid, partnerName) {
@@ -34,7 +77,7 @@ export async function openChat(partnerUid, partnerName) {
             snap.forEach(mDoc => {
                 const m = mDoc.data();
                 const isMe = m.sender === state.user.uid;
-                html += `<div style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; background: ${isMe ? 'var(--primary)' : 'var(--border-color)'}; color: ${isMe ? 'white' : 'var(--text-color)'}; padding: 10px 15px; border-radius: 15px; max-width: 80%; margin-bottom: 5px; font-weight: 600;">${m.text}</div>`;
+                html += `<div style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; background: ${isMe ? 'var(--primary)' : 'var(--panel-bg)'}; color: ${isMe ? 'white' : 'var(--text-color)'}; padding: 10px 15px; border-radius: 15px; max-width: 80%; margin-bottom: 5px; font-weight: 600; box-shadow:var(--soft-shadow);">${m.text}</div>`;
             });
             const msgBox = document.getElementById('chatMessages');
             msgBox.innerHTML = html;
