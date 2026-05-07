@@ -1,12 +1,13 @@
 import { state, clearListeners } from './core/state.js';
-import { auth, db } from './core/firebase.js';
+import { auth, db, fb } from './core/firebase.js'; // Dodano fb dla increment
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget } from './modules/map.js';
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox } from './modules/posts.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat } from './modules/chat.js';
-import { WIKI } from './data/wikiData.js'; // Zaciągamy poprawną WIKI
+import { WIKI } from './data/wikiData.js'; 
 
+// --- SYSTEM POWIADOMIEŃ WAGGLE ---
 window.Waggle = window.Waggle || {};
 window.Waggle.showToast = (msg) => {
     let toast = document.getElementById('waggle-toast');
@@ -22,12 +23,14 @@ window.Waggle.showToast = (msg) => {
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.style.display='none',300); }, 3500);
 }
 
+// Globalne funkcje pomocnicze
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
 window.Waggle.openLightbox = openLightbox;
 window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
 
+// Funkcja otwierająca menu interakcji z innym użytkownikiem
 window.Waggle.openUserMenu = (uid, name, avatar) => {
     if(uid === state.user.uid) return; 
     document.getElementById('actionUserName').innerText = name;
@@ -58,11 +61,9 @@ function fetchWeather() {
         .then(r=>r.json()).then(d => {
             const tempEl = document.getElementById('weather-temp');
             if(tempEl) tempEl.innerText = `${Math.round(d.current_weather.temperature)}°C`;
-            
-            // Wypełnienie modalnego okienka z pogodą!
             const contentEl = document.getElementById('weather-forecast-content');
             if(contentEl) contentEl.innerHTML = `<p style="font-size:16px; font-weight:800; text-align:center;">Aktualnie: ${Math.round(d.current_weather.temperature)}°C</p><p style="text-align:center; color:var(--text-muted); font-size:12px;">Wiatr: ${d.current_weather.windspeed} km/h</p>`;
-        }).catch(e=>console.warn("Błąd pogody:", e));
+        }).catch(e=>console.warn("Weather error:", e));
     } else {
         setTimeout(fetchWeather, 3000); 
     }
@@ -89,10 +90,9 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
-    
-    // OTWIERANIE POGODY
     if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
 
+    // Alerty
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
     if (e.target.closest('#saveAlertBtn')) {
         const textInput = document.getElementById('alertTextInput');
@@ -101,26 +101,13 @@ document.addEventListener('click', async (e) => {
             .then(() => {
                 document.getElementById('alert-modal').style.display = 'none';
                 textInput.value = '';
-                window.Waggle.showToast("Zagrożenie zgłoszone pomyślnie! ⚠️"); 
-            }).catch(err => window.Waggle.showToast("Błąd zapisu: " + err.message));
-        } else {
-            window.Waggle.showToast("Brak GPS lub tekstu.");
+                window.Waggle.showToast("Zagrożenie zgłoszone! ⚠️");
+            });
         }
     }
 
-    if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
-        const btn = e.target.closest('.top-pill');
-        document.querySelectorAll('#view-community .top-pill').forEach(b => {
-            b.style.background = 'transparent'; b.style.color = 'var(--text-color)';
-        });
-        btn.style.background = 'var(--text-color)'; btn.style.color = 'white';
-        window.Waggle.showToast(`Filtrowanie: ${btn.innerText.trim()} (Wkrótce)`);
-    }
-
+    // Posty i Zdjęcia
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
-    if (e.target.closest('#removePostImageBtn')) {
-        pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
-    }
     if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
     if (e.target.closest('#publishPostBtn')) {
         const btn = e.target.closest('#publishPostBtn');
@@ -140,20 +127,20 @@ document.addEventListener('click', async (e) => {
         finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
     }
 
+    // Wiki Zakładki
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         renderWiki(e.target.getAttribute('data-tab'));
     }
 
+    // Profil i Ustawienia
     if (e.target.closest('#openEditProfileBtn')) {
         const p = state.profile || {};
         document.getElementById('setupName').value = p.name || "";
         document.getElementById('setupCity').value = p.city || "";
         const breedSelect = document.getElementById('setupBreed');
         if (breedSelect) breedSelect.value = p.breed || "";
-        const routineSelect = document.getElementById('setupRoutine');
-        if (routineSelect) routineSelect.value = p.routine || "brak";
         document.getElementById('profile-setup-modal').style.display = 'flex';
     }
     
@@ -162,9 +149,8 @@ document.addEventListener('click', async (e) => {
         btn.innerText = "ZAPISYWANIE..."; btn.disabled = true;
         const d = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim() };
         const breedSelect = document.getElementById('setupBreed'); if(breedSelect) d.breed = breedSelect.value;
-        const routineSelect = document.getElementById('setupRoutine'); if(routineSelect) d.routine = routineSelect.value;
-
         const avatarInput = document.getElementById('setupAvatarInput');
+
         const saveToDb = (data) => {
             db.collection("users").doc(state.user.uid).set(data, {merge:true}).then(() => {
                 state.profile = {...state.profile, ...data};
@@ -176,19 +162,11 @@ document.addEventListener('click', async (e) => {
         };
 
         if (avatarInput && avatarInput.files.length > 0) {
-            uploadImage(avatarInput.files[0]).then(url => { d.avatar = url; saveToDb(d); })
-            .catch(err => { window.Waggle.showToast("Błąd zdjęcia"); btn.innerText = "ZAPISZ"; btn.disabled = false; });
+            uploadImage(avatarInput.files[0]).then(url => { d.avatar = url; saveToDb(d); });
         } else { saveToDb(d); }
     }
 
     if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
-    if (e.target.closest('#saveSettingsBtn')) {
-        localStorage.setItem('waggle_theme', document.getElementById('settingTheme').value);
-        localStorage.setItem('waggle_font', document.getElementById('settingFontSize').value);
-        loadSettings(); document.getElementById('settings-modal').style.display = 'none';
-        window.Waggle.showToast("Ustawienia zapisane");
-    }
-
     if (e.target.closest('#sendMsgBtn')) {
         const input = document.getElementById('chatInput');
         if (input && input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
@@ -213,29 +191,61 @@ document.addEventListener('change', (e) => {
     }
 });
 
+// --- NOWY SILNIK WIEDZY (FIRESTORE) ---
 function renderWiki(tab) {
-    let html = "";
-    // UŻYWAMY POPRAWNEJ NAZWY WIKI
-    const items = WIKI[tab] || WIKI['rasy'] || []; 
-    
-    items.forEach(item => {
-        let tagsHtml = "";
-        if(item.tags) {
-            item.tags.forEach(tag => {
-                tagsHtml += `<span style="display:inline-block; background:var(--panel-bg); color:var(--text-color); font-size:11px; font-weight:800; padding:4px 8px; border-radius:12px; margin-right:6px; margin-top:5px; border: 1px solid var(--border-color);">${tag}</span>`;
-            });
-        }
-
-        html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px;">
-                    <b style="font-size: 16px; color: var(--text-color);">${item.title || item.name}</b><br>
-                    ${tagsHtml}
-                    <p style="margin-top:10px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.4;">${item.desc}</p>
-                 </div>`;
-    });
-    
     const container = document.getElementById('wiki-content');
-    if (container) container.innerHTML = html;
+    if (!container) return;
+    container.innerHTML = '<p style="text-align:center; padding:20px;">Węszenie w bazie danych... 🐾</p>';
+
+    db.collection("wiki").where("category", "==", tab).onSnapshot(snap => {
+        let html = "";
+        snap.forEach(doc => {
+            const item = doc.data();
+            const id = doc.id;
+            const likesCount = item.likes ? item.likes.length : 0;
+            const hasLiked = item.likes && item.likes.includes(state.user.uid);
+
+            let tagsHtml = "";
+            if(item.tags) {
+                item.tags.forEach(tag => {
+                    tagsHtml += `<span style="display:inline-block; background:var(--panel-bg); color:var(--text-color); font-size:10px; font-weight:800; padding:3px 8px; border-radius:10px; margin-right:5px; margin-top:5px; border: 1px solid var(--border-color);">${tag}</span>`;
+                });
+            }
+
+            html += `
+                <div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position:relative;">
+                    <b style="font-size: 17px; color: var(--text-color);">${item.title || item.name}</b><br>
+                    ${tagsHtml}
+                    <p style="margin-top:10px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.5;">${item.desc}</p>
+                    
+                    <div style="border-top: 1px solid var(--border-color); margin-top: 15px; padding-top: 10px; display:flex; gap: 20px; align-items:center;">
+                        <span style="font-size:13px; cursor:pointer; font-weight:800; color: ${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" 
+                              onclick="Waggle.likeWiki('${id}')">
+                            ${hasLiked ? '❤️' : '🤍'} ${likesCount}
+                        </span>
+                        <span style="font-size:13px; color:var(--text-muted); font-weight:800; cursor:pointer;" 
+                              onclick="Waggle.showToast('Komentarze wbudowane wkrótce!')">
+                            💬 Komentarze
+                        </span>
+                    </div>
+                </div>`;
+        });
+        container.innerHTML = html || '<p style="text-align:center; padding:20px;">Brak wpisów.</p>';
+    });
 }
+
+window.Waggle.likeWiki = (id) => {
+    const ref = db.collection("wiki").doc(id);
+    ref.get().then(doc => {
+        const likes = doc.data().likes || [];
+        if (likes.includes(state.user.uid)) {
+            ref.update({ likes: fb.firestore.FieldValue.arrayRemove(state.user.uid) });
+        } else {
+            ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid) });
+            window.Waggle.showToast("Dzięki za ocenę! ❤️");
+        }
+    });
+};
 
 function updateStatsUI() {
     if (!state.profile) return; 
@@ -262,5 +272,24 @@ function loadSettings() {
     else document.body.classList.remove('dark-mode');
     document.documentElement.style.setProperty('--base-font-size', font);
 }
+
+// --- SEEDING (URUCHOM RAZ I USUŃ) ---
+async function seedWiki() {
+    const categories = ['rasy', 'trening', 'sytuacje'];
+    for (const cat of categories) {
+        const items = WIKI[cat] || [];
+        for (const item of items) {
+            await db.collection("wiki").add({
+                ...item,
+                category: cat,
+                likes: [],
+                createdAt: Date.now()
+            });
+        }
+    }
+    window.Waggle.showToast("✅ Wiedza wgrana do bazy!");
+}
+
+// seedWiki(); // Odkomentuj to raz, odśwież stronę i usuń tę linię!
 
 initAuth(initApp);
