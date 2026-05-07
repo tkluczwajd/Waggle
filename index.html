@@ -56,6 +56,7 @@
             <div class="sticky-header">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h3 style="margin:0;">W okolicy</h3>
+                    <div id="stories-container" style="display:flex; gap:12px; overflow-x:auto; padding:15px 0; margin-bottom:5px; scrollbar-width:none; border-bottom:1px solid var(--border-color);"></div>
                 </div>
                 <div style="display:flex; gap:10px; overflow-x:auto; padding:10px 0; margin-top:10px; scrollbar-width:none;">
                     <button class="top-pill" style="background:var(--text-color); color:white; border:none; margin:0;">Wszystko</button>
@@ -80,20 +81,15 @@
             <div id="wiki-content" style="padding:0 10px;"></div>
         </section>
 
-        <section id="view-chat" class="view-section">
-            <div class="sticky-header"><h3 style="margin:0;">Wiadomości</h3></div>
-            <div id="inbox-container"></div>
-            <div id="chat-window" class="chat-overlay">
-                <div class="chat-header">
-                    <button id="closeChatBtn" class="icon-btn">⬅️</button>
-                    <b id="chatPartnerName" style="font-size: 18px;">Czat</b>
+       <section id="view-chat" class="view-section">
+            <div class="sticky-header" style="background:var(--bg-color); z-index:100;">
+                <div style="display:flex; background:var(--panel-bg); border-radius:12px; overflow:hidden; margin-bottom:15px; border:1px solid var(--border-color);">
+                    <button id="chatTabInbox" style="flex:1; padding:12px; border:none; background:white; font-weight:900; color:var(--text-color); cursor:pointer;">ROZMOWY</button>
+                    <button id="chatTabSearch" style="flex:1; padding:12px; border:none; background:transparent; font-weight:900; color:var(--text-muted); cursor:pointer;">STADO / SZUKAJ</button>
                 </div>
-                <div id="chatMessages"></div>
-                <div class="chat-footer">
-                    <input type="text" id="chatInput" placeholder="Napisz wiadomość..." style="margin:0; border-radius:50px; flex:1;">
-                    <button id="sendMsgBtn" class="btn-main" style="width: auto; margin:0; padding: 14px 24px; border-radius:50px;">WYŚLIJ</button>
-                </div>
+                <input type="text" id="userSearchInput" placeholder="Szukaj po imieniu, rasie lub mieście..." style="display:none; width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:10px;">
             </div>
+            <div id="inbox-container" style="padding-top:10px;"></div>
         </section>
 
  <section id="view-profile" class="view-section">
