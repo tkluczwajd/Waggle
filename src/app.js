@@ -49,7 +49,25 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
-    if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
+    if (e.target.closest('#saveAlertBtn')) {
+        const textInput = document.getElementById('alertTextInput');
+        if (textInput && textInput.value && state.location.lat) {
+            db.collection("alerts").add({ 
+                text: textInput.value, 
+                lat: state.location.lat, 
+                lng: state.location.lng, 
+                createdAt: Date.now(), 
+                creator: state.user.uid 
+            }).then(() => {
+                document.getElementById('alert-modal').style.display = 'none';
+                textInput.value = '';
+                // POTWIERDZENIE DLA CIEBIE, ŻE DZIAŁA:
+                alert("Zagrożenie zgłoszone! Pojawi się na mapie u wszystkich.");
+            }).catch(err => alert("Błąd zapisu: " + err.message));
+        } else {
+            alert("Brak GPS lub tekstu.");
+        }
+    }
 
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
     
@@ -153,10 +171,23 @@ document.addEventListener('change', (e) => {
 
 function renderWiki(tab) {
     let html = "";
-    const items = WIKI[tab] || [];
+    // Awaryjne dane, gdyby WIKI się nie załadowało z pliku
+    const safeWiki = WIKI || {
+        rasy: [{title: "Wkrótce", desc: "Baza ras w budowie..."}],
+        trening: [{title: "Pies ciągnie na smyczy", desc: "Zatrzymuj się za każdym razem gdy pies ciągnie. Ruszaj dopiero gdy smycz się rozluźni."}],
+        sytuacje: [{title: "Pierwsze spotkanie psów", desc: "Pozwól psom podejść bokiem, nie na wprost. Zachowaj luźną smycz."}]
+    };
+    
+    const items = safeWiki[tab] || safeWiki['trening']; // Domyślnie trening, jak na starym screenie
+    
     items.forEach(item => {
-        html += `<div class="post-card"><b>${item.name || item.title}</b><p style="margin-top:5px; font-weight:600; font-size:13px; color:var(--text-muted);">${item.desc}</p></div>`;
+        // Stylowanie kart wiedzy jak na Twoim starym screenie
+        html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px;">
+                    <b style="font-size: 16px; color: var(--text-color);">${item.name || item.title}</b>
+                    <p style="margin-top:8px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.4;">${item.desc}</p>
+                 </div>`;
     });
+    
     const container = document.getElementById('wiki-content');
     if (container) container.innerHTML = html;
 }
@@ -164,8 +195,20 @@ function renderWiki(tab) {
 function updateStatsUI() {
     if (!state.profile) return; 
     document.getElementById('profileNameDisplay').innerText = state.profile.name || "Piesek";
-    document.getElementById('statWalks').innerText = state.profile.walkCount || 0;
-    document.getElementById('statDist').innerText = ((state.profile.walkCount || 0) * 1.2).toFixed(1);
+    
+    const walks = state.profile.walkCount || 0;
+    document.getElementById('statWalks').innerText = walks;
+    document.getElementById('statDist').innerText = (walks * 1.2).toFixed(1);
+    
+    // Obliczanie listka
+    let level = "🌱 Nowik";
+    if (walks >= 5) level = "🐕 Spacerowicz";
+    if (walks >= 20) level = "🐺 Weteran Osiedla";
+    if (walks >= 50) level = "👑 Alfa Stada";
+    
+    const lvlEl = document.getElementById('profileLevelDisplay');
+    if (lvlEl) lvlEl.innerText = level;
+
     const avatarEl = document.getElementById('profileAvatar');
     if(avatarEl) avatarEl.src = state.profile.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
 }
