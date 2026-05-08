@@ -1,58 +1,50 @@
-import { auth, db } from '../core/firebase.js';
-import { appState, setState } from '../core/state.js';
-import { cleanupListeners } from '../core/listeners.js';
+import { auth, db } from "../core/firebase.js";
+import { appState as state, setState } from "../core/state.js";
+import { cleanupListeners, registerListener as addListener } from "../core/listeners.js";
 
-export function initAuth(onReadyCallback) {
+export function initAuth(onReady) {
     auth.onAuthStateChanged(user => {
         cleanupListeners(); 
-        
         const loader = document.getElementById("loader");
         if (loader) loader.style.display = "none";
 
         if (user) {
-            // Zapisujemy usera w centralnym stanie
             setState('auth.user', user);
-            setState('auth.initialized', true);
-
-            // Pobieramy profil (tymczasowo bezpośrednio, potem przeniesiemy to do userService)
-            db.collection("users").doc(user.uid).get().then(doc => {
+            state.user = user; // Most wstecznej kompatybilności
+            
+            const unsub = db.collection("users").doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
                     setState('profile', doc.data());
+                    state.profile = doc.data();
                 } else {
                     const newProfile = { name: "Piesek", walkCount: 0, isSearchable: true };
                     setState('profile', newProfile);
-                    db.collection("users").doc(user.uid).set(newProfile);
+                    state.profile = newProfile;
                 }
                 
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app-interface').style.display = 'flex';
+                const authScreen = document.getElementById("auth-screen");
+                const appUI = document.getElementById("app-interface");
+                if (authScreen) authScreen.style.display = "none";
+                if (appUI) appUI.style.display = "flex";
                 
-                if (typeof onReadyCallback === 'function') onReadyCallback();
+                // Odpalenie głównej aplikacji po udanym logowaniu
+                if (typeof onReady === 'function') onReady();
+            }, err => {
+                console.error("Błąd bazy danych:", err);
+                if (typeof onReady === 'function') onReady();
             });
-
+            
+            addListener(unsub);
         } else {
             setState('auth.user', null);
             setState('profile', null);
+            state.user = null;
+            state.profile = null;
             
-            document.getElementById('auth-screen').style.display = 'flex';
-            document.getElementById('app-interface').style.display = 'none';
+            const authScreen = document.getElementById("auth-screen");
+            const appUI = document.getElementById("app-interface");
+            if (appUI) appUI.style.display = "none";
+            if (authScreen) authScreen.style.display = "flex";
         }
     });
-
-    // Podpinamy przyciski z ekranu logowania
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', () => {
-            const email = document.getElementById('authEmail').value;
-            const pass = document.getElementById('authPass').value;
-            auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
-        });
-    }
-
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut().then(() => window.location.reload());
-        });
-    }
 }
