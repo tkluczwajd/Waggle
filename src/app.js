@@ -8,7 +8,7 @@ import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleS
 
 window.Waggle = window.Waggle || {};
 
-// --- SYSTEM TOAST ---
+// --- TOAST SYSTEM ---
 window.Waggle.showToast = (msg) => {
     let toast = document.getElementById('waggle-toast');
     if(!toast) {
@@ -45,12 +45,7 @@ function fetchWeather() {
                 forecastHtml += `<div style="display:flex; justify-content:space-around; border-top:1px solid var(--border-color); padding-top:15px;">`;
                 for(let i=0; i<3; i++) {
                     const date = new Date(d.daily.time[i]).toLocaleDateString('pl-PL', {weekday: 'short'});
-                    forecastHtml += `
-                        <div style="text-align:center;">
-                            <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted);">${date}</div>
-                            <div style="font-size:24px; margin:5px 0;">${getWeatherIcon(d.daily.weathercode[i])}</div>
-                            <div style="font-size:14px; font-weight:900;">${Math.round(d.daily.temperature_2m_max[i])}°</div>
-                        </div>`;
+                    forecastHtml += `<div style="text-align:center;"><div style="font-size:11px;">${date}</div><div style="font-size:24px;">${getWeatherIcon(d.daily.weathercode[i])}</div><div>${Math.round(d.daily.temperature_2m_max[i])}°</div></div>`;
                 }
                 forecastHtml += `</div>`;
                 contentEl.innerHTML = forecastHtml;
@@ -63,30 +58,20 @@ function fetchWeather() {
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
-    container.innerHTML = '<p style="text-align:center; padding:20px;">Węszenie w bazie danych... 🐾</p>';
-
+    container.innerHTML = '<p style="text-align:center; padding:20px;">Węszenie... 🐾</p>';
     db.collection("wiki").where("category", "==", tab).onSnapshot(snap => {
         let html = "";
         snap.forEach(doc => {
             const item = doc.data();
             const id = doc.id;
-            const likesCount = item.likes ? item.likes.length : 0;
             const hasLiked = item.likes && item.likes.includes(state.user.uid);
-            let tagsHtml = (item.tags || []).map(tag => `<span style="display:inline-block; background:var(--panel-bg); color:var(--text-color); font-size:10px; font-weight:800; padding:3px 8px; border-radius:10px; margin-right:5px; margin-top:5px; border: 1px solid var(--border-color);">${tag}</span>`).join("");
-
-            html += `
-                <div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px;">
-                    <b style="font-size: 17px; color: var(--text-color);">${item.title || item.name}</b><br>
-                    ${tagsHtml}
-                    <p style="margin-top:10px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.5;">${item.desc}</p>
-                    <div style="border-top: 1px solid var(--border-color); margin-top: 15px; padding-top: 10px;">
-                        <span style="font-size:13px; cursor:pointer; font-weight:800; color: ${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" onclick="Waggle.likeWiki('${id}')">
-                            ${hasLiked ? '❤️' : '🤍'} ${likesCount}
-                        </span>
-                    </div>
-                </div>`;
+            html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding:15px; margin-bottom:15px;">
+                <b style="font-size: 17px;">${item.title || item.name}</b><br>
+                <p style="margin-top:10px; font-size:14px; color:var(--text-muted);">${item.desc}</p>
+                <span style="font-size:13px; cursor:pointer; color:${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" onclick="Waggle.likeWiki('${id}')">${hasLiked ? '❤️' : '🤍'} ${item.likes ? item.likes.length : 0}</span>
+            </div>`;
         });
-        container.innerHTML = html || '<p style="text-align:center; padding:20px;">Brak wpisów.</p>';
+        container.innerHTML = html || '<p style="text-align:center;">Brak wpisów.</p>';
     });
 }
 window.Waggle.likeWiki = (id) => {
@@ -102,150 +87,90 @@ window.Waggle.likeWiki = (id) => {
 window.Waggle.renderPlaces = () => {
     const container = document.getElementById('places-container');
     if (!container) return;
-    if (nearbyPlaces.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
-        return;
-    }
+    if (nearbyPlaces.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px;">Szukam... 🧭</p>'; return; }
     let html = "";
     nearbyPlaces.forEach(place => {
-        const icon = place.isDogPark ? '🐕' : '🌳';
-        const type = place.isDogPark ? 'Wybieg dla psów' : 'Park';
-        const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
-        html += `
-            <div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <div style="font-size:30px;">${icon}</div>
-                    <div>
-                        <b style="font-size:16px; color:var(--text-color);">${place.name}</b><br>
-                        <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${type} • ${place.distance.toFixed(1)} km stąd</span>
-                    </div>
-                </div>
-                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color};" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">Prowadź</button>
-            </div>`;
+        html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding:15px; border-left:4px solid var(--secondary);">
+            <div><b>${place.name}</b><br><small>${place.distance.toFixed(1)} km</small></div>
+            <button class="btn-outline" style="width:auto; padding:8px;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">🧭</button>
+        </div>`;
     });
     container.innerHTML = html;
 };
 
-// --- GLOBALNE EKSPORTY ---
+// --- GLOBALNE ---
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
 window.Waggle.openLightbox = openLightbox;
-window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
 window.Waggle.togglePostLike = togglePostLike;
 window.Waggle.openPostComments = openPostComments;
 window.Waggle.searchUsers = searchUsers;
 window.Waggle.toggleStado = toggleStado;
 
-// --- NAWIGACJA I WIDOKI ---
 function switchView(viewId) {
     clearListeners(); 
     document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    
-    const targetView = document.getElementById('view-' + viewId);
-    if (targetView) targetView.classList.add('active');
-    
-    const navBtn = document.querySelector(`.nav-item[data-view="${viewId}"]`);
-    if (navBtn) navBtn.classList.add('active');
-    
+    const tv = document.getElementById('view-' + viewId);
+    if (tv) tv.classList.add('active');
+    const nb = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+    if (nb) nb.classList.add('active');
     if (viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 300);
     if (viewId === 'community') loadPosts();
-    if (viewId === 'chat') document.getElementById('chatTabInbox').click();
     if (viewId === 'wiki') renderWiki('rasy');
     if (viewId === 'places') window.Waggle.renderPlaces();
 }
 
-// --- STATYSTYKI I USTAWIENIA ---
 function updateStatsUI() {
     if (!state.profile) return; 
-    const nDisp = document.getElementById('profileNameDisplay');
-    if(nDisp) nDisp.innerText = state.profile.name || "Piesek";
+    document.getElementById('profileNameDisplay').innerText = state.profile.name || "Piesek";
     const walks = state.profile.walkCount || 0;
-    const wEl = document.getElementById('statWalks');
-    const dEl = document.getElementById('statDist');
-    if(wEl) wEl.innerText = walks;
-    if(dEl) dEl.innerText = (walks * 1.2).toFixed(1);
+    document.getElementById('statWalks').innerText = walks;
+    document.getElementById('statDist').innerText = (walks * 1.2).toFixed(1);
     const av = document.getElementById('profileAvatar');
     if(av) av.src = state.profile.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
 }
 
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
-    const font = localStorage.getItem('waggle_font') || '14px';
     if (theme === 'dark') document.body.classList.add('dark-mode');
-    else document.body.classList.remove('dark-mode');
-    document.documentElement.style.setProperty('--base-font-size', font);
-    
     state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
-    const sC = document.getElementById('settingSearchable');
-    if (sC) sC.checked = !state.isGhostMode;
+    const sc = document.getElementById('settingSearchable');
+    if (sc) sc.checked = !state.isGhostMode;
 }
 
-// --- ZMIENNE POMOCNICZE DLA POSTÓW ---
 let pendingImageFile = null;
 
-// --- INICJALIZACJA ---
 export function initApp() {
     loadSettings(); initMap(); loadPosts(); loadInbox(); updateStatsUI(); fetchWeather();
 }
 
-// --- OBSŁUGA ZDARZEŃ (LISTENERS) ---
-document.addEventListener('input', (e) => {
-    if (e.target.id === 'userSearchInput') window.Waggle.searchUsers(e.target.value);
-});
-
+// LISTENERS
+document.addEventListener('input', (e) => { if (e.target.id === 'userSearchInput') window.Waggle.searchUsers(e.target.value); });
 document.addEventListener('change', (e) => {
     if(e.target.id === 'postImageInput') {
-        const file = e.target.files[0];
-        if(file) {
-            pendingImageFile = file;
-            const reader = new FileReader();
-            reader.onload = (ex) => {
-                document.getElementById('post-image-preview').src = ex.target.result;
-                document.getElementById('post-image-preview-container').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+        pendingImageFile = e.target.files[0];
+        if(pendingImageFile) {
+            const r = new FileReader(); r.onload = (ex) => { document.getElementById('post-image-preview').src = ex.target.result; document.getElementById('post-image-preview-container').style.display = 'block'; }; r.readAsDataURL(pendingImageFile);
         }
     }
-    if (e.target.id === 'isEventCheckbox') {
-        const detailsInput = document.getElementById('eventDetailsInput');
-        detailsInput.style.display = e.target.checked ? 'block' : 'none';
-    }
+    if (e.target.id === 'isEventCheckbox') document.getElementById('eventDetailsInput').style.display = e.target.checked ? 'block' : 'none';
 });
 
 document.addEventListener('click', async (e) => {
     const navItem = e.target.closest('.nav-item');
     if (navItem) switchView(navItem.getAttribute('data-view'));
-
     if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
 
-    // Czat
+    // CZAT
     if (e.target.closest('#closeChatBtn')) closeActiveChat();
-    if (e.target.closest('#sendMsgBtn')) {
-        const input = document.getElementById('chatInput');
-        if (input && input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
-    }
-    if (e.target.closest('#chatAddPhotoBtn')) {
-        const input = document.createElement('input');
-        input.type = 'file'; input.accept = 'image/*';
-        input.onchange = (ev) => sendChatImage(ev.target.files[0]);
-        input.click();
-    }
-    if (e.target.closest('#chatTabInbox')) {
-        e.target.style.background = 'white';
-        document.getElementById('chatTabSearch').style.background = 'transparent';
-        document.getElementById('userSearchInput').style.display = 'none';
-        loadInbox();
-    }
-    if (e.target.closest('#chatTabSearch')) {
-        e.target.style.background = 'white';
-        document.getElementById('chatTabInbox').style.background = 'transparent';
-        document.getElementById('userSearchInput').style.display = 'block';
-        searchUsers('');
-    }
+    if (e.target.closest('#sendMsgBtn')) { const i = document.getElementById('chatInput'); if (i && i.value.trim()) { sendMessage(i.value.trim()); i.value = ""; } }
+    if (e.target.closest('#chatAddPhotoBtn')) { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = (ev) => sendChatImage(ev.target.files[0]); i.click(); }
+    if (e.target.closest('#chatTabInbox')) { e.target.style.background = 'white'; document.getElementById('chatTabSearch').style.background = 'transparent'; document.getElementById('userSearchInput').style.display = 'none'; loadInbox(); }
+    if (e.target.closest('#chatTabSearch')) { e.target.style.background = 'white'; document.getElementById('chatTabInbox').style.background = 'transparent'; document.getElementById('userSearchInput').style.display = 'block'; searchUsers(''); }
 
-    // Mapa i Spacer
+    // MAPA
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
@@ -253,61 +178,41 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
     if (e.target.closest('#saveAlertBtn')) {
         const text = document.getElementById('alertTextInput').value;
-        if (text && state.location.lat) {
-            db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid })
-            .then(() => { document.getElementById('alert-modal').style.display = 'none'; window.Waggle.showToast("Zagrożenie zgłoszone! ⚠️"); });
-        }
+        if (text && state.location.lat) { db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid }).then(() => { document.getElementById('alert-modal').style.display = 'none'; window.Waggle.showToast("Zgłoszono! ⚠️"); }); }
     }
 
-    // Posty i Społeczność
+    // SPOŁECZNOŚĆ
     if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
-    if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
     if (e.target.closest('#publishPostBtn')) {
-        const btn = e.target; btn.disabled = true;
         const text = document.getElementById('postContent').value.trim();
         const isEvent = document.getElementById('isEventCheckbox').checked;
-        const eventDate = document.getElementById('eventDate').value;
-        try {
-            let url = null; if(pendingImageFile) url = await uploadImage(pendingImageFile);
-            await saveCommunityPost(text, url, isEvent, eventDate);
-            document.getElementById('post-creator-modal').style.display = 'none';
-            pendingImageFile = null; window.Waggle.showToast("Opublikowano! 🎉");
-        } catch(err) { window.Waggle.showToast("Błąd publikacji!"); } finally { btn.disabled = false; }
+        const date = document.getElementById('eventDate').value;
+        try { let url = null; if(pendingImageFile) url = await uploadImage(pendingImageFile); await saveCommunityPost(text, url, isEvent, date); document.getElementById('post-creator-modal').style.display = 'none'; window.Waggle.showToast("Gotowe! 🎉"); } catch(err) { window.Waggle.showToast("Błąd!"); }
     }
-    if (e.target.closest('#sendCommentBtn')) {
-        const input = document.getElementById('commentInput');
-        if (input && input.value.trim()) { addPostComment(input.value.trim()); input.value = ""; }
-    }
+    if (e.target.closest('#sendCommentBtn')) { const i = document.getElementById('commentInput'); if (i && i.value.trim()) { addPostComment(i.value.trim()); i.value = ""; } }
 
-    // Wiki
-    if (e.target.classList.contains('wiki-tab-btn')) {
-        document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        renderWiki(e.target.getAttribute('data-tab'));
-    }
+    // WIKI
+    if (e.target.classList.contains('wiki-tab-btn')) { document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab')); }
 
-    // Ustawienia i Profil
+    // USTAWIENIA
     if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
     if (e.target.closest('#saveSettingsBtn')) {
-        const theme = document.getElementById('settingTheme').value;
         const isSearchable = document.getElementById('settingSearchable').checked;
-        localStorage.setItem('waggle_theme', theme);
         localStorage.setItem('waggle_ghost_mode', (!isSearchable).toString());
         state.isGhostMode = !isSearchable;
         if (state.isGhostMode && state.user) db.collection("walks").doc(state.user.uid).delete();
         loadSettings(); document.getElementById('settings-modal').style.display = 'none';
         window.Waggle.showToast("Zapisano!");
     }
+    if (e.target.closest('#openEditProfileBtn')) document.getElementById('profile-setup-modal').style.display = 'flex';
     if (e.target.closest('#saveProfileBtn')) {
-        const data = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim(), breed: document.getElementById('setupBreed').value };
-        const avatarInput = document.getElementById('setupAvatarInput');
-        if (avatarInput.files.length > 0) {
-            uploadImage(avatarInput.files[0]).then(url => { data.avatar = url; db.collection("users").doc(state.user.uid).set(data, {merge:true}); });
-        } else { db.collection("users").doc(state.user.uid).set(data, {merge:true}); }
+        const d = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim(), breed: document.getElementById('setupBreed').value };
+        const ai = document.getElementById('setupAvatarInput');
+        if (ai.files.length > 0) { uploadImage(ai.files[0]).then(url => { d.avatar = url; db.collection("users").doc(state.user.uid).update(d); }); } else { db.collection("users").doc(state.user.uid).update(d); }
         document.getElementById('profile-setup-modal').style.display = 'none';
     }
 
-    // Auth
+    // AUTH
     if (e.target.closest('#loginBtn')) auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value);
     if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
 });
