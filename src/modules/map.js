@@ -36,13 +36,22 @@ export function initMap() {
         if(state.isFollowing && state.map) state.map.panTo([latitude, longitude]);
         updateAlertHubUI(); 
 
-        // GPS NA ŻYWO!
+        // GPS NA ŻYWO Z OBSŁUGĄ GHOST MODE
         if (state.isWalking && state.user) {
-            db.collection("walks").doc(state.user.uid).update({
-                lat: latitude,
-                lng: longitude,
-                timestamp: Date.now()
-            }).catch(e => console.warn("Błąd aktualizacji GPS", e));
+            if (state.isGhostMode) {
+                // Jeśli Ghost Mode jest włączony, usuwamy naszą pozycję z bazy widocznych spacerów
+                db.collection("walks").doc(state.user.uid).delete().catch(() => {});
+            } else {
+                // Jeśli jesteśmy widoczni, normalnie aktualizujemy pozycję
+                db.collection("walks").doc(state.user.uid).set({
+                    uid: state.user.uid,
+                    name: state.profile?.name || "Piesek",
+                    avatar: state.profile?.avatar || "",
+                    lat: latitude,
+                    lng: longitude,
+                    timestamp: Date.now()
+                }, { merge: true });
+            }
         }
 
     }, err => console.warn("GPS Error:", err), { enableHighAccuracy: true });
@@ -51,22 +60,94 @@ export function initMap() {
     listenForAlerts(); 
 }
 
-function getDistance(lat1, lon1, lat2, lon2) { 
-    const R = 6371; const dLat = (lat2-lat1) * Math.PI / 180; const dLon = (lon2-lon1) * Math.PI / 180; 
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+function loadParksAndRuns(lat, lng) {
+    if (parksLoaded) return;
+    const query = `[out:json];(node["leisure"="dog_park"](around:5000,${lat},${lng});way["leisure"="dog_park"](around:5000,${lat},${lng});node["leisure"="park"](around:3000,${lat},${lng}););out center;`;
+    fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`)
+        .then(r => r.json()).then(data => {
+            data.elements.forEach(el => {
+                const eLat = el.lat || el.center.lat;
+                const eLng = el.lon || el.center.lon;
+                const isRun = el.tags.leisure === 'dog_park';
+                const name = el.tags.name || (isRun ? "Wybieg dla psów" : "Park");
+                
+                const dist = getDistance(lat, lng, eLat, eLng);
+                nearbyPlaces.push({ name, dist, lat: eLat, lng: eLng, isRun });
+
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div style="background:${isRun ? '#4cd137' : '#00a8ff'}; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:2px solid white; box-shadow:var(--soft-shadow); font-size:16px;">${isRun ? '🐕' : '🌳'}</div>`,
+                    iconSize: [30,30]
+                });
+                L.marker([eLat, eLng], { icon }).addTo(state.map).bindPopup(`<b>${name}</b><br>${dist.toFixed(2)} km`);
+            });
+            nearbyPlaces.sort((a, b) => a.dist - b.dist);
+            parksLoaded = true;
+        });
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2-lat1) * Math.PI / 180;
+    const dLon = (lon2-lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+function listenForWalks() {
+    const unsub = db.collection("walks").onSnapshot(snap => {
+        const activeUids = new Set();
+        let html = "";
+        snap.forEach(doc => {
+            const d = doc.data();
+            if (Date.now() - d.timestamp > 600000) return; 
+            activeUids.add(d.uid);
+            const isMe = d.uid === state.user?.uid;
+            
+            const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+            html += `<div class="story-circle" onclick="window.Waggle.centerOnTarget(${d.lat}, ${d.lng})" style="flex-shrink:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; width:65px;">
+                        <div style="width:55px; height:55px; border-radius:50%; padding:2px; border:2px solid ${isMe ? 'var(--secondary)' : 'var(--primary)'}; background:white; box-shadow:var(--soft-shadow);">
+                            <img src="${avatarSrc}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                        </div>
+                        <div style="font-size:10px; font-weight:900; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;">${isMe ? 'Ty' : d.name}</div>
+                     </div>`;
+            
+            if(!isMe) {
+                if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
+                else dogMarkers[d.uid] = L.marker([d.lat, d.lng], { 
+                    icon: L.divIcon({ 
+                        className: '', 
+                        html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, 
+                        iconSize: [40, 40] 
+                    }) 
+                }).addTo(state.map).on('click', () => {
+                    window.Waggle.showUserModal(d);
+                });
+            }
+        });
+        Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
+        
+        const sc = document.getElementById('stories-container');
+        if(sc) sc.innerHTML = html || "<p style='font-size:12px; color:var(--text-muted); padding-left:10px;'>Cisza w okolicy. Wyjdź jako pierwszy!</p>";
+    });
+    addListener(unsub);
 }
 
 function listenForAlerts() {
     const unsub = db.collection("alerts").onSnapshot(snap => {
-        Object.values(alertMarkers).forEach(m => state.map.removeLayer(m));
-        alertMarkers = {}; activeAlertsList = [];
+        activeAlertsList = [];
         snap.forEach(doc => {
-            const a = doc.data();
-            if(Date.now() - a.createdAt < 86400000) {
-                const marker = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: `<div style="background:var(--danger); color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:18px; border:3px solid white; box-shadow:var(--soft-shadow); box-sizing: border-box;">⚠️</div>`, iconSize:[32,32] }) })
-                .addTo(state.map).bindPopup(`<b>Zagrożenie:</b><br>${a.text}`);
-                alertMarkers[doc.id] = marker; activeAlertsList.push({ id: doc.id, ...a });
+            const data = { id: doc.id, ...doc.data() };
+            if (Date.now() - data.createdAt > 86400000) return; 
+            activeAlertsList.push(data);
+
+            if (!alertMarkers[doc.id] && !dismissedAlerts.includes(doc.id)) {
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div style="background:var(--danger); width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; font-size:18px; box-shadow:0 0 15px rgba(255,82,82,0.5);">⚠️</div>`,
+                    iconSize: [35,35]
+                });
+                alertMarkers[doc.id] = L.marker([data.lat, data.lng], { icon }).addTo(state.map).bindPopup(`<b>ZAGROŻENIE!</b><br>${data.text}`);
             }
         });
         updateAlertHubUI();
@@ -75,105 +156,26 @@ function listenForAlerts() {
 }
 
 function updateAlertHubUI() {
-    if (!state.location.lat) return;
-    const nearby = activeAlertsList.filter(a => getDistance(state.location.lat, state.location.lng, a.lat, a.lng) < 5);
-    const unread = nearby.filter(a => !dismissedAlerts.includes(a.id));
-    const pill = document.getElementById('active-alert-pill');
-    if (!pill) return;
-    if (nearby.length > 0) {
-        pill.style.display = 'flex';
-        pill.onclick = () => window.showAllAlertsPopup(nearby);
-        if (unread.length > 0) {
-            pill.style.background = 'var(--danger)'; pill.innerHTML = `⚠️ ${unread.length} NOWE ZAGROŻENIA!`;
-            pill.style.animation = 'pulse-red 1.5s infinite'; 
-        } else {
-            pill.style.background = 'var(--panel-bg)'; pill.style.color = 'var(--danger)';
-            pill.innerHTML = `⚠️ ${nearby.length} w okolicy`; pill.style.animation = 'none';
-        }
-    } else { pill.style.display = 'none'; }
-}
-
-window.showAllAlertsPopup = function(nearbyAlerts) {
+    const container = document.getElementById('active-alerts-list');
+    if (!container) return;
+    if (activeAlertsList.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">Brak aktywnych alertów w okolicy. Czysto! 🐾</div>`;
+        return;
+    }
     let html = "";
-    nearbyAlerts.forEach(a => {
-        const dist = getDistance(state.location.lat, state.location.lng, a.lat, a.lng).toFixed(1);
-        const diffMin = Math.round((Date.now() - a.createdAt) / 60000);
-        let timeText = diffMin < 60 ? `${diffMin} min temu` : `${Math.floor(diffMin/60)} godz. temu`;
-        html += `<div style="padding: 15px; border-radius: 16px; background: var(--bg-color); margin-bottom: 10px; border-left: 4px solid var(--danger);">
-                    <b style="color: var(--danger); font-size: 15px;">${a.text}</b><br>
-                    <small style="color: var(--text-muted); font-weight: 800;">Około ${dist} km stąd • ${timeText}</small>
+    activeAlertsList.forEach(a => {
+        html += `<div class="post-card" style="margin-bottom:10px; border-left:4px solid var(--danger);">
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div style="flex:1;">
+                            <b style="color:var(--danger); font-size:12px;">⚠️ ALERT ZAGROŻENIA</b>
+                            <p style="margin:5px 0; font-size:14px; font-weight:700;">${a.text}</p>
+                            <small style="color:var(--text-muted);">Zgłoszono: ${new Date(a.createdAt).toLocaleTimeString()}</small>
+                        </div>
+                        <button class="btn-outline" onclick="window.Waggle.centerOnTarget(${a.lat}, ${a.lng})" style="width:auto; padding:8px 12px; font-size:12px;">POKAŻ</button>
+                    </div>
                  </div>`;
-        if(!dismissedAlerts.includes(a.id)) dismissedAlerts.push(a.id);
     });
-    document.getElementById('alert-hub-list').innerHTML = html;
-    document.getElementById('alert-hub-modal').style.display = 'flex';
-    localStorage.setItem('dismissedAlerts', JSON.stringify(dismissedAlerts));
-    updateAlertHubUI();
-};
-
-async function loadParks(lat, lng) {
-    if (parksLoaded) return; parksLoaded = true;
-    const query = `[out:json];(node["leisure"="park"](around:5000,${lat},${lng});way["leisure"="park"](around:5000,${lat},${lng});node["leisure"="dog_park"](around:5000,${lat},${lng});way["leisure"="dog_park"](around:5000,${lat},${lng}););out center;`;
-    
-    try {
-        const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        
-        nearbyPlaces.length = 0; 
-        const parkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🌳</div>', iconSize: [24,24] });
-        const dogParkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🐕</div>', iconSize: [24,24] });
-
-        data.elements.forEach(el => {
-            const pLat = el.lat || el.center.lat; const pLon = el.lon || el.center.lon;
-            const isDogPark = el.tags && el.tags.leisure === 'dog_park';
-            const name = el.tags && el.tags.name ? el.tags.name : (isDogPark ? "Wybieg dla psów" : "Park / Zielen");
-            const distance = getDistance(lat, lng, pLat, pLon);
-            
-            nearbyPlaces.push({ name: name, isDogPark: isDogPark, lat: pLat, lng: pLon, distance: distance });
-
-            L.marker([pLat, pLon], { icon: isDogPark ? dogParkIcon : parkIcon }).addTo(state.map)
-             .bindPopup(`<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLon}" target="_blank" style="color:var(--secondary); font-weight:800; text-decoration:none; display:inline-block; margin-top:5px;">Nawiguj tutaj 🧭</a>`);
-        });
-
-        nearbyPlaces.sort((a, b) => a.distance - b.distance);
-        if (window.Waggle && window.Waggle.renderPlaces) window.Waggle.renderPlaces();
-    } catch(err) { parksLoaded = false; }
-}
-
-function loadParksAndRuns(lat, lng) { loadParks(lat, lng); }
-
-function listenForWalks() {
-    const unsub = db.collection("walks").onSnapshot(snap => {
-        let html = ""; const activeUids = new Set();
-        snap.forEach(doc => {
-            const d = doc.data();
-            activeUids.add(d.uid);
-            const isMe = (d.uid === state.user?.uid);
-            const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-            const bColor = isMe ? 'var(--primary)' : 'white';
-            
-            // LOGIKA: Kliknięcie wysyła kordynaty GPS do menu, jeśli to inna osoba!
-            const clickAction = isMe 
-                ? `window.Waggle.centerOnMe()` 
-                : `window.Waggle.openUserMenu('${d.uid}', '${d.name}', '${avatarSrc}', ${d.lat}, ${d.lng})`;
-            
-            // ZABEZPIECZENIE GRAFIKI (SZYTWNE 60x60)
-            html += `<div class="walk-card" onclick="${clickAction}" style="display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:70px;">
-                        <img src="${avatarSrc}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border: 3px solid ${bColor}; box-shadow:var(--soft-shadow);">
-                        <div style="font-size:12px; font-weight:900; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;">${isMe ? 'Ty' : d.name}</div>
-                     </div>`;
-            
-            if(!isMe) {
-                if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
-                else dogMarkers[d.uid] = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: '', html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, iconSize: [40, 40] }) }).addTo(state.map);
-            }
-        });
-        Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
-        
-        const sc = document.getElementById('stories-container');
-        if(sc) sc.innerHTML = html || "<p style='font-size:12px; color:var(--text-muted); padding-left:10px;'>Cisza w okolicy. Wyjdź jako pierwszy!</p>";
-    }); 
-    addListener(unsub);
+    container.innerHTML = html;
 }
 
 export function centerOnMe() { state.isFollowing = true; state.map.flyTo([state.location.lat, state.location.lng], 15); }
