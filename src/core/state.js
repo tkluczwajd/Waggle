@@ -1,31 +1,27 @@
-// src/core/state.js
-
-export const state = {
-    user: null,
-    profile: null,
-    location: { lat: null, lng: null },
-    isWalking: false,
-    isGhostMode: false, // NOWOŚĆ: Stan trybu niewidzialności
-    map: null,
-    isFollowing: true, 
-    currentChatId: null,
-    listeners: []
+export const appState = {
+    auth: {
+        user: null,
+        initialized: false
+    },
+    ui: {
+        activeView: 'map',
+        activeModal: null,
+        loading: false,
+        theme: 'light'
+    },
+    location: {
+        lat: null,
+        lng: null,
+        following: true,
+        watchId: null
+    }
 };
 
-// Nowy standard funkcji
-export function addListener(unsub) {
-    state.listeners.push(unsub);
+export function setState(path, value) {
+    const keys = path.split('.');
+    let current = appState;
+    while (keys.length > 1) {
+        current = current[keys.shift()];
+    }
+    current[keys[0]] = value;
 }
-
-export function clearListeners() {
-    state.listeners.forEach(unsub => {
-        if (typeof unsub === 'function') unsub();
-    });
-    state.listeners = [];
-}
-
-// "Most" kompatybilności dla starszych plików (np. posts.js, chat.js)
-export const ListenerManager = {
-    add: addListener,
-    clear: clearListeners
-};
