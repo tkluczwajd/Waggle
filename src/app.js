@@ -7,6 +7,8 @@ import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter,
 import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado } from './modules/chat.js';
 
 window.Waggle = window.Waggle || {};
+
+// TOAST SYSTEM
 window.Waggle.showToast = (msg) => {
     let toast = document.getElementById('waggle-toast');
     if(!toast) {
@@ -16,107 +18,45 @@ window.Waggle.showToast = (msg) => {
         document.body.appendChild(toast);
     }
     toast.innerText = msg;
-    toast.style.opacity = '1';
-    setTimeout(() => { toast.style.opacity = '0'; }, 3000);
-};
+    toast.style.opacity = '1'; toast.style.display = 'block';
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.style.display='none',300); }, 3500);
+}
 
+// EXPOSE TO WINDOW
 window.Waggle.openChat = openChat;
+window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
+window.Waggle.openLightbox = openLightbox;
+window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
+window.Waggle.togglePostLike = togglePostLike;
+window.Waggle.openPostComments = openPostComments;
+window.Waggle.searchUsers = searchUsers;
 window.Waggle.toggleStado = toggleStado;
 
-// Funkcja pokazująca szybki modal użytkownika po kliknięciu w avatar na mapie
-window.Waggle.showUserModal = (userData) => {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'flex';
-    modal.innerHTML = `
-        <div class="card" style="width:280px; text-align:center; padding:25px;">
-            <div style="width:80px; height:80px; margin:0 auto 15px; border-radius:50%; border:3px solid var(--primary); padding:3px;">
-                <img src="${userData.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150'}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
-            </div>
-            <h3 style="margin:0;">${userData.name}</h3>
-            <p style="color:var(--text-muted); font-size:13px; margin-top:5px;">${userData.status || 'Na spacerze'}</p>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;">
-                <button class="btn-main" id="modalChatBtn" style="padding:10px; font-size:12px;">NAPISZ</button>
-                <button class="btn-outline" id="modalStadoBtn" style="padding:10px; font-size:12px;">STADO</button>
-            </div>
-            <button class="btn-outline" onclick="this.closest('.modal').remove()" style="margin-top:10px; border:none;">Zamknij</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
+// VIEW SWITCHER
+function switchView(viewId) {
+    clearListeners(); 
+    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     
-    document.getElementById('modalChatBtn').onclick = () => {
-        modal.remove();
-        openChat(userData.uid, userData.name);
-    };
-    document.getElementById('modalStadoBtn').onclick = () => {
-        toggleStado(userData.uid);
-        modal.remove();
-    };
-};
+    const targetView = document.getElementById('view-' + viewId);
+    const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+    
+    if (targetView) targetView.classList.add('active');
+    if (targetNav) targetNav.classList.add('active');
+    
+    if (viewId === 'map' && state.map) setTimeout(() => state.map.invalidateSize(), 300);
+    if (viewId === 'community') loadPosts();
+    if (viewId === 'chat') loadInbox();
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-    initAuth(() => {
-        loadSettings();
-        initApp();
-    });
-});
-
-function initApp() {
+// APP INITIALIZATION
+export function initApp() {
+    loadSettings(); 
     initMap();
     loadPosts();
     loadInbox();
     updateStatsUI();
-
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const view = item.getAttribute('data-view');
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(view).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            item.classList.add('active');
-        });
-    });
-
-    document.addEventListener('click', (e) => {
-        if (e.target.id === 'startWalkBtn') startWalk();
-        if (e.target.id === 'stopWalkBtn') stopWalk();
-        if (e.target.id === 'centerMeBtn') centerOnMe();
-        if (e.target.id === 'openPostCreatorBtn') document.getElementById('post-modal').style.display = 'flex';
-        if (e.target.id === 'closePostModal') document.getElementById('post-modal').style.display = 'none';
-        if (e.target.id === 'openSettingsBtn') document.getElementById('settings-modal').style.display = 'flex';
-        if (e.target.id === 'closeSettingsBtn') document.getElementById('settings-modal').style.display = 'none';
-        if (e.target.id === 'openSearchBtn') document.getElementById('search-modal').style.display = 'flex';
-        if (e.target.id === 'closeSearchBtn') document.getElementById('search-modal').style.display = 'none';
-        if (e.target.id === 'logoutBtn') auth.signOut().then(() => window.location.reload());
-        
-        // Zapisywanie ustawień
-        if (e.target.id === 'saveSettingsBtn') {
-            const theme = document.getElementById('settingTheme').value;
-            const font = document.getElementById('settingFontSize').value;
-            const isSearchable = document.getElementById('settingSearchable').checked;
-
-            localStorage.setItem('waggle_theme', theme);
-            localStorage.setItem('waggle_font', font);
-            localStorage.setItem('waggle_ghost_mode', (!isSearchable).toString());
-            
-            state.isGhostMode = !isSearchable;
-            
-            // Jeśli tryb ducha włączony, usuwamy nas z mapy natychmiast
-            if (state.isGhostMode && state.user) {
-                db.collection("walks").doc(state.user.uid).delete();
-            }
-
-            loadSettings();
-            document.getElementById('settings-modal').style.display = 'none';
-            window.Waggle.showToast("Ustawienia zapisane! 🐾");
-        }
-    });
-
-    const searchInput = document.getElementById('userSearchInput');
-    if(searchInput) {
-        searchInput.addEventListener('input', (e) => searchUsers(e.target.value));
-    }
 }
 
 function loadSettings() {
@@ -126,30 +66,81 @@ function loadSettings() {
 
     if (theme === 'dark') document.body.classList.add('dark-mode');
     else document.body.classList.remove('dark-mode');
-    
     document.documentElement.style.setProperty('--base-font-size', font);
-    
+
     state.isGhostMode = isGhost;
     const searchableCheckbox = document.getElementById('settingSearchable');
-    if (searchableCheckbox) {
-        searchableCheckbox.checked = !isGhost; 
-    }
+    if (searchableCheckbox) searchableCheckbox.checked = !isGhost;
 }
 
 function updateStatsUI() {
     if (!state.profile) return; 
-    document.getElementById('profileNameDisplay').innerText = state.profile.name || "Piesek";
-    const walks = state.profile.walkCount || 0;
-    document.getElementById('statWalks').innerText = walks;
-    document.getElementById('statDist').innerText = (walks * 1.2).toFixed(1);
+    const nameDisp = document.getElementById('profileNameDisplay');
+    if(nameDisp) nameDisp.innerText = state.profile.name || "Piesek";
     
-    let level = "🌱 Nowik";
-    if (walks >= 5) level = "🐕 Spacerowicz";
-    if (walks >= 20) level = "🐺 Weteran Osiedla";
-    if (walks >= 50) level = "👑 Alfa Stada";
-    const lvlEl = document.getElementById('profileLevelDisplay');
-    if (lvlEl) lvlEl.innerText = level;
-
+    const walks = state.profile.walkCount || 0;
+    const walkEl = document.getElementById('statWalks');
+    const distEl = document.getElementById('statDist');
+    if(walkEl) walkEl.innerText = walks;
+    if(distEl) distEl.innerText = (walks * 1.2).toFixed(1);
+    
     const avatarEl = document.getElementById('profileAvatar');
     if(avatarEl) avatarEl.src = state.profile.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
 }
+
+// GLOBAL EVENT LISTENERS
+document.addEventListener('click', async (e) => {
+    // Modals
+    if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
+    
+    // Navigation
+    const navItem = e.target.closest('.nav-item');
+    if (navItem) switchView(navItem.getAttribute('data-view'));
+
+    // Map Controls
+    if (e.target.closest('#centerBtn')) centerOnMe();
+    if (e.target.closest('#startWalkBtn')) startWalk();
+    if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
+
+    // Auth Actions
+    if (e.target.closest('#loginBtn')) {
+        const email = document.getElementById('authEmail').value;
+        const pass = document.getElementById('authPass').value;
+        auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+    }
+    
+    if (e.target.closest('#registerBtn')) {
+        const email = document.getElementById('authEmail').value;
+        const pass = document.getElementById('authPass').value;
+        auth.createUserWithEmailAndPassword(email, pass).then(() => {
+            db.collection("users").doc(auth.currentUser.uid).set({ name: "Nowy Piesek", walkCount: 0 });
+        }).catch(err => alert(err.message));
+    }
+
+    if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
+
+    // Settings
+    if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
+    if (e.target.closest('#saveSettingsBtn')) {
+        const theme = document.getElementById('settingTheme').value;
+        const font = document.getElementById('settingFontSize').value;
+        const isSearchable = document.getElementById('settingSearchable').checked;
+
+        localStorage.setItem('waggle_theme', theme);
+        localStorage.setItem('waggle_font', font);
+        localStorage.setItem('waggle_ghost_mode', (!isSearchable).toString());
+        
+        state.isGhostMode = !isSearchable;
+        if (state.isGhostMode && state.user) db.collection("walks").doc(state.user.uid).delete();
+
+        loadSettings();
+        document.getElementById('settings-modal').style.display = 'none';
+        window.Waggle.showToast("Ustawienia zapisane! 🐾");
+    }
+
+    // Community Actions
+    if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
+});
+
+// START AUTH
+initAuth(initApp);
