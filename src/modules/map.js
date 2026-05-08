@@ -1,5 +1,8 @@
-import { state, addListener } from '../core/state.js';
+import { appState as state, setState } from '../core/state.js';
 import { db } from '../core/firebase.js';
+import { mapManager } from './map/mapManager.js';
+import { registerListener } from '../core/listeners.js';
+import { subscribeToWalks } from '../services/walkService.js';
 
 let myMarker = null; 
 let dogMarkers = {}; 
@@ -10,13 +13,15 @@ let parksLoaded = false;
 export const nearbyPlaces = []; 
 
 export function initMap() {
-    if (state.map) return;
-    state.map = L.map('map', { zoomControl: false }).setView([52.2, 21.0], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(state.map);
+    if (state.map?.instance) return; // Zabezpieczenie przed dublowaniem
+    
+    mapManager.init('map', 52.2, 21.0, 13);
+    setState('map.instance', mapManager);
 
     navigator.geolocation.watchPosition(pos => {
         const { latitude, longitude } = pos.coords;
-        state.location = { lat: latitude, lng: longitude };
+        setState('location.lat', latitude);
+        setState('location.lng', longitude);
         
         const myAvatarSrc = state.profile?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
         const myIcon = L.divIcon({ 
@@ -26,23 +31,22 @@ export function initMap() {
         });
 
         if (!myMarker) {
-            myMarker = L.marker([latitude, longitude], { icon: myIcon, zIndexOffset: 1000 }).addTo(state.map);
-            state.map.setView([latitude, longitude], 15);
+            myMarker = L.marker([latitude, longitude], { icon: myIcon, zIndexOffset: 1000 });
+            mapManager.addMarkerToLayer('user', myMarker); // Warstwa usera
+            mapManager.flyTo(latitude, longitude, 15);
             loadParksAndRuns(latitude, longitude); 
         } else { 
             myMarker.setLatLng([latitude, longitude]).setIcon(myIcon); 
         }
         
-        if(state.isFollowing && state.map) state.map.panTo([latitude, longitude]);
+        if(state.location.following) mapManager.panTo(latitude, longitude);
         updateAlertHubUI(); 
 
         // GPS NA ŻYWO Z OBSŁUGĄ GHOST MODE
         if (state.isWalking && state.user) {
             if (state.isGhostMode) {
-                // Jeśli Ghost Mode jest włączony, usuwamy naszą pozycję z bazy widocznych spacerów
                 db.collection("walks").doc(state.user.uid).delete().catch(() => {});
             } else {
-                // Jeśli jesteśmy widoczni, normalnie aktualizujemy pozycję
                 db.collection("walks").doc(state.user.uid).set({
                     uid: state.user.uid,
                     name: state.profile?.name || "Piesek",
@@ -79,7 +83,10 @@ function loadParksAndRuns(lat, lng) {
                     html: `<div style="background:${isRun ? '#4cd137' : '#00a8ff'}; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:2px solid white; box-shadow:var(--soft-shadow); font-size:16px;">${isRun ? '🐕' : '🌳'}</div>`,
                     iconSize: [30,30]
                 });
-                L.marker([eLat, eLng], { icon }).addTo(state.map).bindPopup(`<b>${name}</b><br>${dist.toFixed(2)} km`);
+                
+                const marker = L.marker([eLat, eLng], { icon });
+                marker.bindPopup(`<b>${name}</b><br>${dist.toFixed(2)} km`);
+                mapManager.addMarkerToLayer('parks', marker); // Warstwa parków
             });
             nearbyPlaces.sort((a, b) => a.dist - b.dist);
             parksLoaded = true;
@@ -95,11 +102,11 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 function listenForWalks() {
-    const unsub = db.collection("walks").onSnapshot(snap => {
+    const unsub = subscribeToWalks(walks => {
         const activeUids = new Set();
         let html = "";
-        snap.forEach(doc => {
-            const d = doc.data();
+        
+        walks.forEach(d => {
             if (Date.now() - d.timestamp > 600000) return; 
             activeUids.add(d.uid);
             const isMe = d.uid === state.user?.uid;
@@ -113,24 +120,37 @@ function listenForWalks() {
                      </div>`;
             
             if(!isMe) {
-                if (dogMarkers[d.uid]) dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
-                else dogMarkers[d.uid] = L.marker([d.lat, d.lng], { 
-                    icon: L.divIcon({ 
-                        className: '', 
-                        html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, 
-                        iconSize: [40, 40] 
-                    }) 
-                }).addTo(state.map).on('click', () => {
-                    window.Waggle.showUserModal(d);
-                });
+                if (dogMarkers[d.uid]) {
+                    dogMarkers[d.uid].setLatLng([d.lat, d.lng]);
+                } else {
+                    const m = L.marker([d.lat, d.lng], { 
+                        icon: L.divIcon({ 
+                            className: '', 
+                            html: `<div style="width:40px;height:40px;border-radius:50%;border:3px solid white;overflow:hidden;background:white;box-shadow:var(--soft-shadow); box-sizing: border-box;"><img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`, 
+                            iconSize: [40, 40] 
+                        }) 
+                    }).on('click', () => {
+                        // Twój oryginalny system UserMenu, którego nie gubimy!
+                        if(window.Waggle.openUserMenu) window.Waggle.openUserMenu(d.uid, d.name, avatarSrc, d.lat, d.lng);
+                    });
+                    
+                    dogMarkers[d.uid] = m;
+                    mapManager.addMarkerToLayer('walks', m); // Warstwa stada
+                }
             }
         });
-        Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
+        
+        Object.keys(dogMarkers).forEach(u => { 
+            if(!activeUids.has(u)) { 
+                mapManager.removeMarkerFromLayer('walks', dogMarkers[u]); 
+                delete dogMarkers[u]; 
+            }
+        });
         
         const sc = document.getElementById('stories-container');
         if(sc) sc.innerHTML = html || "<p style='font-size:12px; color:var(--text-muted); padding-left:10px;'>Cisza w okolicy. Wyjdź jako pierwszy!</p>";
     });
-    addListener(unsub);
+    registerListener(unsub);
 }
 
 function listenForAlerts() {
@@ -147,12 +167,15 @@ function listenForAlerts() {
                     html: `<div style="background:var(--danger); width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:3px solid white; font-size:18px; box-shadow:0 0 15px rgba(255,82,82,0.5);">⚠️</div>`,
                     iconSize: [35,35]
                 });
-                alertMarkers[doc.id] = L.marker([data.lat, data.lng], { icon }).addTo(state.map).bindPopup(`<b>ZAGROŻENIE!</b><br>${data.text}`);
+                const m = L.marker([data.lat, data.lng], { icon }).bindPopup(`<b>ZAGROŻENIE!</b><br>${data.text}`);
+                
+                alertMarkers[doc.id] = m;
+                mapManager.addMarkerToLayer('alerts', m); // Warstwa alertów
             }
         });
         updateAlertHubUI();
     });
-    addListener(unsub);
+    registerListener(unsub);
 }
 
 function updateAlertHubUI() {
@@ -178,5 +201,16 @@ function updateAlertHubUI() {
     container.innerHTML = html;
 }
 
-export function centerOnMe() { state.isFollowing = true; state.map.flyTo([state.location.lat, state.location.lng], 15); }
-export function centerOnTarget(lat, lng) { state.isFollowing = false; state.map.flyTo([lat, lng], 16); document.querySelector('.nav-item[data-view="map"]').click(); }
+export function centerOnMe() { 
+    setState('location.following', true); 
+    if (state.location.lat && state.location.lng) {
+        mapManager.flyTo(state.location.lat, state.location.lng, 15); 
+    }
+}
+
+export function centerOnTarget(lat, lng) { 
+    setState('location.following', false); 
+    mapManager.flyTo(lat, lng, 16); 
+    const mapBtn = document.querySelector('.nav-item[data-view="map"]');
+    if(mapBtn) mapBtn.click(); 
+}
