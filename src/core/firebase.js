@@ -1,6 +1,5 @@
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
+// Usuwamy: import firebase from 'firebase/compat/app';
+// Korzystamy z globalnego obiektu firebase załadowanego z CDN
 
 const firebaseConfig = { 
     apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", 
@@ -11,10 +10,11 @@ const firebaseConfig = {
     appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" 
 };
 
+// Sprawdzamy, czy aplikacja nie została już zainicjalizowana
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-export const auth = firebase.auth();
 export const db = firebase.firestore();
-export const fb = firebase;
+export const auth = firebase.auth();
+export const fb = firebase; // Potrzebne do FieldValue
