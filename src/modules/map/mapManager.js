@@ -1,3 +1,6 @@
+// Usuwamy: import L from 'leaflet';
+// Leaflet jest dostępny globalnie jako window.L
+
 export class MapManager {
     constructor() {
         this.map = null;
@@ -7,13 +10,12 @@ export class MapManager {
     init(containerId, lat = 52.2, lng = 21.0, zoom = 13) {
         if (this.map) return;
         
-        // Pobieramy Leafleta z obiektu window (został załadowany w HTML)
+        // Pobieramy Leafleta z obiektu window
         const L = window.L;
         
         this.map = L.map(containerId, { zoomControl: false }).setView([lat, lng], zoom);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(this.map);
         
-        // Inicjalizacja warstw, jak zalecał audyt
         this.layers = {
             user: L.layerGroup().addTo(this.map),
             walks: L.layerGroup().addTo(this.map),
