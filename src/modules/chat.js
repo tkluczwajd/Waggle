@@ -1,6 +1,6 @@
 import { db, fb } from '../core/firebase.js';
 import { state, ListenerManager } from '../core/state.js';
-import { uploadImage } from './posts.js'; // Importujemy istniejącą funkcję uploadu
+import { uploadImage } from './posts.js'; 
 
 let currentChatUnsub = null; 
 
@@ -23,109 +23,68 @@ export function loadInbox() {
                 <div class="post-card" style="display:flex; align-items:center; gap:15px; margin-bottom:10px; cursor:pointer;" onclick="window.Waggle.openChat('${partnerUid}', '${partnerName}')">
                     <div style="width:50px; height:50px; border-radius:50%; background:var(--panel-bg); display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:var(--soft-shadow);">🐾</div>
                     <div style="flex:1;">
-                        <b style="font-size:16px;">${partnerName}</b><br>
-                        <small style="color:var(--text-muted);">${d.lastMsg || 'Kliknij, aby pisać'}</small>
+                        <b style="font-size:16px; color:var(--text-color);">${partnerName}</b><br>
+                        <span style="font-size:14px; color:var(--text-muted); font-weight:600;">${d.lastMsg || 'Brak wiadomości'}</span>
                     </div>
                 </div>`;
             });
-            const container = document.getElementById('inbox-container');
-            if (container) container.innerHTML = html || "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Brak rozmów. Przejdź do zakładki STADO i poznaj kogoś!</p>";
+            const c = document.getElementById('inbox-container');
+            if(c) c.innerHTML = html || "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Brak otwartych rozmów. Znajdź kogoś z okolicy!</p>";
         });
     ListenerManager.add(unsub);
 }
 
-function buildUserCard(uid, u, inStado) {
-    const avatar = u.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-    const stadoBtnColor = inStado ? 'var(--danger)' : 'var(--secondary)';
-    const stadoBtnText = inStado ? '❌ Ze stada' : '🐾 Do Stada';
-    
-    return `
-    <div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <div style="display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="window.Waggle.openUserMenu('${uid}', '${u.name || 'Piesek'}', '${avatar}')">
-            <img src="${avatar}" style="width:50px;height:50px;border-radius:50%;object-fit:cover; border:2px solid var(--border-color);">
-            <div style="line-height:1.2;">
-                <b style="font-size:16px;">${u.name || 'Piesek'}</b><br>
-                <small style="color:var(--text-muted); font-size:12px; font-weight:800;">${u.breed || 'Rasa nieznana'} • ${u.city || 'Miasto nieznane'}</small>
-            </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:5px;">
-            <button class="btn-main" style="width:auto; padding:6px 10px; font-size:11px;" onclick="window.Waggle.openChat('${uid}', '${u.name || 'Piesek'}')">💬 Napisz</button>
-            <button class="btn-outline" style="width:auto; padding:6px 10px; font-size:11px; color:${stadoBtnColor}; border-color:${stadoBtnColor};" onclick="window.Waggle.toggleStado('${uid}')">${stadoBtnText}</button>
-        </div>
-    </div>`;
+// NOWOŚĆ: Szukajka potrafi szukać po Imieniu, Mieście i Rasie!
+export function searchUsers(query) {
+    const q = query.toLowerCase().trim();
+    db.collection("users").get().then(snap => {
+        let html = "";
+        snap.forEach(doc => {
+            const u = doc.data();
+            if (doc.id === state.user?.uid) return; // Nie szukaj siebie
+
+            const nameMatch = u.name && u.name.toLowerCase().includes(q);
+            const cityMatch = u.city && u.city.toLowerCase().includes(q);
+            const breedMatch = u.breed && u.breed.toLowerCase().includes(q);
+            
+            // Jeśli coś wpisano i nic nie pasuje - omiń
+            if (q && !nameMatch && !cityMatch && !breedMatch) return;
+
+            const avatarSrc = u.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+            html += `
+            <div class="post-card" style="display:flex; align-items:center; gap:15px; margin-bottom:10px; cursor:pointer;" onclick="window.Waggle.openChat('${doc.id}', '${u.name || 'Piesek'}')">
+                <img src="${avatarSrc}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
+                <div>
+                    <b style="font-size:16px; color:var(--text-color);">${u.name || 'Nieznajomy Piesek'}</b><br>
+                    <small style="color:var(--text-muted); font-weight:700;">📍 ${u.city || 'Nie podano'} • 🐕 ${u.breed || 'Wielorasowy'}</small>
+                </div>
+            </div>`;
+        });
+        const container = document.getElementById('inbox-container');
+        if (container) container.innerHTML = html || "<p style='text-align:center; margin-top:20px;'>Nikogo nie znaleziono 🐾</p>";
+    });
 }
 
-export function searchUsers(query) {
-    db.collection("users").doc(state.user.uid).get().then(myDoc => {
-        const myStado = myDoc.data().stado || [];
-        if(!query || query.length < 2) {
-            if (myStado.length === 0) {
-                document.getElementById('inbox-container').innerHTML = "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Twoje Stado jest puste. Wpisz imię psa lub rasę!</p>";
-                return;
-            }
-            db.collection("users").get().then(snap => {
-                 let html = "<h4 style='padding-left:5px; color:var(--secondary);'>Twoje Stado:</h4>";
-                 snap.forEach(doc => { if(myStado.includes(doc.id)) html += buildUserCard(doc.id, doc.data(), true); });
-                 document.getElementById('inbox-container').innerHTML = html;
-            });
-            return;
-        }
-        const q = query.toLowerCase();
-        db.collection("users").get().then(snap => {
+export function openChat(uid, name) {
+    if (!state.user) return;
+    const chatId = state.user.uid > uid ? `${state.user.uid}_${uid}` : `${uid}_${state.user.uid}`;
+    state.currentChatId = chatId;
+    
+    document.getElementById('chatPartnerName').innerText = name;
+    document.getElementById('chat-window').style.display = 'flex';
+
+    if(currentChatUnsub) currentChatUnsub();
+
+    currentChatUnsub = db.collection("chats").doc(chatId).collection("messages").orderBy("time", "asc")
+        .onSnapshot(snap => {
             let html = "";
             snap.forEach(doc => {
-                const u = doc.data();
-                if(doc.id === state.user.uid) return; 
-                if((u.name && u.name.toLowerCase().includes(q)) || (u.breed && u.breed.toLowerCase().includes(q))) {
-                    html += buildUserCard(doc.id, u, myStado.includes(doc.id));
-                }
-            });
-            document.getElementById('inbox-container').innerHTML = html || "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Nie znaleziono piesków.</p>";
-        });
-    });
-}
-
-export function toggleStado(friendUid) {
-    if(!state.user) return;
-    const ref = db.collection("users").doc(state.user.uid);
-    ref.get().then(doc => {
-        const stado = doc.data().stado || [];
-        if(stado.includes(friendUid)) {
-            ref.update({ stado: fb.firestore.FieldValue.arrayRemove(friendUid) });
-            window.Waggle.showToast("Usunięto ze Stada!");
-        } else {
-            ref.update({ stado: fb.firestore.FieldValue.arrayUnion(friendUid) });
-            window.Waggle.showToast("Dodano do Stada! 🐾");
-        }
-        searchUsers(document.getElementById('userSearchInput')?.value || '');
-    });
-}
-
-export async function openChat(partnerUid, partnerName) {
-    const chatId = [state.user.uid, partnerUid].sort().join("_");
-    state.currentChatId = chatId;
-    document.getElementById('chatPartnerName').innerText = partnerName;
-    document.getElementById('chat-window').style.display = 'flex';
-    
-    if(currentChatUnsub) currentChatUnsub();
-    
-    currentChatUnsub = db.collection("chats").doc(chatId).collection("messages")
-        .orderBy("time", "asc").limit(50).onSnapshot(snap => {
-            let html = "";
-            snap.forEach(mDoc => {
-                const m = mDoc.data();
-                const isMe = m.sender === state.user.uid;
-                const msgTime = new Date(m.time).toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'});
-                const imgHtml = m.imageUrl ? `<img src="${m.imageUrl}" style="max-width:100%; border-radius:10px; margin-top:5px; cursor:pointer;" onclick="window.Waggle.openLightbox('${m.imageUrl}')">` : "";
+                const msg = doc.data();
+                const isMine = msg.sender === state.user.uid;
+                let contentHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" style="width:100%; border-radius:12px; margin-bottom:5px; cursor:pointer;" onclick="window.Waggle.openLightbox('${msg.imageUrl}')">` : "";
+                if(msg.text) contentHtml += msg.text;
                 
-                html += `
-                <div style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; max-width: 80%; margin-bottom: 8px; display:flex; flex-direction:column;">
-                    <div style="background: ${isMe ? 'var(--primary)' : 'var(--panel-bg)'}; color: ${isMe ? 'white' : 'var(--text-color)'}; padding: 10px 15px; border-radius: 15px; font-weight: 600; box-shadow:var(--soft-shadow); word-break: break-word;">
-                        ${m.text ? `<div>${m.text}</div>` : ""}
-                        ${imgHtml}
-                    </div>
-                    <small style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; font-size:10px; color:var(--text-muted); margin-top:4px;">${msgTime}</small>
-                </div>`;
+                html += `<div class="chat-bubble ${isMine ? 'mine' : ''}">${contentHtml}</div>`;
             });
             const msgBox = document.getElementById('chatMessages');
             if(msgBox) {
@@ -159,9 +118,16 @@ export function closeActiveChat() {
 
 export async function sendChatImage(file) {
     if(!file) return;
-    window.Waggle.showToast("Wysyłanie zdjęcia...");
+    window.Waggle.showToast("Wysyłam zdjęcie... ⏳");
     try {
         const url = await uploadImage(file);
         sendMessage("", url);
-    } catch(e) { window.Waggle.showToast("Błąd wysyłania zdjęcia"); }
+    } catch(err) {
+        window.Waggle.showToast("Błąd wysyłania zdjęcia!");
+    }
+}
+
+export function toggleStado(partnerUid) {
+    // Funkcja zarezerwowana pod rozwój Stada (znajomych)
+    window.Waggle.showToast("Dodawanie do stada wkrótce! 🐕");
 }
