@@ -16,11 +16,13 @@ export function switchView(view) {
 
     setState('ui.activeView', view);
     
-    if (view === 'map' && appState.map) {
-        setTimeout(() => appState.map.invalidateSize(), 300);
+    // TWARDY RESET MAPY - naprawia szare tło po powrocie z innej zakładki!
+    if (view === 'map' && appState.map && appState.map.instance) {
+        setTimeout(() => {
+            appState.map.instance.invalidateSize();
+        }, 150);
     }
 
-    // 🌟 MEGAFON (EventBus): Informujemy resztę aplikacji, że zmieniliśmy widok!
     eventBus.emit('viewChanged', view);
 }
 
