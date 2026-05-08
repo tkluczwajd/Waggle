@@ -12,3 +12,9 @@ export function cleanupListeners() {
     });
     activeListeners.length = 0;
 }
+
+// Kompatybilność wsteczna dla Twoich starszych plików (zostawiamy, żeby nic nie zepsuć!)
+export const ListenerManager = {
+    add: registerListener,
+    clear: cleanupListeners
+};
