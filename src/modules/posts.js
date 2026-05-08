@@ -118,8 +118,9 @@ export function openPostComments(postId) {
         snap.forEach(doc => {
             const c = doc.data();
             const timeStr = c.timestamp ? new Date(c.timestamp.toDate ? c.timestamp.toDate() : c.timestamp).toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) : '';
+            // DODANO: text-align: left w głownym kontenerze komentarza!
             html += `
-                <div style="background:var(--panel-bg); padding:10px 15px; border-radius:12px; margin-bottom:10px;">
+                <div style="background:var(--panel-bg); padding:10px 15px; border-radius:12px; margin-bottom:10px; text-align: left;">
                     <div style="display:flex; justify-content:space-between; align-items:baseline;">
                         <b style="font-size:14px; color:var(--text-color);">${c.author}</b>
                         <small style="font-size:10px; color:var(--text-muted);">${timeStr}</small>
