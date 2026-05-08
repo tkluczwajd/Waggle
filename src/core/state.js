@@ -5,6 +5,7 @@ export const state = {
     profile: null,
     location: { lat: null, lng: null },
     isWalking: false,
+    isGhostMode: false, //
     map: null,
     isFollowing: true, 
     currentChatId: null,
@@ -23,7 +24,7 @@ export function clearListeners() {
     state.listeners = [];
 }
 
-// "Most" kompatybilności dla starszych plików (np. posts.js, chat.js)
+// "Most" kompatybilności dla starszych plików
 export const ListenerManager = {
     add: addListener,
     clear: clearListeners
