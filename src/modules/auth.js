@@ -1,6 +1,7 @@
 import { auth, db } from "../core/firebase.js";
 import { appState as state, setState } from "../core/state.js";
 import { cleanupListeners, registerListener as addListener } from "../core/listeners.js";
+import { eventBus } from "../core/eventBus.js"; // NOWOŚĆ: Powiadamianie o danych
 
 export function initAuth(onReady) {
     auth.onAuthStateChanged(user => {
@@ -10,7 +11,7 @@ export function initAuth(onReady) {
 
         if (user) {
             setState('auth.user', user);
-            state.user = user; // Most wstecznej kompatybilności
+            state.user = user; 
             
             const unsub = db.collection("users").doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
@@ -22,12 +23,14 @@ export function initAuth(onReady) {
                     state.profile = newProfile;
                 }
                 
+                // Krzyczymy przez megafon: "Profil załadowany, odświeżcie UI!"
+                eventBus.emit('profileUpdated', state.profile);
+                
                 const authScreen = document.getElementById("auth-screen");
                 const appUI = document.getElementById("app-interface");
                 if (authScreen) authScreen.style.display = "none";
                 if (appUI) appUI.style.display = "flex";
                 
-                // Odpalenie głównej aplikacji po udanym logowaniu
                 if (typeof onReady === 'function') onReady();
             }, err => {
                 console.error("Błąd bazy danych:", err);
