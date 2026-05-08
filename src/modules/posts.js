@@ -29,6 +29,8 @@ function renderPosts() {
     
     currentPosts.forEach(p => { 
         if (currentFilter === 'events' && !p.isEvent) return;
+        if (currentFilter === 'alerts' && !p.isAlert) return;
+        if (currentFilter === 'info' && !p.isInfo) return;
 
         let timeString = "Przed chwilą";
         if (p.timestamp) {
@@ -50,6 +52,7 @@ function renderPosts() {
 
         let eventBanner = "";
         let cardStyle = "position:relative;";
+        
         if (p.isEvent) {
             cardStyle = "position:relative; border: 2px solid var(--primary);";
             let eventDateStr = p.eventDate ? new Date(p.eventDate).toLocaleString('pl-PL', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : "Nieznana data";
@@ -57,6 +60,12 @@ function renderPosts() {
                 <div><b style="font-size:15px;">📅 Ustawka!</b><br><small style="font-weight:700;">${eventDateStr}</small></div>
                 <button onclick="window.Waggle.showToast('Zadeklarowałeś obecność! 🐾')" style="background:white; color:var(--primary); border:none; border-radius:20px; padding:6px 15px; font-weight:900; font-size:12px; cursor:pointer;">BĘDĘ!</button>
             </div>`;
+        } else if (p.isAlert) {
+            cardStyle = "position:relative; border: 2px solid var(--danger);";
+            eventBanner = `<div style="background:var(--danger); color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800;">⚠️ ZAGROŻENIE</div>`;
+        } else if (p.isInfo) {
+            cardStyle = "position:relative; border: 2px solid #f39c12;";
+            eventBanner = `<div style="background:#f39c12; color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800;">ℹ️ OGŁOSZENIE</div>`;
         }
 
         const likesCount = p.likes ? p.likes.length : 0;
@@ -164,7 +173,7 @@ export async function uploadImage(file) {
     });
 }
 
-export async function saveCommunityPost(content, imageUrl = null, isEvent = false, eventDate = null) {
+export async function saveCommunityPost(content, imageUrl = null, isEvent = false, eventDate = null, isInfo = false) {
     if (!state.user || !state.profile) return;
     return db.collection("posts").add({ 
         uid: state.user.uid, 
@@ -174,6 +183,8 @@ export async function saveCommunityPost(content, imageUrl = null, isEvent = fals
         imageUrl, 
         isEvent,
         eventDate,
+        isInfo,
+        isAlert: false,
         likes: [], 
         commentCount: 0, 
         timestamp: fb.firestore.FieldValue.serverTimestamp() 
