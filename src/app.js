@@ -6,7 +6,7 @@ import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; 
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
-import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado, sendChatImage } from './modules/chat.js';
+import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers } from './modules/chat.js';
 
 window.Waggle = window.Waggle || {};
 
@@ -23,7 +23,7 @@ window.Waggle.showToast = (msg) => {
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.style.display='none',300); }, 3500);
 }
 
-// Globalne bindingi (Naprawa niedziałających funkcji)
+// Globalne funkcje pomocnicze
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
@@ -33,7 +33,7 @@ window.Waggle.openPostComments = openPostComments;
 window.Waggle.searchUsers = searchUsers;
 
 document.addEventListener('click', async (e) => {
-    // NAPRAWA PRZYCISKU ZAMKNIJ CZAT
+    // Zamykanie okien
     if (e.target.closest('#closeChatBtn') || e.target.classList.contains('close-modal-btn')) {
         const modal = e.target.closest('.modal');
         if (modal) modal.style.display = 'none';
@@ -42,16 +42,16 @@ document.addEventListener('click', async (e) => {
 
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
-    if (e.target.closest('#stopWalkBtn')) { stopWalk(); }
+    if (e.target.closest('#stopWalkBtn')) stopWalk();
 
-    // NAPRAWA PRZYCISKU ZGŁOŚ (ALERTY)
+    // Alert na mapie
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
     if (e.target.closest('#saveAlertBtn')) {
         const textInput = document.getElementById('alertTextInput');
-        if (!textInput.value.trim()) return window.Waggle.showToast("Wpisz treść alertu!");
+        if (!textInput.value.trim()) return;
         
         if (!state.location.lat) {
-            window.Waggle.showToast("Czekam na sygnał GPS... spróbuj za chwilę 🛰️");
+            window.Waggle.showToast("Czekam na GPS... 🛰️");
             return;
         }
 
@@ -60,17 +60,18 @@ document.addEventListener('click', async (e) => {
             text: alertText, lat: state.location.lat, lng: state.location.lng, 
             createdAt: Date.now(), creator: state.user.uid 
         }).then(() => {
+            // Automatyczny post o Alercie
             db.collection("posts").add({ 
                 uid: state.user.uid, author: state.profile?.name || "Piesek", avatar: state.profile?.avatar || "", 
                 content: alertText, imageUrl: null, isEvent: false, isAlert: true, isInfo: false,
                 likes: [], commentCount: 0, timestamp: fb.firestore.FieldValue.serverTimestamp() 
             });
             document.getElementById('alert-modal').style.display = 'none';
-            textInput.value = ''; window.Waggle.showToast("Zagrożenie zgłoszone! ⚠️");
+            textInput.value = ''; window.Waggle.showToast("Zgłoszono! ⚠️");
         });
     }
 
-    // NAPRAWA PRZYCISKU WYŚLIJ (CZAT)
+    // Czat - wysyłanie
     if (e.target.closest('#sendMsgBtn')) {
         const input = document.getElementById('chatInput');
         if (input && input.value.trim()) {
@@ -79,16 +80,17 @@ document.addEventListener('click', async (e) => {
         }
     }
 
-    // ZAPISYWANIE PROFILU (Naprawa zerowania danych)
+    // Profil - zapisywanie zmian
     if (e.target.closest('#saveProfileBtn')) {
         const btn = e.target.closest('#saveProfileBtn');
+        const name = document.getElementById('setupName').value.trim();
+        const city = document.getElementById('setupCity').value.trim();
+        const breed = document.getElementById('setupBreed').value;
+
+        if(!name) return window.Waggle.showToast("Imię psa jest wymagane!");
+
         btn.disabled = true;
-        const d = { 
-            name: document.getElementById('setupName').value.trim(), 
-            city: document.getElementById('setupCity').value.trim(), 
-            breed: document.getElementById('setupBreed').value 
-        };
-        db.collection("users").doc(state.user.uid).update(d).then(() => {
+        db.collection("users").doc(state.user.uid).update({ name, city, breed }).then(() => {
             btn.disabled = false;
             document.getElementById('profile-setup-modal').style.display = 'none';
             window.Waggle.showToast("Profil zaktualizowany! ✅");
