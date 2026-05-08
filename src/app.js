@@ -114,7 +114,6 @@ export function initApp() {
         if(document.getElementById('setupBreed')) document.getElementById('setupBreed').value = profile.breed || "";
     });
 
-    // NOWOŚĆ: Synchronizacja pogody z faktycznym pojawieniem się GPS-u
     eventBus.on('locationUpdated', (loc) => {
         if (!state.weatherFetched || Date.now() - state.weatherFetched > 300000) {
             fetchWeather(loc.lat, loc.lng);
@@ -174,8 +173,15 @@ document.addEventListener('change', (e) => {
 
 document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
-    if (e.target.closest('#closeChatBtn')) closeActiveChat(); // Wymuszone zamykanie czatu
+    if (e.target.closest('#closeChatBtn')) closeActiveChat();
     if (e.target.closest('#centerBtn')) centerOnMe();
+    
+    // NOWOŚĆ: Reakcja na kliknięcie w pigułkę "Alerty" na mapie
+    if (e.target.closest('#active-alert-pill')) {
+        document.querySelector('.nav-item[data-view="community"]').click();
+        setTimeout(() => setPostFilter('alerts'), 200); // Automatycznie włącza filtr alertów na tablicy
+    }
+    
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
     if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
@@ -187,7 +193,6 @@ document.addEventListener('click', async (e) => {
             const alertText = textInput.value;
             db.collection("alerts").add({ text: alertText, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid })
             .then(() => {
-                // NOWOŚĆ: Automatycznie dodaje post o zagrożeniu na Tablicę
                 db.collection("posts").add({ 
                     uid: state.user.uid, author: state.profile?.name || "Piesek", avatar: state.profile?.avatar || "", 
                     content: alertText, imageUrl: null, isEvent: false, isAlert: true, isInfo: false,
@@ -279,14 +284,20 @@ document.addEventListener('click', async (e) => {
         const isGhost = document.getElementById('settingSearchable').checked;
         const isHidden = document.getElementById('settingHidden').checked;
         const font = document.getElementById('settingFontSize').value;
+        const theme = document.getElementById('settingTheme').value;
         
         localStorage.setItem('waggle_ghost_mode', isGhost.toString());
         localStorage.setItem('waggle_hidden_mode', isHidden.toString());
         localStorage.setItem('waggle_font', font);
+        localStorage.setItem('waggle_theme', theme);
         
         state.isGhostMode = isGhost;
         state.isHiddenMode = isHidden;
+        
+        // NOWOŚĆ: Nakładanie zmian w locie bez odświeżania!
         document.documentElement.style.setProperty('--base-font-size', font);
+        if (theme === 'dark') document.body.classList.add('dark-mode');
+        else document.body.classList.remove('dark-mode');
         
         if (isHidden && state.user) db.collection("walks").doc(state.user.uid).delete();
         document.getElementById('settings-modal').style.display = 'none';
@@ -297,6 +308,7 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
 });
 
+// PRZYWRÓCONA WIEDZA Z BŁYSKAWICAMI!
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -307,8 +319,8 @@ function renderWiki(tab) {
             const item = doc.data(); const id = doc.id;
             const hasLiked = item.likes && item.likes.includes(state.user.uid);
             let imgHtml = item.img ? `<img src="${item.img}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:10px;">` : "";
-            html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding:15px; margin-bottom: 15px;">
-                ${imgHtml}<b style="font-size: 17px;">${item.title || item.name}</b><p style="margin-top:10px; font-size:14px; color:var(--text-muted);">${item.desc}</p>
+            html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding:15px; margin-bottom: 15px; text-align: left;">
+                ${imgHtml}<b style="font-size: 17px;">⚡ ${item.title || item.name}</b><p style="margin-top:10px; font-size:14px; color:var(--text-muted); line-height: 1.5;">${item.desc}</p>
                 <div style="margin-top: 15px;"><span style="font-size:13px; cursor:pointer; font-weight:800; color:${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" onclick="Waggle.likeWiki('${id}')">${hasLiked ? '❤️' : '🤍'} ${item.likes ? item.likes.length : 0}</span></div></div>`;
         });
         container.innerHTML = html || '<p style="text-align:center;">Brak wpisów.</p>';
@@ -337,6 +349,7 @@ function loadSettings() {
     if(document.getElementById('settingSearchable')) document.getElementById('settingSearchable').checked = state.isGhostMode;
     if(document.getElementById('settingHidden')) document.getElementById('settingHidden').checked = state.isHiddenMode;
     if(document.getElementById('settingFontSize')) document.getElementById('settingFontSize').value = font;
+    if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
 }
 
 initAuth(initApp);
