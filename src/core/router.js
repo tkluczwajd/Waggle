@@ -16,11 +16,13 @@ export function switchView(view) {
 
     setState('ui.activeView', view);
     
-    // TWARDY RESET MAPY - naprawia szare tło po powrocie z innej zakładki!
+    // NAPRAWA SZAREJ MAPY: Wymuszenie przeliczenia rozmiaru kontenera
     if (view === 'map' && appState.map && appState.map.instance) {
         setTimeout(() => {
             appState.map.instance.invalidateSize();
-        }, 150);
+            // Jeśli nadal byłoby szare, powtarzamy po pół sekundy
+            setTimeout(() => appState.map.instance.invalidateSize(), 400);
+        }, 200);
     }
 
     eventBus.emit('viewChanged', view);
