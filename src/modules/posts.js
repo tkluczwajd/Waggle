@@ -61,7 +61,7 @@ function renderPosts() {
 
         const likesCount = p.likes ? p.likes.length : 0;
         const hasLiked = p.likes && p.likes.includes(state.user?.uid);
-        const commentCount = p.commentCount || 0; // ODCZYT LICZNIKA KOMENTARZY
+        const commentCount = p.commentCount || 0; 
 
         html += `<div class="post-card" style="${cardStyle}">
                     ${eventBanner}
@@ -137,7 +137,6 @@ export function addPostComment(text) {
         text: text.trim(),
         timestamp: fb.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-        // ZWIĘKSZAMY LICZNIK KOMENTARZY W POŚCIE
         db.collection("posts").doc(postId).update({
             commentCount: fb.firestore.FieldValue.increment(1)
         });
@@ -176,7 +175,7 @@ export async function saveCommunityPost(content, imageUrl = null, isEvent = fals
         isEvent,
         eventDate,
         likes: [], 
-        commentCount: 0, // Zaczynamy od 0 komentarzy
+        commentCount: 0, 
         timestamp: fb.firestore.FieldValue.serverTimestamp() 
     });
 }
