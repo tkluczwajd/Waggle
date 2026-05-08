@@ -7,8 +7,6 @@ let alertMarkers = {};
 let activeAlertsList = []; 
 let dismissedAlerts = JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
 let parksLoaded = false; 
-
-// NOWOŚĆ: używamy "const", żeby referencja się nigdy nie zerwała
 export const nearbyPlaces = []; 
 
 export function initMap() {
@@ -37,6 +35,16 @@ export function initMap() {
         
         if(state.isFollowing && state.map) state.map.panTo([latitude, longitude]);
         updateAlertHubUI(); 
+
+        // GPS NA ŻYWO!
+        if (state.isWalking && state.user) {
+            db.collection("walks").doc(state.user.uid).update({
+                lat: latitude,
+                lng: longitude,
+                timestamp: Date.now()
+            }).catch(e => console.warn("Błąd aktualizacji GPS", e));
+        }
+
     }, err => console.warn("GPS Error:", err), { enableHighAccuracy: true });
 
     listenForWalks(); 
@@ -111,7 +119,7 @@ async function loadParks(lat, lng) {
         const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
         const data = await res.json();
         
-        nearbyPlaces.length = 0; // POPRAWKA: Bezpieczne czyszczenie listy
+        nearbyPlaces.length = 0; 
         const parkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🌳</div>', iconSize: [24,24] });
         const dogParkIcon = L.divIcon({ className: '', html: '<div style="font-size:22px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">🐕</div>', iconSize: [24,24] });
 
@@ -121,20 +129,14 @@ async function loadParks(lat, lng) {
             const name = el.tags && el.tags.name ? el.tags.name : (isDogPark ? "Wybieg dla psów" : "Park / Zielen");
             const distance = getDistance(lat, lng, pLat, pLon);
             
-            nearbyPlaces.push({
-                name: name, isDogPark: isDogPark, lat: pLat, lng: pLon, distance: distance
-            });
+            nearbyPlaces.push({ name: name, isDogPark: isDogPark, lat: pLat, lng: pLon, distance: distance });
 
             L.marker([pLat, pLon], { icon: isDogPark ? dogParkIcon : parkIcon }).addTo(state.map)
              .bindPopup(`<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLon}" target="_blank" style="color:var(--secondary); font-weight:800; text-decoration:none; display:inline-block; margin-top:5px;">Nawiguj tutaj 🧭</a>`);
         });
 
         nearbyPlaces.sort((a, b) => a.distance - b.distance);
-        
-        // Zmuszamy widok "miejsc" do odświeżenia, jeśli pobierze dane z opóźnieniem
-        if (window.Waggle && window.Waggle.renderPlaces) {
-            window.Waggle.renderPlaces();
-        }
+        if (window.Waggle && window.Waggle.renderPlaces) window.Waggle.renderPlaces();
     } catch(err) { parksLoaded = false; }
 }
 
@@ -150,10 +152,15 @@ function listenForWalks() {
             const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
             const bColor = isMe ? 'var(--primary)' : 'white';
             
-            // Pasek na górze Tablicy!
-            html += `<div class="walk-card" onclick="window.Waggle.centerOnTarget(${d.lat}, ${d.lng})">
-                        <img src="${avatarSrc}" style="border: 3px solid ${bColor};">
-                        <div style="font-size:12px; font-weight:900; margin-top:5px;">${isMe ? 'Ty' : d.name}</div>
+            // LOGIKA: Kliknięcie wysyła kordynaty GPS do menu, jeśli to inna osoba!
+            const clickAction = isMe 
+                ? `window.Waggle.centerOnMe()` 
+                : `window.Waggle.openUserMenu('${d.uid}', '${d.name}', '${avatarSrc}', ${d.lat}, ${d.lng})`;
+            
+            // ZABEZPIECZENIE GRAFIKI (SZYTWNE 60x60)
+            html += `<div class="walk-card" onclick="${clickAction}" style="display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:70px;">
+                        <img src="${avatarSrc}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border: 3px solid ${bColor}; box-shadow:var(--soft-shadow);">
+                        <div style="font-size:12px; font-weight:900; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;">${isMe ? 'Ty' : d.name}</div>
                      </div>`;
             
             if(!isMe) {
@@ -163,9 +170,8 @@ function listenForWalks() {
         });
         Object.keys(dogMarkers).forEach(u => { if(!activeUids.has(u)) { state.map.removeLayer(dogMarkers[u]); delete dogMarkers[u]; }});
         
-        // Renderujemy do paska na tablicy
         const sc = document.getElementById('stories-container');
-        if(sc) sc.innerHTML = html || "<p style='font-size:12px; color:var(--text-muted);'>Cisza w okolicy. Wyjdź jako pierwszy!</p>";
+        if(sc) sc.innerHTML = html || "<p style='font-size:12px; color:var(--text-muted); padding-left:10px;'>Cisza w okolicy. Wyjdź jako pierwszy!</p>";
     }); 
     addListener(unsub);
 }
