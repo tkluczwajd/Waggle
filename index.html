@@ -261,13 +261,17 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script type="module" src="/src/app.js?v=999"></script>
-    <div id="user-action-modal" class="modal">
+  <div id="user-action-modal" class="modal" style="z-index: 10000;">
         <div class="card" style="text-align:center;">
             <button class="close-modal-btn">✕</button>
             <img id="actionUserAvatar" src="" style="width:90px;height:90px;border-radius:50%;margin-bottom:15px;object-fit:cover;border:3px solid var(--secondary); box-shadow:var(--soft-shadow);">
             <h3 id="actionUserName" style="margin-top:0;font-weight:900;font-size:24px;">Piesek</h3>
-            <button class="btn-main" id="actionMsgBtn" style="margin-bottom:15px; background:var(--secondary);">💬 Napisz na Priv</button>
-            <button class="btn-outline" id="actionProfileBtn" onclick="Waggle.showToast('Profile innych użytkowników wkrótce!')">🐾 Zobacz pełny profil</button>
+            
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="btn-main" id="actionMsgBtn" style="background:var(--secondary);">💬 Napisz na Priv</button>
+                <button class="btn-outline" id="actionMapBtn" style="display:none; border-color:var(--primary); color:var(--primary);">📍 Pokaż na mapie</button>
+                <button class="btn-outline" id="actionProfileBtn" onclick="Waggle.showToast('Profile innych użytkowników wkrótce!')">🐾 Zobacz pełny profil</button>
+            </div>
         </div>
     </div>
     <div id="comments-modal" class="modal">
