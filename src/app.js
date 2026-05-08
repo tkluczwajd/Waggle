@@ -4,7 +4,7 @@ import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; 
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
-import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers } from './modules/chat.js';
+import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado } from './modules/chat.js';
 
 window.Waggle = window.Waggle || {};
 window.Waggle.showToast = (msg) => {
@@ -38,17 +38,35 @@ window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
 window.Waggle.togglePostLike = togglePostLike;
 window.Waggle.openPostComments = openPostComments;
 window.Waggle.searchUsers = searchUsers;
+window.Waggle.toggleStado = toggleStado; 
 
-window.Waggle.openUserMenu = (uid, name, avatar) => {
+// NOWE MENU Z MAPĄ
+window.Waggle.openUserMenu = (uid, name, avatar, lat = null, lng = null) => {
     if(uid === state.user.uid) return; 
+    
     document.getElementById('actionUserName').innerText = name;
     document.getElementById('actionUserAvatar').src = avatar;
+    
     const msgBtn = document.getElementById('actionMsgBtn');
     msgBtn.onclick = () => {
         document.getElementById('user-action-modal').style.display = 'none';
         document.querySelector('.nav-item[data-view="chat"]').click(); 
         window.Waggle.openChat(uid, name);
     };
+
+    const mapBtn = document.getElementById('actionMapBtn');
+    if (mapBtn) {
+        if (lat !== null && lng !== null) {
+            mapBtn.style.display = 'inline-block';
+            mapBtn.onclick = () => {
+                document.getElementById('user-action-modal').style.display = 'none';
+                window.Waggle.centerOnTarget(lat, lng);
+            };
+        } else {
+            mapBtn.style.display = 'none';
+        }
+    }
+
     document.getElementById('user-action-modal').style.display = 'flex';
 };
 
@@ -137,7 +155,6 @@ function switchView(viewId) {
     if (viewId === 'places') window.Waggle.renderPlaces();
 }
 
-// Zdarzenia INPUT dla Wyszukiwarki psów na żywo
 document.addEventListener('input', (e) => {
     if (e.target.id === 'userSearchInput') {
         window.Waggle.searchUsers(e.target.value);
@@ -238,7 +255,6 @@ document.addEventListener('click', async (e) => {
         }
     }
 
-    // --- PRZYCISKI ZAKŁADEK W CZACIE ---
     if (e.target.closest('#chatTabInbox')) {
         document.getElementById('chatTabInbox').style.background = 'white';
         document.getElementById('chatTabSearch').style.background = 'transparent';
@@ -250,7 +266,7 @@ document.addEventListener('click', async (e) => {
         document.getElementById('chatTabInbox').style.background = 'transparent';
         document.getElementById('userSearchInput').style.display = 'block';
         document.getElementById('userSearchInput').value = '';
-        window.Waggle.searchUsers(''); // Odpalenie podpowiedzi o wyszukiwaniu
+        window.Waggle.searchUsers(''); 
     }
 
     if (e.target.classList.contains('wiki-tab-btn')) {
@@ -297,7 +313,6 @@ document.addEventListener('click', async (e) => {
     }
     if (e.target.closest('#closeChatBtn')) closeActiveChat();
     
-    // --- NAPRAWA LOGOWANIA I REJESTRACJI ---
     if (e.target.closest('#loginBtn')) {
         const email = document.getElementById('authEmail').value;
         const pass = document.getElementById('authPass').value;
@@ -309,11 +324,8 @@ document.addEventListener('click', async (e) => {
         const pass = document.getElementById('authPass').value;
         auth.createUserWithEmailAndPassword(email, pass)
             .then(() => {
-                // Po rejestracji dodajmy profil z pustymi danymi, żeby był w bazie "users" i mógł być wyszukiwany!
                 db.collection("users").doc(auth.currentUser.uid).set({
-                    name: "Nowy Piesek",
-                    city: "",
-                    breed: ""
+                    name: "Nowy Piesek", city: "", breed: ""
                 });
                 window.location.reload();
             })
