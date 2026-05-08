@@ -1,7 +1,7 @@
 import { auth, db } from "../core/firebase.js";
 import { appState as state, setState } from "../core/state.js";
 import { cleanupListeners, registerListener as addListener } from "../core/listeners.js";
-import { eventBus } from "../core/eventBus.js"; // NOWOŚĆ: Powiadamianie o danych
+import { eventBus } from "../core/eventBus.js";
 
 export function initAuth(onReady) {
     auth.onAuthStateChanged(user => {
@@ -13,41 +13,32 @@ export function initAuth(onReady) {
             setState('auth.user', user);
             state.user = user; 
             
+            // Pobieramy dane z bazy
             const unsub = db.collection("users").doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
-                    setState('profile', doc.data());
-                    state.profile = doc.data();
+                    const data = doc.data();
+                    setState('profile', data);
+                    state.profile = data;
                 } else {
-                    const newProfile = { name: "Piesek", walkCount: 0, isSearchable: true };
+                    // Jeśli user jest całkiem nowy, twórz profil bez kasowania czegokolwiek
+                    const newProfile = { name: "Nowy Piesek", walkCount: 0, isSearchable: true };
+                    db.collection("users").doc(user.uid).set(newProfile, {merge: true});
                     setState('profile', newProfile);
                     state.profile = newProfile;
                 }
                 
-                // Krzyczymy przez megafon: "Profil załadowany, odświeżcie UI!"
                 eventBus.emit('profileUpdated', state.profile);
                 
-                const authScreen = document.getElementById("auth-screen");
-                const appUI = document.getElementById("app-interface");
-                if (authScreen) authScreen.style.display = "none";
-                if (appUI) appUI.style.display = "flex";
+                document.getElementById("auth-screen").style.display = "none";
+                document.getElementById("app-interface").style.display = "flex";
                 
-                if (typeof onReady === 'function') onReady();
-            }, err => {
-                console.error("Błąd bazy danych:", err);
                 if (typeof onReady === 'function') onReady();
             });
             
             addListener(unsub);
         } else {
-            setState('auth.user', null);
-            setState('profile', null);
-            state.user = null;
-            state.profile = null;
-            
-            const authScreen = document.getElementById("auth-screen");
-            const appUI = document.getElementById("app-interface");
-            if (appUI) appUI.style.display = "none";
-            if (authScreen) authScreen.style.display = "flex";
+            document.getElementById("app-interface").style.display = "none";
+            document.getElementById("auth-screen").style.display = "flex";
         }
     });
 }
