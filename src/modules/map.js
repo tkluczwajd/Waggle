@@ -3,7 +3,6 @@ import { db } from '../core/firebase.js';
 import { mapManager } from './map/mapManager.js';
 import { registerListener } from '../core/listeners.js';
 import { eventBus } from '../core/eventBus.js';
-
 import { subscribeToWalks } from '../services/walkService.js';
 import { renderWalks } from './map/walksRenderer.js';
 import { subscribeToAlerts } from '../services/alerts/alertsService.js';
@@ -19,7 +18,6 @@ function handleLocationUpdate(latitude, longitude) {
     setState('location.lat', latitude);
     setState('location.lng', longitude);
     
-    // Sygnał, żeby pobrać pogodę, skoro już mamy GPS!
     eventBus.emit('locationUpdated', { lat: latitude, lng: longitude });
 
     const myAvatarSrc = state.profile?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
@@ -33,7 +31,6 @@ function handleLocationUpdate(latitude, longitude) {
         myMarker = L.marker([latitude, longitude], { icon: myIcon, zIndexOffset: 1000 });
         mapManager.addMarkerToLayer('user', myMarker);
         mapManager.flyTo(latitude, longitude, 15);
-
         if (!parksLoaded) {
             fetchNearbyParks(latitude, longitude).then(places => {
                 nearbyPlaces = places;
@@ -48,75 +45,48 @@ function handleLocationUpdate(latitude, longitude) {
 
     if(state.location.following) mapManager.panTo(latitude, longitude);
 
-    if (state.isWalking && state.user) {
-        // Jeśli zaznaczył "Całkowicie Ukryty" - usuwamy go z bazy spacerów (Znika stado/stories)
-        if (state.isHiddenMode) {
-            db.collection("walks").doc(state.user.uid).delete().catch(() => {});
-        } else {
-            let latToSave = latitude;
-            let lngToSave = longitude;
-            
-            // TRYB DUCHA (FUZZY LOCATION): Przesunięcie znacznika o ok. 300-500m
-            if (state.isGhostMode) {
-                if (!state.ghostOffset) {
-                    state.ghostOffset = {
-                        lat: (Math.random() - 0.5) * 0.006, 
-                        lng: (Math.random() - 0.5) * 0.006
-                    };
-                }
-                latToSave += state.ghostOffset.lat;
-                lngToSave += state.ghostOffset.lng;
-            }
-
-            db.collection("walks").doc(state.user.uid).set({
-                uid: state.user.uid,
-                name: state.profile?.name || "Piesek",
-                avatar: state.profile?.avatar || "",
-                lat: latToSave,
-                lng: lngToSave,
-                timestamp: Date.now()
-            }, { merge: true });
-        }
+    // AUTOMATYCZNA AKTUALIZACJA SPACERU (Żeby było Cię widać w kółeczkach)
+    if (state.isWalking && state.user && !state.isHiddenMode) {
+        db.collection("walks").doc(state.user.uid).set({
+            uid: state.user.uid,
+            name: state.profile?.name || "Piesek",
+            avatar: state.profile?.avatar || "",
+            lat: latitude,
+            lng: longitude,
+            timestamp: Date.now() // Musi być Date.now(), żeby walksRenderer widział "świeżość"
+        }, { merge: true });
     }
 }
 
 export function initMap() {
     if (state.map?.instance) return;
-
-    const L = window.L;
     mapManager.init('map', 52.2, 21.0, 13);
     setState('map.instance', mapManager);
 
     if ("geolocation" in navigator) {
+        // Startujemy GPS od razu, bez czekania na przycisk
         navigator.geolocation.watchPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude), 
             err => {
                 console.warn("Błąd GPS:", err.message);
-                if (err.code === 1) window.Waggle.showToast("Zablokowałeś lokalizację. Odblokuj ją w ustawieniach kłódki!");
-                else window.Waggle.showToast("Problem z GPS... Używam Warszawy jako fallbacku.");
                 handleLocationUpdate(52.2297, 21.0122); 
             }, 
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     }
 
     const walksUnsub = subscribeToWalks(walks => renderWalks(walks));
     registerListener(walksUnsub);
-
     const alertsUnsub = subscribeToAlerts(alerts => renderAlerts(alerts));
     registerListener(alertsUnsub);
 }
 
 export function centerOnMe() {
     setState('location.following', true);
-    if (state.location.lat && state.location.lng) {
+    if (state.location.lat) {
         mapManager.flyTo(state.location.lat, state.location.lng, 15);
     } else {
-        window.Waggle.showToast("Szukam sygnału GPS... 🛰️");
-        navigator.geolocation.getCurrentPosition(
-            pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude),
-            err => window.Waggle.showToast("Nadal nie mogę znaleźć GPS.")
-        );
+        window.Waggle.showToast("Szukam GPS... 🛰️");
     }
 }
 
