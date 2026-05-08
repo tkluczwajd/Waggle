@@ -52,7 +52,7 @@
             <div id="map"></div>
         </section>
 
-<section id="view-community" class="view-section">
+        <section id="view-community" class="view-section">
             <div class="sticky-header">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h3 style="margin:0;">W okolicy</h3>
@@ -92,7 +92,7 @@
             <div id="inbox-container" style="padding-top:10px;"></div>
         </section>
 
- <section id="view-profile" class="view-section">
+        <section id="view-profile" class="view-section">
             <div class="profile-header" style="padding:30px 20px; text-align:center;">
                 <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
                 <h2 id="profileNameDisplay" style="margin: 15px 0 0 0; font-weight:900; font-size:26px;">...</h2>
@@ -108,7 +108,9 @@
                     <button class="btn-outline" id="logoutBtn" style="color: var(--danger); border-color: var(--danger);">WYLOGUJ SIĘ</button>
                 </div>
             </div>
-<section id="view-places" class="view-section">
+        </section>
+
+        <section id="view-places" class="view-section">
             <div class="sticky-header">
                 <h3 style="margin:0;">Psie Miejscówki</h3>
                 <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Najbliższe parki i wybiegi</p>
@@ -117,43 +119,35 @@
                 <p style="text-align:center; padding:20px; color:var(--text-muted);">Węszenie w poszukiwaniu miejsc... 🐾</p>
             </div>
         </section>
-        </section>
 
         <nav class="bottom-nav">
             <button class="nav-item active" data-view="map">📍<span>Mapa</span></button>
             <button class="nav-item" data-view="community">📱<span>Tablica</span></button>
             <button class="nav-item" data-view="wiki">📘<span>Wiedza</span></button>
             <button class="nav-item" data-view="chat">💬<span>Czat</span></button>
-<button class="nav-item" data-view="places">
-    <span class="icon">🌳</span><br>Miejsca
-</button>
+            <button class="nav-item" data-view="places">🌳<span>Miejsca</span></button>
             <button class="nav-item" data-view="profile">👤<span>Profil</span></button>
         </nav>
     </div>
 
-<div id="post-creator-modal" class="modal">
+    <div id="post-creator-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
             <h3 style="margin-top:0;">Dodaj Wpis</h3>
-            
-            <textarea id="postContent" placeholder="Co u Was słychać? (np. Idziemy o 18:00 do parku, kto chętny?)" style="width:100%; height:80px; margin-bottom:10px;"></textarea>
-            
+            <textarea id="postContent" placeholder="Co u Was słychać?" style="width:100%; height:80px; margin-bottom:10px;"></textarea>
             <div style="margin-bottom:15px; text-align:left;">
                 <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:var(--text-color); cursor:pointer;">
                     <input type="checkbox" id="isEventCheckbox" style="width:18px; height:18px;">
-                    📅 To jest Ustawka / Wydarzenie
+                    📅 To jest Ustawka
                 </label>
                 <div id="eventDetailsInput" style="display:none; margin-top:10px; background:var(--panel-bg); padding:10px; border-radius:8px;">
-                    <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Kiedy i o której?</label>
                     <input type="datetime-local" id="eventDate" style="width:100%; margin-top:5px; padding:10px; border:1px solid var(--border-color); border-radius:8px;">
                 </div>
             </div>
-
             <div id="post-image-preview-container" style="display:none; position:relative; margin-bottom:10px;">
                 <img id="post-image-preview" src="" style="width:100%; border-radius:8px;">
                 <button id="removePostImageBtn" style="position:absolute; top:5px; right:5px; background:var(--danger); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer;">✕</button>
             </div>
-            
             <div style="display:flex; gap:10px;">
                 <button class="btn-outline" id="addPhotoBtn" style="flex:1;">📷 Zdjęcie</button>
                 <button class="btn-main" id="publishPostBtn" style="flex:1;">OPUBLIKUJ</button>
@@ -162,97 +156,75 @@
         </div>
     </div>
 
-            <button class="btn-main" id="publishPostBtn">OPUBLIKUJ</button>
-        </div>
-    </div>
-
     <div id="alert-hub-modal" class="modal">
-        <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <h3 style="color:var(--danger); font-weight:900; margin-top:0;">⚠️ Zagrożenia</h3>
-            <div id="alert-hub-list" style="max-height: 350px; overflow-y: auto; text-align: left; margin-top: 10px; padding-right: 10px;"></div>
-        </div>
+        <div class="card"><button class="close-modal-btn">✕</button><h3 style="color:var(--danger);">⚠️ Zagrożenia</h3><div id="alert-hub-list"></div></div>
     </div>
 
     <div id="profile-setup-modal" class="modal">
         <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <h3 style="font-weight:900; font-size:24px; margin-top:0;">Profil Psa</h3>
-            
-            <div style="text-align:left; margin-bottom:10px;">
-                <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Zmień zdjęcie profilowe</label>
-                <input type="file" id="setupAvatarInput" accept="image/*" style="padding:10px;">
-            </div>
-
+            <button class="close-modal-btn">✕</button><h3>Profil Psa</h3>
+            <input type="file" id="setupAvatarInput" accept="image/*">
             <input type="text" id="setupName" placeholder="Imię psa">
             <input type="text" id="setupCity" placeholder="Miasto">
-            <select id="setupBreed" style="margin-bottom: 10px;">
-                <option value="">Wybierz rasę...</option>
-                <option value="Kundelek">Kundelek</option>
-                <option value="Golden Retriever">Golden Retriever</option>
-                <option value="Owczarek Niemiecki">Owczarek Niemiecki</option>
-                <option value="Buldog Francuski">Buldog Francuski</option>
-                <option value="Labrador">Labrador</option>
-                <option value="York">Yorkshire Terrier</option>
-                <option value="Mops">Mops</option>
-                <option value="Inna rasa">Inna rasa</option>
-            </select>
-            <select id="setupRoutine">
-                <option value="brak">Kiedy zwykle spacerujecie?</option>
-                <option value="Rano">Rano 🌅</option>
-                <option value="Popołudniu">Popołudniu ☀️</option>
-                <option value="Wieczorem">Wieczorem 🌙</option>
-            </select>
+            <select id="setupBreed"><option value="">Wybierz rasę...</option><option value="Kundelek">Kundelek</option><option value="Golden Retriever">Golden Retriever</option><option value="Inna rasa">Inna rasa</option></select>
             <button class="btn-main" id="saveProfileBtn">ZAPISZ</button>
         </div>
     </div>
 
     <div id="settings-modal" class="modal">
         <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <h3 style="font-weight:900; margin-top:0;">Ustawienia</h3>
-            <div style="text-align:left; margin-bottom:15px;">
-                <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Wygląd</label>
-                <select id="settingTheme">
-                    <option value="light">☀️ Jasny</option>
-                    <option value="dark">🌙 Ciemny</option>
-                </select>
-            </div>
-            <div style="text-align:left; margin-bottom:20px;">
-                <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Wielkość tekstu</label>
-                <select id="settingFontSize">
-                    <option value="14px">Mała (Domyślna)</option>
-                    <option value="16px">Średnia</option>
-                    <option value="18px">Duża</option>
-                </select>
-            </div>
-            <div class="legal-checkbox-container">
-                <input type="checkbox" id="settingSearchable">
-                <label for="settingSearchable" style="font-size:13px; font-weight:700;">Chcę być widoczny na mapie dla innych psów.</label>
-            </div>
-            <div class="legal-checkbox-container" style="margin-bottom:20px;">
-                <input type="checkbox" id="settingNotifs">
-                <label for="settingNotifs" style="font-size:13px; font-weight:700;">Dźwięki i wibracje</label>
-            </div>
+            <button class="close-modal-btn">✕</button><h3>Ustawienia</h3>
+            <select id="settingTheme"><option value="light">☀️ Jasny</option><option value="dark">🌙 Ciemny</option></select>
+            <select id="settingFontSize"><option value="14px">Mała</option><option value="16px">Średnia</option></select>
+            <div class="legal-checkbox-container"><input type="checkbox" id="settingSearchable"><label for="settingSearchable">Chcę być widoczny na mapie.</label></div>
             <button class="btn-main" id="saveSettingsBtn">ZAPISZ USTAWIENIA</button>
         </div>
     </div>
 
     <div id="weather-modal" class="modal">
-        <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <h3 style="font-weight:900; margin-top:0;">Prognoza Pogody ⛅</h3>
-            <div id="weather-forecast-content" style="text-align:left;">Ładowanie pogody...</div>
-        </div>
+        <div class="card"><button class="close-modal-btn">✕</button><h3>Prognoza Pogody ⛅</h3><div id="weather-forecast-content"></div></div>
     </div>
 
     <div id="alert-modal" class="modal">
         <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <h3 style="color:var(--danger); font-weight:900; margin-top:0;">⚠️ Zgłoś Zagrożenie</h3>
-            <p style="font-size:13px; margin-top:0; color:var(--text-muted); font-weight:700;">Zaznacz na mapie szkło, trutkę lub agresywnego psa.</p>
+            <button class="close-modal-btn">✕</button><h3 style="color:var(--danger);">⚠️ Zgłoś Zagrożenie</h3>
             <input type="text" id="alertTextInput" placeholder="Co się stało? (np. Szkło)">
             <button class="btn-main" id="saveAlertBtn" style="background:var(--danger);">POSTAW ZNACZNIK</button>
+        </div>
+    </div>
+
+    <div id="user-action-modal" class="modal">
+        <div class="card">
+            <button class="close-modal-btn">✕</button>
+            <img id="actionUserAvatar" src="" style="width:90px;height:90px;border-radius:50%;margin-bottom:15px;object-fit:cover;border:3px solid var(--secondary);">
+            <h3 id="actionUserName">Piesek</h3>
+            <button class="btn-main" id="actionMsgBtn" style="background:var(--secondary);">💬 Napisz na Priv</button>
+            <button class="btn-outline" id="actionMapBtn" style="display:none; margin-top:10px;">📍 Pokaż na mapie</button>
+        </div>
+    </div>
+
+    <div id="comments-modal" class="modal">
+        <div class="card" style="height: 70vh;">
+            <button class="close-modal-btn">✕</button><h3>Komentarze</h3>
+            <div id="comments-list" style="flex:1; overflow-y:auto;"></div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <input type="text" id="commentInput" placeholder="Napisz komentarz..." style="flex:1; margin-bottom:0;">
+                <button class="btn-main" id="sendCommentBtn" style="width:auto; padding:0 20px;">WYŚLIJ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-window" class="modal" style="z-index: 9999;">
+        <div class="card" style="height: 85vh; padding: 0;">
+            <div style="background: var(--panel-bg); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0;">
+                <b id="chatPartnerName">...</b><button id="closeChatBtn" style="background:none; border:none; font-size:20px; cursor:pointer;">✕</button>
+            </div>
+            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+            <div style="padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background: var(--bg-color); border-radius: 0 0 20px 20px;">
+                <button id="chatAddPhotoBtn" style="background:none; border:none; font-size:20px; cursor:pointer;">📷</button>
+                <input type="text" id="chatInput" placeholder="Napisz wiadomość..." style="flex: 1; padding: 12px; border-radius: 20px; border: 1px solid var(--border-color); margin-bottom:0;">
+                <button class="btn-main" id="sendMsgBtn" style="width: auto; padding: 0 20px; border-radius: 20px;">WYŚLIJ</button>
+            </div>
         </div>
     </div>
 
@@ -260,52 +232,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script type="module" src="/src/app.js?v=999"></script>
-  <div id="user-action-modal" class="modal" style="z-index: 10000;">
-        <div class="card" style="text-align:center;">
-            <button class="close-modal-btn">✕</button>
-            <img id="actionUserAvatar" src="" style="width:90px;height:90px;border-radius:50%;margin-bottom:15px;object-fit:cover;border:3px solid var(--secondary); box-shadow:var(--soft-shadow);">
-            <h3 id="actionUserName" style="margin-top:0;font-weight:900;font-size:24px;">Piesek</h3>
-            
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <button class="btn-main" id="actionMsgBtn" style="background:var(--secondary);">💬 Napisz na Priv</button>
-                <button class="btn-outline" id="actionMapBtn" style="display:none; border-color:var(--primary); color:var(--primary);">📍 Pokaż na mapie</button>
-                <button class="btn-outline" id="actionProfileBtn" onclick="Waggle.showToast('Profile innych użytkowników wkrótce!')">🐾 Zobacz pełny profil</button>
-            </div>
-        </div>
-    </div>
-    <div id="comments-modal" class="modal">
-        <div class="card" style="height: 70vh; display: flex; flex-direction: column;">
-            <button class="close-modal-btn">✕</button>
-            <h3 style="margin-top:0;">Komentarze</h3>
-            
-            <div id="comments-list" style="flex:1; overflow-y:auto; margin-bottom: 15px; padding-right: 5px;">
-                </div>
-            
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="commentInput" placeholder="Napisz komentarz..." style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
-                <button class="btn-main" id="sendCommentBtn" style="width:auto; padding:0 20px;">WYŚLIJ</button>
-            </div>
-        </div>
-    </div>
-<div id="chat-window" class="modal" style="z-index: 9999;">
-        <div class="card" style="height: 85vh; display: flex; flex-direction: column; padding: 0;">
-            
-            <div style="background: var(--panel-bg); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0;">
-                <b id="chatPartnerName" style="font-size: 18px; color: var(--text-color);">...</b>
-                <button id="closeChatBtn" style="background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-color);">✕</button>
-            </div>
-            
-            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
-                </div>
-            
-            <div style="padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background: var(--bg-color); border-radius: 0 0 20px 20px;">
-                <input type="text" id="chatInput" placeholder="Napisz wiadomość..." style="flex: 1; padding: 12px; border-radius: 20px; border: 1px solid var(--border-color);">
-                <button class="btn-main" id="sendMsgBtn" style="width: auto; padding: 0 20px; border-radius: 20px;">WYŚLIJ</button>
-            </div>
-
-        </div>
-    </div>
+    <script type="module" src="app.js?v=1.1"></script>
 </body>
-    
 </html>
