@@ -1,10 +1,7 @@
-// --- IMPORTY CORE ---
 import { state } from './core/state.js';
 import { auth, db, fb } from './core/firebase.js';
 import { initRouter } from './core/router.js'; 
 import { eventBus } from './core/eventBus.js'; 
-
-// --- IMPORTY MODUŁÓW ---
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; 
 import { startWalk, stopWalk } from './modules/walk.js';
@@ -13,7 +10,6 @@ import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleS
 
 window.Waggle = window.Waggle || {};
 
-// SYSTEM POWIADOMIEŃ
 window.Waggle.showToast = (msg) => {
     let toast = document.getElementById('waggle-toast');
     if(!toast) {
@@ -37,7 +33,6 @@ function getWeatherIcon(code) {
     return '🌡️';
 }
 
-// BINDINGI GLOBALNE
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
@@ -80,7 +75,7 @@ window.Waggle.renderPlaces = () => {
     }
     let html = "";
     nearbyPlaces.forEach(place => {
-        const icon = place.isDogPark ? '🐕' : '🌳';
+        const icon = place.isDogPark ? '🏞️' : '🌳';
         const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
         html += `
             <div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
@@ -91,7 +86,7 @@ window.Waggle.renderPlaces = () => {
                         <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span>
                     </div>
                 </div>
-                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$${place.lat},${place.lng}', '_blank')">Prowadź</button>
             </div>
         `;
     });
@@ -114,22 +109,28 @@ export function initApp() {
 
     eventBus.on('profileUpdated', (profile) => {
         updateStatsUI();
-        // Po załadowaniu profilu wypełniamy pola w edycji, by nie były puste
         document.getElementById('setupName').value = profile.name || "";
         document.getElementById('setupCity').value = profile.city || "";
         if(document.getElementById('setupBreed')) document.getElementById('setupBreed').value = profile.breed || "";
+    });
+
+    // NOWOŚĆ: Synchronizacja pogody z faktycznym pojawieniem się GPS-u
+    eventBus.on('locationUpdated', (loc) => {
+        if (!state.weatherFetched || Date.now() - state.weatherFetched > 300000) {
+            fetchWeather(loc.lat, loc.lng);
+            state.weatherFetched = Date.now();
+        }
     });
 
     initMap();
     loadPosts();
     loadInbox();
     updateStatsUI();
-    fetchWeather(); 
 }
 
-function fetchWeather() {
-    if(state.location && state.location.lat) {
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.location.lat}&longitude=${state.location.lng}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
+function fetchWeather(lat, lng) {
+    if(lat && lng) {
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
         .then(r=>r.json()).then(d => {
             const tempEl = document.getElementById('weather-temp');
             if(tempEl) tempEl.innerText = `${Math.round(d.current_weather.temperature)}°C`;
@@ -145,7 +146,7 @@ function fetchWeather() {
                 contentEl.innerHTML = forecastHtml;
             }
         }).catch(e=>console.warn("Weather error:", e));
-    } else { setTimeout(fetchWeather, 3000); }
+    }
 }
 
 document.addEventListener('input', (e) => {
@@ -173,6 +174,7 @@ document.addEventListener('change', (e) => {
 
 document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
+    if (e.target.closest('#closeChatBtn')) closeActiveChat(); // Wymuszone zamykanie czatu
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
@@ -182,8 +184,15 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#saveAlertBtn')) {
         const textInput = document.getElementById('alertTextInput');
         if (textInput && textInput.value && state.location.lat) {
-            db.collection("alerts").add({ text: textInput.value, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid })
+            const alertText = textInput.value;
+            db.collection("alerts").add({ text: alertText, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid })
             .then(() => {
+                // NOWOŚĆ: Automatycznie dodaje post o zagrożeniu na Tablicę
+                db.collection("posts").add({ 
+                    uid: state.user.uid, author: state.profile?.name || "Piesek", avatar: state.profile?.avatar || "", 
+                    content: alertText, imageUrl: null, isEvent: false, isAlert: true, isInfo: false,
+                    likes: [], commentCount: 0, timestamp: fb.firestore.FieldValue.serverTimestamp() 
+                });
                 document.getElementById('alert-modal').style.display = 'none';
                 textInput.value = ''; window.Waggle.showToast("Zagrożenie zgłoszone! ⚠️");
             });
@@ -200,7 +209,7 @@ document.addEventListener('click', async (e) => {
         if (filterName.includes('Wszystko')) setPostFilter('all');
         else if (filterName.includes('Ustawki')) setPostFilter('events');
         else if (filterName.includes('Alerty')) setPostFilter('alerts');
-        else window.Waggle.showToast(`Filtr ${filterName} wkrótce!`);
+        else if (filterName.includes('Info')) setPostFilter('info');
     }
 
     if (e.target.closest('#addPhotoBtn')) document.getElementById('postImageInput').click();
@@ -217,7 +226,8 @@ document.addEventListener('click', async (e) => {
         try {
             let finalUrl = null;
             if(pendingImageFile) finalUrl = await uploadImage(pendingImageFile);
-            await saveCommunityPost(text, finalUrl, document.getElementById('isEventCheckbox').checked, document.getElementById('eventDate').value);
+            const isInfo = document.getElementById('isInfoCheckbox')?.checked || false;
+            await saveCommunityPost(text, finalUrl, document.getElementById('isEventCheckbox').checked, document.getElementById('eventDate').value, isInfo);
             document.getElementById('post-creator-modal').style.display = 'none';
             pendingImageFile = null; window.Waggle.showToast("Opublikowano! 🎉");
         } catch(err) { window.Waggle.showToast("Błąd!"); } 
@@ -266,10 +276,19 @@ document.addEventListener('click', async (e) => {
 
     if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
     if (e.target.closest('#saveSettingsBtn')) {
-        const isSearchable = document.getElementById('settingSearchable').checked;
-        localStorage.setItem('waggle_ghost_mode', (!isSearchable).toString());
-        state.isGhostMode = !isSearchable;
-        if (state.isGhostMode && state.user) db.collection("walks").doc(state.user.uid).delete();
+        const isGhost = document.getElementById('settingSearchable').checked;
+        const isHidden = document.getElementById('settingHidden').checked;
+        const font = document.getElementById('settingFontSize').value;
+        
+        localStorage.setItem('waggle_ghost_mode', isGhost.toString());
+        localStorage.setItem('waggle_hidden_mode', isHidden.toString());
+        localStorage.setItem('waggle_font', font);
+        
+        state.isGhostMode = isGhost;
+        state.isHiddenMode = isHidden;
+        document.documentElement.style.setProperty('--base-font-size', font);
+        
+        if (isHidden && state.user) db.collection("walks").doc(state.user.uid).delete();
         document.getElementById('settings-modal').style.display = 'none';
         window.Waggle.showToast("Ustawienia zapisane!");
     }
@@ -308,9 +327,16 @@ function updateStatsUI() {
 
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
+    const font = localStorage.getItem('waggle_font') || '14px';
     if (theme === 'dark') document.body.classList.add('dark-mode');
+    document.documentElement.style.setProperty('--base-font-size', font);
+    
     state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
-    if(document.getElementById('settingSearchable')) document.getElementById('settingSearchable').checked = !state.isGhostMode;
+    state.isHiddenMode = localStorage.getItem('waggle_hidden_mode') === 'true';
+    
+    if(document.getElementById('settingSearchable')) document.getElementById('settingSearchable').checked = state.isGhostMode;
+    if(document.getElementById('settingHidden')) document.getElementById('settingHidden').checked = state.isHiddenMode;
+    if(document.getElementById('settingFontSize')) document.getElementById('settingFontSize').value = font;
 }
 
 initAuth(initApp);
