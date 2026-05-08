@@ -2,6 +2,7 @@ import { appState as state, setState } from '../core/state.js';
 import { db } from '../core/firebase.js';
 import { mapManager } from './map/mapManager.js';
 import { registerListener } from '../core/listeners.js';
+import { eventBus } from '../core/eventBus.js';
 
 import { subscribeToWalks } from '../services/walkService.js';
 import { renderWalks } from './map/walksRenderer.js';
@@ -14,10 +15,12 @@ let myMarker = null;
 let parksLoaded = false;
 export let nearbyPlaces = []; 
 
-// FUNKCJA DO OBSŁUGI POZYCJI (Zdefiniowana poza init, aby centerOnMe mogło z niej korzystać)
 function handleLocationUpdate(latitude, longitude) {
     setState('location.lat', latitude);
     setState('location.lng', longitude);
+    
+    // Sygnał, żeby pobrać pogodę, skoro już mamy GPS!
+    eventBus.emit('locationUpdated', { lat: latitude, lng: longitude });
 
     const myAvatarSrc = state.profile?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
     const myIcon = L.divIcon({
@@ -46,15 +49,31 @@ function handleLocationUpdate(latitude, longitude) {
     if(state.location.following) mapManager.panTo(latitude, longitude);
 
     if (state.isWalking && state.user) {
-        if (state.isGhostMode) {
+        // Jeśli zaznaczył "Całkowicie Ukryty" - usuwamy go z bazy spacerów (Znika stado/stories)
+        if (state.isHiddenMode) {
             db.collection("walks").doc(state.user.uid).delete().catch(() => {});
         } else {
+            let latToSave = latitude;
+            let lngToSave = longitude;
+            
+            // TRYB DUCHA (FUZZY LOCATION): Przesunięcie znacznika o ok. 300-500m
+            if (state.isGhostMode) {
+                if (!state.ghostOffset) {
+                    state.ghostOffset = {
+                        lat: (Math.random() - 0.5) * 0.006, 
+                        lng: (Math.random() - 0.5) * 0.006
+                    };
+                }
+                latToSave += state.ghostOffset.lat;
+                lngToSave += state.ghostOffset.lng;
+            }
+
             db.collection("walks").doc(state.user.uid).set({
                 uid: state.user.uid,
                 name: state.profile?.name || "Piesek",
                 avatar: state.profile?.avatar || "",
-                lat: latitude,
-                lng: longitude,
+                lat: latToSave,
+                lng: lngToSave,
                 timestamp: Date.now()
             }, { merge: true });
         }
@@ -68,7 +87,6 @@ export function initMap() {
     mapManager.init('map', 52.2, 21.0, 13);
     setState('map.instance', mapManager);
 
-    // SYSTEM LOKALIZACJI
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude), 
