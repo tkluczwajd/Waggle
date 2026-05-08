@@ -1,3 +1,5 @@
+import { registerListener, cleanupListeners } from './listeners.js';
+
 export const appState = {
     auth: {
         user: null,
@@ -15,13 +17,13 @@ export const appState = {
         following: true,
         watchId: null
     },
-    profile: null, // Tu trzymamy dane usera (imię, awatar, tryb ducha)
+    profile: null,
     isWalking: false,
     map: null,
     currentChatId: null
 };
 
-// Funkcja do bezpiecznej zmiany danych
+// Funkcja do bezpiecznej zmiany danych w nowej architekturze
 export function setState(path, value) {
     const keys = path.split('.');
     let current = appState;
@@ -31,5 +33,13 @@ export function setState(path, value) {
     current[keys[0]] = value;
 }
 
-// Tymczasowy most dla Twoich starszych funkcji, by ich nie popsuć
-export const state = appState;
+// === MOST KOMPATYBILNOŚCI WSTECZNEJ DLA STARYCH MODUŁÓW ===
+// Poniższe eksporty ratują niezrefaktoryzowane pliki (posts.js, chat.js) przed awarią
+
+export const state = appState; 
+export const addListener = registerListener;
+export const clearListeners = cleanupListeners;
+export const ListenerManager = {
+    add: registerListener,
+    clear: cleanupListeners
+};
