@@ -3,7 +3,6 @@ import { db } from '../core/firebase.js';
 import { mapManager } from './map/mapManager.js';
 import { registerListener } from '../core/listeners.js';
 
-// Nasze nowe rozdzielone moduły (Dyrygent wzywa muzyków)
 import { subscribeToWalks } from '../services/walkService.js';
 import { renderWalks } from './map/walksRenderer.js';
 import { subscribeToAlerts } from '../services/alerts/alertsService.js';
@@ -13,7 +12,7 @@ import { renderParksOnMap } from './map/parksRenderer.js';
 
 let myMarker = null;
 let parksLoaded = false;
-export let nearbyPlaces = []; // Tablica potrzebna w app.js
+export let nearbyPlaces = []; 
 
 export function initMap() {
     if (state.map?.instance) return;
@@ -22,9 +21,8 @@ export function initMap() {
     mapManager.init('map', 52.2, 21.0, 13);
     setState('map.instance', mapManager);
 
-    // Główny system lokalizacji (Twój Ghost Mode i update pozycji)
-    navigator.geolocation.watchPosition(pos => {
-        const { latitude, longitude } = pos.coords;
+    // FUNKCJA POMOCNICZA: Obsługa odświeżania pozycji (Działa też na fallbacku!)
+    function handleLocationUpdate(latitude, longitude) {
         setState('location.lat', latitude);
         setState('location.lng', longitude);
 
@@ -40,11 +38,12 @@ export function initMap() {
             mapManager.addMarkerToLayer('user', myMarker);
             mapManager.flyTo(latitude, longitude, 15);
 
-            // Pobierz parki tylko przy pierwszym wejściu na mapę
             if (!parksLoaded) {
                 fetchNearbyParks(latitude, longitude).then(places => {
                     nearbyPlaces = places;
                     renderParksOnMap(places);
+                    // Jeśli ktoś ma otwartą zakładkę Miejsca, odświeżamy listę
+                    if (window.Waggle?.renderPlaces) window.Waggle.renderPlaces();
                     parksLoaded = true;
                 });
             }
@@ -54,7 +53,6 @@ export function initMap() {
 
         if(state.location.following) mapManager.panTo(latitude, longitude);
 
-        // Zapisywanie do bazy "w locie" i uwzględnianie Ghost Mode
         if (state.isWalking && state.user) {
             if (state.isGhostMode) {
                 db.collection("walks").doc(state.user.uid).delete().catch(() => {});
@@ -69,10 +67,19 @@ export function initMap() {
                 }, { merge: true });
             }
         }
+    }
 
-    }, err => console.warn("GPS Error:", err), { enableHighAccuracy: true });
+    // SYSTEM LOKALIZACJI Z FALLBACKIEM (Jeśli GPS padnie lub milczy > 10sek)
+    navigator.geolocation.watchPosition(
+        pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude), 
+        err => {
+            console.warn("GPS Error:", err);
+            window.Waggle.showToast("Brak GPS! Używam lokalizacji domyślnej (Warszawa).");
+            handleLocationUpdate(52.2297, 21.0122); // Fallback: Warszawa
+        }, 
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
 
-    // Zaczynamy słuchać bazy danych
     const walksUnsub = subscribeToWalks(walks => renderWalks(walks));
     registerListener(walksUnsub);
 
