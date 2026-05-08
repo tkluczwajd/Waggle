@@ -9,7 +9,7 @@ import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; 
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
-import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado } from './modules/chat.js';
+import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado, sendChatImage } from './modules/chat.js';
 
 window.Waggle = window.Waggle || {};
 
@@ -37,7 +37,6 @@ function getWeatherIcon(code) {
     return '🌡️';
 }
 
-// BINDING FUNKCJI DO WINDOW
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
@@ -48,7 +47,6 @@ window.Waggle.openPostComments = openPostComments;
 window.Waggle.searchUsers = searchUsers;
 window.Waggle.toggleStado = toggleStado; 
 
-// WYŚWIETLANIE MENU UŻYTKOWNIKA
 window.Waggle.openUserMenu = (uid, name, avatar, lat = null, lng = null) => {
     if(uid === state.user.uid) return; 
     
@@ -74,11 +72,9 @@ window.Waggle.openUserMenu = (uid, name, avatar, lat = null, lng = null) => {
             mapBtn.style.display = 'none';
         }
     }
-
     document.getElementById('user-action-modal').style.display = 'flex';
 };
 
-// MIEJSCA
 window.Waggle.renderPlaces = () => {
     const container = document.getElementById('places-container');
     if (!container) return;
@@ -103,7 +99,7 @@ window.Waggle.renderPlaces = () => {
                         <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${type} • ${place.distance.toFixed(1)} km stąd</span>
                     </div>
                 </div>
-                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color};" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$$${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color};" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$$$${place.lat},${place.lng}', '_blank')">Prowadź</button>
             </div>
         `;
     });
@@ -112,19 +108,20 @@ window.Waggle.renderPlaces = () => {
 
 let pendingImageFile = null;
 
-// --- GŁÓWNA FUNKCJA STARTOWA ---
 export function initApp() {
     console.log("🐾 Waggle Core Foundation V1 - Uruchamianie...");
     loadSettings(); 
-    initRouter(); // Odpalamy nową nawigację
+    initRouter(); 
     
-    // Słuchamy z routera, w co kliknął użytkownik!
     eventBus.on('viewChanged', (view) => {
         if (view === 'community') loadPosts();
         if (view === 'chat') loadInbox();
         if (view === 'wiki') renderWiki('rasy'); 
         if (view === 'places') window.Waggle.renderPlaces();
     });
+
+    // NOWOŚĆ: Nasłuchujemy zmiany profilu, żeby natychmiast załadować zdjęcie i statystyki
+    eventBus.on('profileUpdated', updateStatsUI);
 
     initMap();
     loadPosts();
@@ -162,11 +159,8 @@ function fetchWeather() {
     }
 }
 
-// LISTENERY DO POSTÓW I SZUKANIA
 document.addEventListener('input', (e) => {
-    if (e.target.id === 'userSearchInput') {
-        window.Waggle.searchUsers(e.target.value);
-    }
+    if (e.target.id === 'userSearchInput') window.Waggle.searchUsers(e.target.value);
 });
 
 document.addEventListener('change', (e) => {
@@ -188,12 +182,9 @@ document.addEventListener('change', (e) => {
     }
 });
 
-// GŁÓWNY SYSTEM EVENTÓW
 document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
     
-    // Usunięto przestarzałe switchView(navItem.getAttribute('data-view')) z kliknięć - zajmuje się tym router.js!
-
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
@@ -276,6 +267,15 @@ document.addEventListener('click', async (e) => {
         document.getElementById('userSearchInput').style.display = 'block';
         document.getElementById('userSearchInput').value = '';
         window.Waggle.searchUsers(''); 
+    }
+
+    // NOWOŚĆ: Obsługa aparatu w czacie (Naprawa pkt 4)
+    if (e.target.closest('#chatAddPhotoBtn')) {
+        const input = document.createElement('input');
+        input.type = 'file'; 
+        input.accept = 'image/*';
+        input.onchange = (ev) => sendChatImage(ev.target.files[0]);
+        input.click();
     }
 
     if (e.target.classList.contains('wiki-tab-btn')) {
@@ -366,8 +366,11 @@ function renderWiki(tab) {
                 });
             }
 
+            let imgHtml = item.img ? `<img src="${item.img}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:10px; border:1px solid var(--border-color);">` : "";
+
             html += `
                 <div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position:relative;">
+                    ${imgHtml}
                     <b style="font-size: 17px; color: var(--text-color);">${item.title || item.name}</b><br>
                     ${tagsHtml}
                     <p style="margin-top:10px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.5;">${item.desc}</p>
@@ -423,5 +426,4 @@ function loadSettings() {
     document.documentElement.style.setProperty('--base-font-size', font);
 }
 
-// INICJALIZACJA
 initAuth(initApp);
