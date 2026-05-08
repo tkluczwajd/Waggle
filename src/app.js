@@ -37,6 +37,7 @@ function getWeatherIcon(code) {
     return '🌡️';
 }
 
+// BINDINGI GLOBALNE
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
@@ -49,17 +50,14 @@ window.Waggle.toggleStado = toggleStado;
 
 window.Waggle.openUserMenu = (uid, name, avatar, lat = null, lng = null) => {
     if(uid === state.user.uid) return; 
-    
     document.getElementById('actionUserName').innerText = name;
     document.getElementById('actionUserAvatar').src = avatar;
-    
     const msgBtn = document.getElementById('actionMsgBtn');
     msgBtn.onclick = () => {
         document.getElementById('user-action-modal').style.display = 'none';
         document.querySelector('.nav-item[data-view="chat"]').click(); 
         window.Waggle.openChat(uid, name);
     };
-
     const mapBtn = document.getElementById('actionMapBtn');
     if (mapBtn) {
         if (lat !== null && lng !== null) {
@@ -68,9 +66,7 @@ window.Waggle.openUserMenu = (uid, name, avatar, lat = null, lng = null) => {
                 document.getElementById('user-action-modal').style.display = 'none';
                 window.Waggle.centerOnTarget(lat, lng);
             };
-        } else {
-            mapBtn.style.display = 'none';
-        }
+        } else { mapBtn.style.display = 'none'; }
     }
     document.getElementById('user-action-modal').style.display = 'flex';
 };
@@ -78,28 +74,24 @@ window.Waggle.openUserMenu = (uid, name, avatar, lat = null, lng = null) => {
 window.Waggle.renderPlaces = () => {
     const container = document.getElementById('places-container');
     if (!container) return;
-    
     if (nearbyPlaces.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy (do 5km)... 🧭</p>';
+        container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
         return;
     }
-
     let html = "";
     nearbyPlaces.forEach(place => {
         const icon = place.isDogPark ? '🐕' : '🌳';
-        const type = place.isDogPark ? 'Wybieg dla psów' : 'Park';
         const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
-        
         html += `
             <div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div style="font-size:30px;">${icon}</div>
                     <div>
                         <b style="font-size:16px; color:var(--text-color);">${place.name}</b><br>
-                        <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${type} • ${place.distance.toFixed(1)} km stąd</span>
+                        <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span>
                     </div>
                 </div>
-                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color};" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$$$${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">Prowadź</button>
             </div>
         `;
     });
@@ -120,8 +112,13 @@ export function initApp() {
         if (view === 'places') window.Waggle.renderPlaces();
     });
 
-    // NOWOŚĆ: Nasłuchujemy zmiany profilu, żeby natychmiast załadować zdjęcie i statystyki
-    eventBus.on('profileUpdated', updateStatsUI);
+    eventBus.on('profileUpdated', (profile) => {
+        updateStatsUI();
+        // Po załadowaniu profilu wypełniamy pola w edycji, by nie były puste
+        document.getElementById('setupName').value = profile.name || "";
+        document.getElementById('setupCity').value = profile.city || "";
+        if(document.getElementById('setupBreed')) document.getElementById('setupBreed').value = profile.breed || "";
+    });
 
     initMap();
     loadPosts();
@@ -142,21 +139,13 @@ function fetchWeather() {
                 forecastHtml += `<div style="display:flex; justify-content:space-around; border-top:1px solid var(--border-color); padding-top:15px;">`;
                 for(let i=0; i<3; i++) {
                     const date = new Date(d.daily.time[i]).toLocaleDateString('pl-PL', {weekday: 'short'});
-                    forecastHtml += `
-                        <div style="text-align:center;">
-                            <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted);">${date}</div>
-                            <div style="font-size:24px; margin:5px 0;">${getWeatherIcon(d.daily.weathercode[i])}</div>
-                            <div style="font-size:14px; font-weight:900;">${Math.round(d.daily.temperature_2m_max[i])}°</div>
-                            <div style="font-size:10px; color:var(--text-muted);">${Math.round(d.daily.temperature_2m_min[i])}°</div>
-                        </div>`;
+                    forecastHtml += `<div style="text-align:center;"><div style="font-size:11px;">${date}</div><div style="font-size:24px;">${getWeatherIcon(d.daily.weathercode[i])}</div><div>${Math.round(d.daily.temperature_2m_max[i])}°</div></div>`;
                 }
                 forecastHtml += `</div>`;
                 contentEl.innerHTML = forecastHtml;
             }
         }).catch(e=>console.warn("Weather error:", e));
-    } else {
-        setTimeout(fetchWeather, 3000); 
-    }
+    } else { setTimeout(fetchWeather, 3000); }
 }
 
 document.addEventListener('input', (e) => {
@@ -184,7 +173,6 @@ document.addEventListener('change', (e) => {
 
 document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('close-modal-btn')) e.target.closest('.modal').style.display = 'none';
-    
     if (e.target.closest('#centerBtn')) centerOnMe();
     if (e.target.closest('#startWalkBtn')) startWalk();
     if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
@@ -197,8 +185,7 @@ document.addEventListener('click', async (e) => {
             db.collection("alerts").add({ text: textInput.value, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now(), creator: state.user.uid })
             .then(() => {
                 document.getElementById('alert-modal').style.display = 'none';
-                textInput.value = '';
-                window.Waggle.showToast("Zagrożenie zgłoszone! ⚠️");
+                textInput.value = ''; window.Waggle.showToast("Zagrożenie zgłoszone! ⚠️");
             });
         }
     }
@@ -212,6 +199,7 @@ document.addEventListener('click', async (e) => {
         btn.style.background = 'var(--text-color)'; btn.style.color = 'white';
         if (filterName.includes('Wszystko')) setPostFilter('all');
         else if (filterName.includes('Ustawki')) setPostFilter('events');
+        else if (filterName.includes('Alerty')) setPostFilter('alerts');
         else window.Waggle.showToast(`Filtr ${filterName} wkrótce!`);
     }
 
@@ -219,40 +207,26 @@ document.addEventListener('click', async (e) => {
     if (e.target.closest('#removePostImageBtn')) {
         pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
     }
-    if (e.target.closest('#addPostBtn')) {
-        document.getElementById('postContent').value = '';
-        document.getElementById('isEventCheckbox').checked = false;
-        document.getElementById('eventDetailsInput').style.display = 'none';
-        document.getElementById('post-creator-modal').style.display = 'flex';
-    }
+    if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
     
     if (e.target.closest('#publishPostBtn')) {
         const btn = e.target.closest('#publishPostBtn');
         const text = document.getElementById('postContent').value.trim();
-        const isEvent = document.getElementById('isEventCheckbox').checked;
-        const eventDate = document.getElementById('eventDate').value;
-        
         if(text.length < 3) return window.Waggle.showToast("Napisz coś więcej!");
-        if(isEvent && !eventDate) return window.Waggle.showToast("Wybierz datę i godzinę ustawki!");
-
-        btn.disabled = true; btn.innerText = "WYSYŁANIE...";
+        btn.disabled = true;
         try {
             let finalUrl = null;
             if(pendingImageFile) finalUrl = await uploadImage(pendingImageFile);
-            await saveCommunityPost(text, finalUrl, isEvent, eventDate);
+            await saveCommunityPost(text, finalUrl, document.getElementById('isEventCheckbox').checked, document.getElementById('eventDate').value);
             document.getElementById('post-creator-modal').style.display = 'none';
-            pendingImageFile = null; document.getElementById('post-image-preview-container').style.display = 'none';
-            window.Waggle.showToast(isEvent ? "Ustawka opublikowana! 📅" : "Post opublikowany! 🎉");
-        } catch(err) { window.Waggle.showToast("Błąd wysyłania!"); } 
-        finally { btn.disabled = false; btn.innerText = "OPUBLIKUJ"; }
+            pendingImageFile = null; window.Waggle.showToast("Opublikowano! 🎉");
+        } catch(err) { window.Waggle.showToast("Błąd!"); } 
+        finally { btn.disabled = false; }
     }
 
     if (e.target.closest('#sendCommentBtn')) {
         const input = document.getElementById('commentInput');
-        if (input && input.value.trim()) {
-            addPostComment(input.value.trim());
-            input.value = ""; 
-        }
+        if (input && input.value.trim()) { addPostComment(input.value.trim()); input.value = ""; }
     }
 
     if (e.target.closest('#chatTabInbox')) {
@@ -265,140 +239,62 @@ document.addEventListener('click', async (e) => {
         document.getElementById('chatTabSearch').style.background = 'white';
         document.getElementById('chatTabInbox').style.background = 'transparent';
         document.getElementById('userSearchInput').style.display = 'block';
-        document.getElementById('userSearchInput').value = '';
         window.Waggle.searchUsers(''); 
     }
 
-    // NOWOŚĆ: Obsługa aparatu w czacie (Naprawa pkt 4)
     if (e.target.closest('#chatAddPhotoBtn')) {
-        const input = document.createElement('input');
-        input.type = 'file'; 
-        input.accept = 'image/*';
+        const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
         input.onchange = (ev) => sendChatImage(ev.target.files[0]);
         input.click();
     }
 
     if (e.target.classList.contains('wiki-tab-btn')) {
         document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        renderWiki(e.target.getAttribute('data-tab'));
+        e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab'));
     }
 
-    if (e.target.closest('#openEditProfileBtn')) {
-        const p = state.profile || {};
-        document.getElementById('setupName').value = p.name || "";
-        document.getElementById('setupCity').value = p.city || "";
-        const breedSelect = document.getElementById('setupBreed');
-        if (breedSelect) breedSelect.value = p.breed || "";
-        document.getElementById('profile-setup-modal').style.display = 'flex';
-    }
+    if (e.target.closest('#openEditProfileBtn')) document.getElementById('profile-setup-modal').style.display = 'flex';
     
     if (e.target.closest('#saveProfileBtn')) {
-        const btn = e.target.closest('#saveProfileBtn');
-        btn.innerText = "ZAPISYWANIE..."; btn.disabled = true;
-        const d = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim() };
-        const breedSelect = document.getElementById('setupBreed'); if(breedSelect) d.breed = breedSelect.value;
+        const btn = e.target.closest('#saveProfileBtn'); btn.disabled = true;
+        const d = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim(), breed: document.getElementById('setupBreed').value };
         const avatarInput = document.getElementById('setupAvatarInput');
-
-        const saveToDb = (data) => {
-            db.collection("users").doc(state.user.uid).set(data, {merge:true}).then(() => {
-                state.profile = {...state.profile, ...data};
-                document.getElementById('profile-setup-modal').style.display = 'none';
-                updateStatsUI();
-                window.Waggle.showToast("Profil zapisany!");
-                btn.innerText = "ZAPISZ"; btn.disabled = false;
-            });
-        };
-
         if (avatarInput && avatarInput.files.length > 0) {
-            uploadImage(avatarInput.files[0]).then(url => { d.avatar = url; saveToDb(d); });
-        } else { saveToDb(d); }
+            uploadImage(avatarInput.files[0]).then(url => { d.avatar = url; db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(()=> { btn.disabled=false; document.getElementById('profile-setup-modal').style.display='none'; window.Waggle.showToast("Zapisano!"); }); });
+        } else { db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(()=> { btn.disabled=false; document.getElementById('profile-setup-modal').style.display='none'; window.Waggle.showToast("Zapisano!"); }); }
     }
 
     if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
-    if (e.target.closest('#sendMsgBtn')) {
-        const input = document.getElementById('chatInput');
-        if (input && input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
-    }
-    if (e.target.closest('#closeChatBtn')) closeActiveChat();
-    
-    // LOGOWANIE
-    if (e.target.closest('#loginBtn')) {
-        const email = document.getElementById('authEmail').value;
-        const pass = document.getElementById('authPass').value;
-        auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+    if (e.target.closest('#saveSettingsBtn')) {
+        const isSearchable = document.getElementById('settingSearchable').checked;
+        localStorage.setItem('waggle_ghost_mode', (!isSearchable).toString());
+        state.isGhostMode = !isSearchable;
+        if (state.isGhostMode && state.user) db.collection("walks").doc(state.user.uid).delete();
+        document.getElementById('settings-modal').style.display = 'none';
+        window.Waggle.showToast("Ustawienia zapisane!");
     }
     
-    if (e.target.closest('#registerBtn')) {
-        const email = document.getElementById('authEmail').value;
-        const pass = document.getElementById('authPass').value;
-        auth.createUserWithEmailAndPassword(email, pass)
-            .then(() => {
-                db.collection("users").doc(auth.currentUser.uid).set({
-                    name: "Nowy Piesek", city: "", breed: ""
-                });
-                window.location.reload();
-            })
-            .catch(err => alert("Błąd rejestracji: " + err.message));
-    }
-    
+    if (e.target.closest('#loginBtn')) auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value);
     if (e.target.closest('#logoutBtn')) auth.signOut().then(() => window.location.reload());
 });
 
-// WIKI
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
-    container.innerHTML = '<p style="text-align:center; padding:20px;">Węszenie w bazie danych... 🐾</p>';
-
+    container.innerHTML = '<p style="text-align:center; padding:20px;">Węszenie... 🐾</p>';
     db.collection("wiki").where("category", "==", tab).onSnapshot(snap => {
         let html = "";
         snap.forEach(doc => {
-            const item = doc.data();
-            const id = doc.id;
-            const likesCount = item.likes ? item.likes.length : 0;
+            const item = doc.data(); const id = doc.id;
             const hasLiked = item.likes && item.likes.includes(state.user.uid);
-
-            let tagsHtml = "";
-            if(item.tags) {
-                item.tags.forEach(tag => {
-                    tagsHtml += `<span style="display:inline-block; background:var(--panel-bg); color:var(--text-color); font-size:10px; font-weight:800; padding:3px 8px; border-radius:10px; margin-right:5px; margin-top:5px; border: 1px solid var(--border-color);">${tag}</span>`;
-                });
-            }
-
-            let imgHtml = item.img ? `<img src="${item.img}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:10px; border:1px solid var(--border-color);">` : "";
-
-            html += `
-                <div class="post-card" style="border-left: 4px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position:relative;">
-                    ${imgHtml}
-                    <b style="font-size: 17px; color: var(--text-color);">${item.title || item.name}</b><br>
-                    ${tagsHtml}
-                    <p style="margin-top:10px; font-weight:600; font-size:14px; color:var(--text-muted); line-height: 1.5;">${item.desc}</p>
-                    
-                    <div style="border-top: 1px solid var(--border-color); margin-top: 15px; padding-top: 10px; display:flex; gap: 20px; align-items:center;">
-                        <span style="font-size:13px; cursor:pointer; font-weight:800; color: ${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" 
-                              onclick="Waggle.likeWiki('${id}')">
-                            ${hasLiked ? '❤️' : '🤍'} ${likesCount}
-                        </span>
-                    </div>
-                </div>`;
+            let imgHtml = item.img ? `<img src="${item.img}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:10px;">` : "";
+            html += `<div class="post-card" style="border-left: 4px solid var(--secondary); padding:15px; margin-bottom: 15px;">
+                ${imgHtml}<b style="font-size: 17px;">${item.title || item.name}</b><p style="margin-top:10px; font-size:14px; color:var(--text-muted);">${item.desc}</p>
+                <div style="margin-top: 15px;"><span style="font-size:13px; cursor:pointer; font-weight:800; color:${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" onclick="Waggle.likeWiki('${id}')">${hasLiked ? '❤️' : '🤍'} ${item.likes ? item.likes.length : 0}</span></div></div>`;
         });
-        container.innerHTML = html || '<p style="text-align:center; padding:20px;">Brak wpisów.</p>';
+        container.innerHTML = html || '<p style="text-align:center;">Brak wpisów.</p>';
     });
 }
-
-window.Waggle.likeWiki = (id) => {
-    const ref = db.collection("wiki").doc(id);
-    ref.get().then(doc => {
-        const likes = doc.data().likes || [];
-        if (likes.includes(state.user.uid)) {
-            ref.update({ likes: fb.firestore.FieldValue.arrayRemove(state.user.uid) });
-        } else {
-            ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid) });
-            window.Waggle.showToast("Dzięki za ocenę! ❤️");
-        }
-    });
-};
 
 function updateStatsUI() {
     if (!state.profile) return; 
@@ -406,24 +302,15 @@ function updateStatsUI() {
     const walks = state.profile.walkCount || 0;
     document.getElementById('statWalks').innerText = walks;
     document.getElementById('statDist').innerText = (walks * 1.2).toFixed(1);
-    
-    let level = "🌱 Nowik";
-    if (walks >= 5) level = "🐕 Spacerowicz";
-    if (walks >= 20) level = "🐺 Weteran Osiedla";
-    if (walks >= 50) level = "👑 Alfa Stada";
-    const lvlEl = document.getElementById('profileLevelDisplay');
-    if (lvlEl) lvlEl.innerText = level;
-
-    const avatarEl = document.getElementById('profileAvatar');
-    if(avatarEl) avatarEl.src = state.profile.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+    const av = document.getElementById('profileAvatar');
+    if(av) av.src = state.profile.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
 }
 
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
-    const font = localStorage.getItem('waggle_font') || '14px';
     if (theme === 'dark') document.body.classList.add('dark-mode');
-    else document.body.classList.remove('dark-mode');
-    document.documentElement.style.setProperty('--base-font-size', font);
+    state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
+    if(document.getElementById('settingSearchable')) document.getElementById('settingSearchable').checked = !state.isGhostMode;
 }
 
 initAuth(initApp);
