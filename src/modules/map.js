@@ -32,7 +32,6 @@ function handleLocationUpdate(latitude, longitude) {
         myMarker = L.marker([latitude, longitude], { icon: myIcon, zIndexOffset: 1000 });
         mapManager.addMarkerToLayer('user', myMarker);
         mapManager.flyTo(latitude, longitude, 15);
-
         if (!parksLoaded) {
             fetchNearbyParks(latitude, longitude).then(places => {
                 nearbyPlaces = places;
@@ -47,85 +46,52 @@ function handleLocationUpdate(latitude, longitude) {
 
     if(state.location.following) mapManager.panTo(latitude, longitude);
 
-    if (state.isWalking && state.user) {
-        if (state.isHiddenMode) {
-            db.collection("walks").doc(state.user.uid).delete().catch(() => {});
-        } else {
-            let latToSave = latitude;
-            let lngToSave = longitude;
-            
-            if (state.isGhostMode) {
-                if (!state.ghostOffset) {
-                    state.ghostOffset = { lat: (Math.random() - 0.5) * 0.006, lng: (Math.random() - 0.5) * 0.006 };
-                }
-                latToSave += state.ghostOffset.lat;
-                lngToSave += state.ghostOffset.lng;
-            }
-
-            db.collection("walks").doc(state.user.uid).set({
-                uid: state.user.uid,
-                name: state.profile?.name || "Piesek",
-                avatar: state.profile?.avatar || "",
-                lat: latToSave,
-                lng: lngToSave,
-                timestamp: Date.now()
-            }, { merge: true });
-        }
+    if (state.isWalking && state.user && !state.isHiddenMode) {
+        db.collection("walks").doc(state.user.uid).set({
+            uid: state.user.uid,
+            name: state.profile?.name || "Piesek",
+            avatar: state.profile?.avatar || "",
+            lat: latitude,
+            lng: longitude,
+            timestamp: Date.now()
+        }, { merge: true });
     }
 }
 
 export function initMap() {
     if (state.map?.instance) return;
 
-    const L = window.L;
     mapManager.init('map', 52.2, 21.0, 13);
     setState('map.instance', mapManager);
 
     if ("geolocation" in navigator) {
-        // Twarde żądanie przy uruchomieniu (naprawa auto-startu GPS)
+        // Twardy start - wymuszamy lokalizację od razu po wejściu
         navigator.geolocation.getCurrentPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude),
-            err => console.warn("Początkowy błąd GPS:", err),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            err => console.warn("GPS start error:", err.message),
+            { enableHighAccuracy: true, timeout: 10000 }
         );
 
-        // Ciągły nasłuch w tle
         navigator.geolocation.watchPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude), 
-            err => {
-                console.warn("Błąd GPS (w tle):", err.message);
-                if (!state.location.lat) handleLocationUpdate(52.2297, 21.0122); 
-            }, 
+            err => console.warn("GPS watch error:", err.message), 
             { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
         );
-    } else {
-        window.Waggle.showToast("Przeglądarka nie obsługuje GPS!");
     }
 
     const walksUnsub = subscribeToWalks(walks => renderWalks(walks));
     registerListener(walksUnsub);
-
     const alertsUnsub = subscribeToAlerts(alerts => renderAlerts(alerts));
     registerListener(alertsUnsub);
 }
 
 export function centerOnMe() {
     setState('location.following', true);
-    if ("geolocation" in navigator) {
+    if (state.location.lat) {
+        mapManager.flyTo(state.location.lat, state.location.lng, 15);
+    } else {
         window.Waggle.showToast("Szukam sygnału GPS... 🛰️");
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                handleLocationUpdate(pos.coords.latitude, pos.coords.longitude);
-                mapManager.flyTo(pos.coords.latitude, pos.coords.longitude, 16);
-            },
-            err => {
-                console.warn("Twardy błąd GPS:", err);
-                if (err.code === 1) window.Waggle.showToast("GPS zablokowany! (Brak uprawnień lub HTTPS)");
-                else window.Waggle.showToast("Słaby sygnał GPS. Spróbuj na zewnątrz.");
-                if (state.location.lat) mapManager.flyTo(state.location.lat, state.location.lng, 15);
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
+        navigator.geolocation.getCurrentPosition(pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude));
     }
 }
 
