@@ -19,7 +19,6 @@ function handleLocationUpdate(latitude, longitude) {
     setState('location.lat', latitude);
     setState('location.lng', longitude);
     
-    // Sygnał, żeby pobrać pogodę, skoro już mamy GPS!
     eventBus.emit('locationUpdated', { lat: latitude, lng: longitude });
 
     const myAvatarSrc = state.profile?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
@@ -49,20 +48,15 @@ function handleLocationUpdate(latitude, longitude) {
     if(state.location.following) mapManager.panTo(latitude, longitude);
 
     if (state.isWalking && state.user) {
-        // Jeśli zaznaczył "Całkowicie Ukryty" - usuwamy go z bazy spacerów
         if (state.isHiddenMode) {
             db.collection("walks").doc(state.user.uid).delete().catch(() => {});
         } else {
             let latToSave = latitude;
             let lngToSave = longitude;
             
-            // TRYB DUCHA (FUZZY LOCATION)
             if (state.isGhostMode) {
                 if (!state.ghostOffset) {
-                    state.ghostOffset = {
-                        lat: (Math.random() - 0.5) * 0.006, 
-                        lng: (Math.random() - 0.5) * 0.006
-                    };
+                    state.ghostOffset = { lat: (Math.random() - 0.5) * 0.006, lng: (Math.random() - 0.5) * 0.006 };
                 }
                 latToSave += state.ghostOffset.lat;
                 lngToSave += state.ghostOffset.lng;
@@ -88,17 +82,21 @@ export function initMap() {
     setState('map.instance', mapManager);
 
     if ("geolocation" in navigator) {
-        // Cichy nasłuch w tle - odpala się przy ruchu
+        // Twarde żądanie przy uruchomieniu (naprawa auto-startu GPS)
+        navigator.geolocation.getCurrentPosition(
+            pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude),
+            err => console.warn("Początkowy błąd GPS:", err),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+
+        // Ciągły nasłuch w tle
         navigator.geolocation.watchPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude), 
             err => {
                 console.warn("Błąd GPS (w tle):", err.message);
-                if (err.code === 1) window.Waggle.showToast("Zablokowałeś GPS w przeglądarce!");
-                
-                // Odpalamy fallback tylko jeśli nie mamy żadnej lokalizacji
-                if(!state.location.lat) handleLocationUpdate(52.2297, 21.0122); 
+                if (!state.location.lat) handleLocationUpdate(52.2297, 21.0122); 
             }, 
-            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
         );
     } else {
         window.Waggle.showToast("Przeglądarka nie obsługuje GPS!");
@@ -113,11 +111,8 @@ export function initMap() {
 
 export function centerOnMe() {
     setState('location.following', true);
-    
     if ("geolocation" in navigator) {
         window.Waggle.showToast("Szukam sygnału GPS... 🛰️");
-        
-        // Twarde wymuszenie lokalizacji po kliknięciu!
         navigator.geolocation.getCurrentPosition(
             pos => {
                 handleLocationUpdate(pos.coords.latitude, pos.coords.longitude);
@@ -125,16 +120,9 @@ export function centerOnMe() {
             },
             err => {
                 console.warn("Twardy błąd GPS:", err);
-                if (err.code === 1) {
-                    window.Waggle.showToast("GPS zablokowany! (Brak uprawnień lub HTTPS)");
-                } else {
-                    window.Waggle.showToast("Słaby sygnał GPS. Spróbuj na zewnątrz.");
-                }
-                
-                // Jeśli mamy stary punkt, po prostu tam lecimy
-                if (state.location.lat) {
-                    mapManager.flyTo(state.location.lat, state.location.lng, 15);
-                }
+                if (err.code === 1) window.Waggle.showToast("GPS zablokowany! (Brak uprawnień lub HTTPS)");
+                else window.Waggle.showToast("Słaby sygnał GPS. Spróbuj na zewnątrz.");
+                if (state.location.lat) mapManager.flyTo(state.location.lat, state.location.lng, 15);
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
