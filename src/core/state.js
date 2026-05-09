@@ -19,11 +19,13 @@ export const appState = {
     },
     profile: null,
     isWalking: false,
-    map: null,
+    // POPRAWKA: Inicjalizujemy jako obiekt, by map.instance nie rzucało błędu
+    map: {
+        instance: null
+    },
     currentChatId: null
 };
 
-// Funkcja do bezpiecznej zmiany danych w nowej architekturze
 export function setState(path, value) {
     const keys = path.split('.');
     let current = appState;
@@ -32,9 +34,6 @@ export function setState(path, value) {
     }
     current[keys[0]] = value;
 }
-
-// === MOST KOMPATYBILNOŚCI WSTECZNEJ DLA STARYCH MODUŁÓW ===
-// Poniższe eksporty ratują niezrefaktoryzowane pliki (posts.js, chat.js) przed awarią
 
 export const state = appState; 
 export const addListener = registerListener;
