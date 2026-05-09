@@ -21,9 +21,14 @@ export function renderAlerts(alerts) {
         }
     });
 
-    // Wypełnianie listy w panelu bocznym/modalu
+    // NAPRAWA PIGUŁKI: To musi być tutaj, zanim zrobimy return!
+    const alertPill = document.getElementById('active-alert-pill');
+    if(alertPill) {
+        alertPill.style.display = alerts.length > 0 ? 'flex' : 'none';
+    }
+
     const container = document.getElementById('active-alerts-list');
-    if (!container) return;
+    if (!container) return; // Teraz można bezpiecznie przerwać
 
     if (alerts.length === 0) {
         container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">Brak aktywnych alertów w okolicy. Czysto! 🐾</div>`;
@@ -44,8 +49,4 @@ export function renderAlerts(alerts) {
                  </div>`;
     });
     container.innerHTML = html;
-    
-    // Jeśli są alerty, pokaż ostrzegawczą pigułkę nad mapą
-    const alertPill = document.getElementById('active-alert-pill');
-    if(alertPill) alertPill.style.display = 'flex';
 }
