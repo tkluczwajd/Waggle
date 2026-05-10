@@ -8,7 +8,16 @@ import { eventBus } from './core/eventBus.js';
 import { initAuth } from './modules/auth.js';
 import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map.js'; 
 import { startWalk, stopWalk } from './modules/walk.js';
-import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
+import { 
+    loadPosts, 
+    saveCommunityPost, 
+    uploadImage, 
+    openLightbox, 
+    setPostFilter, 
+    togglePostLike, 
+    openPostComments, 
+    addPostComment 
+} from './modules/posts/postsListeners.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado, sendChatImage } from './modules/chat.js';
 import { initProfileListeners } from './modules/profile/profileListeners.js';
 import { renderProfileStats } from './modules/profile/profileRenderer.js';
@@ -44,9 +53,6 @@ window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
 window.Waggle.openLightbox = openLightbox;
-window.Waggle.deletePost = (id) => db.collection("posts").doc(id).delete();
-window.Waggle.togglePostLike = togglePostLike;
-window.Waggle.openPostComments = openPostComments;
 window.Waggle.searchUsers = searchUsers;
 window.Waggle.toggleStado = toggleStado; 
 
