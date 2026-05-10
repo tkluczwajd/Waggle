@@ -10,6 +10,8 @@ import { initMap, centerOnMe, centerOnTarget, nearbyPlaces } from './modules/map
 import { startWalk, stopWalk } from './modules/walk.js';
 import { loadPosts, saveCommunityPost, uploadImage, openLightbox, setPostFilter, togglePostLike, openPostComments, addPostComment } from './modules/posts.js';
 import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado, sendChatImage } from './modules/chat.js';
+import { initProfileListeners } from './modules/profile/profileListeners.js';
+import { renderProfileStats } from './modules/profile/profileRenderer.js';
 
 window.Waggle = window.Waggle || {};
 
@@ -157,7 +159,7 @@ document.addEventListener('click', async (e) => {
         }
     }
     
-    if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(updateStatsUI, 500); }
+    if (e.target.closest('#stopWalkBtn')) { stopWalk(); setTimeout(renderProfileStats, 500); }
     if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
 
     if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
@@ -246,17 +248,6 @@ document.addEventListener('click', async (e) => {
         e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab'));
     }
 
-    if (e.target.closest('#openEditProfileBtn')) {
-        document.getElementById('setupName').value = state.profile?.name || "";
-        document.getElementById('setupCity').value = state.profile?.city || "";
-        if(document.getElementById('setupBreed')) document.getElementById('setupBreed').value = state.profile?.breed || "";
-        document.getElementById('profile-setup-modal').style.display = 'flex';
-    }
-    
-if (e.target.closest('#saveProfileBtn')) {
-        const btn = e.target.closest('#saveProfileBtn'); btn.disabled = true;
-        const d = { name: document.getElementById('setupName').value.trim(), city: document.getElementById('setupCity').value.trim(), breed: document.getElementById('setupBreed').value };
-        const avatarInput = document.getElementById('setupAvatarInput');
         
         // Funkcja wymuszająca odświeżenie UI po zapisie
         const updateStateAndUI = (data) => {
@@ -337,34 +328,6 @@ window.Waggle.likeWiki = (id) => {
     });
 };
 
-function updateStatsUI() {
-    if (!state.profile) return; 
-    const nameEl = document.getElementById('profileNameDisplay');
-    if(nameEl) nameEl.innerText = state.profile.name || "Piesek";
-    
-    const walks = state.profile.walkCount || 0;
-    const walksEl = document.getElementById('statWalks');
-    if(walksEl) walksEl.innerText = walks;
-    
-    const distEl = document.getElementById('statDist');
-    if(distEl) distEl.innerText = (walks * 1.2).toFixed(1);
-    
-    let level = "🌱 Nowik";
-    if (walks >= 5) level = "🐕 Spacerowicz";
-    if (walks >= 20) level = "🐺 Weteran Osiedla";
-    if (walks >= 50) level = "👑 Alfa Stada";
-    const lvlEl = document.getElementById('profileLevelDisplay');
-    if (lvlEl) lvlEl.innerText = level;
-
-    const av = document.getElementById('profileAvatar');
-    if(av) {
-        const avatarUrl = (state.profile.avatar && state.profile.avatar.trim() !== "") 
-            ? state.profile.avatar 
-            : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
-        av.src = avatarUrl;
-    }
-}
-
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
     const font = localStorage.getItem('waggle_font') || '14px';
@@ -404,15 +367,6 @@ function fetchWeather(lat, lng) {
 
 export function initApp() {
     initRouter(); 
-    
-    eventBus.on('profileUpdated', (profile) => {
-        updateStatsUI();
-        if(profile) {
-            document.getElementById('setupName').value = profile.name || "";
-            document.getElementById('setupCity').value = profile.city || "";
-            if(document.getElementById('setupBreed')) document.getElementById('setupBreed').value = profile.breed || "";
-        }
-    });
 
     eventBus.on('locationUpdated', (loc) => {
         fetchWeather(loc.lat, loc.lng);
@@ -429,7 +383,10 @@ export function initApp() {
     initMap();
     loadPosts();
     loadInbox();
-    updateStatsUI();
+    
+    // Uruchamiamy nasz nowy, czysty moduł profilu!
+    initProfileListeners();
+    renderProfileStats();
 }
 
 initAuth(initApp);
