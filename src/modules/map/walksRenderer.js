@@ -38,17 +38,17 @@ export function renderWalks(walks) {
                 });
                 dogMarkers[d.uid] = m;
                 mapManager.addMarkerToLayer('walks', m);
-            }
+      }
         }
     });
 
-    // AKTUALIZACJA TABLICY: Wstrzykujemy kółeczka do kontenera Stories!
+    // DODANO: Wstrzyknięcie HTML do kontenera Stories na Tablicy!
     const storiesContainer = document.getElementById('stories-container');
     if (storiesContainer) {
         storiesContainer.innerHTML = html || '<p style="font-size:10px; color:var(--text-muted); margin-left:15px;">Nikogo nie ma na spacerze 🐾</p>';
     }
 
-    // Czyszczenie nieaktywnych
+    // Usuwanie psów, które zeszły ze spaceru
     Object.keys(dogMarkers).forEach(u => {
         if (!activeUids.has(u)) {
             mapManager.removeMarkerFromLayer('walks', dogMarkers[u]);
