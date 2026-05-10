@@ -108,13 +108,11 @@ export function initMap() {
         window.Waggle.showToast("Przeglądarka nie obsługuje GPS!");
     }
 
-    const walksUnsub = subscribeToWalks(walks => renderWalks(walks));
-    registerListener(walksUnsub);
-
-    const alertsUnsub = subscribeToAlerts(alerts => renderAlerts(alerts));
-    registerListener(alertsUnsub);
+// Nasłuchy VIP - nie dodajemy ich do "niszczarki" (registerListener)
+    // Dzięki temu śledzą innych graczy i alerty przez cały czas działania apki!
+    subscribeToWalks(walks => renderWalks(walks));
+    subscribeToAlerts(alerts => renderAlerts(alerts));
 }
-
 export function centerOnMe() {
     setState('location.following', true);
     if ("geolocation" in navigator) {
