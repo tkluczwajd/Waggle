@@ -248,28 +248,6 @@ document.addEventListener('click', async (e) => {
         e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab'));
     }
 
-        
-        // Funkcja wymuszająca odświeżenie UI po zapisie
-        const updateStateAndUI = (data) => {
-            if (data.avatar) state.profile.avatar = data.avatar;
-            state.profile.name = data.name;
-            state.profile.city = data.city;
-            state.profile.breed = data.breed;
-            eventBus.emit('profileUpdated', state.profile); // Megafon krzyczy "Zmieniono profil!"
-            btn.disabled = false; 
-            document.getElementById('profile-setup-modal').style.display = 'none'; 
-            window.Waggle.showToast("Zapisano! ✅");
-        };
-
-        if (avatarInput && avatarInput.files.length > 0) {
-            uploadImage(avatarInput.files[0]).then(url => { 
-                d.avatar = url; 
-                db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(() => updateStateAndUI(d)); 
-            });
-        } else { 
-            db.collection("users").doc(state.user.uid).set(d, {merge:true}).then(() => updateStateAndUI(d)); 
-        }
-    }
     // USTAWIENIA
     if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
     if (e.target.closest('#saveSettingsBtn')) {
@@ -294,7 +272,7 @@ document.addEventListener('click', async (e) => {
         document.getElementById('settings-modal').style.display = 'none';
         window.Waggle.showToast("Ustawienia zapisane!");
     }
-});
+}); // <--- Tutaj mogło brakować zamykających znaków w Twoim kodzie
 
 // WIKI RENDERER I LAJKOWANIE
 function renderWiki(tab) {
