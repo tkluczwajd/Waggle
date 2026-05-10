@@ -33,13 +33,14 @@ export function initAuth(onReady) {
                 document.getElementById("app-interface").style.display = "flex";
                 
                 // Uruchamiamy resztę aplikacji (mapę itp.) TYLKO RAZ przy starcie
-                if (!appInitialized && typeof onReady === 'function') {
+               if (!appInitialized && typeof onReady === 'function') {
                     onReady();
                     appInitialized = true;
                 }
             });
             
-            addListener(unsub);
+            // UWAGA: Usunęliśmy stąd addListener(unsub);
+            // Twój profil jest teraz VIP-em i odświeża się bez przerw!
         } else {
             // Po wylogowaniu resetujemy stan apki
             appInitialized = false;
