@@ -72,12 +72,14 @@ export async function saveCommunityPost(content, imageUrl = null, isEvent = fals
     });
 }
 
-// Globalne bindowania dla onclicków w HTML
+// Zapewniamy, że obiekt Waggle istnieje w oknie przeglądarki
+window.Waggle = window.Waggle || {};
+
+// Teraz bezpiecznie przypisujemy funkcje dla onclicków w HTML
 window.Waggle.deletePost = (id) => deletePostInDb(id);
 window.Waggle.togglePostLike = togglePostLike;
 window.Waggle.openPostComments = openPostComments;
 
-// Otwieranie obrazków (pozostało globalne)
 export function openLightbox(url) {
     const img = document.getElementById('lightbox-img');
     const modal = document.getElementById('lightbox-modal');
@@ -85,5 +87,4 @@ export function openLightbox(url) {
 }
 window.Waggle.openLightbox = openLightbox;
 
-// Współdzielona funkcja uploadu dla innych modułów (np. chat)
 export const uploadImage = uploadImageToService;
