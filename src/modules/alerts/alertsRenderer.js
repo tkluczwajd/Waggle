@@ -18,15 +18,16 @@ export function renderAlerts(alerts) {
 
             alertMarkers[a.id] = m;
             mapManager.addMarkerToLayer('alerts', m);
-        }
+   }
     });
 
-    // NAPRAWA PIGUŁKI: To musi być tutaj, zanim zrobimy return!
+    // DODANO: Włączenie/Wyłączenie pigułki alertu nad mapą
     const alertPill = document.getElementById('active-alert-pill');
-    if(alertPill) {
+    if (alertPill) {
         alertPill.style.display = alerts.length > 0 ? 'flex' : 'none';
     }
 
+    // Wypełnianie listy w panelu bocznym/modalu
     const container = document.getElementById('active-alerts-list');
     if (!container) return; // Teraz można bezpiecznie przerwać
 
