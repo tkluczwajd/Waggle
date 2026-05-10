@@ -72,10 +72,11 @@ export async function saveCommunityPost(content, imageUrl = null, isEvent = fals
     });
 }
 
-// Zapewniamy, że obiekt Waggle istnieje w oknie przeglądarki
+// --- BINDOWANIA GLOBALNE (DLA HTML) ---
+
+// Ten "bezpiecznik" sprawia, że jeśli Waggle jeszcze nie istnieje, to zostanie utworzony
 window.Waggle = window.Waggle || {};
 
-// Teraz bezpiecznie przypisujemy funkcje dla onclicków w HTML
 window.Waggle.deletePost = (id) => deletePostInDb(id);
 window.Waggle.togglePostLike = togglePostLike;
 window.Waggle.openPostComments = openPostComments;
@@ -83,7 +84,10 @@ window.Waggle.openPostComments = openPostComments;
 export function openLightbox(url) {
     const img = document.getElementById('lightbox-img');
     const modal = document.getElementById('lightbox-modal');
-    if (img && modal) { img.src = url; modal.style.display = 'flex'; }
+    if (img && modal) { 
+        img.src = url; 
+        modal.style.display = 'flex'; 
+    }
 }
 window.Waggle.openLightbox = openLightbox;
 
