@@ -77,11 +77,17 @@ function handleLocationUpdate(latitude, longitude) {
 export function initMap() {
     if (state.map?.instance) return;
 
-    const L = window.L;
     mapManager.init('map', 52.2, 21.0, 13);
     setState('map.instance', mapManager);
 
-if ("geolocation" in navigator) {
+    // DODANO: Wyłączenie auto-śledzenia, gdy użytkownik sam przesuwa mapę palcem
+    if (mapManager.map) {
+        mapManager.map.on('dragstart', () => {
+            setState('location.following', false);
+        });
+    }
+
+    if ("geolocation" in navigator) {
         // Twardy strzał przy starcie (wymusza pobranie lokalizacji bez klikania)
         navigator.geolocation.getCurrentPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude),
