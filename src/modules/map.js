@@ -81,15 +81,15 @@ export function initMap() {
     mapManager.init('map', 52.2, 21.0, 13);
     setState('map.instance', mapManager);
 
-    if ("geolocation" in navigator) {
-        // Twarde żądanie przy uruchomieniu (naprawa auto-startu GPS)
+if ("geolocation" in navigator) {
+        // Twardy strzał przy starcie (wymusza pobranie lokalizacji bez klikania)
         navigator.geolocation.getCurrentPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude),
-            err => console.warn("Początkowy błąd GPS:", err),
+            err => console.warn("Początkowy błąd GPS:", err.message),
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
 
-        // Ciągły nasłuch w tle
+        // Startujemy ciągły nasłuch w tle
         navigator.geolocation.watchPosition(
             pos => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude), 
             err => {
