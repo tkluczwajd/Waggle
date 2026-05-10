@@ -19,10 +19,7 @@ export const appState = {
     },
     profile: null,
     isWalking: false,
-    // POPRAWKA: Inicjalizujemy jako obiekt, by map.instance nie rzucało błędu
-    map: {
-        instance: null
-    },
+    map: { instance: null },
     currentChatId: null
 };
 
