@@ -1,54 +1,89 @@
 import { appState as state } from '../../core/state.js';
-import { eventBus } from '../../core/eventBus.js';
-import { saveProfileData } from './profileService.js';
-import { renderProfileStats, fillProfileSetupForm } from './profileRenderer.js';
-import { uploadImage } from '../posts.js'; 
+import { registerListener } from '../../core/listeners.js';
+import { 
+    subscribeToPosts, 
+    addPost, 
+    deletePostInDb, 
+    toggleLikeInDb, 
+    subscribeToComments, 
+    addCommentInDb, 
+    uploadImageToService 
+} from './postsService.js';
+import { renderPostsList, renderCommentsList } from './postsRenderer.js';
 
-export function initProfileListeners() {
-    // Kiedy auth.js pobierze nowe dane, odświeżamy widok
-    eventBus.on('profileUpdated', () => {
-        renderProfileStats();
-        fillProfileSetupForm();
+let currentFilter = 'all';
+let currentPosts = [];
+let currentCommentsUnsub = null;
+
+// Eksportujemy do użycia w app.js
+export function loadPosts() {
+    const unsub = subscribeToPosts(50, (posts) => {
+        currentPosts = posts;
+        renderPostsList(currentPosts, currentFilter);
     });
+    registerListener(unsub);
+}
 
-    document.addEventListener('click', (e) => {
-        // Otwieranie modala
-        if (e.target.closest('#openEditProfileBtn')) {
-            fillProfileSetupForm();
-            document.getElementById('profile-setup-modal').style.display = 'flex';
-        }
-        
-        // Zapisywanie profilu
-        if (e.target.closest('#saveProfileBtn')) {
-            const btn = e.target.closest('#saveProfileBtn'); 
-            btn.disabled = true;
-            
-            const d = { 
-                name: document.getElementById('setupName').value.trim(), 
-                city: document.getElementById('setupCity').value.trim(), 
-                breed: document.getElementById('setupBreed').value 
-            };
-            const avatarInput = document.getElementById('setupAvatarInput');
-            
-            const updateStateAndUI = (data) => {
-                if (data.avatar) state.profile.avatar = data.avatar;
-                state.profile.name = data.name;
-                state.profile.city = data.city;
-                state.profile.breed = data.breed;
-                eventBus.emit('profileUpdated', state.profile); 
-                btn.disabled = false; 
-                document.getElementById('profile-setup-modal').style.display = 'none'; 
-                window.Waggle.showToast("Zapisano! ✅");
-            };
+export function setPostFilter(filter) {
+    currentFilter = filter;
+    renderPostsList(currentPosts, currentFilter);
+}
 
-            if (avatarInput && avatarInput.files.length > 0) {
-                uploadImage(avatarInput.files[0]).then(url => { 
-                    d.avatar = url; 
-                    saveProfileData(state.user.uid, d).then(() => updateStateAndUI(d)); 
-                });
-            } else { 
-                saveProfileData(state.user.uid, d).then(() => updateStateAndUI(d)); 
-            }
-        }
+export function togglePostLike(postId) {
+    if (!state.user) return;
+    toggleLikeInDb(postId, state.user.uid);
+}
+
+export function openPostComments(postId) {
+    state.currentCommentPostId = postId; 
+    document.getElementById('comments-modal').style.display = 'flex';
+    
+    if(currentCommentsUnsub) currentCommentsUnsub(); 
+    
+    currentCommentsUnsub = subscribeToComments(postId, (comments) => {
+        renderCommentsList(comments);
     });
 }
+
+export function addPostComment(text) {
+    if(!state.user || !state.currentCommentPostId || !text.trim()) return;
+    
+    addCommentInDb(state.currentCommentPostId, {
+        uid: state.user.uid,
+        author: state.profile?.name || "Piesek",
+        text: text.trim()
+    });
+}
+
+export async function saveCommunityPost(content, imageUrl = null, isEvent = false, eventDate = null, isInfo = false) {
+    if (!state.user || !state.profile) return;
+    return addPost({ 
+        uid: state.user.uid, 
+        author: state.profile.name || "Piesek", 
+        avatar: state.profile.avatar || "", 
+        content, 
+        imageUrl, 
+        isEvent,
+        eventDate,
+        isInfo,
+        isAlert: false,
+        likes: [], 
+        commentCount: 0
+    });
+}
+
+// Globalne bindowania dla onclicków w HTML
+window.Waggle.deletePost = (id) => deletePostInDb(id);
+window.Waggle.togglePostLike = togglePostLike;
+window.Waggle.openPostComments = openPostComments;
+
+// Otwieranie obrazków (pozostało globalne)
+export function openLightbox(url) {
+    const img = document.getElementById('lightbox-img');
+    const modal = document.getElementById('lightbox-modal');
+    if (img && modal) { img.src = url; modal.style.display = 'flex'; }
+}
+window.Waggle.openLightbox = openLightbox;
+
+// Współdzielona funkcja uploadu dla innych modułów (np. chat)
+export const uploadImage = uploadImageToService;
