@@ -218,9 +218,9 @@ document.addEventListener('click', async (e) => {
         finally { btn.disabled = false; }
     }
 
-    if (e.target.closest('#sendCommentBtn')) {
-        const input = document.getElementById('commentInput');
-        if (input && input.value.trim()) { addPostComment(input.value.trim()); input.value = ""; }
+    if (e.target.closest('#sendMsgBtn')) {
+        const input = document.getElementById('chatInput');
+        if (input && input.value.trim()) { sendMessage(input.value.trim()); input.value = ""; }
     }
 
     if (e.target.closest('#chatTabInbox')) {
@@ -265,6 +265,11 @@ document.addEventListener('click', async (e) => {
         state.isHiddenMode = isHidden;
         
         document.documentElement.style.setProperty('--base-font-size', font);
+        
+        // Trik na proporcjonalne skalowanie całego interfejsu
+        const zoomMap = { '12px': '0.85', '14px': '1', '16px': '1.15', '18px': '1.3' };
+        document.body.style.zoom = zoomMap[font] || '1';
+        
         if (theme === 'dark') document.body.classList.add('dark-mode');
         else document.body.classList.remove('dark-mode');
         
@@ -312,6 +317,9 @@ function loadSettings() {
     if (theme === 'dark') document.body.classList.add('dark-mode');
     else document.body.classList.remove('dark-mode');
     document.documentElement.style.setProperty('--base-font-size', font);
+    
+    const zoomMap = { '12px': '0.85', '14px': '1', '16px': '1.15', '18px': '1.3' };
+    document.body.style.zoom = zoomMap[font] || '1';
     
     state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
     state.isHiddenMode = localStorage.getItem('waggle_hidden_mode') === 'true';
