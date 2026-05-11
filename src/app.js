@@ -53,9 +53,41 @@ export function initApp() {
     // 🔌 2. SUPER-KLEJ (Wszystkie przyciski interfejsu)
     document.addEventListener('click', (e) => {
         
+        // --- 📍 MAPA I SPACERY ---
+        if (e.target.closest('#centerBtn')) {
+            if (state.location.lat && state.location.lng) {
+                mapManager.flyTo(state.location.lat, state.location.lng, 15);
+                window.Waggle.showToast("Zlokalizowano! 📍");
+            } else {
+                window.Waggle.showToast("Czekam na sygnał GPS... ⏳");
+            }
+        }
+        
+        if (e.target.closest('#startWalkBtn')) {
+            state.isWalking = true;
+            document.getElementById('startWalkBtn').style.display = 'none';
+            document.getElementById('stopWalkBtn').style.display = 'inline-block';
+            document.getElementById('statusInput').style.display = 'none';
+            window.Waggle.showToast("Spacer rozpoczęty! 🐾");
+            // Tu w przyszłości podepniemy walkService, żeby wysłać status do Firebase
+        }
+        
+        if (e.target.closest('#stopWalkBtn')) {
+            state.isWalking = false;
+            document.getElementById('stopWalkBtn').style.display = 'none';
+            document.getElementById('startWalkBtn').style.display = 'inline-block';
+            document.getElementById('statusInput').style.display = 'inline-block';
+            document.getElementById('statusInput').value = '';
+            window.Waggle.showToast("Spacer zakończony! 🏁");
+        }
+
         // --- 📝 POSTY ---
         if (e.target.closest('#addPostBtn')) {
             document.getElementById('post-creator-modal').style.display = 'flex';
+        }
+        if (e.target.closest('#addPhotoBtn')) {
+            e.preventDefault();
+            document.getElementById('postImageInput').click(); // Otwiera galerię w telefonie
         }
         if (e.target.closest('#publishPostBtn')) {
             const content = document.getElementById('postContent').value;
