@@ -1,6 +1,5 @@
 import { auth, db } from "../core/firebase.js";
 import { appState as state, setState } from "../core/state.js";
-
 import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false; // Zabezpieczenie przed wielokrotnym startem apki
@@ -8,7 +7,6 @@ let appInitialized = false; // Zabezpieczenie przed wielokrotnym startem apki
 export function initAuth(onReady) {
     // 1. MONITOROWANIE STANU ZALOGOWANIA
     auth.onAuthStateChanged(user => {
-
         const loader = document.getElementById("loader");
         if (loader) loader.style.display = "none";
 
@@ -33,13 +31,14 @@ export function initAuth(onReady) {
                 document.getElementById("app-interface").style.display = "flex";
                 
                 // Uruchamiamy resztę aplikacji (mapę itp.) TYLKO RAZ przy starcie
-                if (!appInitialized && typeof onReady === 'function') {
+               if (!appInitialized && typeof onReady === 'function') {
                     onReady();
                     appInitialized = true;
                 }
             });
             
-            addListener(unsub);
+            // UWAGA: Usunęliśmy stąd addListener(unsub);
+            // Twój profil jest teraz VIP-em i odświeża się bez przerw!
         } else {
             // Po wylogowaniu resetujemy stan apki
             appInitialized = false;
