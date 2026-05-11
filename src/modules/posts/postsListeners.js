@@ -10,6 +10,7 @@ import {
     uploadImageToService 
 } from './postsService.js';
 import { renderPostsList, renderCommentsList } from './postsRenderer.js';
+window.Waggle = window.Waggle || {};
 
 let currentFilter = 'all';
 let currentPosts = [];
