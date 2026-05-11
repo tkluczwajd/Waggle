@@ -1,4 +1,4 @@
-import { db, fb } from '../../core/firebase.js'
+import { db, fb } from '../core/firebase.js';
 
 const IMGBB_KEY = "af2b35f5ca54dd9c8fc91595fe525de9"; 
 
