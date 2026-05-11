@@ -1,9 +1,7 @@
 import { appState, setState } from './state.js';
-import { cleanupListeners } from './listeners.js';
 import { eventBus } from './eventBus.js';
 
 export function switchView(view) {
-    cleanupListeners(); 
 
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
