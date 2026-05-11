@@ -10,9 +10,16 @@ import { db, fb } from './core/firebase.js';
 import { fetchNearbyParks } from './services/parksService.js';
 import { renderParksOnMap } from './modules/map/parksRenderer.js';
 
+// --- DODANE SUBSKRYPCJE NA ŻYWO ---
+import { subscribeToWalks } from './services/walkService.js';
+import { renderWalks } from './modules/map/walksRenderer.js';
+import { subscribeToAlerts } from './services/alertsService.js';
+import { renderAlerts } from './modules/alerts/alertsRenderer.js'; 
+// (Uwaga: jeśli konsola rzuci tu błąd 404, sprawdź czy alertsRenderer.js leży w /modules/alerts/ czy bezpośrednio w /modules/map/ i popraw ścieżkę)
+
 window.Waggle = window.Waggle || {};
 
-// 1. GLOBALNY TOAST Z SOBOTY
+// 1. GLOBALNY TOAST I CENTROWANIE MAPY
 window.Waggle.showToast = (msg) => {
     let t = document.getElementById('waggle-toast');
     if(!t) {
@@ -23,8 +30,9 @@ window.Waggle.showToast = (msg) => {
     t.innerText = msg; t.style.display = 'block'; t.style.opacity = '1';
     setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.style.display='none',300); }, 3500);
 };
+window.Waggle.centerOnTarget = (lat, lng) => mapManager.flyTo(lat, lng, 16);
 
-// 2. FUNKCJE POMOCNICZE Z SOBOTY (Pogoda, Statystyki, Miejsca)
+// 2. FUNKCJE POMOCNICZE
 function getWeatherIcon(code) {
     if (code === 0) return '☀️'; if (code <= 3) return '⛅'; if (code <= 48) return '🌫️';
     if (code <= 55 || (code >= 61 && code <= 65) || (code >= 80 && code <= 82)) return '🌧️';
@@ -80,7 +88,6 @@ function loadSettings() {
     if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
 }
 
-// 3. WIKI (BAZA WIEDZY Z SOBOTY)
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -104,25 +111,35 @@ window.Waggle.likeWiki = (id) => {
     ref.get().then(doc => {
         const likes = doc.data().likes || [];
         if (likes.includes(state.user.uid)) ref.update({ likes: fb.firestore.FieldValue.arrayRemove(state.user.uid) });
-        else { ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid) }); window.Waggle.showToast("Dzięki za ocenę! ❤️"); }
+        else { ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid); window.Waggle.showToast("Dzięki za ocenę! ❤️"); }
     });
 };
 
+// ---------------------------------------------
+// INICJALIZACJA APLIKACJI
+// ---------------------------------------------
 export function initApp() {
     initRouter();
     initMap();
+    
+    // NAPRAWA SZAREJ MAPY: Przekazujemy instancję do stanu, aby router wiedział co odświeżać
+    state.map.instance = mapManager.map;
+
     loadPosts();
     loadInbox();
     initProfileListeners();
     loadSettings();
 
-    // PODPIĘCIE EVENTBUS (Z soboty) - To ożywi statystyki po logowaniu
+    // ODŚWIEŻANIE NA ŻYWO: To naprawia błąd, w którym nie widziałeś innych na spacerze!
+    subscribeToWalks(walks => renderWalks(walks));
+    subscribeToAlerts(alerts => renderAlerts(alerts));
+
     eventBus.on('profileUpdated', () => updateStatsUI());
     eventBus.on('viewChanged', async (view) => {
         if (view === 'wiki') renderWiki('rasy');
         if (view === 'places' && state.location.lat) {
             const container = document.getElementById('places-container');
-            container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków... 🧭</p>';
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
             const places = await fetchNearbyParks(state.location.lat, state.location.lng);
             renderParksOnMap(places);
             let html = "";
@@ -144,14 +161,13 @@ export function initApp() {
         }
     });
 
-    // 📍 1. GPS i śledzenie
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude; const lng = pos.coords.longitude;
             const isFirstFix = !state.location.lat;
             state.location.lat = lat; state.location.lng = lng;
 
-            if(isFirstFix) fetchWeather(lat, lng); // Pobierz pogodę przy pierwszym namiarze
+            if(isFirstFix) fetchWeather(lat, lng); 
 
             if(!window.userMarker && !state.isHiddenMode) {
                 window.userMarker = window.L.marker([lat, lng], {
@@ -165,16 +181,18 @@ export function initApp() {
         }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
     }
 
-    // 🔌 2. SUPER-KLEJ DO WSZYSTKICH PRZYCISKÓW (Połączenie nowej architektury z logiką sobotnią)
+    // ---------------------------------------------
+    // PEŁEN SUPER-KLEJ (Teraz z podpiętymi Postami i Czatem!)
+    // ---------------------------------------------
     document.addEventListener('click', (e) => {
         
-        // ZAKŁADKI WIKI
+        // --- ZAKŁADKI WIKI ---
         if (e.target.classList.contains('wiki-tab-btn')) {
             document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab'));
         }
 
-        // ZAPISYWANIE USTAWIEŃ (Z soboty)
+        // --- USTAWIENIA ---
         if (e.target.closest('#saveSettingsBtn')) {
             const isGhost = document.getElementById('settingSearchable')?.checked || false;
             const isHidden = document.getElementById('settingHidden')?.checked || false;
@@ -193,7 +211,7 @@ export function initApp() {
             window.Waggle.showToast("Ustawienia zapisane!");
         }
 
-        // MAPA I SPACERY
+        // --- MAPA I SPACERY ---
         if (e.target.closest('#centerBtn')) {
             if (state.location.lat && state.location.lng) { mapManager.flyTo(state.location.lat, state.location.lng, 15); window.Waggle.showToast("Zlokalizowano! 📍"); }
         }
@@ -215,10 +233,77 @@ export function initApp() {
             window.Waggle.showToast("Spacer zakończony! 🏁");
         }
 
-        // MODALE ORAZ WIDŻETY (Zamykanie i otwieranie)
+        // --- ALERTY (Dodawanie zgłoszenia) ---
+        if (e.target.closest('#submitAlertBtn')) {
+            const text = document.getElementById('alertInput')?.value;
+            if(!text) return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
+            if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
+            db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now() });
+            document.getElementById('alert-modal').style.display = 'none';
+            document.getElementById('alertInput').value = '';
+            window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
+        }
+
+        // --- POSTY (Odzyskane kliknięcia Tablicy!) ---
+        if (e.target.closest('#addPostBtn')) { document.getElementById('post-creator-modal').style.display = 'flex'; }
+        if (e.target.closest('#addPhotoBtn')) { e.preventDefault(); document.getElementById('postImageInput').click(); }
+        if (e.target.closest('#publishPostBtn')) {
+            const content = document.getElementById('postContent').value;
+            const isEvent = document.getElementById('isEventCheckbox')?.checked || false;
+            const isInfo = document.getElementById('isInfoCheckbox')?.checked || false;
+            if(!content.trim()) return window.Waggle.showToast("Wpisz treść posta!");
+            saveCommunityPost(content, null, isEvent, null, isInfo).then(() => {
+                document.getElementById('post-creator-modal').style.display = 'none';
+                document.getElementById('postContent').value = '';
+                window.Waggle.showToast("Opublikowano! 🐾");
+            });
+        }
+        if (e.target.closest('.filter-btn')) {
+            const btn = e.target.closest('.filter-btn');
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            setPostFilter(btn.dataset.filter || 'all');
+        }
+        if (e.target.closest('#sendCommentBtn')) {
+            const input = document.getElementById('commentInput');
+            if(input) { addPostComment(input.value); input.value = ''; }
+        }
+
+        // --- CZAT (Odzyskane przyciski wysyłania!) ---
+        if (e.target.id === 'chatTabInbox') {
+            document.getElementById('chat-inbox-view').style.display = 'block'; document.getElementById('chat-search-view').style.display = 'none';
+            e.target.classList.add('active'); document.getElementById('chatTabSearch').classList.remove('active');
+        }
+        if (e.target.id === 'chatTabSearch') {
+            document.getElementById('chat-inbox-view').style.display = 'none'; document.getElementById('chat-search-view').style.display = 'block';
+            e.target.classList.add('active'); document.getElementById('chatTabInbox').classList.remove('active');
+        }
+        // Obsługuje obie nazwy, w zależności od tego jak masz to w HTML
+        if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
+            const input = document.getElementById('chatInput');
+            if(input) { sendMessage(input.value); input.value = ''; }
+        }
+        if (e.target.id === 'chatSearchBtn') {
+            const query = document.getElementById('chatSearchInput').value;
+            searchUsers(query);
+        }
+
+        // --- MODALE ORAZ PROFIL ---
         if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
         if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
         if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
+        
+        // Zabezpieczenie na różne nazwy ID w przycisku Profilu
+        if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup')) {
+            const modal = document.getElementById('profile-setup-modal');
+            if(modal) {
+                document.getElementById('setupName').value = state.profile?.name || "";
+                document.getElementById('setupCity').value = state.profile?.city || "";
+                document.getElementById('setupBreed').value = state.profile?.breed || "";
+                modal.style.display = 'flex';
+            }
+        }
+
         if (e.target.closest('.close-modal-btn')) {
             const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
             if(modal) modal.style.display = 'none';
