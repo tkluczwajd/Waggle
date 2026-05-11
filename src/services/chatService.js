@@ -1,4 +1,4 @@
-import { db } from '../../core/firebase.js';
+import { db, fb } from '../core/firebase.js';
 
 export function subscribeToInbox(uid, callback) {
     return db.collection("chats")
