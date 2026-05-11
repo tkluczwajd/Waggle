@@ -20,10 +20,7 @@ export function searchUsersInDb(query, callback) {
             const nameMatch = u.name && u.name.toLowerCase().includes(q);
             const cityMatch = u.city && u.city.toLowerCase().includes(q);
             const breedMatch = u.breed && u.breed.toLowerCase().includes(q);
-            
-            if (!q || nameMatch || cityMatch || breedMatch) {
-                users.push({ id: doc.id, ...u });
-            }
+            if (!q || nameMatch || cityMatch || breedMatch) users.push({ id: doc.id, ...u });
         });
         callback(users);
     });
