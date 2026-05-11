@@ -31,7 +31,7 @@ window.Waggle.showToast = (msg) => {
 
 window.Waggle.centerOnTarget = (lat, lng) => {
     switchView('map');
-    setTimeout(() => mapManager.flyTo(lat, lng, 16), 300);
+    setTimeout(() => { if(mapManager.map) mapManager.flyTo(lat, lng, 16); }, 300);
 };
 
 window.Waggle.openLightbox = (url) => {
@@ -71,10 +71,11 @@ window.Waggle.submitAlert = () => {
     db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now() });
     document.getElementById('alert-modal').style.display = 'none';
     if(document.getElementById('alertInput')) document.getElementById('alertInput').value = '';
+    if(document.getElementById('alertTextInput')) document.getElementById('alertTextInput').value = '';
     window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
 };
 
-// 2. FUNKCJE POMOCNICZE (WIKI, POGODA, STATYSTYKI)
+// 2. FUNKCJE POMOCNICZE (POGODA, STATYSTYKI, WIKI)
 function getWeatherIcon(code) {
     if (code === 0) return '☀️'; if (code <= 3) return '⛅'; if (code <= 48) return '🌫️';
     if (code <= 55 || (code >= 61 && code <= 65) || (code >= 80 && code <= 82)) return '🌧️';
@@ -115,6 +116,9 @@ function updateStatsUI() {
 
     const av = document.getElementById('profileAvatar');
     if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+
+    // DODANO: Odśwież ikonę psa na mapie po pobraniu danych profilu
+    if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 }
 
 function loadSettings() {
@@ -161,19 +165,17 @@ window.Waggle.likeWiki = (id) => {
 };
 
 function updateUserMarker(lat, lng) {
-    const L = window.L;
-    if (!L) return;
+    if (!window.L || state.isHiddenMode) return;
     const avatarSrc = state.profile?.avatar;
     let iconHtml;
     if (avatarSrc && avatarSrc.trim() !== '') {
-        iconHtml = `<div style="width:36px; height:36px; border-radius:50%; border:3px solid var(--secondary); box-shadow:0 0 15px rgba(0,0,0,0.3); overflow:hidden; background:white;"><img src="${avatarSrc}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+        iconHtml = `<div style="width:38px; height:38px; border-radius:50%; border:3px solid var(--secondary); box-shadow:0 0 15px rgba(0,0,0,0.3); overflow:hidden; background:white;"><img src="${avatarSrc}" style="width:100%; height:100%; object-fit:cover;"></div>`;
     } else {
         iconHtml = `<div style="background:#34ace0; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`;
     }
-    const iconSize = avatarSrc ? [36,36] : [20,20];
-    const icon = L.divIcon({ className: '', html: iconHtml, iconSize });
+    const icon = window.L.divIcon({ className: '', html: iconHtml, iconSize: avatarSrc ? [38,38] : [20,20] });
     if (!window.userMarker) {
-        window.userMarker = L.marker([lat, lng], { icon });
+        window.userMarker = window.L.marker([lat, lng], { icon });
         mapManager.addMarkerToLayer('user', window.userMarker);
     } else {
         window.userMarker.setLatLng([lat, lng]);
@@ -181,7 +183,9 @@ function updateUserMarker(lat, lng) {
     }
 }
 
+// ---------------------------------------------
 // 3. INICJALIZACJA APLIKACJI
+// ---------------------------------------------
 export function initApp() {
     initRouter();
     initMap();
@@ -212,13 +216,9 @@ export function initApp() {
                 html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
                         <div style="display:flex; align-items:center; gap:15px;">
                             <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
-                            <div>
-                                <b style="font-size:16px; color:var(--text-color);">${place.name}</b><br>
+                            <div><b style="font-size:16px;">${place.name}</b><br>
                                 <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span>
-                            </div>
-                        </div>
-                        <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">Prowadź</button>
-                    </div>`;
+                            </div></div><button class="btn-outline" style="width:auto; padding:5px 12px;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">Prowadź</button></div>`;
             });
             container.innerHTML = html;
             state.placesLoaded = true;
@@ -232,7 +232,7 @@ export function initApp() {
             state.location.lat = lat; state.location.lng = lng;
             if(isFirstFix) { fetchWeather(lat, lng); mapManager.flyTo(lat, lng, 15); }
             if(!state.isHiddenMode) updateUserMarker(lat, lng);
-        }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
+        }, err => console.log("GPS..."), { enableHighAccuracy: true });
     }
 
     document.addEventListener('input', (e) => {
@@ -242,44 +242,35 @@ export function initApp() {
     });
 
     // 🔌 SUPER-KLEJ (KLIKNIĘCIA)
-    document.addEventListener('click', (e) => {
-        // --- PROFIL I AWATAR ---
+    document.addEventListener('click', async (e) => {
         if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) {
             window.Waggle.triggerAvatarUpload();
         }
-        if (e.target.closest('#openEditProfileBtn')) {
-            document.getElementById('setupName').value = state.profile?.name || "";
-            document.getElementById('setupCity').value = state.profile?.city || "";
-            document.getElementById('profile-setup-modal').style.display = 'flex';
-        }
 
-        // --- WIKI I USTAWIANIA ---
         if (e.target.classList.contains('wiki-tab-btn')) {
             document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab'));
         }
+
         if (e.target.closest('#saveSettingsBtn')) {
             const isGhost = document.getElementById('settingSearchable')?.checked || false;
             const isHidden = document.getElementById('settingHidden')?.checked || false;
             const font = document.getElementById('settingFontSize')?.value || '14px';
             const theme = document.getElementById('settingTheme')?.value || 'light';
-            localStorage.setItem('waggle_ghost_mode', isGhost.toString()); localStorage.setItem('waggle_hidden_mode', isHidden.toString());
-            localStorage.setItem('waggle_font', font); localStorage.setItem('waggle_theme', theme);
+            localStorage.setItem('waggle_ghost_mode', isGhost.toString()); 
+            localStorage.setItem('waggle_hidden_mode', isHidden.toString());
+            localStorage.setItem('waggle_font', font); 
+            localStorage.setItem('waggle_theme', theme);
             state.isGhostMode = isGhost; state.isHiddenMode = isHidden;
             if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
             document.getElementById('settings-modal').style.display = 'none';
             window.Waggle.showToast("Ustawienia zapisane!");
         }
 
-        // --- MAPA I POGODA ---
         if (e.target.closest('#centerBtn')) {
             if (state.location.lat && state.location.lng) { mapManager.flyTo(state.location.lat, state.location.lng, 15); window.Waggle.showToast("Zlokalizowano! 📍"); }
         }
-        if (e.target.closest('#weatherWidgetBtn')) {
-            document.getElementById('weather-modal').style.display = 'flex';
-        }
 
-        // --- SPACER ---
         if (e.target.closest('#startWalkBtn')) {
             state.isWalking = true;
             document.getElementById('startWalkBtn').style.display = 'none'; document.getElementById('stopWalkBtn').style.display = 'inline-block'; document.getElementById('statusInput').style.display = 'none';
@@ -291,6 +282,7 @@ export function initApp() {
             }
             window.Waggle.showToast("Spacer rozpoczęty! 🐾");
         }
+
         if (e.target.closest('#stopWalkBtn')) {
             state.isWalking = false;
             document.getElementById('stopWalkBtn').style.display = 'none'; document.getElementById('startWalkBtn').style.display = 'inline-block'; document.getElementById('statusInput').style.display = 'inline-block';
@@ -298,40 +290,30 @@ export function initApp() {
             window.Waggle.showToast("Spacer zakończony! 🏁");
         }
 
-        // --- ALERTY ---
-        if (e.target.closest('#triggerAlertBtn')) {
-            document.getElementById('alert-modal').style.display = 'flex';
-        }
-        if (e.target.closest('#saveAlertBtn') || e.target.closest('#submitAlertBtn')) {
-            window.Waggle.submitAlert();
-        }
+        // NAPRAWA PRZYCISKU ALERTU ORAZ POGODY
+        if (e.target.closest('#saveAlertBtn') || e.target.closest('#submitAlertBtn')) window.Waggle.submitAlert();
+        if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
 
-        // --- POSTY I FILTRY ---
-        if (e.target.closest('#addPostBtn')) {
-            document.getElementById('post-creator-modal').style.display = 'flex';
-        }
+        // PUBLIKOWANIE POSTA ZE ZDJĘCIEM (NAPRAWIONE)
         if (e.target.closest('#publishPostBtn')) {
             const content = document.getElementById('postContent').value;
             const file = document.getElementById('postImageInput').files[0];
             if(!content.trim() && !file) return;
+
             window.Waggle.showToast("Publikuję... ⏳");
+            let url = null;
             if(file) {
-                uploadImage(file).then(url => {
-                    saveCommunityPost(content, url, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked).then(() => {
-                        document.getElementById('post-creator-modal').style.display = 'none';
-                        document.getElementById('postContent').value = '';
-                        document.getElementById('postImageInput').value = '';
-                        window.Waggle.showToast("Opublikowano! 🐾");
-                    });
-                });
-            } else {
-                saveCommunityPost(content, null, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked).then(() => {
-                    document.getElementById('post-creator-modal').style.display = 'none';
-                    document.getElementById('postContent').value = '';
-                    window.Waggle.showToast("Opublikowano! 🐾");
-                });
+                url = await uploadImage(file); // Czekamy aż zdjęcie się wyśle
             }
+            await saveCommunityPost(content, url, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked);
+            
+            document.getElementById('post-creator-modal').style.display = 'none';
+            document.getElementById('postContent').value = '';
+            document.getElementById('postImageInput').value = '';
+            window.Waggle.showToast("Opublikowano! 🐾");
         }
+
+        // FILTRY TABLICY
         if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
             const btn = e.target.closest('.top-pill');
             const filterName = btn.innerText.trim();
@@ -345,27 +327,20 @@ export function initApp() {
             else if (filterName.includes('Info')) setPostFilter('info');
         }
 
-        // --- CZAT ---
+        // CZAT (ZAKŁADKI I WYSYŁANIE)
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chatTabInbox').style.background = 'white';
-            document.getElementById('chatTabSearch').style.background = 'transparent';
-            document.getElementById('chat-inbox-view').style.display = 'block';
-            document.getElementById('chat-search-view').style.display = 'none';
+            document.getElementById('chat-inbox-view').style.display = 'block'; document.getElementById('chat-search-view').style.display = 'none';
+            document.getElementById('chatTabInbox').classList.add('active'); document.getElementById('chatTabSearch').classList.remove('active');
             loadInbox();
         }
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chatTabSearch').style.background = 'white';
-            document.getElementById('chatTabInbox').style.background = 'transparent';
-            document.getElementById('chat-inbox-view').style.display = 'none';
-            document.getElementById('chat-search-view').style.display = 'block';
+            document.getElementById('chat-inbox-view').style.display = 'none'; document.getElementById('chat-search-view').style.display = 'block';
+            document.getElementById('chatTabSearch').classList.add('active'); document.getElementById('chatTabInbox').classList.remove('active');
             searchUsers(''); 
         }
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
-            if(input && input.value.trim()) {
-                sendMessage(input.value);
-                input.value = '';
-            }
+            if(input && input.value.trim()) { sendMessage(input.value); input.value = ''; }
         }
         if (e.target.closest('#chatAddPhotoBtn')) {
             const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
@@ -373,9 +348,14 @@ export function initApp() {
             input.click();
         }
 
-        // --- UNIWERSALNE ZAMYKANIE MODALI ---
+        if (e.target.closest('#openEditProfileBtn')) {
+            document.getElementById('setupName').value = state.profile?.name || "";
+            document.getElementById('setupCity').value = state.profile?.city || "";
+            document.getElementById('profile-setup-modal').style.display = 'flex';
+        }
+
         if (e.target.closest('.close-modal-btn')) {
-            const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay') || e.target.closest('.screen-container');
+            const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
             if(modal) modal.style.display = 'none';
         }
     });
