@@ -1,12 +1,12 @@
 import { appState as state } from '../../core/state.js';
 import { eventBus } from '../../core/eventBus.js';
 import { saveProfileData } from '../../services/profileService.js';
-import { uploadImage } from '../posts/postsListeners.js'; 
+import { uploadImageToService as uploadImage } from '../../services/postsService.js'; 
 
 window.Waggle = window.Waggle || {};
 
 export function initProfileListeners() {
-    // 1. Otwieranie modala edycji
+    // 1. Otwieranie modala
     document.addEventListener('click', (e) => {
         if (e.target.closest('#open-profile-setup')) {
             const modal = document.getElementById('profile-setup-modal');
@@ -19,7 +19,7 @@ export function initProfileListeners() {
         }
     });
 
-    // 2. Sekcja zapisu profilu (TERAZ JEST WEWNĄTRZ FUNKCJI)
+    // 2. Zapisywanie profilu
     document.addEventListener('click', (e) => {
         if (e.target.closest('#saveProfileBtn')) {
             const btn = e.target.closest('#saveProfileBtn'); 
@@ -47,6 +47,9 @@ export function initProfileListeners() {
                 uploadImage(avatarInput.files[0]).then(url => {
                     d.avatar = url;
                     finalizeSave(d);
+                }).catch(() => {
+                    btn.disabled = false;
+                    window.Waggle.showToast("Błąd zdjęcia!");
                 });
             } else {
                 finalizeSave(d);
