@@ -1,7 +1,6 @@
 import { appState as state, setState } from '../core/state.js';
 import { db } from '../core/firebase.js';
 import { mapManager } from './map/mapManager.js';
-import { registerListener } from '../core/listeners.js';
 import { eventBus } from '../core/eventBus.js';
 
 import { subscribeToWalks } from '../services/walkService.js';
