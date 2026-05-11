@@ -55,4 +55,13 @@ export class MapManager {
     }
 }
 
+// ... (cały Twój kod klasy MapManager zostaje bez zmian) ...
+
 export const mapManager = new MapManager();
+
+// TO MUSISZ DODAĆ:
+export function initMap() {
+    // Inicjalizujemy mapę na divie o id 'map'
+    mapManager.init('map');
+    console.log("📍 Mapa: Inicjalizacja zakończona.");
+}
