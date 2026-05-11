@@ -25,8 +25,7 @@ export function loadPosts() {
     const unsub = subscribeToPosts(50, (posts) => {
         currentPosts = posts;
         renderPostsList(currentPosts, currentFilter);
-    });
-   // registerListener(unsub);
+    })
 }
 
 export function setPostFilter(filter) {
