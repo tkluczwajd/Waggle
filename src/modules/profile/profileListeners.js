@@ -11,7 +11,6 @@ export function initProfileListeners() {
         if (e.target.closest('#open-profile-setup')) {
             const modal = document.getElementById('profile-setup-modal');
             if (modal) {
-                // Wypełniamy pola aktualnymi danymi ze stanu
                 document.getElementById('setupName').value = state.profile?.name || "";
                 document.getElementById('setupCity').value = state.profile?.city || "";
                 document.getElementById('setupBreed').value = state.profile?.breed || "Mieszaniec";
@@ -20,16 +19,12 @@ export function initProfileListeners() {
         }
     });
 
-    // ... Twoja istniejąca sekcja document.addEventListener('click'...) z saveProfileBtn ...
-}
-
+    // 2. Sekcja zapisu profilu (TERAZ JEST WEWNĄTRZ FUNKCJI)
     document.addEventListener('click', (e) => {
-        // --- SEKCJA ZAPISU PROFILU ---
         if (e.target.closest('#saveProfileBtn')) {
             const btn = e.target.closest('#saveProfileBtn'); 
-            btn.disabled = true; // Blokujemy przycisk na czas zapisu
+            btn.disabled = true;
             
-            // Pobieramy dane z formularza
             const d = { 
                 name: document.getElementById('setupName').value.trim(), 
                 city: document.getElementById('setupCity').value.trim(), 
@@ -38,25 +33,16 @@ export function initProfileListeners() {
             
             const avatarInput = document.getElementById('setupAvatarInput');
 
-            // Funkcja pomocnicza, która wykonuje "betonowanie" stanu
             const finalizeSave = (dataWithAvatar) => {
                 saveProfileData(state.user.uid, dataWithAvatar).then(() => {
-                    
-                    // --- TUTAJ WSTAWIASZ TEN KOD (BETONOWANIE STANU) ---
-                    // 1. Aktualizujemy centralne źródło prawdy (State)
                     state.profile = { ...state.profile, ...dataWithAvatar }; 
-                    
-                    // 2. Informujemy resztę aplikacji (Renderer słucha tego zdarzenia)
                     eventBus.emit('profileUpdated', state.profile); 
-                    // --------------------------------------------------
-
                     btn.disabled = false;
                     document.getElementById('profile-setup-modal').style.display = 'none';
                     window.Waggle.showToast("Profil zaktualizowany! ✅");
                 });
             };
 
-            // Logika uploadu zdjęcia (jeśli wybrano nowe)
             if (avatarInput && avatarInput.files.length > 0) {
                 uploadImage(avatarInput.files[0]).then(url => {
                     d.avatar = url;
