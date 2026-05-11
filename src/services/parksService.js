@@ -1,4 +1,4 @@
-import { getDistance } from '../geolocation/geolocationService.js';
+import { getDistance } from './geolocationService.js';
 
 export async function fetchNearbyParks(lat, lng) {
     // ZWIĘKSZONO PROMIEŃ z 3000/5000 do 10000 (10km), żeby serwer zawsze coś wypluł
