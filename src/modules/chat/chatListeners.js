@@ -25,7 +25,9 @@ export function openChat(uid, name) {
     const chatId = state.user.uid > uid ? `${state.user.uid}_${uid}` : `${uid}_${state.user.uid}`;
     state.currentChatId = chatId;
     
-    document.getElementById('chatPartnerName').innerText = name;
+    const partnerNameEl = document.getElementById('chatPartnerName');
+    if(partnerNameEl) partnerNameEl.innerText = name;
+    
     document.getElementById('chat-window').style.display = 'flex';
 
     if(currentChatUnsub) currentChatUnsub();
@@ -70,9 +72,8 @@ export async function sendChatImage(file) {
     }
 }
 
-// BINDOWANIA GLOBALNE (BEZPIECZNIK)
 window.Waggle = window.Waggle || {};
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.searchUsers = searchUsers;
-window.Waggle.toggleStado = (uid) => window.Waggle.showToast("Dodawanie do stada wkrótce! 🐕");
+window.Waggle.sendChatImage = sendChatImage;
