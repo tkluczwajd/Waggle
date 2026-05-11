@@ -1,14 +1,13 @@
 import { initAuth } from './modules/auth.js';
 import { initMap, mapManager } from './modules/map/mapManager.js'; 
 import { initProfileListeners } from './modules/profile/profileListeners.js';
-import { loadPosts, setPostFilter, addPostComment } from './modules/posts/postsListeners.js';
+import { loadPosts, setPostFilter, addPostComment, saveCommunityPost } from './modules/posts/postsListeners.js';
 import { loadInbox, sendMessage, searchUsers } from './modules/chat/chatListeners.js';
 import { initRouter } from './core/router.js';
 import { appState as state } from './core/state.js';
 
 window.Waggle = window.Waggle || {};
 
-// Globalny Toast
 window.Waggle.showToast = (msg) => {
     let t = document.getElementById('waggle-toast');
     if(!t) {
@@ -27,7 +26,7 @@ export function initApp() {
     loadInbox();
     initProfileListeners();
 
-    // 📍 1. WŁĄCZENIE GPS (To przywróci śledzenie i niebieską kropkę)
+    // 📍 1. GPS i śledzenie
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude;
@@ -36,7 +35,6 @@ export function initApp() {
             state.location.lng = lng;
 
             if(!window.userMarker) {
-                // Tworzymy niebieską kropkę
                 window.userMarker = window.L.marker([lat, lng], {
                     icon: window.L.divIcon({
                         className: '',
@@ -45,33 +43,44 @@ export function initApp() {
                     })
                 });
                 mapManager.addMarkerToLayer('user', window.userMarker);
-                mapManager.flyTo(lat, lng, 15); // Wyśrodkowanie na użytkowniku
+                mapManager.flyTo(lat, lng, 15); 
             } else {
-                window.userMarker.setLatLng([lat, lng]); // Aktualizacja pozycji
+                window.userMarker.setLatLng([lat, lng]); 
             }
         }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
     }
 
-    // 🔌 2. PODPIĘCIE PRZYCISKÓW (Super-Klej dla UI)
+    // 🔌 2. SUPER-KLEJ (Wszystkie przyciski interfejsu)
     document.addEventListener('click', (e) => {
-        // --- FILTRY POSTÓW ---
+        
+        // --- 📝 POSTY ---
+        if (e.target.closest('#addPostBtn')) {
+            document.getElementById('post-creator-modal').style.display = 'flex';
+        }
+        if (e.target.closest('#publishPostBtn')) {
+            const content = document.getElementById('postContent').value;
+            const isEvent = document.getElementById('isEventCheckbox').checked;
+            const isInfo = document.getElementById('isInfoCheckbox').checked;
+            if(!content.trim()) return window.Waggle.showToast("Wpisz treść posta!");
+            
+            saveCommunityPost(content, null, isEvent, null, isInfo).then(() => {
+                document.getElementById('post-creator-modal').style.display = 'none';
+                document.getElementById('postContent').value = '';
+                window.Waggle.showToast("Opublikowano! 🐾");
+            });
+        }
         if (e.target.closest('.filter-btn')) {
             const btn = e.target.closest('.filter-btn');
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             setPostFilter(btn.dataset.filter || 'all');
         }
-
-        // --- DODAWANIE KOMENTARZY ---
         if (e.target.closest('#sendCommentBtn')) {
             const input = document.getElementById('commentInput');
-            if(input) {
-                addPostComment(input.value);
-                input.value = '';
-            }
+            if(input) { addPostComment(input.value); input.value = ''; }
         }
 
-        // --- ZAKŁADKI CZATU (Wiadomości / Szukaj) ---
+        // --- 💬 CZAT ---
         if (e.target.id === 'chatTabInbox') {
             document.getElementById('chat-inbox-view').style.display = 'block';
             document.getElementById('chat-search-view').style.display = 'none';
@@ -84,26 +93,43 @@ export function initApp() {
             e.target.classList.add('active');
             document.getElementById('chatTabInbox').classList.remove('active');
         }
-
-        // --- PRZYCISKI CZATU ---
-        if (e.target.closest('#sendMessageBtn')) {
+        if (e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
-            if(input) {
-                sendMessage(input.value);
-                input.value = '';
-            }
+            if(input) { sendMessage(input.value); input.value = ''; }
         }
         if (e.target.id === 'chatSearchBtn') {
             const query = document.getElementById('chatSearchInput').value;
             searchUsers(query);
         }
 
-        // --- ZAMYKANIE MODALI ---
+        // --- 👤 PROFIL I INNE MODALE ---
+        if (e.target.closest('#openEditProfileBtn')) {
+            const modal = document.getElementById('profile-setup-modal');
+            if(modal) {
+                document.getElementById('setupName').value = state.profile?.name || "";
+                document.getElementById('setupCity').value = state.profile?.city || "";
+                document.getElementById('setupBreed').value = state.profile?.breed || "";
+                modal.style.display = 'flex';
+            }
+        }
+        if (e.target.closest('#openSettingsBtn')) {
+            document.getElementById('settings-modal').style.display = 'flex';
+        }
+        if (e.target.closest('#triggerAlertBtn')) {
+            document.getElementById('alert-modal').style.display = 'flex';
+        }
+        if (e.target.closest('#weatherWidgetBtn')) {
+            document.getElementById('weather-modal').style.display = 'flex';
+        }
+
+        // --- ❌ ZAMYKANIE MODALI ---
         if (e.target.closest('.close-modal-btn')) {
-            const modal = e.target.closest('.modal-overlay') || document.getElementById('comments-modal');
+            const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
             if(modal) modal.style.display = 'none';
         }
     });
 
     console.log("🚀 Waggle: Systemy ustabilizowane. Fundamenty utwardzone.");
 }
+
+initAuth(initApp);
