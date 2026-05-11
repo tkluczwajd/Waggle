@@ -3,18 +3,17 @@ import { initMap, mapManager } from './modules/map/mapManager.js';
 import { initProfileListeners } from './modules/profile/profileListeners.js';
 import { loadPosts, setPostFilter, addPostComment, saveCommunityPost } from './modules/posts/postsListeners.js';
 import { loadInbox, sendMessage, searchUsers } from './modules/chat/chatListeners.js';
-import { initRouter } from './core/router.js';
+import { initRouter, switchView } from './core/router.js'; 
 import { appState as state } from './core/state.js';
 import { eventBus } from './core/eventBus.js';
 import { db, fb } from './core/firebase.js';
 import { fetchNearbyParks } from './services/parksService.js';
 import { renderParksOnMap } from './modules/map/parksRenderer.js';
-
-// --- DODANE SUBSKRYPCJE NA ŻYWO ---
 import { subscribeToWalks } from './services/walkService.js';
 import { renderWalks } from './modules/map/walksRenderer.js';
 import { subscribeToAlerts } from './services/alertsService.js';
 import { renderAlerts } from './modules/alerts/alertsRenderer.js'; 
+import { uploadImageToService as uploadImage } from './services/postsService.js'; 
 
 window.Waggle = window.Waggle || {};
 
@@ -29,7 +28,58 @@ window.Waggle.showToast = (msg) => {
     t.innerText = msg; t.style.display = 'block'; t.style.opacity = '1';
     setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.style.display='none',300); }, 3500);
 };
-window.Waggle.centerOnTarget = (lat, lng) => mapManager.flyTo(lat, lng, 16);
+
+// ZMIANA: Najpierw przełącz widok na mapę, a potem centruj
+window.Waggle.centerOnTarget = (lat, lng) => {
+    switchView('map');
+    setTimeout(() => mapManager.flyTo(lat, lng, 16), 300);
+};
+
+// ZMIANA: Globalny Lightbox do powiększania zdjęć z postów
+window.Waggle.openLightbox = (url) => {
+    const img = document.getElementById('lightbox-img');
+    const modal = document.getElementById('lightbox-modal');
+    if(img && modal) { img.src = url; modal.style.display = 'flex'; }
+};
+
+// ZMIANA: Wgrywanie zdjęcia profilowego (Awatara)
+window.Waggle.triggerAvatarUpload = () => {
+    let input = document.getElementById('hiddenAvatarInput');
+    if(!input) {
+        input = document.createElement('input');
+        input.type = 'file'; input.id = 'hiddenAvatarInput'; input.accept = 'image/*'; input.style.display = 'none';
+        document.body.appendChild(input);
+        
+        input.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            window.Waggle.showToast("Wysyłam nowe zdjęcie... ⏳");
+            try {
+                const url = await uploadImage(file);
+                if(state.user) {
+                    await db.collection("users").doc(state.user.uid).set({ avatar: url }, { merge: true });
+                    state.profile.avatar = url;
+                    eventBus.emit('profileUpdated', state.profile);
+                    window.Waggle.showToast("Zdjęcie zmienione! 🐾");
+                }
+            } catch(err) {
+                window.Waggle.showToast("Błąd wysyłania zdjęcia!");
+            }
+        });
+    }
+    input.click();
+};
+
+window.Waggle.submitAlert = () => {
+    const text = document.getElementById('alertInput')?.value || document.getElementById('alertTextInput')?.value;
+    if(!text) return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
+    if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
+    db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now() });
+    document.getElementById('alert-modal').style.display = 'none';
+    if(document.getElementById('alertInput')) document.getElementById('alertInput').value = '';
+    if(document.getElementById('alertTextInput')) document.getElementById('alertTextInput').value = '';
+    window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
+};
 
 // 2. FUNKCJE POMOCNICZE
 function getWeatherIcon(code) {
@@ -105,7 +155,6 @@ function renderWiki(tab) {
     });
 }
 
-// TUTAJ NAPRAWIŁEM BRAKUJĄCY NAWIAS :)
 window.Waggle.likeWiki = (id) => {
     if(!state.user) return;
     const ref = db.collection("wiki").doc(id);
@@ -119,6 +168,32 @@ window.Waggle.likeWiki = (id) => {
         }
     });
 };
+
+// ZMIANA: Tworzy znacznik użytkownika ze zdjęciem na mapie
+function updateUserMarker(lat, lng) {
+    const L = window.L;
+    if (!L) return;
+    const avatarSrc = state.profile?.avatar;
+    let iconHtml;
+    
+    // Ustawia awatar lub standardową kropkę
+    if (avatarSrc && avatarSrc.trim() !== '') {
+        iconHtml = `<div style="width:36px; height:36px; border-radius:50%; border:3px solid var(--secondary); box-shadow:0 0 15px rgba(0,0,0,0.3); overflow:hidden; background:white;"><img src="${avatarSrc}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+    } else {
+        iconHtml = `<div style="background:#34ace0; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`;
+    }
+    
+    const iconSize = avatarSrc ? [36,36] : [20,20];
+    const icon = L.divIcon({ className: '', html: iconHtml, iconSize });
+
+    if (!window.userMarker) {
+        window.userMarker = L.marker([lat, lng], { icon });
+        mapManager.addMarkerToLayer('user', window.userMarker);
+    } else {
+        window.userMarker.setLatLng([lat, lng]);
+        window.userMarker.setIcon(icon);
+    }
+}
 
 // ---------------------------------------------
 // INICJALIZACJA APLIKACJI
@@ -134,14 +209,23 @@ export function initApp() {
     initProfileListeners();
     loadSettings();
 
-    // ODŚWIEŻANIE NA ŻYWO
     subscribeToWalks(walks => renderWalks(walks));
     subscribeToAlerts(alerts => renderAlerts(alerts));
 
-    eventBus.on('profileUpdated', () => updateStatsUI());
+    eventBus.on('profileUpdated', () => {
+        updateStatsUI();
+        // Aktualizacja obrazka na mapie natychmiast po zmianie zdjęcia w profilu
+        if (state.location.lat && !state.isHiddenMode) {
+            updateUserMarker(state.location.lat, state.location.lng);
+        }
+    });
+
     eventBus.on('viewChanged', async (view) => {
         if (view === 'wiki') renderWiki('rasy');
         if (view === 'places' && state.location.lat) {
+            // ZMIANA: Miejsca nie ładują się na nowo, jeśli już raz je wczytano
+            if (state.placesLoaded) return; 
+            
             const container = document.getElementById('places-container');
             container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
             const places = await fetchNearbyParks(state.location.lat, state.location.lng);
@@ -162,6 +246,7 @@ export function initApp() {
                     </div>`;
             });
             container.innerHTML = html;
+            state.placesLoaded = true; // Zaznaczamy w pamięci, że wybiegi zostały wczytane
         }
     });
 
@@ -173,23 +258,33 @@ export function initApp() {
 
             if(isFirstFix) fetchWeather(lat, lng); 
 
-            if(!window.userMarker && !state.isHiddenMode) {
-                window.userMarker = window.L.marker([lat, lng], {
-                    icon: window.L.divIcon({ className: '', html: '<div style="background:#34ace0; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>', iconSize: [20,20] })
-                });
-                mapManager.addMarkerToLayer('user', window.userMarker);
-                mapManager.flyTo(lat, lng, 15); 
+            if(!state.isHiddenMode) {
+                updateUserMarker(lat, lng);
+                if(isFirstFix) mapManager.flyTo(lat, lng, 15); 
             } else if (window.userMarker) {
-                window.userMarker.setLatLng([lat, lng]); 
+                mapManager.removeMarkerFromLayer('user', window.userMarker);
+                window.userMarker = null;
             }
         }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
     }
 
+    // ZMIANA: Nasłuchuj powiększania czcionki na żywo, zanim użytkownik zapisze ustawienia
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'settingFontSize') {
+            document.documentElement.style.setProperty('--base-font-size', e.target.value);
+        }
+    });
+
     // ---------------------------------------------
-    // PEŁEN SUPER-KLEJ (Z podpiętymi Postami i Czatem!)
+    // PEŁEN SUPER-KLEJ 
     // ---------------------------------------------
     document.addEventListener('click', (e) => {
         
+        // --- ZMIANA: Kliknięcie w zdjęcie w profilu albo w przycisk otworzy galerię ---
+        if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) {
+            window.Waggle.triggerAvatarUpload();
+        }
+
         // --- ZAKŁADKI WIKI ---
         if (e.target.classList.contains('wiki-tab-btn')) {
             document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
@@ -237,16 +332,9 @@ export function initApp() {
             window.Waggle.showToast("Spacer zakończony! 🏁");
         }
 
-        // --- ALERTY (Dodawanie zgłoszenia) ---
-        if (e.target.closest('#submitAlertBtn')) {
-            const text = document.getElementById('alertInput')?.value || document.getElementById('alertTextInput')?.value;
-            if(!text) return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
-            if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
-            db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now() });
-            document.getElementById('alert-modal').style.display = 'none';
-            if(document.getElementById('alertInput')) document.getElementById('alertInput').value = '';
-            if(document.getElementById('alertTextInput')) document.getElementById('alertTextInput').value = '';
-            window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
+        // --- ALERTY ---
+        if (e.target.closest('#submitAlertBtn') || e.target.closest('.submit-alert')) {
+            window.Waggle.submitAlert();
         }
 
         // --- POSTY ---
@@ -274,20 +362,20 @@ export function initApp() {
             if(input) { addPostComment(input.value); input.value = ''; }
         }
 
-        // --- CZAT ---
-        if (e.target.id === 'chatTabInbox') {
+        // --- ZMIANA: CZAT (Zabezpieczone zakładki szukaj/wiadomości) ---
+        if (e.target.closest('#chatTabInbox')) {
             document.getElementById('chat-inbox-view').style.display = 'block'; document.getElementById('chat-search-view').style.display = 'none';
-            e.target.classList.add('active'); document.getElementById('chatTabSearch').classList.remove('active');
+            e.target.closest('#chatTabInbox').classList.add('active'); document.getElementById('chatTabSearch').classList.remove('active');
         }
-        if (e.target.id === 'chatTabSearch') {
+        if (e.target.closest('#chatTabSearch')) {
             document.getElementById('chat-inbox-view').style.display = 'none'; document.getElementById('chat-search-view').style.display = 'block';
-            e.target.classList.add('active'); document.getElementById('chatTabInbox').classList.remove('active');
+            e.target.closest('#chatTabSearch').classList.add('active'); document.getElementById('chatTabInbox').classList.remove('active');
         }
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
             if(input) { sendMessage(input.value); input.value = ''; }
         }
-        if (e.target.id === 'chatSearchBtn') {
+        if (e.target.closest('#chatSearchBtn')) {
             const query = document.getElementById('chatSearchInput').value;
             searchUsers(query);
         }
