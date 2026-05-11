@@ -1,4 +1,4 @@
-import { db } from '../../core/firebase.js';
+import { db, fb } from '../core/firebase.js';
 
 export function subscribeToAlerts(callback) {
     return db.collection("alerts").onSnapshot(snap => {
