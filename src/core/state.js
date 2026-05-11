@@ -31,10 +31,4 @@ export function setState(path, value) {
     current[keys[0]] = value;
 }
 
-export const state = appState; 
-export const addListener = registerListener;
-export const clearListeners = cleanupListeners;
-export const ListenerManager = {
-    add: registerListener,
-    clear: cleanupListeners
-};
+export const state = appState;
