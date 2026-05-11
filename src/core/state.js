@@ -1,4 +1,3 @@
-import { registerListener, cleanupListeners } from './listeners.js';
 
 export const appState = {
     auth: {
