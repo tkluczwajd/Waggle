@@ -13,7 +13,6 @@ export function loadInbox() {
     const unsub = subscribeToInbox(state.user.uid, (chats) => {
         renderInboxList(chats, state.user.uid);
     });
-    //registerListener(unsub);
 }
 
 export function searchUsers(query) {
