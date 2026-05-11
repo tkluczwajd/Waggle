@@ -1,6 +1,5 @@
 import { auth, db } from "../core/firebase.js";
 import { appState as state, setState } from "../core/state.js";
-import { cleanupListeners, registerListener as addListener } from "../core/listeners.js";
 import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false; // Zabezpieczenie przed wielokrotnym startem apki
