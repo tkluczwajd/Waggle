@@ -24,7 +24,6 @@ import {
     openChat, 
     closeActiveChat, 
     searchUsers, 
-    toggleStado, 
     sendChatImage 
 } from './modules/chat/chatListeners.js';
 import { initProfileListeners } from './modules/profile/profileListeners.js';
