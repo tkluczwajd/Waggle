@@ -3,6 +3,8 @@ import { eventBus } from '../../core/eventBus.js';
 import { saveProfileData } from './profileService.js';
 import { uploadImage } from '../posts/postsListeners.js'; 
 
+window.Waggle = window.Waggle || {};
+
 export function initProfileListeners() {
     // ... inne listenery ...
 
