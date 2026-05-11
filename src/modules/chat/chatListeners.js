@@ -1,20 +1,15 @@
 import { appState as state } from '../../core/state.js';
-// USUNIĘTO: import { registerListener } ... (bo plik core/listeners nie istnieje)
 import { uploadImageToService } from '../../services/postsService.js'; 
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
 
-window.Waggle = window.Waggle || {};
-
-let currentChatUnsub = null;
-
 export function loadInbox() {
     if (!state.user) return;
-    const unsub = subscribeToInbox(state.user.uid, (chats) => {
+    subscribeToInbox(state.user.uid, (chats) => {
         renderInboxList(chats, state.user.uid);
     });
+    // USUNIĘTO registerListener(unsub);
 }
-
 export function searchUsers(query) {
     searchUsersInDb(query, (users) => {
         renderSearchResultsList(users, state.user?.uid);
