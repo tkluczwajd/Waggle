@@ -1,6 +1,6 @@
 import { auth, db } from "../core/firebase.js";
 import { appState as state, setState } from "../core/state.js";
-import { cleanupListeners, registerListener as addListener } from "../core/listeners.js";
+
 import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false; // Zabezpieczenie przed wielokrotnym startem apki
@@ -8,7 +8,7 @@ let appInitialized = false; // Zabezpieczenie przed wielokrotnym startem apki
 export function initAuth(onReady) {
     // 1. MONITOROWANIE STANU ZALOGOWANIA
     auth.onAuthStateChanged(user => {
-        cleanupListeners(); 
+
         const loader = document.getElementById("loader");
         if (loader) loader.style.display = "none";
 
