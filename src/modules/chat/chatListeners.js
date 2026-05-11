@@ -1,7 +1,6 @@
 import { appState as state } from '../../core/state.js';
-import { registerListener } from '../../core/listeners.js'; // Jeśli to też wywala 404, usuń tę linię
-import { uploadImage } from '../posts/postsListeners.js'; 
-// Poprawna ścieżka do spłaszczonego serwisu
+// USUNIĘTO: import { registerListener } ... (bo plik core/listeners nie istnieje)
+import { uploadImageToService } from '../../services/postsService.js'; 
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
 
