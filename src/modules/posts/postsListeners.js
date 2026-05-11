@@ -26,7 +26,7 @@ export function loadPosts() {
         currentPosts = posts;
         renderPostsList(currentPosts, currentFilter);
     });
-    registerListener(unsub);
+   // registerListener(unsub);
 }
 
 export function setPostFilter(filter) {
