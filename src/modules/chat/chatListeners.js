@@ -4,6 +4,8 @@ import { uploadImage } from '../posts/postsListeners.js';
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb } from './chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
 
+window.Waggle = window.Waggle || {};
+
 let currentChatUnsub = null;
 
 export function loadInbox() {
