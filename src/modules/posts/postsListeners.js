@@ -1,15 +1,21 @@
 import { appState as state } from '../../core/state.js';
-import { registerListener } from '../../core/listeners.js';
+import { eventBus } from '../../core/eventBus.js';
+
+// Łączymy wszystko w jeden import z nowej lokalizacji w services
 import { 
     subscribeToPosts, 
     addPost, 
     deletePostInDb, 
-    toggleLikeInDb, 
+    togglePostLikeInDb, // upewnij się, że taka nazwa jest w serwisie (wcześniej mogło być toggleLikeInDb)
     subscribeToComments, 
     addCommentInDb, 
     uploadImageToService 
-} from './postsService.js';
+} from '../../services/postsService.js';
+
+// Renderer zostaje w tym samym folderze, więc ./ jest OK
 import { renderPostsList, renderCommentsList } from './postsRenderer.js';
+
+// Nasz bezpiecznik dla okna globalnego
 window.Waggle = window.Waggle || {};
 
 let currentFilter = 'all';
