@@ -15,7 +15,6 @@ import { subscribeToWalks } from './services/walkService.js';
 import { renderWalks } from './modules/map/walksRenderer.js';
 import { subscribeToAlerts } from './services/alertsService.js';
 import { renderAlerts } from './modules/alerts/alertsRenderer.js'; 
-// (Uwaga: jeśli konsola rzuci tu błąd 404, sprawdź czy alertsRenderer.js leży w /modules/alerts/ czy bezpośrednio w /modules/map/ i popraw ścieżkę)
 
 window.Waggle = window.Waggle || {};
 
@@ -105,13 +104,19 @@ function renderWiki(tab) {
         container.innerHTML = html || '<p style="text-align:center;">Brak wpisów.</p>';
     });
 }
+
+// TUTAJ NAPRAWIŁEM BRAKUJĄCY NAWIAS :)
 window.Waggle.likeWiki = (id) => {
     if(!state.user) return;
     const ref = db.collection("wiki").doc(id);
     ref.get().then(doc => {
         const likes = doc.data().likes || [];
-        if (likes.includes(state.user.uid)) ref.update({ likes: fb.firestore.FieldValue.arrayRemove(state.user.uid) });
-        else { ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid); window.Waggle.showToast("Dzięki za ocenę! ❤️"); }
+        if (likes.includes(state.user.uid)) {
+            ref.update({ likes: fb.firestore.FieldValue.arrayRemove(state.user.uid) });
+        } else { 
+            ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid) }); 
+            window.Waggle.showToast("Dzięki za ocenę! ❤️"); 
+        }
     });
 };
 
@@ -122,7 +127,6 @@ export function initApp() {
     initRouter();
     initMap();
     
-    // NAPRAWA SZAREJ MAPY: Przekazujemy instancję do stanu, aby router wiedział co odświeżać
     state.map.instance = mapManager.map;
 
     loadPosts();
@@ -130,7 +134,7 @@ export function initApp() {
     initProfileListeners();
     loadSettings();
 
-    // ODŚWIEŻANIE NA ŻYWO: To naprawia błąd, w którym nie widziałeś innych na spacerze!
+    // ODŚWIEŻANIE NA ŻYWO
     subscribeToWalks(walks => renderWalks(walks));
     subscribeToAlerts(alerts => renderAlerts(alerts));
 
@@ -182,7 +186,7 @@ export function initApp() {
     }
 
     // ---------------------------------------------
-    // PEŁEN SUPER-KLEJ (Teraz z podpiętymi Postami i Czatem!)
+    // PEŁEN SUPER-KLEJ (Z podpiętymi Postami i Czatem!)
     // ---------------------------------------------
     document.addEventListener('click', (e) => {
         
@@ -235,16 +239,17 @@ export function initApp() {
 
         // --- ALERTY (Dodawanie zgłoszenia) ---
         if (e.target.closest('#submitAlertBtn')) {
-            const text = document.getElementById('alertInput')?.value;
+            const text = document.getElementById('alertInput')?.value || document.getElementById('alertTextInput')?.value;
             if(!text) return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
             if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
             db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now() });
             document.getElementById('alert-modal').style.display = 'none';
-            document.getElementById('alertInput').value = '';
+            if(document.getElementById('alertInput')) document.getElementById('alertInput').value = '';
+            if(document.getElementById('alertTextInput')) document.getElementById('alertTextInput').value = '';
             window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
         }
 
-        // --- POSTY (Odzyskane kliknięcia Tablicy!) ---
+        // --- POSTY ---
         if (e.target.closest('#addPostBtn')) { document.getElementById('post-creator-modal').style.display = 'flex'; }
         if (e.target.closest('#addPhotoBtn')) { e.preventDefault(); document.getElementById('postImageInput').click(); }
         if (e.target.closest('#publishPostBtn')) {
@@ -269,7 +274,7 @@ export function initApp() {
             if(input) { addPostComment(input.value); input.value = ''; }
         }
 
-        // --- CZAT (Odzyskane przyciski wysyłania!) ---
+        // --- CZAT ---
         if (e.target.id === 'chatTabInbox') {
             document.getElementById('chat-inbox-view').style.display = 'block'; document.getElementById('chat-search-view').style.display = 'none';
             e.target.classList.add('active'); document.getElementById('chatTabSearch').classList.remove('active');
@@ -278,7 +283,6 @@ export function initApp() {
             document.getElementById('chat-inbox-view').style.display = 'none'; document.getElementById('chat-search-view').style.display = 'block';
             e.target.classList.add('active'); document.getElementById('chatTabInbox').classList.remove('active');
         }
-        // Obsługuje obie nazwy, w zależności od tego jak masz to w HTML
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
             if(input) { sendMessage(input.value); input.value = ''; }
@@ -293,7 +297,6 @@ export function initApp() {
         if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
         if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
         
-        // Zabezpieczenie na różne nazwy ID w przycisku Profilu
         if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup')) {
             const modal = document.getElementById('profile-setup-modal');
             if(modal) {
