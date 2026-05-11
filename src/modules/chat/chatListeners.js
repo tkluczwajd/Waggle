@@ -1,7 +1,8 @@
 import { appState as state } from '../../core/state.js';
-import { uploadImageToService } from '../../services/postsService.js'; 
+import { uploadImageToService as uploadImage } from '../../services/postsService.js';
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
+let currentChatUnsub = null;
 
 export function loadInbox() {
     if (!state.user) return;
