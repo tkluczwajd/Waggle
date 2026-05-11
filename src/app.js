@@ -18,7 +18,15 @@ import {
     openPostComments, 
     addPostComment 
 } from './modules/posts/postsListeners.js';
-import { loadInbox, sendMessage, openChat, closeActiveChat, searchUsers, toggleStado, sendChatImage } from './modules/chat.js';
+import { 
+    loadInbox, 
+    sendMessage, 
+    openChat, 
+    closeActiveChat, 
+    searchUsers, 
+    toggleStado, 
+    sendChatImage 
+} from './modules/chat/chatListeners.js';
 import { initProfileListeners } from './modules/profile/profileListeners.js';
 import { renderProfileStats } from './modules/profile/profileRenderer.js';
 
@@ -49,12 +57,8 @@ function getWeatherIcon(code) {
 }
 
 // BINDINGI GLOBALNE
-window.Waggle.openChat = openChat;
-window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.centerOnTarget = centerOnTarget;
 window.Waggle.openLightbox = openLightbox;
-window.Waggle.searchUsers = searchUsers;
-window.Waggle.toggleStado = toggleStado; 
 
 window.Waggle.openUserMenu = (uid, name, avatar, lat = null, lng = null) => {
     if(uid === state.user.uid) return; 
