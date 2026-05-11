@@ -37,7 +37,8 @@ export function initAuth(onReady) {
                 }
             });
             
-            // UWAGA: Usunęliśmy stąd addListener(unsub);
+            // UWAGA: Usunęliśmy stąd 
+            addEventListener (unsub);
             // Twój profil jest teraz VIP-em i odświeża się bez przerw!
         } else {
             // Po wylogowaniu resetujemy stan apki
