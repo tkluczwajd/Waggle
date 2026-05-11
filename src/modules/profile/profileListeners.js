@@ -6,7 +6,22 @@ import { uploadImage } from '../posts/postsListeners.js';
 window.Waggle = window.Waggle || {};
 
 export function initProfileListeners() {
-    // ... inne listenery ...
+    // 1. Otwieranie modala edycji
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#open-profile-setup')) {
+            const modal = document.getElementById('profile-setup-modal');
+            if (modal) {
+                // Wypełniamy pola aktualnymi danymi ze stanu
+                document.getElementById('setupName').value = state.profile?.name || "";
+                document.getElementById('setupCity').value = state.profile?.city || "";
+                document.getElementById('setupBreed').value = state.profile?.breed || "Mieszaniec";
+                modal.style.display = 'flex';
+            }
+        }
+    });
+
+    // ... Twoja istniejąca sekcja document.addEventListener('click'...) z saveProfileBtn ...
+}
 
     document.addEventListener('click', (e) => {
         // --- SEKCJA ZAPISU PROFILU ---
