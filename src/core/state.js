@@ -1,4 +1,3 @@
-
 export const appState = {
     auth: {
         user: null,
