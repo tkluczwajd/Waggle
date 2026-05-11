@@ -12,3 +12,4 @@ export function subscribeToAlerts(callback) {
         callback(alerts);
     });
 }
+ 
