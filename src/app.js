@@ -201,6 +201,7 @@ function updateUserMarker(lat, lng) {
 export function initApp() {
     initRouter();
     initMap();
+    updateStatsUI(); // Dodaj tę linię tutaj
     
     state.map.instance = mapManager.map;
 
@@ -269,7 +270,7 @@ export function initApp() {
     }
 
     // ZMIANA: Nasłuchuj powiększania czcionki na żywo, zanim użytkownik zapisze ustawienia
-    document.addEventListener('change', (e) => {
+        document.addEventListener('input', (e) => {
         if (e.target.id === 'settingFontSize') {
             document.documentElement.style.setProperty('--base-font-size', e.target.value);
         }
@@ -342,14 +343,29 @@ export function initApp() {
         if (e.target.closest('#addPhotoBtn')) { e.preventDefault(); document.getElementById('postImageInput').click(); }
         if (e.target.closest('#publishPostBtn')) {
             const content = document.getElementById('postContent').value;
-            const isEvent = document.getElementById('isEventCheckbox')?.checked || false;
-            const isInfo = document.getElementById('isInfoCheckbox')?.checked || false;
-            if(!content.trim()) return window.Waggle.showToast("Wpisz treść posta!");
-            saveCommunityPost(content, null, isEvent, null, isInfo).then(() => {
-                document.getElementById('post-creator-modal').style.display = 'none';
-                document.getElementById('postContent').value = '';
-                window.Waggle.showToast("Opublikowano! 🐾");
-            });
+            const file = document.getElementById('postImageInput').files[0];
+            if(!content.trim() && !file) return;
+
+            window.Waggle.showToast("Publikuję... ⏳");
+            
+            // Logika wgrywania zdjęcia przed zapisem posta:
+            let url = null;
+            if(file) {
+                uploadImage(file).then(uploadedUrl => {
+                    saveCommunityPost(content, uploadedUrl, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked).then(() => {
+                        document.getElementById('post-creator-modal').style.display = 'none';
+                        document.getElementById('postContent').value = '';
+                        document.getElementById('postImageInput').value = '';
+                        window.Waggle.showToast("Opublikowano! 🐾");
+                    });
+                });
+            } else {
+                saveCommunityPost(content, null, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked).then(() => {
+                    document.getElementById('post-creator-modal').style.display = 'none';
+                    document.getElementById('postContent').value = '';
+                    window.Waggle.showToast("Opublikowano! 🐾");
+                });
+            }
         }
         if (e.target.closest('.filter-btn')) {
             const btn = e.target.closest('.filter-btn');
@@ -362,14 +378,18 @@ export function initApp() {
             if(input) { addPostComment(input.value); input.value = ''; }
         }
 
-        // --- ZMIANA: CZAT (Zabezpieczone zakładki szukaj/wiadomości) ---
+       // --- CZAT (Zabezpieczone zakładki szukaj/wiadomości) ---
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chat-inbox-view').style.display = 'block'; document.getElementById('chat-search-view').style.display = 'none';
-            e.target.closest('#chatTabInbox').classList.add('active'); document.getElementById('chatTabSearch').classList.remove('active');
+            document.getElementById('chat-inbox-view').style.display = 'block'; 
+            document.getElementById('chat-search-view').style.display = 'none';
+            document.getElementById('chatTabInbox').classList.add('active'); 
+            document.getElementById('chatTabSearch').classList.remove('active');
         }
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chat-inbox-view').style.display = 'none'; document.getElementById('chat-search-view').style.display = 'block';
-            e.target.closest('#chatTabSearch').classList.add('active'); document.getElementById('chatTabInbox').classList.remove('active');
+            document.getElementById('chat-inbox-view').style.display = 'none'; 
+            document.getElementById('chat-search-view').style.display = 'block';
+            document.getElementById('chatTabSearch').classList.add('active'); 
+            document.getElementById('chatTabInbox').classList.remove('active');
         }
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
