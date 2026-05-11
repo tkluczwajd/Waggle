@@ -1,6 +1,5 @@
 import { appState as state } from '../../core/state.js';
 import { eventBus } from '../../core/eventBus.js';
-// Poprawna ścieżka
 import { saveProfileData } from '../../services/profileService.js';
 import { uploadImage } from '../posts/postsListeners.js'; 
 
