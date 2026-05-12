@@ -281,7 +281,22 @@ if ("geolocation" in navigator) {
         if (e.target.closest('#addPostBtn')) {
             document.getElementById('post-creator-modal').style.display = 'flex';
         }
-        if (e.target.closest('#triggerAlertBtn') || e.target.closest('#active-alert-pill')) {
+        // --- ALERTY: Rozdzielenie Logiki ---
+        
+        // 1. Kliknięcie w napis "Alerty" na mapie (pigułka) -> Widok listy
+        if (e.target.closest('#active-alert-pill')) {
+            // Jeśli masz modal listy, otwórz go. Jeśli nie, idź do Tablicy z filtrem Alertów.
+            const listModal = document.getElementById('alerts-list-modal');
+            if (listModal) {
+                listModal.style.display = 'flex';
+            } else {
+                window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
+                switchView('community');
+                setTimeout(() => setPostFilter('alerts'), 300);
+            }
+        }
+        // 2. Kliknięcie w Wykrzyknik (!) -> Okno dodawania nowego alertu
+        if (e.target.closest('#triggerAlertBtn')) {
             document.getElementById('alert-modal').style.display = 'flex';
         }
         if (e.target.closest('#openSettingsBtn')) {
@@ -333,9 +348,13 @@ if ("geolocation" in navigator) {
         if (e.target.closest('#stopWalkBtn')) {
             state.isWalking = false;
             document.getElementById('stopWalkBtn').style.display = 'none'; document.getElementById('startWalkBtn').style.display = 'inline-block'; document.getElementById('statusInput').style.display = 'inline-block';
-            if (state.user) db.collection("walks").doc(state.user.uid).delete();
-            window.Waggle.showToast("Spacer zakończony! 🏁");
-        }
+           if(state.user) {
+                    await db.collection("users").doc(state.user.uid).set({ avatar: url }, { merge: true });
+                    state.profile.avatar = url;
+                    // KLUCZOWE: Wymuszamy odświeżenie statystyk i ikon
+                    updateStatsUI(); 
+                    window.Waggle.showToast("Zdjęcie zmienione! 🐾");
+                }
 
         if (e.target.closest('#saveAlertBtn') || e.target.closest('#submitAlertBtn')) {
             window.Waggle.submitAlert();
