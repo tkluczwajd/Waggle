@@ -30,7 +30,7 @@ export async function fetchNearbyParks(lat, lng) {
         if (places.length === 0) {
             places.push({
                 name: "Park Waggle (Test)",
-                distance: 1.5,
+                distance: 5,
                 lat: lat + 0.01,
                 lng: lng + 0.01,
                 isDogPark: true
