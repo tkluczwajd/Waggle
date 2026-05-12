@@ -417,13 +417,6 @@ if ("geolocation" in navigator) {
             document.getElementById('profile-setup-modal').style.display = 'flex';
         }
 
-        if (e.target.closest('.close-modal-btn')) {
-            const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
-            if(modal) modal.style.display = 'none';
-// ... wcześniejszy kod (okolice linii 400+) ...
-        }
-    });
-
  // --- SPRZĄTACZ SESJI: Czyści stare spacery przy starcie apki ---
     auth.onAuthStateChanged(user => {
         if (user) {
