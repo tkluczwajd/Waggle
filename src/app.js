@@ -258,9 +258,10 @@ export function initApp() {
         }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
     }
 
+// NASŁUCH: Filtrowanie miast w Stadzie
     document.addEventListener('input', (e) => {
-        if (e.target.id === 'settingFontSize') {
-            document.documentElement.style.setProperty('--base-font-size', e.target.value);
+        if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
+            searchUsers(e.target.value);
         }
     });
 
@@ -269,6 +270,31 @@ export function initApp() {
         
         // MODALE
         if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
+        // NAPRAWA: Otwieranie edycji profilu
+        if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup')) {
+            const modal = document.getElementById('profile-setup-modal');
+            if(modal) {
+                document.getElementById('setupName').value = state.profile?.name || "";
+                document.getElementById('setupCity').value = state.profile?.city || "";
+                document.getElementById('setupBreed').value = state.profile?.breed || "";
+                modal.style.display = 'flex';
+            }
+        }
+
+        // NAPRAWA: Aparat w czacie (dodawanie zdjęcia do wiadomości)
+        if (e.target.closest('#chatAddPhotoBtn')) {
+            let chatInput = document.getElementById('chat-image-input');
+            if(!chatInput) {
+                chatInput = document.createElement('input');
+                chatInput.id = 'chat-image-input';
+                chatInput.type = 'file'; chatInput.accept = 'image/*'; chatInput.style.display = 'none';
+                document.body.appendChild(chatInput);
+                chatInput.addEventListener('change', (ev) => {
+                    if(ev.target.files[0]) sendChatImage(ev.target.files[0]);
+                });
+            }
+            chatInput.click();
+        }
         
         // ALERTY
         if (e.target.closest('#active-alert-pill')) {
@@ -359,16 +385,20 @@ export function initApp() {
             setPostFilter(filter);
         }
 
-        // CZAT
+        // CZAT: Zakładka STADO (Szukaj)
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chatTabSearch').style.background = 'white'; document.getElementById('chatTabInbox').style.background = 'transparent';
-            const searchInput = document.getElementById('userSearchInput');
-            if(searchInput) { searchInput.style.display = 'block'; searchInput.focus(); }
-            searchUsers(''); 
+            document.getElementById('chatTabSearch').style.cssText = 'background: white !important; color: black !important; font-weight: 800;';
+            document.getElementById('chatTabInbox').style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+            document.getElementById('chat-inbox-view').style.display = 'none';
+            document.getElementById('chat-search-view').style.display = 'block';
+            searchUsers(''); // Pokazuje wszystkich na start
         }
+       // CZAT: Zakładka WIADOMOŚCI
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chatTabInbox').style.background = 'white'; document.getElementById('chatTabSearch').style.background = 'transparent';
-            if(document.getElementById('userSearchInput')) document.getElementById('userSearchInput').style.display = 'none';
+            document.getElementById('chatTabInbox').style.cssText = 'background: white !important; color: black !important; font-weight: 800;';
+            document.getElementById('chatTabSearch').style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+            document.getElementById('chat-inbox-view').style.display = 'block';
+            document.getElementById('chat-search-view').style.display = 'none';
             loadInbox();
         }
 
@@ -406,5 +436,18 @@ export function initApp() {
 
     console.log("🚀 Waggle: Architektura Hybrydowa aktywna!");
 }
-
+// NASŁUCH: Podgląd zdjęcia w kreatorze postów
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'postImageInput') {
+            const file = e.target.files[0];
+            const previewContainer = document.getElementById('post-image-preview'); // Upewnij się, że masz taki div w index.html
+            if (file && previewContainer) {
+                const reader = new FileReader();
+                reader.onload = (ex) => {
+                    previewContainer.innerHTML = `<img src="${ex.target.result}" style="width:100%; height:150px; object-fit:cover; border-radius:10px; margin-top:10px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    });
 initAuth(initApp);
