@@ -273,137 +273,84 @@ if ("geolocation" in navigator) {
         }
     });
 
-    // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA) - TUTAJ NAPRAWIŁEM PRZYCISKI
+   // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA) - NAPRAWIONA WERSJA
     document.addEventListener('click', async (e) => {
         
-        // --- MODALE (Otwieranie) ---
-        if (e.target.closest('#addPostBtn')) {
-            document.getElementById('post-creator-modal').style.display = 'flex';
+        // MODALE
+        if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
+        if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
+        if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
+        if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
+
+        // ALERTY
+        if (e.target.closest('#active-alert-pill')) {
+            const listModal = document.getElementById('alerts-list-modal');
+            if (listModal) listModal.style.display = 'flex';
+            else { 
+                document.querySelector('.nav-item[data-view="community"]').click();
+                setTimeout(() => setPostFilter('alerts'), 300); 
+            }
         }
-        // --- ALERTY: Rozdzielenie Logiki ---
-       // 1. Pigułka Alertu na Mapie - Widok listy alertów
-    if (e.target.closest('#active-alert-pill')) {
-        const listModal = document.getElementById('alerts-list-modal');
-        if (listModal) {
-            listModal.style.display = 'flex';
-        } else {
-            window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
-            document.querySelector('.nav-item[data-view="community"]').click();
-            setTimeout(() => setPostFilter('alerts'), 300);
-        }
-    }
-    
-    // 2. Kliknięcie w Wykrzyknik (!) -> Okno dodawania nowego alertu
-    if (e.target.closest('#triggerAlertBtn')) {
-        document.getElementById('alert-modal').style.display = 'flex';
-    }
+        if (e.target.closest('#saveAlertBtn') || e.target.closest('#submitAlertBtn')) window.Waggle.submitAlert();
 
-    if (e.target.closest('#saveAlertBtn')) {
-        window.Waggle.submitAlert();
-    }
+        // PROFIL I AWATAR
+        if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) window.Waggle.triggerAvatarUpload();
 
- // 1. Pigułka Alertu na Mapie - Widok listy alertów
-    if (e.target.closest('#active-alert-pill')) {
-        const listModal = document.getElementById('alerts-list-modal');
-        if (listModal) {
-            listModal.style.display = 'flex';
-        } else {
-            window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
-            document.querySelector('.nav-item[data-view="community"]').click();
-            setTimeout(() => setPostFilter('alerts'), 300);
-        }
-    }
-    
-    // 2. Kliknięcie w Wykrzyknik (!) -> Okno dodawania nowego alertu
-    if (e.target.closest('#triggerAlertBtn')) {
-        document.getElementById('alert-modal').style.display = 'flex';
-    }
-
-    if (e.target.closest('#saveAlertBtn')) {
-        window.Waggle.submitAlert();
-    }
-
-    // --- TABLICA: Zdjęcie i Komentarze ---
-    if (e.target.closest('#addPhotoBtn')) {
-        const fileInput = document.getElementById('postImageInput');
-        if (fileInput) fileInput.click(); 
-    }
-
-    if (e.target.closest('#sendCommentBtn')) {
-        const input = document.getElementById('commentInput');
-        if (input && input.value.trim()) {
-            addPostComment(input.value);
-            input.value = ''; 
-        } else {
-            window.Waggle.showToast("Wpisz treść komentarza!");
-        }
-    }
-        // --- PROFIL I AWATAR ---
-        if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) {
-            window.Waggle.triggerAvatarUpload();
-        }
-
+        // WIKI TABS
         if (e.target.classList.contains('wiki-tab-btn')) {
             document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab'));
         }
 
-        if (e.target.closest('#saveSettingsBtn')) {
-            const isGhost = document.getElementById('settingSearchable')?.checked || false;
-            const isHidden = document.getElementById('settingHidden')?.checked || false;
-            const font = document.getElementById('settingFontSize')?.value || '14px';
-            const theme = document.getElementById('settingTheme')?.value || 'light';
-            localStorage.setItem('waggle_ghost_mode', isGhost.toString()); localStorage.setItem('waggle_hidden_mode', isHidden.toString());
-            localStorage.setItem('waggle_font', font); localStorage.setItem('waggle_theme', theme);
-            state.isGhostMode = isGhost; state.isHiddenMode = isHidden;
-            if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
-            document.getElementById('settings-modal').style.display = 'none';
-            window.Waggle.showToast("Ustawienia zapisane!");
-        }
-
-        if (e.target.closest('#centerBtn')) {
-            if (state.location.lat && state.location.lng) { mapManager.flyTo(state.location.lat, state.location.lng, 15); window.Waggle.showToast("Zlokalizowano! 📍"); }
-        }
-
+        // SPACER
         if (e.target.closest('#startWalkBtn')) {
             state.isWalking = true;
-            document.getElementById('startWalkBtn').style.display = 'none'; document.getElementById('stopWalkBtn').style.display = 'inline-block'; document.getElementById('statusInput').style.display = 'none';
-            if (state.user && state.location.lat && !state.isHiddenMode) {
-                db.collection("walks").doc(state.user.uid).set({
-                    uid: state.user.uid, name: state.profile?.name || "Piesek", avatar: state.profile?.avatar || "",
-                    lat: state.location.lat, lng: state.location.lng, timestamp: Date.now()
-                }, { merge: true });
-            }
-            window.Waggle.showToast("Spacer rozpoczęty! 🐾");
+            document.getElementById('startWalkBtn').style.display = 'none'; 
+            document.getElementById('stopWalkBtn').style.display = 'inline-block'; 
+            document.getElementById('statusInput').style.display = 'none';
+            db.collection("walks").doc(state.user.uid).set({ uid: state.user.uid, name: state.profile?.name, avatar: state.profile?.avatar, lat: state.location.lat, lng: state.location.lng, timestamp: Date.now() }, { merge: true });
         }
-
         if (e.target.closest('#stopWalkBtn')) {
             state.isWalking = false;
-            document.getElementById('stopWalkBtn').style.display = 'none'; document.getElementById('startWalkBtn').style.display = 'inline-block'; document.getElementById('statusInput').style.display = 'inline-block';
-           if(state.user) {
-                    await db.collection("users").doc(state.user.uid).set({ avatar: url }, { merge: true });
-                    state.profile.avatar = url;
-                    // KLUCZOWE: Wymuszamy odświeżenie statystyk i ikon
-                    updateStatsUI(); 
-                    window.Waggle.showToast("Zdjęcie zmienione! 🐾");
-                }
-
-        if (e.target.closest('#saveAlertBtn') || e.target.closest('#submitAlertBtn')) {
-            window.Waggle.submitAlert();
+            document.getElementById('stopWalkBtn').style.display = 'none'; 
+            document.getElementById('startWalkBtn').style.display = 'inline-block'; 
+            document.getElementById('statusInput').style.display = 'inline-block';
+            if (state.user) db.collection("walks").doc(state.user.uid).delete();
         }
 
-        // Pigułka Alertu na Mapie - Widok listy alertów
-    if (e.target.closest('#active-alert-pill')) {
-        // Zamiast otwierać dodawanie, otwieramy listę alertów (upewnij się, że masz modal o tym ID)
-        const listModal = document.getElementById('alerts-list-modal');
-        if(listModal) listModal.style.display = 'flex';
-        else {
-            // Jeśli nie masz modala listy, idź do tablicy z filtrem
-            document.querySelector('.nav-item[data-view="community"]').click();
-            setTimeout(() => setPostFilter('alerts'), 200);
+        // POSTY
+        if (e.target.closest('#publishPostBtn')) {
+            const content = document.getElementById('postContent').value;
+            const file = document.getElementById('postImageInput').files[0];
+            if(!content.trim() && !file) return;
+            window.Waggle.showToast("Publikuję... ⏳");
+            let url = file ? await uploadImage(file) : null;
+            await saveCommunityPost(content, url, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked);
+            document.getElementById('post-creator-modal').style.display = 'none';
+            document.getElementById('postContent').value = '';
         }
-    }
 
+        // CZAT
+        if (e.target.closest('#chatTabSearch')) {
+            document.getElementById('chatTabSearch').style.background = 'white'; 
+            document.getElementById('chatTabInbox').style.background = 'transparent';
+            const searchInput = document.getElementById('userSearchInput');
+            if(searchInput) { searchInput.style.display = 'block'; searchInput.focus(); }
+            searchUsers(''); 
+        }
+        if (e.target.closest('#chatTabInbox')) {
+            document.getElementById('chatTabInbox').style.background = 'white'; 
+            document.getElementById('chatTabSearch').style.background = 'transparent';
+            if(document.getElementById('userSearchInput')) document.getElementById('userSearchInput').style.display = 'none';
+            loadInbox();
+        }
+
+        // ZAMYKANIE
+        if (e.target.closest('.close-modal-btn')) {
+            const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
+            if(modal) modal.style.display = 'none';
+        }
+    });
         // --- POSTY (Publikowanie ze zdjęciem) ---
         if (e.target.closest('#publishPostBtn')) {
             const content = document.getElementById('postContent').value;
