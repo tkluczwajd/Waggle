@@ -151,15 +151,15 @@ function renderWiki(tab) {
 }
 
 window.Waggle.likeWiki = (id) => {
-    if(!state.user) return;
+    if(!state.user) return; // Zabezpieczenie przed niezalogowanym
     const ref = db.collection("wiki").doc(id);
     ref.get().then(doc => {
         const likes = doc.data().likes || [];
         if (likes.includes(state.user.uid)) {
             ref.update({ likes: fb.firestore.FieldValue.arrayRemove(state.user.uid) });
-        } else { 
-            ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid) }); 
-            window.Waggle.showToast("Dzięki za ocenę! ❤️"); 
+        } else {
+            ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid) });
+            window.Waggle.showToast("Dzięki za ocenę! ❤️");
         }
     });
 };
@@ -227,12 +227,35 @@ export function initApp() {
         }
     });
 
-    if ("geolocation" in navigator) {
+if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+            const lat = pos.coords.latitude; 
+            const lng = pos.coords.longitude;
             const isFirstFix = !state.location.lat;
-            state.location.lat = lat; state.location.lng = lng;
-            if(isFirstFix) { fetchWeather(lat, lng); mapManager.flyTo(lat, lng, 15); }
+            
+            state.location.lat = lat; 
+            state.location.lng = lng;
+
+            if(isFirstFix) { 
+                fetchWeather(lat, lng); 
+                mapManager.flyTo(lat, lng, 15); 
+            }
+
+            // --- HEARTBEAT: Aktualizacja spaceru na żywo ---
+            if (state.isWalking && state.user && !state.isHiddenMode) {
+                db.collection("walks").doc(state.user.uid).update({
+                    lat: lat,
+                    lng: lng,
+                    lastActive: Date.now() // Dodajemy znacznik czasu
+                }).catch(() => {
+                    // Jeśli dokument zniknął (np. sprzątacz go usunął), stwórz go na nowo
+                    db.collection("walks").doc(state.user.uid).set({
+                        uid: state.user.uid, name: state.profile?.name || "Piesek",
+                        avatar: state.profile?.avatar || "", lat, lng, lastActive: Date.now()
+                    });
+                });
+            }
+
             if(!state.isHiddenMode) updateUserMarker(lat, lng);
         }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
     }
@@ -376,10 +399,36 @@ export function initApp() {
         if (e.target.closest('.close-modal-btn')) {
             const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
             if(modal) modal.style.display = 'none';
+// ... wcześniejszy kod (okolice linii 400+) ...
         }
     });
 
-    console.log("🚀 Waggle: Architektura Hybrydowa aktywna!");
-}
+    // --- TUTAJ WKLEJASZ TEN KOD "SPRZĄTACZA" ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            db.collection("walks").doc(user.uid).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const now = Date.now();
+                    const diff = (now - (data.lastActive || 0)) / 1000 / 60;
 
-initAuth(initApp);
+                    if (diff > 30) { 
+                        db.collection("walks").doc(user.uid).delete();
+                        state.isWalking = false;
+                        window.Waggle.showToast("Spacer zakończony automatycznie.");
+                    } else {
+                        state.isWalking = true;
+                        if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
+                        if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
+                        if(document.getElementById('statusInput')) document.getElementById('statusInput').style.display = 'none';
+                    }
+                }
+            });
+        }
+    });
+    // --- KONIEC WKLEJKI ---
+
+    console.log("🚀 Waggle: Architektura Hybrydowa aktywna!");
+} // <--- TO JEST TEN NAWIAS, KTÓRY ZAMYKA initApp. Kod musi być nad nim!
+
+initAuth(initApp); // <--- TO ZOSTAJE NA SAMYM DOLE PLIKU
