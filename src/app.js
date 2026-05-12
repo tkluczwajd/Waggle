@@ -249,17 +249,16 @@ if ("geolocation" in navigator) {
                 mapManager.flyTo(lat, lng, 15); 
             }
 
-            // --- HEARTBEAT: Aktualizacja spaceru na żywo ---
+            // --- HEARTBEAT: Aktualizacja czasu aktywności w bazie ---
             if (state.isWalking && state.user && !state.isHiddenMode) {
                 db.collection("walks").doc(state.user.uid).update({
                     lat: lat,
                     lng: lng,
-                    lastActive: Date.now() // Dodajemy znacznik czasu
+                    timestamp: Date.now() // Kluczowe dla sprzątacza
                 }).catch(() => {
-                    // Jeśli dokument zniknął (np. sprzątacz go usunął), stwórz go na nowo
                     db.collection("walks").doc(state.user.uid).set({
                         uid: state.user.uid, name: state.profile?.name || "Piesek",
-                        avatar: state.profile?.avatar || "", lat, lng, lastActive: Date.now()
+                        avatar: state.profile?.avatar || "", lat, lng, timestamp: Date.now()
                     });
                 });
             }
@@ -282,30 +281,63 @@ if ("geolocation" in navigator) {
             document.getElementById('post-creator-modal').style.display = 'flex';
         }
         // --- ALERTY: Rozdzielenie Logiki ---
-        
-        // 1. Kliknięcie w napis "Alerty" na mapie (pigułka) -> Widok listy
-        if (e.target.closest('#active-alert-pill')) {
-            // Jeśli masz modal listy, otwórz go. Jeśli nie, idź do Tablicy z filtrem Alertów.
-            const listModal = document.getElementById('alerts-list-modal');
-            if (listModal) {
-                listModal.style.display = 'flex';
-            } else {
-                window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
-                switchView('community');
-                setTimeout(() => setPostFilter('alerts'), 300);
-            }
+       // 1. Pigułka Alertu na Mapie - Widok listy alertów
+    if (e.target.closest('#active-alert-pill')) {
+        const listModal = document.getElementById('alerts-list-modal');
+        if (listModal) {
+            listModal.style.display = 'flex';
+        } else {
+            window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
+            document.querySelector('.nav-item[data-view="community"]').click();
+            setTimeout(() => setPostFilter('alerts'), 300);
         }
-        // 2. Kliknięcie w Wykrzyknik (!) -> Okno dodawania nowego alertu
-        if (e.target.closest('#triggerAlertBtn')) {
-            document.getElementById('alert-modal').style.display = 'flex';
-        }
-        if (e.target.closest('#openSettingsBtn')) {
-            document.getElementById('settings-modal').style.display = 'flex';
-        }
-        if (e.target.closest('#weatherWidgetBtn')) {
-            document.getElementById('weather-modal').style.display = 'flex';
-        }
+    }
+    
+    // 2. Kliknięcie w Wykrzyknik (!) -> Okno dodawania nowego alertu
+    if (e.target.closest('#triggerAlertBtn')) {
+        document.getElementById('alert-modal').style.display = 'flex';
+    }
 
+    if (e.target.closest('#saveAlertBtn')) {
+        window.Waggle.submitAlert();
+    }
+
+ // 1. Pigułka Alertu na Mapie - Widok listy alertów
+    if (e.target.closest('#active-alert-pill')) {
+        const listModal = document.getElementById('alerts-list-modal');
+        if (listModal) {
+            listModal.style.display = 'flex';
+        } else {
+            window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
+            document.querySelector('.nav-item[data-view="community"]').click();
+            setTimeout(() => setPostFilter('alerts'), 300);
+        }
+    }
+    
+    // 2. Kliknięcie w Wykrzyknik (!) -> Okno dodawania nowego alertu
+    if (e.target.closest('#triggerAlertBtn')) {
+        document.getElementById('alert-modal').style.display = 'flex';
+    }
+
+    if (e.target.closest('#saveAlertBtn')) {
+        window.Waggle.submitAlert();
+    }
+
+    // --- TABLICA: Zdjęcie i Komentarze ---
+    if (e.target.closest('#addPhotoBtn')) {
+        const fileInput = document.getElementById('postImageInput');
+        if (fileInput) fileInput.click(); 
+    }
+
+    if (e.target.closest('#sendCommentBtn')) {
+        const input = document.getElementById('commentInput');
+        if (input && input.value.trim()) {
+            addPostComment(input.value);
+            input.value = ''; 
+        } else {
+            window.Waggle.showToast("Wpisz treść komentarza!");
+        }
+    }
         // --- PROFIL I AWATAR ---
         if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) {
             window.Waggle.triggerAvatarUpload();
@@ -445,21 +477,22 @@ if ("geolocation" in navigator) {
         }
     });
 
-    // --- TUTAJ WKLEJASZ TEN KOD "SPRZĄTACZA" ---
+ // --- SPRZĄTACZ SESJI: Czyści stare spacery przy starcie apki ---
     auth.onAuthStateChanged(user => {
         if (user) {
             db.collection("walks").doc(user.uid).get().then(doc => {
                 if (doc.exists) {
                     const data = doc.data();
                     const now = Date.now();
-                    const diff = (now - (data.lastActive || 0)) / 1000 / 60;
+                    const diff = (now - (data.timestamp || 0)) / 1000 / 60; // minuty
 
                     if (diff > 30) { 
                         db.collection("walks").doc(user.uid).delete();
                         state.isWalking = false;
-                        window.Waggle.showToast("Spacer zakończony automatycznie.");
+                        window.Waggle.showToast("Stary spacer wygasł automatycznie.");
                     } else {
                         state.isWalking = true;
+                        // Przywróć wygląd przycisków jeśli spacer jest świeży
                         if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
                         if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
                         if(document.getElementById('statusInput')) document.getElementById('statusInput').style.display = 'none';
@@ -468,7 +501,6 @@ if ("geolocation" in navigator) {
             });
         }
     });
-    // --- KONIEC WKLEJKI ---
 
     console.log("🚀 Waggle: Architektura Hybrydowa aktywna!");
 } // <--- TO JEST TEN NAWIAS, KTÓRY ZAMYKA initApp. Kod musi być nad nim!
