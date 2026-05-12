@@ -110,6 +110,14 @@ function updateStatsUI() {
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
     const walksEl = document.getElementById('statWalks'); if(walksEl) walksEl.innerText = p.walkCount || 0;
     const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = ((p.walkCount || 0) * 1.2).toFixed(1);
+
+    // DODAJ TO, ABY MODAL EDYCJI PAMIĘTAŁ DANE:
+    const breedInput = document.getElementById('setupBreed');
+    if(breedInput) breedInput.value = state.profile.breed || "";
+    
+    const cityInput = document.getElementById('setupCity');
+    if(cityInput) cityInput.value = state.profile.city || "";
+
     
     let lvl = "🌱 Nowik";
     if (p.walkCount >= 5) lvl = "🐕 Spacerowicz"; if (p.walkCount >= 20) lvl = "🐺 Weteran Osiedla"; if (p.walkCount >= 50) lvl = "👑 Alfa Stada";
@@ -333,6 +341,18 @@ if ("geolocation" in navigator) {
             window.Waggle.submitAlert();
         }
 
+        // Pigułka Alertu na Mapie - Widok listy alertów
+    if (e.target.closest('#active-alert-pill')) {
+        // Zamiast otwierać dodawanie, otwieramy listę alertów (upewnij się, że masz modal o tym ID)
+        const listModal = document.getElementById('alerts-list-modal');
+        if(listModal) listModal.style.display = 'flex';
+        else {
+            // Jeśli nie masz modala listy, idź do tablicy z filtrem
+            document.querySelector('.nav-item[data-view="community"]').click();
+            setTimeout(() => setPostFilter('alerts'), 200);
+        }
+    }
+
         // --- POSTY (Publikowanie ze zdjęciem) ---
         if (e.target.closest('#publishPostBtn')) {
             const content = document.getElementById('postContent').value;
@@ -372,22 +392,25 @@ if ("geolocation" in navigator) {
             document.getElementById('chat-search-view').style.display = 'none';
             loadInbox();
         }
+        
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chatTabSearch').classList.add('active');
-            document.getElementById('chatTabInbox').classList.remove('active');
-            document.getElementById('chat-inbox-view').style.display = 'none';
-            document.getElementById('chat-search-view').style.display = 'block';
-            searchUsers(''); 
+             document.getElementById('chatTabSearch').style.background = 'white';
+             document.getElementById('chatTabInbox').style.background = 'transparent';
+             const searchInput = document.getElementById('userSearchInput');
+        if(searchInput) {
+            searchInput.style.display = 'block';
+            searchInput.focus(); // Automatycznie ustaw kursor
         }
+        window.Waggle.searchUsers(''); 
+    }  
 
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
             if(input && input.value.trim()) { sendMessage(input.value); input.value = ''; }
         }
-        if (e.target.closest('#chatAddPhotoBtn')) {
-            const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
-            input.onchange = (ev) => sendChatImage(ev.target.files[0]);
-            input.click();
+        if (e.target.closest('#addPhotoBtn') || e.target.closest('.post-setup-avatar-btn')) {
+            const fileInput = document.getElementById('postImageInput');
+            if(fileInput) fileInput.click();
         }
 
         if (e.target.closest('#openEditProfileBtn')) {
