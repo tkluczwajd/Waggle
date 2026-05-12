@@ -6,7 +6,7 @@ import { loadInbox, sendMessage, searchUsers, sendChatImage } from './modules/ch
 import { initRouter, switchView } from './core/router.js'; 
 import { appState as state } from './core/state.js';
 import { eventBus } from './core/eventBus.js';
-import { db, fb } from './core/firebase.js';
+import { auth, db, fb } from './core/firebase.js';
 import { fetchNearbyParks } from './services/parksService.js';
 import { renderParksOnMap } from './modules/map/parksRenderer.js';
 import { subscribeToWalks } from './services/walkService.js';
@@ -57,6 +57,7 @@ window.Waggle.triggerAvatarUpload = () => {
                     await db.collection("users").doc(state.user.uid).set({ avatar: url }, { merge: true });
                     state.profile.avatar = url;
                     eventBus.emit('profileUpdated', state.profile);
+                    updateStatsUI();
                     window.Waggle.showToast("Zdjęcie zmienione! 🐾");
                 }
             } catch(err) { window.Waggle.showToast("Błąd wysyłania zdjęcia!"); }
@@ -111,14 +112,11 @@ function updateStatsUI() {
     const walksEl = document.getElementById('statWalks'); if(walksEl) walksEl.innerText = p.walkCount || 0;
     const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = ((p.walkCount || 0) * 1.2).toFixed(1);
 
-    // DODAJ TO, ABY MODAL EDYCJI PAMIĘTAŁ DANE:
     const breedInput = document.getElementById('setupBreed');
     if(breedInput) breedInput.value = state.profile.breed || "";
-    
     const cityInput = document.getElementById('setupCity');
     if(cityInput) cityInput.value = state.profile.city || "";
 
-    
     let lvl = "🌱 Nowik";
     if (p.walkCount >= 5) lvl = "🐕 Spacerowicz"; if (p.walkCount >= 20) lvl = "🐺 Weteran Osiedla"; if (p.walkCount >= 50) lvl = "👑 Alfa Stada";
     const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
@@ -159,7 +157,7 @@ function renderWiki(tab) {
 }
 
 window.Waggle.likeWiki = (id) => {
-    if(!state.user) return; // Zabezpieczenie przed niezalogowanym
+    if(!state.user) return;
     const ref = db.collection("wiki").doc(id);
     ref.get().then(doc => {
         const likes = doc.data().likes || [];
@@ -188,14 +186,11 @@ function updateUserMarker(lat, lng) {
     }
 }
 
-// ---------------------------------------------
 // 3. INICJALIZACJA APLIKACJI
-// ---------------------------------------------
 export function initApp() {
     initRouter();
     initMap();
     updateStatsUI();
-    
     state.map.instance = mapManager.map;
 
     loadPosts();
@@ -235,26 +230,22 @@ export function initApp() {
         }
     });
 
-if ("geolocation" in navigator) {
+    if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude; 
             const lng = pos.coords.longitude;
             const isFirstFix = !state.location.lat;
-            
-            state.location.lat = lat; 
-            state.location.lng = lng;
+            state.location.lat = lat; state.location.lng = lng;
 
             if(isFirstFix) { 
                 fetchWeather(lat, lng); 
                 mapManager.flyTo(lat, lng, 15); 
             }
 
-            // --- HEARTBEAT: Aktualizacja czasu aktywności w bazie ---
+            // HEARTBEAT: Aktualizacja spaceru na żywo
             if (state.isWalking && state.user && !state.isHiddenMode) {
                 db.collection("walks").doc(state.user.uid).update({
-                    lat: lat,
-                    lng: lng,
-                    timestamp: Date.now() // Kluczowe dla sprzątacza
+                    lat, lng, timestamp: Date.now()
                 }).catch(() => {
                     db.collection("walks").doc(state.user.uid).set({
                         uid: state.user.uid, name: state.profile?.name || "Piesek",
@@ -273,52 +264,31 @@ if ("geolocation" in navigator) {
         }
     });
 
-   // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA) - NAPRAWIONA WERSJA
+    // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA)
     document.addEventListener('click', async (e) => {
         
         // MODALE
         if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
-        if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
-        if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
-        if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
-
+        
         // ALERTY
         if (e.target.closest('#active-alert-pill')) {
             const listModal = document.getElementById('alerts-list-modal');
             if (listModal) listModal.style.display = 'flex';
-            else { 
+            else {
+                window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
                 document.querySelector('.nav-item[data-view="community"]').click();
-                setTimeout(() => setPostFilter('alerts'), 300); 
+                setTimeout(() => setPostFilter('alerts'), 300);
             }
         }
-        if (e.target.closest('#saveAlertBtn') || e.target.closest('#submitAlertBtn')) window.Waggle.submitAlert();
+        if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
+        if (e.target.closest('#saveAlertBtn')) window.Waggle.submitAlert();
 
-        // PROFIL I AWATAR
-        if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) window.Waggle.triggerAvatarUpload();
-
-        // WIKI TABS
-        if (e.target.classList.contains('wiki-tab-btn')) {
-            document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active'); renderWiki(e.target.getAttribute('data-tab'));
+        // TABLICA
+        if (e.target.closest('#addPhotoBtn')) {
+            const fileInput = document.getElementById('postImageInput');
+            if (fileInput) fileInput.click(); 
         }
 
-        // SPACER
-        if (e.target.closest('#startWalkBtn')) {
-            state.isWalking = true;
-            document.getElementById('startWalkBtn').style.display = 'none'; 
-            document.getElementById('stopWalkBtn').style.display = 'inline-block'; 
-            document.getElementById('statusInput').style.display = 'none';
-            db.collection("walks").doc(state.user.uid).set({ uid: state.user.uid, name: state.profile?.name, avatar: state.profile?.avatar, lat: state.location.lat, lng: state.location.lng, timestamp: Date.now() }, { merge: true });
-        }
-        if (e.target.closest('#stopWalkBtn')) {
-            state.isWalking = false;
-            document.getElementById('stopWalkBtn').style.display = 'none'; 
-            document.getElementById('startWalkBtn').style.display = 'inline-block'; 
-            document.getElementById('statusInput').style.display = 'inline-block';
-            if (state.user) db.collection("walks").doc(state.user.uid).delete();
-        }
-
-        // POSTY
         if (e.target.closest('#publishPostBtn')) {
             const content = document.getElementById('postContent').value;
             const file = document.getElementById('postImageInput').files[0];
@@ -328,114 +298,106 @@ if ("geolocation" in navigator) {
             await saveCommunityPost(content, url, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked);
             document.getElementById('post-creator-modal').style.display = 'none';
             document.getElementById('postContent').value = '';
+            document.getElementById('postImageInput').value = '';
+            window.Waggle.showToast("Opublikowano! 🐾");
+        }
+
+        if (e.target.closest('#sendCommentBtn')) {
+            const input = document.getElementById('commentInput');
+            if (input && input.value.trim()) {
+                addPostComment(input.value);
+                input.value = ''; 
+            }
+        }
+
+        // PROFIL
+        if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) window.Waggle.triggerAvatarUpload();
+
+        if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
+
+        if (e.target.closest('#saveSettingsBtn')) {
+            const font = document.getElementById('settingFontSize')?.value || '14px';
+            const theme = document.getElementById('settingTheme')?.value || 'light';
+            localStorage.setItem('waggle_font', font); localStorage.setItem('waggle_theme', theme);
+            document.documentElement.style.setProperty('--base-font-size', font);
+            if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+            document.getElementById('settings-modal').style.display = 'none';
+            window.Waggle.showToast("Ustawienia zapisane!");
+        }
+
+        if (e.target.closest('#centerBtn')) {
+            if (state.location.lat && state.location.lng) { mapManager.flyTo(state.location.lat, state.location.lng, 15); window.Waggle.showToast("Zlokalizowano! 📍"); }
+        }
+
+        // SPACER
+        if (e.target.closest('#startWalkBtn')) {
+            state.isWalking = true;
+            document.getElementById('startWalkBtn').style.display = 'none'; 
+            document.getElementById('stopWalkBtn').style.display = 'inline-block'; 
+            document.getElementById('statusInput').style.display = 'none';
+            db.collection("walks").doc(state.user.uid).set({ uid: state.user.uid, name: state.profile?.name, avatar: state.profile?.avatar, lat: state.location.lat, lng: state.location.lng, timestamp: Date.now() }, { merge: true });
+            window.Waggle.showToast("Spacer rozpoczęty! 🐾");
+        }
+
+        if (e.target.closest('#stopWalkBtn')) {
+            state.isWalking = false;
+            document.getElementById('stopWalkBtn').style.display = 'none'; 
+            document.getElementById('startWalkBtn').style.display = 'inline-block'; 
+            document.getElementById('statusInput').style.display = 'inline-block';
+            if (state.user) db.collection("walks").doc(state.user.uid).delete();
+            window.Waggle.showToast("Spacer zakończony! 🏁");
+        }
+
+        // FILTRY TABLICY
+        if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
+            const btn = e.target.closest('.top-pill');
+            document.querySelectorAll('#view-community .top-pill').forEach(b => {
+                b.style.background = 'transparent'; b.style.color = 'var(--text-color)';
+            });
+            btn.style.background = 'var(--text-color)'; btn.style.color = 'white';
+            const filter = btn.innerText.includes('Wszystko') ? 'all' : (btn.innerText.includes('Ustawki') ? 'events' : (btn.innerText.includes('Alerty') ? 'alerts' : 'info'));
+            setPostFilter(filter);
         }
 
         // CZAT
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chatTabSearch').style.background = 'white'; 
-            document.getElementById('chatTabInbox').style.background = 'transparent';
+            document.getElementById('chatTabSearch').style.background = 'white'; document.getElementById('chatTabInbox').style.background = 'transparent';
             const searchInput = document.getElementById('userSearchInput');
             if(searchInput) { searchInput.style.display = 'block'; searchInput.focus(); }
             searchUsers(''); 
         }
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chatTabInbox').style.background = 'white'; 
-            document.getElementById('chatTabSearch').style.background = 'transparent';
+            document.getElementById('chatTabInbox').style.background = 'white'; document.getElementById('chatTabSearch').style.background = 'transparent';
             if(document.getElementById('userSearchInput')) document.getElementById('userSearchInput').style.display = 'none';
             loadInbox();
         }
-
-        // ZAMYKANIE
-        if (e.target.closest('.close-modal-btn')) {
-            const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
-            if(modal) modal.style.display = 'none';
-        }
-    });
-        // --- POSTY (Publikowanie ze zdjęciem) ---
-        if (e.target.closest('#publishPostBtn')) {
-            const content = document.getElementById('postContent').value;
-            const file = document.getElementById('postImageInput').files[0];
-            if(!content.trim() && !file) return;
-
-            window.Waggle.showToast("Publikuję... ⏳");
-            let url = null;
-            if(file) {
-                url = await uploadImage(file);
-            }
-            await saveCommunityPost(content, url, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked);
-            document.getElementById('post-creator-modal').style.display = 'none';
-            document.getElementById('postContent').value = '';
-            document.getElementById('postImageInput').value = '';
-            window.Waggle.showToast("Opublikowano! 🐾");
-        }
-
-        if (e.target.closest('.filter-btn') || (e.target.closest('.top-pill') && e.target.closest('#view-community'))) {
-            const btn = e.target.closest('.filter-btn') || e.target.closest('.top-pill');
-            const filterName = btn.innerText.trim();
-            document.querySelectorAll('#view-community .top-pill, .filter-btn').forEach(b => {
-                b.style.background = 'transparent'; b.style.color = 'var(--text-color)';
-            });
-            btn.style.background = 'var(--text-color)'; btn.style.color = 'white';
-            if (filterName.includes('Wszystko')) setPostFilter('all');
-            else if (filterName.includes('Ustawki')) setPostFilter('events');
-            else if (filterName.includes('Alerty')) setPostFilter('alerts');
-            else if (filterName.includes('Info')) setPostFilter('info');
-        }
-
-        // --- CZAT (Wiadomości / Stado) ---
-        if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chatTabInbox').classList.add('active');
-            document.getElementById('chatTabSearch').classList.remove('active');
-            document.getElementById('chat-inbox-view').style.display = 'block';
-            document.getElementById('chat-search-view').style.display = 'none';
-            loadInbox();
-        }
-        
-        if (e.target.closest('#chatTabSearch')) {
-             document.getElementById('chatTabSearch').style.background = 'white';
-             document.getElementById('chatTabInbox').style.background = 'transparent';
-             const searchInput = document.getElementById('userSearchInput');
-        if(searchInput) {
-            searchInput.style.display = 'block';
-            searchInput.focus(); // Automatycznie ustaw kursor
-        }
-        window.Waggle.searchUsers(''); 
-    }  
 
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
             if(input && input.value.trim()) { sendMessage(input.value); input.value = ''; }
         }
-        if (e.target.closest('#addPhotoBtn') || e.target.closest('.post-setup-avatar-btn')) {
-            const fileInput = document.getElementById('postImageInput');
-            if(fileInput) fileInput.click();
-        }
 
-        if (e.target.closest('#openEditProfileBtn')) {
-            document.getElementById('setupName').value = state.profile?.name || "";
-            document.getElementById('setupCity').value = state.profile?.city || "";
-            document.getElementById('profile-setup-modal').style.display = 'flex';
-        }
+        if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
 
- // --- SPRZĄTACZ SESJI: Czyści stare spacery przy starcie apki ---
+        if (e.target.closest('.close-modal-btn')) {
+            const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay');
+            if(modal) modal.style.display = 'none';
+        }
+    });
+
+    // SPRZĄTACZ SESJI
     auth.onAuthStateChanged(user => {
         if (user) {
             db.collection("walks").doc(user.uid).get().then(doc => {
                 if (doc.exists) {
-                    const data = doc.data();
-                    const now = Date.now();
-                    const diff = (now - (data.timestamp || 0)) / 1000 / 60; // minuty
-
+                    const diff = (Date.now() - (doc.data().timestamp || 0)) / 1000 / 60;
                     if (diff > 30) { 
-                        db.collection("walks").doc(user.uid).delete();
-                        state.isWalking = false;
-                        window.Waggle.showToast("Stary spacer wygasł automatycznie.");
+                        db.collection("walks").doc(user.uid).delete(); 
+                        state.isWalking = false; 
                     } else {
                         state.isWalking = true;
-                        // Przywróć wygląd przycisków jeśli spacer jest świeży
                         if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
                         if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
-                        if(document.getElementById('statusInput')) document.getElementById('statusInput').style.display = 'none';
                     }
                 }
             });
@@ -443,6 +405,6 @@ if ("geolocation" in navigator) {
     });
 
     console.log("🚀 Waggle: Architektura Hybrydowa aktywna!");
-} // <--- TO JEST TEN NAWIAS, KTÓRY ZAMYKA initApp. Kod musi być nad nim!
+}
 
-initAuth(initApp); // <--- TO ZOSTAJE NA SAMYM DOLE PLIKU
+initAuth(initApp);
