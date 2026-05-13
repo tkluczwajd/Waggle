@@ -68,7 +68,6 @@ window.Waggle.triggerAvatarUpload = () => {
 };
 
 window.Waggle.submitAlert = async () => {
-    // Pobierz tekst z dowolnego dostępnego pola alertu
     const input = document.getElementById('alertInput') || document.getElementById('alertTextInput');
     const text = input?.value;
 
@@ -77,7 +76,7 @@ window.Waggle.submitAlert = async () => {
 
     try {
         const timestamp = Date.now();
-        // 1. Dodaj do mapy (kolekcja alerts)
+        // ZAPIS DO MAPY (To zostaje tutaj!)
         await db.collection("alerts").add({
             text: text,
             lat: state.location.lat,
@@ -85,24 +84,23 @@ window.Waggle.submitAlert = async () => {
             createdAt: timestamp
         });
 
-        // 2. Dodaj do tablicy (kolekcja posts) - dzięki temu pojawi się w "Alerty"
+        // ZAPIS DO TABLICY
         await db.collection("posts").add({
-            content: text,
+            content: `⚠️ ALERT: ${text}`,
             authorName: state.profile?.name || "Piesek",
             authorAvatar: state.profile?.avatar || "",
-            type: 'alert', // Kluczowe dla filtrowania
+            type: 'alert',
             isInfo: true,
             createdAt: timestamp
         });
 
         document.getElementById('alert-modal').style.display = 'none';
-        if(input) input.value = ''; // Wyzeruj pole
+        if(input) input.value = ''; 
         window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
     } catch (err) {
-        console.error("Błąd alertu:", err);
         window.Waggle.showToast("Błąd wysyłania!");
     }
-};
+}; // <--- Koniec funkcji. Wszystko poniżej do linii "// 2. FUNKCJE POMOCNICZE" usuwamy.
 
 // 2. FUNKCJE POMOCNICZE (POGODA, STATYSTYKI, WIKI)
 function getWeatherIcon(code) {
@@ -319,10 +317,10 @@ export function initApp() {
         }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
     }
 
-// NASŁUCH: Filtrowanie miast w Stadzie
+        // NASŁUCH: Filtrowanie Stada na żywo
     document.addEventListener('input', (e) => {
         if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
-            searchUsers(e.target.value);
+            searchUsers(e.target.value); // Wysyła treść do Firebase
         }
     });
 
@@ -347,12 +345,6 @@ export function initApp() {
         }
     });
 
-        // NASŁUCH: Filtrowanie Stada na żywo
-    document.addEventListener('input', (e) => {
-        if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
-            searchUsers(e.target.value); // Wysyła treść do Firebase
-        }
-    });
     
     // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA)
     document.addEventListener('click', async (e) => {
@@ -398,27 +390,28 @@ if (e.target.closest('#chatAddPhotoBtn')) {
         // ALERTY
             if (e.target.closest('#active-alert-pill')) {
             window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
-            switchView('community'); // Zmień widok
+            switchView('community'); 
             
-            // Ustawienie filtra z opóźnieniem, żeby widok zdążył się załadować
             setTimeout(() => {
-                // 1. Zdejmij podświetlenie ze wszystkich przycisków
+                // 1. Czyścimy wszystkie pigułki (szare tło)
                 document.querySelectorAll('#view-community .top-pill').forEach(b => {
-                    b.style.background = 'transparent'; 
+                    b.style.background = 'transparent';
                     b.style.color = 'var(--text-color)';
                 });
                 
-                // 2. Znajdź przycisk "Alerty" i go podświetl
-                const alertBtn = Array.from(document.querySelectorAll('.top-pill')).find(el => el.innerText.includes('Alerty'));
+                // 2. Szukamy pigułki "Alerty" i dajemy jej czarne tło
+                const alertBtn = Array.from(document.querySelectorAll('#view-community .top-pill'))
+                                     .find(el => el.innerText.includes('Alerty'));
                 if (alertBtn) {
                     alertBtn.style.background = 'var(--text-color)';
                     alertBtn.style.color = 'white';
                 }
                 
-                // 3. Odpal samo filtrowanie danych
+                // 3. Uruchamiamy filtrowanie danych
                 setPostFilter('alerts');
             }, 300);
         }
+        
         if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
         if (e.target.closest('#saveAlertBtn')) window.Waggle.submitAlert();
 
@@ -454,14 +447,61 @@ if (e.target.closest('#chatAddPhotoBtn')) {
 
         if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
 
-        if (e.target.closest('#saveSettingsBtn')) {
+if (e.target.closest('#saveSettingsBtn')) {
+            const isGhost = document.getElementById('settingSearchable')?.checked || false;
+            const isHidden = document.getElementById('settingHidden')?.checked || false;
             const font = document.getElementById('settingFontSize')?.value || '14px';
             const theme = document.getElementById('settingTheme')?.value || 'light';
-            localStorage.setItem('waggle_font', font); localStorage.setItem('waggle_theme', theme);
+
+            localStorage.setItem('waggle_ghost_mode', isGhost.toString()); 
+            localStorage.setItem('waggle_hidden_mode', isHidden.toString());
+            localStorage.setItem('waggle_font', font); 
+            localStorage.setItem('waggle_theme', theme);
+
+            state.isGhostMode = isGhost; 
+            state.isHiddenMode = isHidden;
+
             document.documentElement.style.setProperty('--base-font-size', font);
             if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+            
+            // Odśwież marker na mapie (żeby od razu zniknął lub przeskoczył)
+            if(state.location.lat) updateUserMarker(state.location.lat, state.location.lng);
+
             document.getElementById('settings-modal').style.display = 'none';
             window.Waggle.showToast("Ustawienia zapisane!");
+        }
+
+        // --- ZAPIS EDYCJI PROFILU ---
+        if (e.target.id === 'saveProfileBtn' || e.target.closest('#saveProfileBtn')) {
+            const newName = document.getElementById('setupName')?.value;
+            const newCity = document.getElementById('setupCity')?.value;
+            const newBreed = document.getElementById('setupBreed')?.value;
+
+            if(!newName) return window.Waggle.showToast("Imię jest wymagane! 🐾");
+
+            window.Waggle.showToast("Zapisuję zmiany... ⏳");
+            
+            try {
+                // Aktualizacja w Firebase
+                await db.collection("users").doc(state.user.uid).update({
+                    name: newName,
+                    city: newCity,
+                    breed: newBreed,
+                    avatar: state.profile.avatar || ""
+                });
+
+                // Aktualizacja w pamięci apki
+                state.profile = { ...state.profile, name: newName, city: newCity, breed: newBreed };
+                
+                // Odświeżenie interfejsu
+                updateStatsUI();
+                
+                document.getElementById('profile-setup-modal').style.display = 'none';
+                window.Waggle.showToast("Profil zaktualizowany! ✨");
+            } catch (err) {
+                console.error(err);
+                window.Waggle.showToast("Błąd zapisu!");
+            }
         }
 
         if (e.target.closest('#centerBtn')) {
