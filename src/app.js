@@ -53,10 +53,11 @@ window.Waggle.triggerAvatarUpload = () => {
             window.Waggle.showToast("Wysyłam nowe zdjęcie... ⏳");
             try {
                 const url = await uploadImage(file);
-                if(state.user) {
+                    if(state.user) {
                     await db.collection("users").doc(state.user.uid).set({ avatar: url }, { merge: true });
                     state.profile.avatar = url;
-                    eventBus.emit('profileUpdated', state.profile);
+                    // Dodaj to:
+                    if(document.getElementById('profileAvatar')) document.getElementById('profileAvatar').src = url;
                     updateStatsUI();
                     window.Waggle.showToast("Zdjęcie zmienione! 🐾");
                 }
@@ -66,17 +67,38 @@ window.Waggle.triggerAvatarUpload = () => {
     input.click();
 };
 
-window.Waggle.submitAlert = () => {
+window.Waggle.submitAlert = async () => {
     const text = document.getElementById('alertInput')?.value || document.getElementById('alertTextInput')?.value;
     if(!text) return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
     if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
-    db.collection("alerts").add({ text, lat: state.location.lat, lng: state.location.lng, createdAt: Date.now() });
+
+    const alertData = {
+        text: `⚠️ ALERT: ${text}`,
+        lat: state.location.lat,
+        lng: state.location.lng,
+        createdAt: Date.now(),
+        author: state.profile?.name || "Użytkownik",
+        authorId: state.user?.uid,
+        category: 'alerts', // To sprawi, że wpadnie do filtra Alerty
+        isAlert: true
+    };
+
+    // 1. Dodaj do mapy
+    await db.collection("alerts").add(alertData);
+    // 2. Dodaj do tablicy (jako post)
+    await db.collection("posts").add({
+        content: text,
+        type: 'alert',
+        authorName: state.profile?.name || "Piesek",
+        authorAvatar: state.profile?.avatar || "",
+        createdAt: Date.now(),
+        isInfo: true // Alerty traktujemy jako ważne info
+    });
+
     document.getElementById('alert-modal').style.display = 'none';
     if(document.getElementById('alertInput')) document.getElementById('alertInput').value = '';
-    if(document.getElementById('alertTextInput')) document.getElementById('alertTextInput').value = '';
     window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
 };
-
 // 2. FUNKCJE POMOCNICZE (POGODA, STATYSTYKI, WIKI)
 function getWeatherIcon(code) {
     if (code === 0) return '☀️'; if (code <= 3) return '⛅'; if (code <= 48) return '🌫️';
@@ -172,16 +194,50 @@ window.Waggle.likeWiki = (id) => {
 
 function updateUserMarker(lat, lng) {
     const L = window.L;
-    if (!L || state.isHiddenMode) return;
+    if (!L) return;
+
+    // --- 1. HIDDEN MODE (Ukrycie) ---
+    // Jeśli użytkownik chce być całkiem niewidoczny
+    if (state.isHiddenMode) {
+        if (window.userMarker) {
+            mapManager.map.removeLayer(window.userMarker);
+            window.userMarker = null;
+        }
+        return; // Przerywamy, nie rysujemy nic
+    }
+
+    // --- 2. GHOST MODE (Rozmycie) ---
+    let displayLat = lat;
+    let displayLng = lng;
+
+    if (state.isGhostMode) {
+        // Tworzymy stałe przesunięcie dla tej sesji, żeby marker nie "drżał"
+        if (!state.ghostOffset) {
+            state.ghostOffset = {
+                lat: (Math.random() - 0.5) * 0.002, // ok. 150-200m
+                lng: (Math.random() - 0.5) * 0.002
+            };
+        }
+        displayLat += state.ghostOffset.lat;
+        displayLng += state.ghostOffset.lng;
+    } else {
+        // Jeśli wyłączymy Ghost Mode, czyścimy przesunięcie
+        state.ghostOffset = null;
+    }
+
+    // --- 3. RYSOWANIE MARKERA (na realnych lub oszukanych współrzędnych) ---
     const avatarSrc = state.profile?.avatar;
-    let iconHtml = avatarSrc ? `<div style="width:38px; height:38px; border-radius:50%; border:3px solid var(--secondary); box-shadow:0 0 15px rgba(0,0,0,0.3); overflow:hidden; background:white;"><img src="${avatarSrc}" style="width:100%; height:100%; object-fit:cover;"></div>` 
-                             : `<div style="background:#34ace0; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`;
+    let iconHtml = avatarSrc ? 
+        `<div style="width:38px; height:38px; border-radius:50%; border:3px solid var(--secondary); box-shadow:0 0 15px rgba(0,0,0,0.3); overflow:hidden; background:white;"><img src="${avatarSrc}" style="width:100%; height:100%; object-fit:cover;"></div>` : 
+        `<div style="background:#34ace0; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`;
+    
     const icon = L.divIcon({ className: '', html: iconHtml, iconSize: avatarSrc ? [38,38] : [20,20] });
+
     if (!window.userMarker) {
-        window.userMarker = L.marker([lat, lng], { icon });
+        window.userMarker = L.marker([displayLat, displayLng], { icon });
         mapManager.addMarkerToLayer('user', window.userMarker);
     } else {
-        window.userMarker.setLatLng([lat, lng]);
+        window.userMarker.setLatLng([displayLat, displayLng]);
         window.userMarker.setIcon(icon);
     }
 }
@@ -285,29 +341,37 @@ export function initApp() {
         }
 
         // NAPRAWA: Aparat w czacie (dodawanie zdjęcia do wiadomości)
-        if (e.target.closest('#chatAddPhotoBtn')) {
-            let chatInput = document.getElementById('chat-image-input');
+if (e.target.closest('#chatAddPhotoBtn')) {
+            let chatInput = document.getElementById('chat-hidden-file');
             if(!chatInput) {
                 chatInput = document.createElement('input');
-                chatInput.id = 'chat-image-input';
+                chatInput.id = 'chat-hidden-file';
                 chatInput.type = 'file'; chatInput.accept = 'image/*'; chatInput.style.display = 'none';
                 document.body.appendChild(chatInput);
-                chatInput.addEventListener('change', (ev) => {
-                    if(ev.target.files[0]) sendChatImage(ev.target.files[0]);
+                chatInput.addEventListener('change', async (ev) => {
+                    const file = ev.target.files[0];
+                    if(file) {
+                        const confirmSend = confirm("Czy chcesz wysłać to zdjęcie do rozmówcy?");
+                        if(confirmSend) {
+                            window.Waggle.showToast("Wysyłam zdjęcie... 📸");
+                            sendChatImage(file); // Wysyła zdjęcie
+                        }
+                    }
                 });
             }
             chatInput.click();
         }
         
         // ALERTY
-        if (e.target.closest('#active-alert-pill')) {
-            const listModal = document.getElementById('alerts-list-modal');
-            if (listModal) listModal.style.display = 'flex';
-            else {
-                window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
-                document.querySelector('.nav-item[data-view="community"]').click();
-                setTimeout(() => setPostFilter('alerts'), 300);
-            }
+      if (e.target.closest('#active-alert-pill')) {
+            window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
+            switchView('community');
+            setTimeout(() => {
+                // Znajdź przycisk filtra Alerty i go "kliknij" wizualnie
+                const alertBtn = Array.from(document.querySelectorAll('.top-pill')).find(el => el.innerText.includes('Alerty'));
+                if(alertBtn) alertBtn.click(); 
+                setPostFilter('alerts');
+            }, 300);
         }
         if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
         if (e.target.closest('#saveAlertBtn')) window.Waggle.submitAlert();
