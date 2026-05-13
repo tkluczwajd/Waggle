@@ -76,7 +76,8 @@ window.Waggle.submitAlert = async () => {
 
     try {
         const timestamp = Date.now();
-        // ZAPIS DO MAPY (To zostaje tutaj!)
+        
+        // 1. Zapis do mapy (kolekcja alerts)
         await db.collection("alerts").add({
             text: text,
             lat: state.location.lat,
@@ -84,24 +85,15 @@ window.Waggle.submitAlert = async () => {
             createdAt: timestamp
         });
 
-        // ZAPIS DO TABLICY
-        // 2. Zapis do kolekcji POSTS (żeby było widać na Tablicy)
-        await db.collection("posts").add({
-            content: `⚠️ ALERT: ${text}`,
-            authorName: state.profile?.name || "Piesek",
-            authorAvatar: state.profile?.avatar || "",
-            type: 'alert',      // Dla jednych filtrów
-            category: 'alerts', // Dla drugich filtrów (pigułki)
-            isAlert: true,      // Flaga pomocnicza
-            isInfo: true,
-            createdAt: timestamp
-        });
+        // 2. Zapis do Tablicy (używamy teraz naszej poprawionej funkcji)
+        // Argumenty: content, url, isEvent, date, isInfo, isAlert
+        await saveCommunityPost(`⚠️ ALERT: ${text}`, null, false, null, true, true);
 
         document.getElementById('alert-modal').style.display = 'none';
         if(input) input.value = ''; 
-        window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
+        window.Waggle.showToast("Zgłoszono zagrożenie wszędzie! ⚠️");
     } catch (err) {
-        window.Waggle.showToast("Błąd wysyłania!");
+        window.Waggle.showToast("Błąd połączenia!");
     }
 }; // <--- Koniec funkcji. Wszystko poniżej do linii "// 2. FUNKCJE POMOCNICZE" usuwamy.
 
@@ -353,7 +345,10 @@ export function initApp() {
     document.addEventListener('click', async (e) => {
         
         // MODALE
-        if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
+        // Otwieranie dodawania alertu z przycisku na Tablicy
+        if (e.target.closest('#addAlertBtnTab')) {
+            document.getElementById('alert-modal').style.display = 'flex';
+        }
         // Otwieranie dodawania alertu z dowolnego miejsca (np. z Tablicy)
         if (e.target.closest('#addAlertBtnTab') || e.target.closest('.trigger-alert-global')) {
             document.getElementById('alert-modal').style.display = 'flex';
