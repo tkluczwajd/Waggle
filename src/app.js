@@ -68,20 +68,41 @@ window.Waggle.triggerAvatarUpload = () => {
 };
 
 window.Waggle.submitAlert = async () => {
-    const text = document.getElementById('alertInput')?.value || document.getElementById('alertTextInput')?.value;
-    if(!text) return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
+    // Pobierz tekst z dowolnego dostępnego pola alertu
+    const input = document.getElementById('alertInput') || document.getElementById('alertTextInput');
+    const text = input?.value;
+
+    if(!text || text.trim() === "") return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
     if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
 
-    const alertData = {
-        text: `⚠️ ALERT: ${text}`,
-        lat: state.location.lat,
-        lng: state.location.lng,
-        createdAt: Date.now(),
-        author: state.profile?.name || "Użytkownik",
-        authorId: state.user?.uid,
-        category: 'alerts', // To sprawi, że wpadnie do filtra Alerty
-        isAlert: true
-    };
+    try {
+        const timestamp = Date.now();
+        // 1. Dodaj do mapy (kolekcja alerts)
+        await db.collection("alerts").add({
+            text: text,
+            lat: state.location.lat,
+            lng: state.location.lng,
+            createdAt: timestamp
+        });
+
+        // 2. Dodaj do tablicy (kolekcja posts) - dzięki temu pojawi się w "Alerty"
+        await db.collection("posts").add({
+            content: text,
+            authorName: state.profile?.name || "Piesek",
+            authorAvatar: state.profile?.avatar || "",
+            type: 'alert', // Kluczowe dla filtrowania
+            isInfo: true,
+            createdAt: timestamp
+        });
+
+        document.getElementById('alert-modal').style.display = 'none';
+        if(input) input.value = ''; // Wyzeruj pole
+        window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
+    } catch (err) {
+        console.error("Błąd alertu:", err);
+        window.Waggle.showToast("Błąd wysyłania!");
+    }
+};
 
     // 1. Dodaj do mapy
     await db.collection("alerts").add(alertData);
@@ -298,16 +319,25 @@ export function initApp() {
                 mapManager.flyTo(lat, lng, 15); 
             }
 
-            // HEARTBEAT: Aktualizacja spaceru na żywo
+// HEARTBEAT: Aktualizacja spaceru na żywo
             if (state.isWalking && state.user && !state.isHiddenMode) {
-                db.collection("walks").doc(state.user.uid).update({
-                    lat, lng, timestamp: Date.now()
-                }).catch(() => {
-                    db.collection("walks").doc(state.user.uid).set({
-                        uid: state.user.uid, name: state.profile?.name || "Piesek",
-                        avatar: state.profile?.avatar || "", lat, lng, timestamp: Date.now()
-                    });
-                });
+                let uploadLat = lat;
+                let uploadLng = lng;
+
+                // Jeśli tryb Ducha jest włączony, wysyłaj oszukane współrzędne do bazy
+                if (state.isGhostMode && state.ghostOffset) {
+                    uploadLat += state.ghostOffset.lat;
+                    uploadLng += state.ghostOffset.lng;
+                }
+
+                db.collection("walks").doc(state.user.uid).set({
+                    uid: state.user.uid, 
+                    name: state.profile?.name || "Piesek",
+                    avatar: state.profile?.avatar || "", 
+                    lat: uploadLat, 
+                    lng: uploadLng, 
+                    timestamp: Date.now()
+                }, { merge: true });
             }
 
             if(!state.isHiddenMode) updateUserMarker(lat, lng);
@@ -363,13 +393,26 @@ if (e.target.closest('#chatAddPhotoBtn')) {
         }
         
         // ALERTY
-      if (e.target.closest('#active-alert-pill')) {
+            if (e.target.closest('#active-alert-pill')) {
             window.Waggle.showToast("Przełączam na listę alertów... ⚠️");
-            switchView('community');
+            switchView('community'); // Zmień widok
+            
+            // Ustawienie filtra z opóźnieniem, żeby widok zdążył się załadować
             setTimeout(() => {
-                // Znajdź przycisk filtra Alerty i go "kliknij" wizualnie
+                // 1. Zdejmij podświetlenie ze wszystkich przycisków
+                document.querySelectorAll('#view-community .top-pill').forEach(b => {
+                    b.style.background = 'transparent'; 
+                    b.style.color = 'var(--text-color)';
+                });
+                
+                // 2. Znajdź przycisk "Alerty" i go podświetl
                 const alertBtn = Array.from(document.querySelectorAll('.top-pill')).find(el => el.innerText.includes('Alerty'));
-                if(alertBtn) alertBtn.click(); 
+                if (alertBtn) {
+                    alertBtn.style.background = 'var(--text-color)';
+                    alertBtn.style.color = 'white';
+                }
+                
+                // 3. Odpal samo filtrowanie danych
                 setPostFilter('alerts');
             }, 300);
         }
