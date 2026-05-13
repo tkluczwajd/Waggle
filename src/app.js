@@ -85,11 +85,14 @@ window.Waggle.submitAlert = async () => {
         });
 
         // ZAPIS DO TABLICY
+        // 2. Zapis do kolekcji POSTS (żeby było widać na Tablicy)
         await db.collection("posts").add({
             content: `⚠️ ALERT: ${text}`,
             authorName: state.profile?.name || "Piesek",
             authorAvatar: state.profile?.avatar || "",
-            type: 'alert',
+            type: 'alert',      // Dla jednych filtrów
+            category: 'alerts', // Dla drugich filtrów (pigułki)
+            isAlert: true,      // Flaga pomocnicza
             isInfo: true,
             createdAt: timestamp
         });
@@ -351,6 +354,10 @@ export function initApp() {
         
         // MODALE
         if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
+        // Otwieranie dodawania alertu z dowolnego miejsca (np. z Tablicy)
+        if (e.target.closest('#addAlertBtnTab') || e.target.closest('.trigger-alert-global')) {
+            document.getElementById('alert-modal').style.display = 'flex';
+        }
       // OTWIERANIE EDYCJI PROFILU
         if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup') || e.target.closest('.edit-profile-trigger')) {
             const modal = document.getElementById('profile-setup-modal');
