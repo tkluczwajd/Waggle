@@ -270,14 +270,17 @@ export function initApp() {
         
         // MODALE
         if (e.target.closest('#addPostBtn')) document.getElementById('post-creator-modal').style.display = 'flex';
-        // NAPRAWA: Otwieranie edycji profilu
-        if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup')) {
+      // OTWIERANIE EDYCJI PROFILU
+        if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup') || e.target.closest('.edit-profile-trigger')) {
             const modal = document.getElementById('profile-setup-modal');
             if(modal) {
-                document.getElementById('setupName').value = state.profile?.name || "";
-                document.getElementById('setupCity').value = state.profile?.city || "";
-                document.getElementById('setupBreed').value = state.profile?.breed || "";
+                // Wypełniamy pola aktualnymi danymi przed otwarciem
+                if(document.getElementById('setupName')) document.getElementById('setupName').value = state.profile?.name || "";
+                if(document.getElementById('setupCity')) document.getElementById('setupCity').value = state.profile?.city || "";
+                if(document.getElementById('setupBreed')) document.getElementById('setupBreed').value = state.profile?.breed || "";
                 modal.style.display = 'flex';
+            } else {
+                console.error("Błąd: Nie znaleziono modala profile-setup-modal");
             }
         }
 
@@ -351,6 +354,34 @@ export function initApp() {
             window.Waggle.showToast("Ustawienia zapisane!");
         }
 
+        // NASŁUCH: Podgląd zdjęcia przed wysłaniem posta
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'postImageInput') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('post-image-preview'); 
+            if (file && preview) {
+                const reader = new FileReader();
+                reader.onload = (ex) => {
+                    // Sprawdzamy czy preview to <img> czy <div>
+                    if(preview.tagName === 'IMG') {
+                        preview.src = ex.target.result;
+                        preview.style.display = 'block';
+                    } else {
+                        preview.innerHTML = `<img src="${ex.target.result}" style="width:100%; height:150px; object-fit:cover; border-radius:10px; margin-top:10px;">`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+
+        // NASŁUCH: Filtrowanie Stada na żywo
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
+            searchUsers(e.target.value); // Wysyła treść do Firebase
+        }
+    });
+
         if (e.target.closest('#centerBtn')) {
             if (state.location.lat && state.location.lng) { mapManager.flyTo(state.location.lat, state.location.lng, 15); window.Waggle.showToast("Zlokalizowano! 📍"); }
         }
@@ -385,21 +416,32 @@ export function initApp() {
             setPostFilter(filter);
         }
 
-        // CZAT: Zakładka STADO (Szukaj)
-        if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chatTabSearch').style.cssText = 'background: white !important; color: black !important; font-weight: 800;';
-            document.getElementById('chatTabInbox').style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
-            document.getElementById('chat-inbox-view').style.display = 'none';
-            document.getElementById('chat-search-view').style.display = 'block';
-            searchUsers(''); // Pokazuje wszystkich na start
-        }
-       // CZAT: Zakładka WIADOMOŚCI
+      // CZAT: Zakładka WIADOMOŚCI
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chatTabInbox').style.cssText = 'background: white !important; color: black !important; font-weight: 800;';
-            document.getElementById('chatTabSearch').style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+            document.getElementById('chatTabInbox').style.cssText = 'background: white !important; color: black !important; font-weight: 900; border: 1px solid black;';
+            document.getElementById('chatTabSearch').style.cssText = 'background: transparent !important; color: #95a5a6 !important;';
             document.getElementById('chat-inbox-view').style.display = 'block';
             document.getElementById('chat-search-view').style.display = 'none';
+            // Chowamy pasek wyszukiwania w wiadomościach
+            const sInput = document.getElementById('userSearchInput') || document.getElementById('chatSearchInput');
+            if(sInput) sInput.style.display = 'none';
             loadInbox();
+        }
+
+        // CZAT: Zakładka STADO (SZUKAJ)
+        if (e.target.closest('#chatTabSearch')) {
+            document.getElementById('chatTabSearch').style.cssText = 'background: white !important; color: black !important; font-weight: 900; border: 1px solid black;';
+            document.getElementById('chatTabInbox').style.cssText = 'background: transparent !important; color: #95a5a6 !important;';
+            document.getElementById('chat-inbox-view').style.display = 'none';
+            document.getElementById('chat-search-view').style.display = 'block';
+            // WYMUSZAMY POKAZANIE PASKA WYSZUKIWANIA
+            const sInput = document.getElementById('userSearchInput') || document.getElementById('chatSearchInput');
+            if(sInput) {
+                sInput.style.display = 'block';
+                sInput.style.visibility = 'visible';
+                sInput.focus();
+            }
+            searchUsers(''); 
         }
 
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
@@ -436,18 +478,5 @@ export function initApp() {
 
     console.log("🚀 Waggle: Architektura Hybrydowa aktywna!");
 }
-// NASŁUCH: Podgląd zdjęcia w kreatorze postów
-    document.addEventListener('change', (e) => {
-        if (e.target.id === 'postImageInput') {
-            const file = e.target.files[0];
-            const previewContainer = document.getElementById('post-image-preview'); // Upewnij się, że masz taki div w index.html
-            if (file && previewContainer) {
-                const reader = new FileReader();
-                reader.onload = (ex) => {
-                    previewContainer.innerHTML = `<img src="${ex.target.result}" style="width:100%; height:150px; object-fit:cover; border-radius:10px; margin-top:10px;">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-    });
+
 initAuth(initApp);
