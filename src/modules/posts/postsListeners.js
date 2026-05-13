@@ -59,7 +59,7 @@ export function addPostComment(text) {
     });
 }
 
-export async function saveCommunityPost(content, imageUrl = null, isEvent = false, eventDate = null, isInfo = false) {
+export async function saveCommunityPost(content, imageUrl = null, isEvent = false, eventDate = null, isInfo = false, isAlert = false) {
     if (!state.user || !state.profile) return;
     return addPost({ 
         uid: state.user.uid, 
@@ -70,12 +70,12 @@ export async function saveCommunityPost(content, imageUrl = null, isEvent = fals
         isEvent,
         eventDate,
         isInfo,
-        isAlert: false,
+        isAlert, // Teraz przyjmuje wartość z argumentu, a nie false na sztywno
+        category: isAlert ? 'alerts' : (isEvent ? 'events' : (isInfo ? 'info' : 'all')),
         likes: [], 
         commentCount: 0
     });
 }
-
 // --- BINDOWANIA GLOBALNE (DLA HTML) ---
 
 // Ten "bezpiecznik" sprawia, że jeśli Waggle jeszcze nie istnieje, to zostanie utworzony
