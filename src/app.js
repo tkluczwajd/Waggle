@@ -104,22 +104,6 @@ window.Waggle.submitAlert = async () => {
     }
 };
 
-    // 1. Dodaj do mapy
-    await db.collection("alerts").add(alertData);
-    // 2. Dodaj do tablicy (jako post)
-    await db.collection("posts").add({
-        content: text,
-        type: 'alert',
-        authorName: state.profile?.name || "Piesek",
-        authorAvatar: state.profile?.avatar || "",
-        createdAt: Date.now(),
-        isInfo: true // Alerty traktujemy jako ważne info
-    });
-
-    document.getElementById('alert-modal').style.display = 'none';
-    if(document.getElementById('alertInput')) document.getElementById('alertInput').value = '';
-    window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
-};
 // 2. FUNKCJE POMOCNICZE (POGODA, STATYSTYKI, WIKI)
 function getWeatherIcon(code) {
     if (code === 0) return '☀️'; if (code <= 3) return '⛅'; if (code <= 48) return '🌫️';
@@ -321,22 +305,13 @@ export function initApp() {
 
 // HEARTBEAT: Aktualizacja spaceru na żywo
             if (state.isWalking && state.user && !state.isHiddenMode) {
-                let uploadLat = lat;
-                let uploadLng = lng;
-
-                // Jeśli tryb Ducha jest włączony, wysyłaj oszukane współrzędne do bazy
-                if (state.isGhostMode && state.ghostOffset) {
-                    uploadLat += state.ghostOffset.lat;
-                    uploadLng += state.ghostOffset.lng;
+                let uLat = lat; let uLng = lng;
+                if (state.isGhostMode && state.ghostOffset) { 
+                    uLat += state.ghostOffset.lat; uLng += state.ghostOffset.lng; 
                 }
-
                 db.collection("walks").doc(state.user.uid).set({
-                    uid: state.user.uid, 
-                    name: state.profile?.name || "Piesek",
-                    avatar: state.profile?.avatar || "", 
-                    lat: uploadLat, 
-                    lng: uploadLng, 
-                    timestamp: Date.now()
+                    uid: state.user.uid, name: state.profile?.name || "Piesek",
+                    avatar: state.profile?.avatar || "", lat: uLat, lng: uLng, timestamp: Date.now()
                 }, { merge: true });
             }
 
@@ -351,6 +326,34 @@ export function initApp() {
         }
     });
 
+            // NASŁUCH: Podgląd zdjęcia przed wysłaniem posta
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'postImageInput') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('post-image-preview'); 
+            if (file && preview) {
+                const reader = new FileReader();
+                reader.onload = (ex) => {
+                    // Sprawdzamy czy preview to <img> czy <div>
+                    if(preview.tagName === 'IMG') {
+                        preview.src = ex.target.result;
+                        preview.style.display = 'block';
+                    } else {
+                        preview.innerHTML = `<img src="${ex.target.result}" style="width:100%; height:150px; object-fit:cover; border-radius:10px; margin-top:10px;">`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+
+        // NASŁUCH: Filtrowanie Stada na żywo
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
+            searchUsers(e.target.value); // Wysyła treść do Firebase
+        }
+    });
+    
     // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA)
     document.addEventListener('click', async (e) => {
         
@@ -461,34 +464,6 @@ if (e.target.closest('#chatAddPhotoBtn')) {
             window.Waggle.showToast("Ustawienia zapisane!");
         }
 
-        // NASŁUCH: Podgląd zdjęcia przed wysłaniem posta
-    document.addEventListener('change', (e) => {
-        if (e.target.id === 'postImageInput') {
-            const file = e.target.files[0];
-            const preview = document.getElementById('post-image-preview'); 
-            if (file && preview) {
-                const reader = new FileReader();
-                reader.onload = (ex) => {
-                    // Sprawdzamy czy preview to <img> czy <div>
-                    if(preview.tagName === 'IMG') {
-                        preview.src = ex.target.result;
-                        preview.style.display = 'block';
-                    } else {
-                        preview.innerHTML = `<img src="${ex.target.result}" style="width:100%; height:150px; object-fit:cover; border-radius:10px; margin-top:10px;">`;
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-    });
-
-        // NASŁUCH: Filtrowanie Stada na żywo
-    document.addEventListener('input', (e) => {
-        if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
-            searchUsers(e.target.value); // Wysyła treść do Firebase
-        }
-    });
-
         if (e.target.closest('#centerBtn')) {
             if (state.location.lat && state.location.lng) { mapManager.flyTo(state.location.lat, state.location.lng, 15); window.Waggle.showToast("Zlokalizowano! 📍"); }
         }
@@ -503,7 +478,7 @@ if (e.target.closest('#chatAddPhotoBtn')) {
             window.Waggle.showToast("Spacer rozpoczęty! 🐾");
         }
 
-        if (e.target.closest('#stopWalkBtn')) {
+if (e.target.closest('#stopWalkBtn')) {
             state.isWalking = false;
             document.getElementById('stopWalkBtn').style.display = 'none'; 
             document.getElementById('startWalkBtn').style.display = 'inline-block'; 
