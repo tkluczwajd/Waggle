@@ -90,7 +90,13 @@ window.Waggle.submitAlert = async () => {
             lng: state.location.lng,
             createdAt: timestamp
         });
-
+        let alertUrl = null;
+        if(state.pendingAlertFile) {
+            alertUrl = await uploadImage(state.pendingAlertFile);
+            state.pendingAlertFile = null;
+        }
+        // W zapisie do posts dodaj imageUrl: alertUrl
+        await saveCommunityPost(`⚠️ ALERT: ${text}`, alertUrl, false, null, true, true);
         // 2. Zapis do Tablicy (używamy teraz naszej poprawionej funkcji)
         // Argumenty: content, url, isEvent, date, isInfo, isAlert
         await saveCommunityPost(`⚠️ ALERT: ${text}`, null, false, null, true, true);
