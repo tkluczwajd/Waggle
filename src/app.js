@@ -76,36 +76,32 @@ window.Waggle.triggerAvatarUpload = () => {
 window.Waggle.submitAlert = async () => {
     const input = document.getElementById('alertInput') || document.getElementById('alertTextInput');
     const text = input?.value;
-
     if(!text || text.trim() === "") return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
     if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
 
     try {
         const timestamp = Date.now();
+        window.Waggle.showToast("Wysyłam zgłoszenie... ⚠️");
         
-        // 1. Zapis do mapy (kolekcja alerts)
-        await db.collection("alerts").add({
-            text: text,
-            lat: state.location.lat,
-            lng: state.location.lng,
-            createdAt: timestamp
-        });
         let alertUrl = null;
         if(state.pendingAlertFile) {
             alertUrl = await uploadImage(state.pendingAlertFile);
-            state.pendingAlertFile = null;
+            state.pendingAlertFile = null; // Czyścimy po wysłaniu
         }
-        // W zapisie do posts dodaj imageUrl: alertUrl
+
+        // 1. Zapis do mapy
+        await db.collection("alerts").add({
+            text: text, lat: state.location.lat, lng: state.location.lng, createdAt: timestamp, imageUrl: alertUrl
+        });
+
+        // 2. Zapis do Tablicy (tylko RAZ)
         await saveCommunityPost(`⚠️ ALERT: ${text}`, alertUrl, false, null, true, true);
-        // 2. Zapis do Tablicy (używamy teraz naszej poprawionej funkcji)
-        // Argumenty: content, url, isEvent, date, isInfo, isAlert
-        await saveCommunityPost(`⚠️ ALERT: ${text}`, null, false, null, true, true);
 
         document.getElementById('alert-modal').style.display = 'none';
         if(input) input.value = ''; 
-        window.Waggle.showToast("Zgłoszono zagrożenie wszędzie! ⚠️");
+        window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
     } catch (err) {
-        window.Waggle.showToast("Błąd połączenia!");
+        window.Waggle.showToast("Błąd wysyłania!");
     }
 }; // <--- Koniec funkcji. Wszystko poniżej do linii "// 2. FUNKCJE POMOCNICZE" usuwamy.
 
@@ -396,24 +392,23 @@ export function initApp() {
         }
 
         // NAPRAWA: Aparat w czacie (dodawanie zdjęcia do wiadomości)
-         if (e.target.closest('#chatAddPhotoBtn')) {
+        if (e.target.closest('#chatAddPhotoBtn')) {
             let input = document.getElementById('chat-hidden-camera');
             if(!input) {
                 input = document.createElement('input');
                 input.type = 'file'; input.accept = 'image/*'; input.id = 'chat-hidden-camera'; input.style.display = 'none';
-                // DODAJEMY capture="environment" aby od razu proponował aparat na telefonie:
-                // input.setAttribute('capture', 'environment'); // opcjonalnie
+                input.setAttribute('capture', 'environment');
                 document.body.appendChild(input);
                 input.onchange = (ev) => {
                     const file = ev.target.files[0];
                     if(file) {
                         state.pendingChatFile = file;
-                        const preview = document.getElementById('chat-preview-box');
+                        const preview = document.getElementById('chat-preview-container');
                         if(preview) {
                             preview.style.display = 'block';
-                            preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:60px; border-radius:8px;"> <span onclick="window.Waggle.clearChatFile()" style="color:red; font-weight:bold; cursor:pointer; margin-left:10px;">X</span>`;
+                            preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:50px; border-radius:10px; border:2px solid var(--primary);"> <span style="color:red; cursor:pointer; font-weight:bold;" onclick="state.pendingChatFile=null; this.parentElement.style.display='none'">X</span>`;
                         }
-                        window.Waggle.showToast("Zdjęcie gotowe do wysłania! 📸");
+                        window.Waggle.showToast("Zjęcie załączone! 📸");
                     }
                 };
             }
@@ -450,13 +445,13 @@ export function initApp() {
         if (e.target.closest('#alertAddPhotoBtn')) {
             const input = document.createElement('input');
             input.type = 'file'; input.accept = 'image/*';
+            input.setAttribute('capture', 'environment'); // TO OTWIERA APARAT
             input.onchange = async (ev) => {
                 state.pendingAlertFile = ev.target.files[0];
-                window.Waggle.showToast("Zdjęcie do alertu załączone! 🖼️");
+                window.Waggle.showToast("Zdjęcie do alertu gotowe! 📸");
             };
             input.click();
         }
-
         // TABLICA
         if (e.target.closest('#addPhotoBtn')) {
             const fileInput = document.getElementById('postImageInput');
@@ -581,46 +576,35 @@ if (e.target.closest('#stopWalkBtn')) {
         }
 
 // CZAT: Zakładka STADO (SZUKAJ)
+
         if (e.target.closest('#chatTabSearch')) {
-            const viewSearch = document.getElementById('chat-search-view');
-            const viewInbox = document.getElementById('chat-inbox-view');
-            const btnSearch = document.getElementById('chatTabSearch');
-            const btnInbox = document.getElementById('chatTabInbox');
-
-            // 1. Przełączanie kontenerów (kluczowe!)
-            if(viewSearch) viewSearch.style.display = 'block';
-            if(viewInbox) viewInbox.style.display = 'none';
-
-            // 2. Stylizacja (żeby było widać, co kliknięte)
-            btnSearch.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px; opacity: 1;';
-            btnInbox.style.cssText = 'background: transparent !important; color: var(--text-muted) !important; opacity: 0.6;';
-
-            // 3. Pokazanie paska wyszukiwania i focus
-            const sInput = document.getElementById('userSearchInput');
-            if(sInput) {
-                sInput.style.display = 'block';
-                sInput.style.visibility = 'visible';
-                setTimeout(() => sInput.focus(), 100);
-            }
+            document.getElementById('chat-inbox-view').style.display = 'none';
+            document.getElementById('chat-search-view').style.display = 'block';
             
-            searchUsers(''); // Odśwież listę
+            // Stylizacja przycisków
+            const btnS = document.getElementById('chatTabSearch');
+            const btnI = document.getElementById('chatTabInbox');
+            btnS.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
+            btnI.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+
+            const sInput = document.getElementById('userSearchInput');
+            if(sInput) { sInput.style.display = 'block'; setTimeout(() => sInput.focus(), 100); }
+            searchUsers(''); 
         }
 
-        // CZAT: Zakładka ROZMOWY (INBOX)
+        // CZAT: Zakładka ROZMOWY
         if (e.target.closest('#chatTabInbox')) {
-            const viewSearch = document.getElementById('chat-search-view');
-            const viewInbox = document.getElementById('chat-inbox-view');
-            const btnSearch = document.getElementById('chatTabSearch');
-            const btnInbox = document.getElementById('chatTabInbox');
-
-            if(viewSearch) viewSearch.style.display = 'none';
-            if(viewInbox) viewInbox.style.display = 'block';
-
-            btnInbox.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px; opacity: 1;';
-            btnSearch.style.cssText = 'background: transparent !important; color: var(--text-muted) !important; opacity: 0.6;';
+            document.getElementById('chat-inbox-view').style.display = 'block';
+            document.getElementById('chat-search-view').style.display = 'none';
+            
+            const btnS = document.getElementById('chatTabSearch');
+            const btnI = document.getElementById('chatTabInbox');
+            btnI.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
+            btnS.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
             
             loadInbox();
         }
+        
 if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
             const text = input?.value.trim();
