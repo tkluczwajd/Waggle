@@ -56,6 +56,12 @@ window.Waggle.triggerAvatarUpload = () => {
                     if(state.user) {
                     await db.collection("users").doc(state.user.uid).set({ avatar: url }, { merge: true });
                     state.profile.avatar = url;
+                        // WYMUSZAMY ODŚWIEŻENIE NA EKRANIE
+                    const avatarImgs = document.querySelectorAll('#profileAvatar, .current-user-avatar');
+                    avatarImgs.forEach(img => img.src = url);
+                    
+                    eventBus.emit('profileUpdated', state.profile);
+                    updateStatsUI();
                     // Dodaj to:
                     if(document.getElementById('profileAvatar')) document.getElementById('profileAvatar').src = url;
                     updateStatsUI();
@@ -342,16 +348,18 @@ export function initApp() {
 
     
     // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA)
+  // 🔌 4. SUPER-KLEJ (KLIKNIĘCIA)
     document.addEventListener('click', async (e) => {
         
-        // MODALE
-        // Otwieranie dodawania alertu z przycisku na Tablicy
-        if (e.target.closest('#addAlertBtnTab')) {
-            document.getElementById('alert-modal').style.display = 'flex';
+        // MODALE - OTWIERANIE
+        if (e.target.closest('#addPostBtn')) {
+            const modal = document.getElementById('post-creator-modal');
+            if(modal) modal.style.display = 'flex';
         }
-        // Otwieranie dodawania alertu z dowolnego miejsca (np. z Tablicy)
-        if (e.target.closest('#addAlertBtnTab') || e.target.closest('.trigger-alert-global')) {
-            document.getElementById('alert-modal').style.display = 'flex';
+
+        if (e.target.closest('#addAlertBtnTab') || e.target.closest('#triggerAlertBtn')) {
+            const modal = document.getElementById('alert-modal');
+            if(modal) modal.style.display = 'flex';
         }
       // OTWIERANIE EDYCJI PROFILU
         if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup') || e.target.closest('.edit-profile-trigger')) {
@@ -375,13 +383,17 @@ if (e.target.closest('#chatAddPhotoBtn')) {
                 chatInput.id = 'chat-hidden-file';
                 chatInput.type = 'file'; chatInput.accept = 'image/*'; chatInput.style.display = 'none';
                 document.body.appendChild(chatInput);
-                chatInput.addEventListener('change', async (ev) => {
+                chatInput.addEventListener('change', (ev) => {
                     const file = ev.target.files[0];
                     if(file) {
-                        const confirmSend = confirm("Czy chcesz wysłać to zdjęcie do rozmówcy?");
-                        if(confirmSend) {
-                            window.Waggle.showToast("Wysyłam zdjęcie... 📸");
-                            sendChatImage(file); // Wysyła zdjęcie
+                        state.pendingChatFile = file; // Zapisujemy plik w pamięci
+                        const preview = document.getElementById('chat-preview-container');
+                        if(preview) {
+                            preview.innerHTML = `
+                                <div style="position:relative; display:inline-block; margin-top:10px;">
+                                    <img src="${URL.createObjectURL(file)}" style="height:60px; border-radius:10px; border:2px solid var(--primary);">
+                                    <div onclick="window.Waggle.clearChatFile()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; font-weight:bold;">X</div>
+                                </div>`;
                         }
                     }
                 });
@@ -540,37 +552,52 @@ if (e.target.closest('#stopWalkBtn')) {
             setPostFilter(filter);
         }
 
-      // CZAT: Zakładka WIADOMOŚCI
-        if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chatTabInbox').style.cssText = 'background: white !important; color: black !important; font-weight: 900; border: 1px solid black;';
-            document.getElementById('chatTabSearch').style.cssText = 'background: transparent !important; color: #95a5a6 !important;';
-            document.getElementById('chat-inbox-view').style.display = 'block';
-            document.getElementById('chat-search-view').style.display = 'none';
-            // Chowamy pasek wyszukiwania w wiadomościach
-            const sInput = document.getElementById('userSearchInput') || document.getElementById('chatSearchInput');
-            if(sInput) sInput.style.display = 'none';
-            loadInbox();
-        }
-
-        // CZAT: Zakładka STADO (SZUKAJ)
+// CZAT: Zakładka STADO (SZUKAJ)
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chatTabSearch').style.cssText = 'background: white !important; color: black !important; font-weight: 900; border: 1px solid black;';
-            document.getElementById('chatTabInbox').style.cssText = 'background: transparent !important; color: #95a5a6 !important;';
+            const btnSearch = document.getElementById('chatTabSearch');
+            const btnInbox = document.getElementById('chatTabInbox');
+            const searchInput = document.getElementById('userSearchInput');
+
+            btnSearch.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 900; border-radius: 25px;';
+            btnInbox.style.cssText = 'background: transparent !important; color: #95a5a6 !important; border: none;';
+            
             document.getElementById('chat-inbox-view').style.display = 'none';
             document.getElementById('chat-search-view').style.display = 'block';
-            // WYMUSZAMY POKAZANIE PASKA WYSZUKIWANIA
-            const sInput = document.getElementById('userSearchInput') || document.getElementById('chatSearchInput');
-            if(sInput) {
-                sInput.style.display = 'block';
-                sInput.style.visibility = 'visible';
-                sInput.focus();
+            
+            if(searchInput) {
+                searchInput.style.display = 'block';
+                searchInput.style.visibility = 'visible';
+                searchInput.focus();
             }
             searchUsers(''); 
         }
 
-        if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
+        // CZAT: Zakładka ROZMOWY
+        if (e.target.closest('#chatTabInbox')) {
+            const btnSearch = document.getElementById('chatTabSearch');
+            const btnInbox = document.getElementById('chatTabInbox');
+            
+            btnInbox.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 900; border-radius: 25px;';
+            btnSearch.style.cssText = 'background: transparent !important; color: #95a5a6 !important; border: none;';
+            
+            document.getElementById('chat-inbox-view').style.display = 'block';
+            document.getElementById('chat-search-view').style.display = 'none';
+            if(document.getElementById('userSearchInput')) document.getElementById('userSearchInput').style.display = 'none';
+            loadInbox();
+        }
+
+if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
-            if(input && input.value.trim()) { sendMessage(input.value); input.value = ''; }
+            const text = input?.value.trim();
+            
+            if(state.pendingChatFile) {
+                window.Waggle.showToast("Wysyłam zdjęcie... 📸");
+                await sendChatImage(state.pendingChatFile);
+                state.pendingChatFile = null;
+                document.getElementById('chat-preview-container').innerHTML = '';
+            }
+            
+            if(text) { sendMessage(text); input.value = ''; }
         }
 
         if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
