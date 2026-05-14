@@ -90,4 +90,8 @@ input:not([type="checkbox"]), select, textarea {
 }
 input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); margin: 0; }
 
+#profileAvatar { cursor: pointer; transition: transform 0.2s; }
+#profileAvatar:hover { transform: scale(1.05); }
+/* Możesz dodać ikonkę ołówka w HTML obok obrazka */
+
 .stats-bar { display: flex; justify-content: space-around; background: var(--panel-bg); border-radius: 20px; padding: 20px; margin: 20px 20px 0 20px; box-shadow: var(--soft-shadow); }
