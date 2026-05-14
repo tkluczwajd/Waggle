@@ -361,6 +361,20 @@ export function initApp() {
             const modal = document.getElementById('alert-modal');
             if(modal) modal.style.display = 'flex';
         }
+
+        // WIKI: Przełączanie kategorii (rasy, szkolenie, sytuacje)
+        if (e.target.classList.contains('wiki-tab-btn')) {
+            const tabs = document.querySelectorAll('.wiki-tab-btn');
+            tabs.forEach(t => {
+                t.style.background = 'transparent';
+                t.style.color = 'var(--text-muted)';
+            });
+            e.target.style.background = 'var(--secondary)';
+            e.target.style.color = 'white';
+            
+            const category = e.target.getAttribute('data-tab');
+            renderWiki(category);
+        }
       // OTWIERANIE EDYCJI PROFILU
         if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup') || e.target.closest('.edit-profile-trigger')) {
             const modal = document.getElementById('profile-setup-modal');
@@ -376,29 +390,28 @@ export function initApp() {
         }
 
         // NAPRAWA: Aparat w czacie (dodawanie zdjęcia do wiadomości)
-if (e.target.closest('#chatAddPhotoBtn')) {
-            let chatInput = document.getElementById('chat-hidden-file');
-            if(!chatInput) {
-                chatInput = document.createElement('input');
-                chatInput.id = 'chat-hidden-file';
-                chatInput.type = 'file'; chatInput.accept = 'image/*'; chatInput.style.display = 'none';
-                document.body.appendChild(chatInput);
-                chatInput.addEventListener('change', (ev) => {
+         if (e.target.closest('#chatAddPhotoBtn')) {
+            let input = document.getElementById('chat-hidden-camera');
+            if(!input) {
+                input = document.createElement('input');
+                input.type = 'file'; input.accept = 'image/*'; input.id = 'chat-hidden-camera'; input.style.display = 'none';
+                // DODAJEMY capture="environment" aby od razu proponował aparat na telefonie:
+                // input.setAttribute('capture', 'environment'); // opcjonalnie
+                document.body.appendChild(input);
+                input.onchange = (ev) => {
                     const file = ev.target.files[0];
                     if(file) {
-                        state.pendingChatFile = file; // Zapisujemy plik w pamięci
-                        const preview = document.getElementById('chat-preview-container');
+                        state.pendingChatFile = file;
+                        const preview = document.getElementById('chat-preview-box');
                         if(preview) {
-                            preview.innerHTML = `
-                                <div style="position:relative; display:inline-block; margin-top:10px;">
-                                    <img src="${URL.createObjectURL(file)}" style="height:60px; border-radius:10px; border:2px solid var(--primary);">
-                                    <div onclick="window.Waggle.clearChatFile()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; font-weight:bold;">X</div>
-                                </div>`;
+                            preview.style.display = 'block';
+                            preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:60px; border-radius:8px;"> <span onclick="window.Waggle.clearChatFile()" style="color:red; font-weight:bold; cursor:pointer; margin-left:10px;">X</span>`;
                         }
+                        window.Waggle.showToast("Zdjęcie gotowe do wysłania! 📸");
                     }
-                });
+                };
             }
-            chatInput.click();
+            input.click();
         }
         
         // ALERTY
@@ -428,6 +441,15 @@ if (e.target.closest('#chatAddPhotoBtn')) {
         
         if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
         if (e.target.closest('#saveAlertBtn')) window.Waggle.submitAlert();
+        if (e.target.closest('#alertAddPhotoBtn')) {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*';
+            input.onchange = async (ev) => {
+                state.pendingAlertFile = ev.target.files[0];
+                window.Waggle.showToast("Zdjęcie do alertu załączone! 🖼️");
+            };
+            input.click();
+        }
 
         // TABLICA
         if (e.target.closest('#addPhotoBtn')) {
@@ -554,35 +576,22 @@ if (e.target.closest('#stopWalkBtn')) {
 
 // CZAT: Zakładka STADO (SZUKAJ)
         if (e.target.closest('#chatTabSearch')) {
-            const btnSearch = document.getElementById('chatTabSearch');
-            const btnInbox = document.getElementById('chatTabInbox');
-            const searchInput = document.getElementById('userSearchInput');
-
-            btnSearch.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 900; border-radius: 25px;';
-            btnInbox.style.cssText = 'background: transparent !important; color: #95a5a6 !important; border: none;';
-            
             document.getElementById('chat-inbox-view').style.display = 'none';
             document.getElementById('chat-search-view').style.display = 'block';
             
+            // Pasek wyszukiwania - upewnij się, że masz go w HTML wewnątrz chat-search-view
+            const searchInput = document.getElementById('userSearchInput');
             if(searchInput) {
                 searchInput.style.display = 'block';
-                searchInput.style.visibility = 'visible';
                 searchInput.focus();
             }
-            searchUsers(''); 
+            searchUsers(''); // Pokaż wszystkich na start
         }
 
         // CZAT: Zakładka ROZMOWY
         if (e.target.closest('#chatTabInbox')) {
-            const btnSearch = document.getElementById('chatTabSearch');
-            const btnInbox = document.getElementById('chatTabInbox');
-            
-            btnInbox.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 900; border-radius: 25px;';
-            btnSearch.style.cssText = 'background: transparent !important; color: #95a5a6 !important; border: none;';
-            
             document.getElementById('chat-inbox-view').style.display = 'block';
             document.getElementById('chat-search-view').style.display = 'none';
-            if(document.getElementById('userSearchInput')) document.getElementById('userSearchInput').style.display = 'none';
             loadInbox();
         }
 
