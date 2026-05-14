@@ -5,6 +5,17 @@
     --nav-height: 80px; 
     --soft-shadow: 0 10px 25px rgba(149, 157, 165, 0.15);
     --base-font-size: 14px; 
+    :root {
+    --glass: rgba(255, 255, 255, 0.8);
+}
+
+.post-card, .modal-content, .bottom-nav {
+    background: var(--glass) !important;
+    backdrop-filter: blur(12px); /* To daje efekt mrożonego szkła z Firefoxa */
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
 }
 
 body.dark-mode { 
