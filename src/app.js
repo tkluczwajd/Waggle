@@ -582,25 +582,45 @@ if (e.target.closest('#stopWalkBtn')) {
 
 // CZAT: Zakładka STADO (SZUKAJ)
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chat-inbox-view').style.display = 'none';
-            document.getElementById('chat-search-view').style.display = 'block';
-            
-            // Pasek wyszukiwania - upewnij się, że masz go w HTML wewnątrz chat-search-view
-            const searchInput = document.getElementById('userSearchInput');
-            if(searchInput) {
-                searchInput.style.display = 'block';
-                searchInput.focus();
+            const viewSearch = document.getElementById('chat-search-view');
+            const viewInbox = document.getElementById('chat-inbox-view');
+            const btnSearch = document.getElementById('chatTabSearch');
+            const btnInbox = document.getElementById('chatTabInbox');
+
+            // 1. Przełączanie kontenerów (kluczowe!)
+            if(viewSearch) viewSearch.style.display = 'block';
+            if(viewInbox) viewInbox.style.display = 'none';
+
+            // 2. Stylizacja (żeby było widać, co kliknięte)
+            btnSearch.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px; opacity: 1;';
+            btnInbox.style.cssText = 'background: transparent !important; color: var(--text-muted) !important; opacity: 0.6;';
+
+            // 3. Pokazanie paska wyszukiwania i focus
+            const sInput = document.getElementById('userSearchInput');
+            if(sInput) {
+                sInput.style.display = 'block';
+                sInput.style.visibility = 'visible';
+                setTimeout(() => sInput.focus(), 100);
             }
-            searchUsers(''); // Pokaż wszystkich na start
+            
+            searchUsers(''); // Odśwież listę
         }
 
-        // CZAT: Zakładka ROZMOWY
+        // CZAT: Zakładka ROZMOWY (INBOX)
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chat-inbox-view').style.display = 'block';
-            document.getElementById('chat-search-view').style.display = 'none';
+            const viewSearch = document.getElementById('chat-search-view');
+            const viewInbox = document.getElementById('chat-inbox-view');
+            const btnSearch = document.getElementById('chatTabSearch');
+            const btnInbox = document.getElementById('chatTabInbox');
+
+            if(viewSearch) viewSearch.style.display = 'none';
+            if(viewInbox) viewInbox.style.display = 'block';
+
+            btnInbox.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px; opacity: 1;';
+            btnSearch.style.cssText = 'background: transparent !important; color: var(--text-muted) !important; opacity: 0.6;';
+            
             loadInbox();
         }
-
 if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput');
             const text = input?.value.trim();
