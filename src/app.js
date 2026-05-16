@@ -161,40 +161,38 @@ window.Waggle.submitAlert = async () => {
         let finalLat = state.location.lat;
         let finalLng = state.location.lng;
 
-        // Aplikujemy offset, jeśli użytkownik ma włączony Tryb Ducha
+        // Aplikujemy przesunięcie Ghost Mode, jeśli użytkownik ma je włączone
         if (state.isGhostMode && state.ghostOffset) {
             finalLat += state.ghostOffset.lat;
             finalLng += state.ghostOffset.lng;
         }
 
-        // 1. Prawidłowy zapis do bazy mapy (Firestore)
+        // 1. Prawidłowy zapis do kolekcji alertów na mapie
         await db.collection("alerts").add({
-            text: text,
-            lat: finalLat,
-            lng: finalLng,
-            timestamp: timestamp,
+            text: text, 
+            lat: finalLat, 
+            lng: finalLng, 
+            createdAt: timestamp, 
             imageUrl: alertUrl,
             userId: auth.currentUser ? auth.currentUser.uid : 'anon'
         });
 
-        // 2. Zapis do Tablicy Społeczności
+        // 2. Zapis do Tablicy społeczności (tylko RAZ)
         await saveCommunityPost(`⚠️ ALERT: ${text}`, alertUrl, false, null, true, true);
-        
+
         // Resetujemy napis na przycisku aparatu do stanu domyślnego
         const alertBtn = document.getElementById('alertAddPhotoBtn');
         if (alertBtn) alertBtn.innerHTML = "📷 Dodaj zdjęcie zagrożenia";
 
         // Zamykamy okienko i czyścimy tekst
         document.getElementById('alert-modal').style.display = 'none';
-        if (input) input.value = ''; 
+        if(input) input.value = ''; 
         window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
-
     } catch (err) {
         console.error(err);
         window.Waggle.showToast("Błąd wysyłania!");
     }
 };
-
         // 1. Zapis do mapy
 text: text,
             lat: finalLat,
@@ -218,11 +216,6 @@ text: text,
         document.getElementById('alert-modal').style.display = 'none';
         if (input) input.value = ''; 
         window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
-
-    } catch (err) {
-        window.Waggle.showToast("Błąd wysyłania!");
-    }
-}; 
 
 // 2. FUNKCJE POMOCNICZE (POGODA, STATYSTYKI, WIKI)
 function getWeatherIcon(code) {
