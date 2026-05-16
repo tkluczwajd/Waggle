@@ -377,9 +377,37 @@ export function initApp() {
             const isFirstFix = !state.location.lat;
             state.location.lat = lat; state.location.lng = lng;
 
-            if(isFirstFix) { 
+         if(isFirstFix) { 
                 fetchWeather(lat, lng); 
                 mapManager.flyTo(lat, lng, 15); 
+                
+                // 🔥 NOWOŚĆ: Ładujemy parki automatycznie w tle od razu po złapaniu pozycji GPS!
+                (async () => {
+                    try {
+                        const container = document.getElementById('places-container');
+                        const places = await fetchNearbyParks(lat, lng);
+                        renderParksOnMap(places);
+                        
+                        let html = "";
+                        places.forEach(place => {
+                            const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
+                            html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
+                                    <div style="display:flex; align-items:center; gap:15px;">
+                                        <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
+                                        <div>
+                                            <b style="font-size:16px; color:var(--text-color);">${place.name}</b><br>
+                                            <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span>
+                                        </div>
+                                    </div>
+                                    <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                                </div>`;
+                        });
+                        if (container) container.innerHTML = html;
+                        state.placesLoaded = true; // Flaga chroniąca przed ponownym ładowaniem
+                    } catch (e) {
+                        console.warn("Błąd auto-ładowania parków:", e);
+                    }
+                })();
             }
 
             if (state.isWalking && state.user && !state.isHiddenMode) {
@@ -508,9 +536,21 @@ export function initApp() {
             });
         }
 
+   //  POSTY: Wybór źródła zdjęcia (Aparat vs Galeria)
         if (e.target.closest('#addPhotoBtn')) {
-            const fileInput = document.getElementById('postImageInput');
-            if (fileInput) fileInput.click(); 
+            window.Waggle.selectPhotoSource((file) => {
+                // Wstrzykujemy plik bezpośrednio do niewidzialnego inputu, który już masz w HTML
+                const fileInput = document.getElementById('postImageInput');
+                if (fileInput) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+                    
+                    // Odpalamy ręcznie zdarzenie 'change', żeby wywołać Twój istniejący podgląd miniaturki
+                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    window.Waggle.showToast("Zdjęcie do posta gotowe! 📸");
+                }
+            });
         }
 
         if (e.target.closest('#publishPostBtn')) {
@@ -534,7 +574,29 @@ export function initApp() {
             }
         }
 
-        if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) window.Waggle.triggerAvatarUpload();
+        //  PROFIL: Zmiana awatara z wyborem źródła
+        if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) {
+            window.Waggle.selectPhotoSource(async (file) => {
+                window.Waggle.showToast("Wysyłam nowe zdjęcie profilowe... ⏳");
+                try {
+                    const url = await uploadImage(file);
+                    if(state.user) {
+                        await db.collection("users").doc(state.user.uid).set({ avatar: url }, { merge: true });
+                        state.profile.avatar = url;
+                        
+                        // Aktualizacja wszystkich awatarów na ekranie live
+                        const avatarImgs = document.querySelectorAll('#profileAvatar, .current-user-avatar');
+                        avatarImgs.forEach(img => img.src = url);
+                        
+                        eventBus.emit('profileUpdated', state.profile);
+                        updateStatsUI();
+                        window.Waggle.showToast("Awatar zmieniony! 🐾");
+                    }
+                } catch(err) { 
+                    window.Waggle.showToast("Błąd wysyłania zdjęcia!"); 
+                }
+            });
+        }
 
         if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
 
