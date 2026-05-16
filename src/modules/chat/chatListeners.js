@@ -12,9 +12,41 @@ export function loadInbox() {
     });
 }
 
+// Zastąp funkcję searchUsers w src/modules/chat/chatListeners.js:
+
 export function searchUsers(query) {
-    searchUsersInDb(query, (users) => {
-        renderSearchResultsList(users, state.user?.uid);
+    const usersListCont = document.getElementById('users-list');
+    
+    // Odpalamy zapytanie do serwisu chatService
+    searchUsersInDb('', (users) => {
+        if (!usersListCont) return;
+
+        const currentUid = state.user?.uid;
+        const cleanQuery = query.toLowerCase().trim();
+        
+        // Filtrujemy użytkowników lokalnie w aplikacji, co daje nam wyszukiwanie błyskawiczne i niewrażliwe na wielkość liter
+        const filteredUsers = users.filter(user => {
+            // Nie pokazujemy samych siebie w wyszukiwarce
+            if (user.id === currentUid) return false;
+
+            const name = (user.name || "").toLowerCase();
+            const city = (user.city || "").toLowerCase();
+            const breed = (user.breed || "").toLowerCase();
+
+            // Szukamy dopasowania w imieniu, mieście lub rasie psa!
+            return cleanQuery === "" || 
+                   name.includes(cleanQuery) || 
+                   city.includes(cleanQuery) || 
+                   breed.includes(cleanQuery);
+        });
+
+        // Przekazujemy przefiltrowaną listę do renderera
+        renderSearchResultsList(filteredUsers, currentUid);
+        
+        // Mały UX fix: Jeśli lista po filtrowaniu jest pusta, wyświetlamy komunikat
+        if (filteredUsers.length === 0) {
+            usersListCont.innerHTML = `<p style="text-align:center; padding:20px; color:var(--text-muted); font-weight:700;">Nie znaleziono psiaków o tej rasie lub w tym mieście... 🐾</p>`;
+        }
     });
 }
 
