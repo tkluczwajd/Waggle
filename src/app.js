@@ -158,6 +158,43 @@ window.Waggle.submitAlert = async () => {
             state.pendingAlertFile = null; // Czyścimy po wysłaniu
         }
 
+        let finalLat = state.location.lat;
+        let finalLng = state.location.lng;
+
+        // Aplikujemy offset, jeśli użytkownik ma włączony Tryb Ducha
+        if (state.isGhostMode && state.ghostOffset) {
+            finalLat += state.ghostOffset.lat;
+            finalLng += state.ghostOffset.lng;
+        }
+
+        // 1. Prawidłowy zapis do bazy mapy (Firestore)
+        await db.collection("alerts").add({
+            text: text,
+            lat: finalLat,
+            lng: finalLng,
+            timestamp: timestamp,
+            imageUrl: alertUrl,
+            userId: auth.currentUser ? auth.currentUser.uid : 'anon'
+        });
+
+        // 2. Zapis do Tablicy Społeczności
+        await saveCommunityPost(`⚠️ ALERT: ${text}`, alertUrl, false, null, true, true);
+        
+        // Resetujemy napis na przycisku aparatu do stanu domyślnego
+        const alertBtn = document.getElementById('alertAddPhotoBtn');
+        if (alertBtn) alertBtn.innerHTML = "📷 Dodaj zdjęcie zagrożenia";
+
+        // Zamykamy okienko i czyścimy tekst
+        document.getElementById('alert-modal').style.display = 'none';
+        if (input) input.value = ''; 
+        window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
+
+    } catch (err) {
+        console.error(err);
+        window.Waggle.showToast("Błąd wysyłania!");
+    }
+};
+
         // 1. Zapis do mapy
 text: text,
             lat: finalLat,
@@ -185,7 +222,7 @@ text: text,
     } catch (err) {
         window.Waggle.showToast("Błąd wysyłania!");
     }
-}; <--- Koniec funkcji. Wszystko poniżej do linii "// 2. FUNKCJE POMOCNICZE" usuwamy.
+}; 
 
 // 2. FUNKCJE POMOCNICZE (POGODA, STATYSTYKI, WIKI)
 function getWeatherIcon(code) {
