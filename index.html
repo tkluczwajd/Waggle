@@ -83,23 +83,23 @@
             <div id="wiki-content" style="padding:0 10px;"></div>
         </section>
 
-        <section id="view-chat" class="view-section">
-            <div class="sticky-header" style="background:var(--bg-color); z-index:100;">
-                <div style="display:flex; background:var(--panel-bg); border-radius:12px; overflow:hidden; margin-bottom:15px; border:1px solid var(--border-color);">
-                    <button id="chatTabInbox" style="flex:1; padding:12px; border:none; background:white; font-weight:900; color:var(--text-color); cursor:pointer;">ROZMOWY</button>
-                    <button id="chatTabSearch" style="flex:1; padding:12px; border:none; background:transparent; font-weight:900; color:var(--text-muted); cursor:pointer;">STADO / SZUKAJ</button>
-                </div>
-             <div id="chat-search-view" style="display: none;">
-              <div style="padding: 15px;">
-               <input type="text" id="userSearchInput" placeholder="Szukaj miasta lub rasy..." 
-               style="width: 100%; padding: 12px; border-radius: 20px; border: 1px solid #ddd;">
-             </div>
-              <div id="users-list">
+<section id="view-chat" class="view-section">
+    <div class="sticky-header" style="background:var(--bg-color); z-index:100; padding: 20px 20px 5px 20px;">
+        <div style="display:flex; background:var(--panel-bg); border-radius:12px; overflow:hidden; margin-bottom:15px; border:1px solid var(--border-color); padding: 4px;">
+            <button id="chatTabInbox" style="flex:1; padding:12px; border:none; background:#2d3436; font-weight:900; color:white; border-radius:20px; cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">ROZMOWY</button>
+            <button id="chatTabSearch" style="flex:1; padding:12px; border:none; background:transparent; font-weight:900; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">STADO / SZUKAJ</button>
         </div>
-</div>
+        
+        <div id="chat-search-view" style="display: none; padding-top: 5px;">
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="userSearchInput" placeholder="Szukaj miasta lub rasy..." oninput="window.Waggle.executeSearch(this.value)" style="width: 100%; padding: 14px 20px; border-radius: 25px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: inherit;">
             </div>
-            <div id="inbox-container"></div>
-        </section>
+            <div id="users-list" style="max-height: 50vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+    
+    <div id="inbox-container"></div>
+</section>
 
         <section id="view-profile" class="view-section">
             <div class="profile-header" style="padding:30px 20px; text-align:center;">
