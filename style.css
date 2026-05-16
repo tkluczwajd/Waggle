@@ -1,21 +1,25 @@
 :root { 
-    --primary: #ff5252; --secondary: #34ace0; --bg-color: #f4f6f8; 
-    --panel-bg: #ffffff; --text-color: #2c3e50; --border-color: #f1f2f6;
-    --text-muted: #a4b0be; --danger: #ff5252; --gold: #ffb142;
+    --primary: #ff5252; 
+    --secondary: #34ace0; 
+    --bg-color: #f4f6f8; 
+    --panel-bg: #ffffff; 
+    --text-color: #2c3e50; 
+    --border-color: #f1f2f6;
+    --text-muted: #a4b0be; 
+    --danger: #ff5252; 
+    --gold: #ffb142;
     --nav-height: 80px; 
     --soft-shadow: 0 10px 25px rgba(149, 157, 165, 0.15);
     --base-font-size: 14px; 
-    :root {
-    --glass: rgba(255, 255, 255, 0.8);
+    --glass: rgba(255, 255, 255, 0.8); /* Poprawiona, płaska struktura zmiennych */
 }
 
 .post-card, .modal-content, .bottom-nav {
     background: var(--glass) !important;
-    backdrop-filter: blur(12px); /* To daje efekt mrożonego szkła z Firefoxa */
+    backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-}
 }
 
 body.dark-mode { 
