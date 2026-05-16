@@ -24,6 +24,68 @@ window.Waggle.executeSearch = (query) => {
         console.error("Funkcja searchUsers nie jest zaimportowana lub dostępna!");
     }
 };
+// Globalny system wyboru źródła zdjęć (Aparat / Galeria) 📸
+window.Waggle.selectPhotoSource = (onFileSelected) => {
+    // 1. Tworzymy modal wyboru w locie, stylizowany pod Premium UI (Glassmorphism)
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); z-index:30000; display:flex; align-items:center; justify-content:center; padding:20px;';
+    
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'max-width:320px; padding:25px; text-align:center; display:flex; flex-direction:column; gap:12px; background:var(--panel-bg); border-radius:24px; box-shadow:var(--soft-shadow);';
+    
+    const title = document.createElement('h4');
+    title.innerText = 'Wybierz zdjęcie 🐾';
+    title.style.cssText = 'margin:0 0 10px 0; color:var(--text-color); font-weight:900;';
+    
+    const cameraBtn = document.createElement('button');
+    cameraBtn.className = 'btn-main';
+    cameraBtn.innerText = '📸 ZRÓB ZDJĘCIE (APARAT)';
+    
+    const galleryBtn = document.createElement('button');
+    galleryBtn.className = 'btn-outline';
+    galleryBtn.innerText = '🖼️ WYBIERZ Z GALERII';
+    galleryBtn.style.cssText = 'border-color:var(--secondary); color:var(--secondary);';
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'nav-item';
+    cancelBtn.innerText = 'Anuluj';
+    cancelBtn.style.cssText = 'margin-top:5px; font-weight:800; cursor:pointer; background:none; border:none; color:var(--text-muted);';
+    
+    card.appendChild(title);
+    card.appendChild(cameraBtn);
+    card.appendChild(galleryBtn);
+    card.appendChild(cancelBtn);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    
+    // Funkcja zamykająca modal
+    const closeMenu = () => overlay.remove();
+    cancelBtn.onclick = closeMenu;
+    overlay.onclick = (e) => { if(e.target === overlay) closeMenu(); };
+    
+    // 2. Obsługa wyboru źródła
+    const triggerInput = (useCamera) => {
+        closeMenu();
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        
+        if (useCamera) {
+            // Ten atrybut wymusza otwarcie tylnej kamery smartfona
+            input.setAttribute('capture', 'environment');
+        }
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) onFileSelected(file);
+        };
+        input.click();
+    };
+    
+    cameraBtn.onclick = () => triggerInput(true);
+    galleryBtn.onclick = () => triggerInput(false);
+};
 // 1. GLOBALNY TOAST I CENTROWANIE MAPY
 window.Waggle.showToast = (msg) => {
     let t = document.getElementById('waggle-toast');
@@ -97,20 +159,33 @@ window.Waggle.submitAlert = async () => {
         }
 
         // 1. Zapis do mapy
-        await db.collection("alerts").add({
-            text: text, lat: state.location.lat, lng: state.location.lng, createdAt: timestamp, imageUrl: alertUrl
+text: text,
+            lat: finalLat,
+            lng: finalLng,
+            timestamp: timestamp,
+            imageUrl: alertUrl
         });
 
-        // 2. Zapis do Tablicy (tylko RAZ)
+        // 2. Zapis do Tablicy
         await saveCommunityPost(`⚠️ ALERT: ${text}`, alertUrl, false, null, true, true);
 
+        // ====================================================
+        // TUTAJ JEST TA KOŃCÓWKA ("SUKCES" I CZYSZCZENIE UI)
+        // ====================================================
+        
+        // Resetujemy napis na przycisku aparatu do stanu domyślnego:
+        const alertBtn = document.getElementById('alertAddPhotoBtn');
+        if (alertBtn) alertBtn.innerHTML = "📷 Dodaj zdjęcie zagrożenia";
+
+        // Zamykamy okienko i czyścimy tekst
         document.getElementById('alert-modal').style.display = 'none';
-        if(input) input.value = ''; 
+        if (input) input.value = ''; 
         window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
+
     } catch (err) {
         window.Waggle.showToast("Błąd wysyłania!");
     }
-}; // <--- Koniec funkcji. Wszystko poniżej do linii "// 2. FUNKCJE POMOCNICZE" usuwamy.
+}; <--- Koniec funkcji. Wszystko poniżej do linii "// 2. FUNKCJE POMOCNICZE" usuwamy.
 
 // 2. FUNKCJE POMOCNICZE (POGODA, STATYSTYKI, WIKI)
 function getWeatherIcon(code) {
@@ -398,28 +473,21 @@ export function initApp() {
             }
         }
 
-        // NAPRAWA: Aparat w czacie (dodawanie zdjęcia do wiadomości)
+//  NOWY OBSŁUGIWACZ APARATU W CZACIE
         if (e.target.closest('#chatAddPhotoBtn')) {
-            let input = document.getElementById('chat-hidden-camera');
-            if(!input) {
-                input = document.createElement('input');
-                input.type = 'file'; input.accept = 'image/*'; input.id = 'chat-hidden-camera'; input.style.display = 'none';
-                input.setAttribute('capture', 'environment');
-                document.body.appendChild(input);
-                input.onchange = (ev) => {
-                    const file = ev.target.files[0];
-                    if(file) {
-                        state.pendingChatFile = file;
-                        const preview = document.getElementById('chat-preview-container');
-                        if(preview) {
-                            preview.style.display = 'block';
-                            preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:50px; border-radius:10px; border:2px solid var(--primary);"> <span style="color:red; cursor:pointer; font-weight:bold;" onclick="state.pendingChatFile=null; this.parentElement.style.display='none'">X</span>`;
-                        }
-                        window.Waggle.showToast("Zjęcie załączone! 📸");
-                    }
-                };
-            }
-            input.click();
+            window.Waggle.selectPhotoSource((file) => {
+                state.pendingChatFile = file;
+                const preview = document.getElementById('chat-preview-box') || document.getElementById('chat-preview-container');
+                if (preview) {
+                    preview.style.display = 'block';
+                    preview.innerHTML = `
+                        <div style="display:inline-block; position:relative; margin-top:10px;">
+                            <img src="${URL.createObjectURL(file)}" style="height:60px; border-radius:12px; border:2px solid var(--primary); object-fit:cover;">
+                            <span style="position:absolute; top:-8px; right:-8px; background:var(--danger); color:white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);" onclick="state.pendingChatFile=null; this.parentElement.parentElement.style.display='none'">✕</span>
+                        </div>`;
+                }
+                window.Waggle.showToast("Zdjęcie załączone! 📸");
+            });
         }
         
         // ALERTY
@@ -449,15 +517,16 @@ export function initApp() {
         
         if (e.target.closest('#triggerAlertBtn')) document.getElementById('alert-modal').style.display = 'flex';
         if (e.target.closest('#saveAlertBtn')) window.Waggle.submitAlert();
+        //  NOWY OBSŁUGIWACZ APARATU W ALERTCH
         if (e.target.closest('#alertAddPhotoBtn')) {
-            const input = document.createElement('input');
-            input.type = 'file'; input.accept = 'image/*';
-            input.setAttribute('capture', 'environment'); // TO OTWIERA APARAT
-            input.onchange = async (ev) => {
-                state.pendingAlertFile = ev.target.files[0];
+            window.Waggle.selectPhotoSource((file) => {
+                state.pendingAlertFile = file;
                 window.Waggle.showToast("Zdjęcie do alertu gotowe! 📸");
-            };
-            input.click();
+                
+                // Opcjonalnie: możemy dodać mały tekst w przycisku informujący, że plik jest załączony
+                const btn = document.getElementById('alertAddPhotoBtn');
+                if(btn) btn.innerText = "✅ Zdjęcie załączone (Kliknij by zmienić)";
+            });
         }
         // TABLICA
         if (e.target.closest('#addPhotoBtn')) {
