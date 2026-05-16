@@ -16,7 +16,14 @@ import { renderAlerts } from './modules/alerts/alertsRenderer.js';
 import { uploadImageToService as uploadImage } from './services/postsService.js'; 
 
 window.Waggle = window.Waggle || {};
-
+// Globalny pomost pozwalający inputowi z HTML na komunikację z modułem JS
+window.Waggle.executeSearch = (query) => {
+    if (typeof searchUsers === 'function') {
+        searchUsers(query);
+    } else {
+        console.error("Funkcja searchUsers nie jest zaimportowana lub dostępna!");
+    }
+};
 // 1. GLOBALNY TOAST I CENTROWANIE MAPY
 window.Waggle.showToast = (msg) => {
     let t = document.getElementById('waggle-toast');
@@ -576,26 +583,38 @@ if (e.target.closest('#stopWalkBtn')) {
         }
 
 // CZAT: Zakładka STADO (SZUKAJ)
-
-       if (e.target.closest('#chatTabSearch')) {
+        if (e.target.closest('#chatTabSearch')) {
             const inboxCont = document.getElementById('inbox-container');
             if (inboxCont) inboxCont.style.display = 'none';
             
             const searchView = document.getElementById('chat-search-view');
             if (searchView) searchView.style.display = 'block';
             
-// Stylizacja przycisków
+            // Bezpieczna stylizacja przycisków bez rozjeżdżania czcionki
             const btnS = document.getElementById('chatTabSearch');
             const btnI = document.getElementById('chatTabInbox');
-            if (btnS) btnS.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
-            if (btnI) btnI.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+            
+            if (btnS) {
+                btnS.style.backgroundColor = '#2d3436';
+                btnS.style.color = '#ffffff';
+                btnS.style.borderRadius = '20px';
+            }
+            if (btnI) {
+                btnI.style.backgroundColor = 'transparent';
+                btnI.style.color = 'var(--text-muted)';
+            }
 
             const sInput = document.getElementById('userSearchInput');
-            if(sInput) { sInput.style.display = 'block'; setTimeout(() => sInput.focus(), 100); }
-            searchUsers(''); 
+            if (sInput) {
+                sInput.value = ''; // Czyścimy input przy wejściu
+                setTimeout(() => sInput.focus(), 100);
+            }
+            
+            // Odpalamy wyszukiwanie początkowe (pusta fraza = lista wszystkich)
+            window.Waggle.executeSearch(''); 
         }
 
-// CZAT: Zakładka ROZMOWY
+        // CZAT: Zakładka ROZMOWY
         if (e.target.closest('#chatTabInbox')) {
             const inboxCont = document.getElementById('inbox-container');
             if (inboxCont) inboxCont.style.display = 'block';
@@ -605,8 +624,16 @@ if (e.target.closest('#stopWalkBtn')) {
             
             const btnS = document.getElementById('chatTabSearch');
             const btnI = document.getElementById('chatTabInbox');
-            if (btnI) btnI.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
-            if (btnS) btnS.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+            
+            if (btnI) {
+                btnI.style.backgroundColor = '#2d3436';
+                btnI.style.color = '#ffffff';
+                btnI.style.borderRadius = '20px';
+            }
+            if (btnS) {
+                btnS.style.backgroundColor = 'transparent';
+                btnS.style.color = 'var(--text-muted)';
+            }
             
             loadInbox();
         }
