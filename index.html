@@ -102,9 +102,13 @@
 </section>
 
         <section id="view-profile" class="view-section">
-            <div class="profile-header" style="padding:30px 20px; text-align:center;">
-                <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
-                <h2 id="profileNameDisplay" style="margin: 15px 0 0 0; font-weight:900; font-size:26px;">...</h2>
+          <div class="profile-header" style="padding:30px 20px; text-align:center;">
+    <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
+        <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
+        <div style="position: absolute; bottom: 0; right: 0; background: var(--secondary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); pointer-events: none; border: 2px solid white;">✎</div>
+    </div>
+    <h2 id="profileNameDisplay" style="margin: 15px 0 0 0; font-weight:900; font-size:26px;">...</h2>
+    ...
                 <div id="profileLevelDisplay" style="color:#78e08f; font-weight:800; font-size:14px; margin-top:5px; margin-bottom:15px;">🌱 Nowik</div>
                 <div class="stats-bar">
                     <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small>Spacerów</small></div>
@@ -226,14 +230,16 @@
         </div>
     </div>
 
-    <div id="alert-modal" class="modal">
-        <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <input type="text" id="alertTextInput" placeholder="Co się dzieje?">
-            <id="alertAddPhotoBtn">
-            <button class="btn-main" id="saveAlertBtn">ZGŁOŚ</button>
-        </div>
+<div id="alert-modal" class="modal">
+    <div class="card">
+        <button class="close-modal-btn">✕</button>
+        <input type="text" id="alertTextInput" placeholder="Co się dzieje?" style="margin-bottom: 15px;">
+        
+        <button class="btn-outline" id="alertAddPhotoBtn" style="margin-bottom: 15px; border-color: var(--primary); color: var(--primary);">📷 Dodaj zdjęcie zagrożenia</button>
+        
+        <button class="btn-main" id="saveAlertBtn">ZGŁOŚ</button>
     </div>
+</div>
 
     <div id="weather-modal" class="modal">
         <div class="card"><button class="close-modal-btn">✕</button><div id="weather-forecast-content"></div></div>
