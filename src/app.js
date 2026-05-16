@@ -284,7 +284,7 @@ export function initApp() {
                                 <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span>
                             </div>
                         </div>
-                        <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                        <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://maps.google.com/?q=${place.lat},${place.lng}', '_blank')">Prowadź</button>
                     </div>`;
             });
             container.innerHTML = html;
@@ -577,30 +577,36 @@ if (e.target.closest('#stopWalkBtn')) {
 
 // CZAT: Zakładka STADO (SZUKAJ)
 
-        if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('chat-inbox-view').style.display = 'none';
-            document.getElementById('chat-search-view').style.display = 'block';
+       if (e.target.closest('#chatTabSearch')) {
+            const inboxCont = document.getElementById('inbox-container');
+            if (inboxCont) inboxCont.style.display = 'none';
             
-            // Stylizacja przycisków
+            const searchView = document.getElementById('chat-search-view');
+            if (searchView) searchView.style.display = 'block';
+            
+// Stylizacja przycisków
             const btnS = document.getElementById('chatTabSearch');
             const btnI = document.getElementById('chatTabInbox');
-            btnS.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
-            btnI.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+            if (btnS) btnS.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
+            if (btnI) btnI.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
 
             const sInput = document.getElementById('userSearchInput');
             if(sInput) { sInput.style.display = 'block'; setTimeout(() => sInput.focus(), 100); }
             searchUsers(''); 
         }
 
-        // CZAT: Zakładka ROZMOWY
+// CZAT: Zakładka ROZMOWY
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('chat-inbox-view').style.display = 'block';
-            document.getElementById('chat-search-view').style.display = 'none';
+            const inboxCont = document.getElementById('inbox-container');
+            if (inboxCont) inboxCont.style.display = 'block';
+            
+            const searchView = document.getElementById('chat-search-view');
+            if (searchView) searchView.style.display = 'none';
             
             const btnS = document.getElementById('chatTabSearch');
             const btnI = document.getElementById('chatTabInbox');
-            btnI.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
-            btnS.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
+            if (btnI) btnI.style.cssText = 'background: #2d3436 !important; color: white !important; font-weight: 800; border-radius: 20px;';
+            if (btnS) btnS.style.cssText = 'background: transparent !important; color: var(--text-muted) !important;';
             
             loadInbox();
         }
