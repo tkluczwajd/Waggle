@@ -1,3 +1,5 @@
+// src/core/state.js
+
 export const appState = {
     auth: {
         user: null,
@@ -15,10 +17,17 @@ export const appState = {
         following: true,
         watchId: null
     },
-    profile: null,
+    profile: {
+        // 🔥 NOWOŚĆ: Domyślna flaga konta Premium, przygotowana pod przyszłą monetyzację startupu! 💰
+        isPremium: false 
+    },
     isWalking: false,
     map: { instance: null },
-    currentChatId: null
+    currentChatId: null,
+    
+    // 🔥 NOWOŚĆ: Centralny koszyk na aktywne listenery Firebase (.onSnapshot)
+    // Dzięki temu bootstrap będzie mógł odpiąć nieaktywne tunele danych przy zmianie widoków!
+    activeListeners: {} 
 };
 
 export function setState(path, value) {
