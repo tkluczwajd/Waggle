@@ -16,13 +16,21 @@ export function initAuth(onReady) {
             
             // Pobieranie profilu z bazy z nasłuchem na żywo
             const unsub = db.collection("users").doc(user.uid).onSnapshot(doc => {
-                const data = doc.exists ? doc.data() : { name: "Piesek", walkCount: 0, isSearchable: true, city: "", breed: "" };
-                
-                // Jeśli profil jest nowy, zapisujemy go bezpiecznie (merge: true)
-                if (!doc.exists) db.collection("users").doc(user.uid).set(data, {merge: true});
+            //  Wklej w to samo miejsce (NOWY, ZABEZPIECZONY FRAGMENT):
+            let data = doc.exists ? doc.data() : { name: "Piesek", walkCount: 0, isSearchable: true, city: "", breed: "" };
 
-                setState('profile', data);
-                state.profile = data;
+                // 🔥 NOWOŚĆ: Dbamy o to, aby profil w stanie miał zawsze zdefiniowaną flagę isPremium.
+                // Jeśli pole w bazie istnieje, zachowa swoją wartość (true/false). Jeśli go nie ma, domyślnie dostanie false.
+                data = {
+                ...data,
+                isPremium: data.isPremium || false
+                };
+
+                 // Jeśli profil jest nowy, zapisujemy go bezpiecznie (merge: true)
+                 if (!doc.exists) db.collection("users").doc(user.uid).set(data, {merge: true});
+
+                 setState('profile', data);
+                 state.profile = data;
                 
                 // Rozsyłamy informację do reszty modułów (np. do app.js, żeby odświeżył statystyki)
                 eventBus.emit('profileUpdated', data);
