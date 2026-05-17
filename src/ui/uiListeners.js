@@ -43,7 +43,19 @@ export function initUiListeners() {
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#addPostBtn')) { const modal = document.getElementById('post-creator-modal'); if(modal) modal.style.display = 'flex'; }
         if (e.target.closest('#addAlertBtnTab') || e.target.closest('#triggerAlertBtn')) { const modal = document.getElementById('alert-modal'); if(modal) modal.style.display = 'flex'; }
-        
+        // 🔥 WKLEJ TO WEWNĄTRZ LISTENERA KLIKNIĘĆ W src/ui/uiListeners.js:
+        if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
+            const btn = e.target.closest('.top-pill'); 
+            document.querySelectorAll('#view-community .top-pill').forEach(b => { 
+              b.style.background = 'transparent'; 
+              b.style.color = 'var(--text-color)'; 
+              });
+            btn.style.background = 'var(--text-color)'; 
+            btn.style.color = 'white';
+    
+            const filter = btn.innerText.includes('Wszystko') ? 'all' : (btn.innerText.includes('Ustawki') ? 'events' : (btn.innerText.includes('Alerty') ? 'alerts' : 'info')); 
+            setPostFilter(filter);
+            }
         if (e.target.classList.contains('wiki-tab-btn')) {
             const tabs = document.querySelectorAll('.wiki-tab-btn'); 
             tabs.forEach(t => { t.style.background = 'transparent'; t.style.color = 'var(--text-muted)'; });
