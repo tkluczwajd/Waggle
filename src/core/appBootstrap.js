@@ -92,13 +92,7 @@ export function bootstrapApp() {
     initMap();
     updateStatsUI();
     state.map.instance = mapManager.map;
-
-    loadPosts(); loadInbox(); initProfileListeners(); loadSettings();
-    state.activeListeners.walks = subscribeToWalks(walks => renderWalks(walks));
-    state.activeListeners.alerts = subscribeToAlerts(alerts => renderAlerts(alerts));
-
-    eventBus.on('profileUpdated', () => updateStatsUI());
-
+    
     // Mostki i Funkcje Globalne wystawione do window.Waggle
     window.Waggle = window.Waggle || {};
     window.Waggle.updateStatsUI = updateStatsUI;
@@ -113,7 +107,7 @@ export function bootstrapApp() {
         });
     };
 
-    window.Waggle.submitAlert = async () => {
+window.Waggle.submitAlert = async () => {
         const input = document.getElementById('alertInput') || document.getElementById('alertTextInput');
         const text = input?.value;
         if(!text || text.trim() === "") return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
@@ -130,13 +124,12 @@ export function bootstrapApp() {
         } catch (err) { console.error(err); window.Waggle.showToast("Błąd wysyłania!"); }
     };
 
-//  Wklej w miejsce usuwanego fragmentu (NOWY FRAGMENT Z UNSUBSCRIBE):
-eventBus.on('viewChanged', async (view) => {
-    // Odpinamy nasłuch postów z Tablicy, jeśli użytkownik opuścił widok społeczności
-    if (view !== 'community' && state.activeListeners.posts) {
-        state.activeListeners.posts(); // Wyrzucenie słuchawki, koniec pobierania danych!
-        state.activeListeners.posts = null;
-    }
+    // Usunęliśmy zepsuty nagłówek i zostawiamy czysty, prawidłowy start routera widoków:
+    eventBus.on('viewChanged', async (view) => {
+        if (view !== 'community' && state.activeListeners.posts) {
+            state.activeListeners.posts(); 
+            state.activeListeners.posts = null;
+        }
     
     // Odpinamy nasłuch czatu, jeśli użytkownik nie jest w zakładce wiadomości
     if (view !== 'chat' && state.activeListeners.inbox) {
@@ -380,22 +373,43 @@ if (state.isWalking && state.user && !state.isHiddenMode) {
         if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; }
     });
 
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            db.collection("walks").doc(user.uid).get().then(doc => {
-                if (doc.exists) {
-                    const diff = (Date.now() - (doc.data().timestamp || 0)) / 1000 / 60;
-                    if (diff > 30) { db.collection("walks").doc(user.uid).delete(); state.isWalking = false; } 
-                    else {
-                        state.isWalking = true;
-                        if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
-                        if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
+//  Wklej to na sam dół w miejsce usuwanej końcówki (NOWY BEZPIECZNY START):
+    initAuth(() => {
+        // Podzespoły i mapa ruszają DOPIERO gdy baza potwierdzi zalogowanie użytkownika!
+        initRouter();
+        initMap();
+        state.map.instance = mapManager.map;
+        updateStatsUI();
+
+        // Zapinamy bezpieczne subskrypcje i listenery w tle
+        loadPosts(); 
+        loadInbox(); 
+        initProfileListeners(); 
+        loadSettings();
+        
+        state.activeListeners.walks = subscribeToWalks(walks => renderWalks(walks));
+        state.activeListeners.alerts = subscribeToAlerts(alerts => renderAlerts(alerts));
+
+        eventBus.on('profileUpdated', () => updateStatsUI());
+
+        // Sprzątacz sesji walks po restarcie
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection("walks").doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const diff = (Date.now() - (doc.data().timestamp || 0)) / 1000 / 60;
+                        if (diff > 30) { db.collection("walks").doc(user.uid).delete(); state.isWalking = false; }  
+                        else {
+                            state.isWalking = true;
+                            if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
+                            if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
+        });
     });
-// ... tutaj kończy się funkcja bootstrapApp()
+
     console.log("🚀 Waggle: Bootstrap zainicjalizowany pomyślnie!");
 }
 
