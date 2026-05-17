@@ -20,20 +20,13 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
+// src/core/firebase.js - Czysta, bezpieczna końcówka pliku:
+
 export const db = firebase.firestore();
 export const auth = firebase.auth();
 export const fb = firebase; // Potrzebne do FieldValue
 
-// 🔥 NOWOŚĆ OD KONSULTANTA: WŁĄCZENIE LOKALNEGO CACHE / OFFLINE-FIRST DLA TELEFONÓW
+// Włączamy cache w wersji podstawowej (pancernej i bezkonfliktowej)
 db.settings({
     cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
 });
-
-db.enablePersistence({ synchronizeTabs: true })
-  .catch((err) => {
-      if (err.code == 'failed-precondition') {
-          console.warn("Keszowanie niedostępne: otwartych wiele kart przeglądarki jednocześnie.");
-      } else if (err.code == 'unimplemented') {
-          console.warn("Ta przeglądarka nie obsługuje lokalnej pamięci podręcznej offline.");
-      }
-  });
