@@ -94,8 +94,8 @@ export function bootstrapApp() {
     state.map.instance = mapManager.map;
 
     loadPosts(); loadInbox(); initProfileListeners(); loadSettings();
-    subscribeToWalks(walks => renderWalks(walks));
-    subscribeToAlerts(alerts => renderAlerts(alerts));
+    state.activeListeners.walks = subscribeToWalks(walks => renderWalks(walks));
+    state.activeListeners.alerts = subscribeToAlerts(alerts => renderAlerts(alerts));
 
     eventBus.on('profileUpdated', () => updateStatsUI());
 
@@ -130,26 +130,48 @@ export function bootstrapApp() {
         } catch (err) { console.error(err); window.Waggle.showToast("Błąd wysyłania!"); }
     };
 
-    eventBus.on('viewChanged', async (view) => {
-        if (view === 'wiki') renderWiki('rasy');
-        if (view === 'places' && state.location.lat) {
-            if (state.placesLoaded) return; const container = document.getElementById('places-container');
-            container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
-            const places = await fetchNearbyParks(state.location.lat, state.location.lng); renderParksOnMap(places);
-            let html = "";
-            places.forEach(place => {
-                const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
-                html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
-                            <div><b style="font-size:16px; color:var(--text-color);">${place.name}</b><br><span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span></div>
-                        </div>
-                        <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://maps.google.com/?q=${place.lat},${place.lng}', '_blank')">Prowadź</button>
-                    </div>`;
-            });
-            container.innerHTML = html; state.placesLoaded = true;
-        }
-    });
+//  Wklej w miejsce usuwanego fragmentu (NOWY FRAGMENT Z UNSUBSCRIBE):
+eventBus.on('viewChanged', async (view) => {
+    // Odpinamy nasłuch postów z Tablicy, jeśli użytkownik opuścił widok społeczności
+    if (view !== 'community' && state.activeListeners.posts) {
+        state.activeListeners.posts(); // Wyrzucenie słuchawki, koniec pobierania danych!
+        state.activeListeners.posts = null;
+    }
+    
+    // Odpinamy nasłuch czatu, jeśli użytkownik nie jest w zakładce wiadomości
+    if (view !== 'chat' && state.activeListeners.inbox) {
+        state.activeListeners.inbox();
+        state.activeListeners.inbox = null;
+    }
+
+    // Ponowne zapinanie na żądanie (Lazy Load), gdy user wraca do widoku:
+    if (view === 'community' && !state.activeListeners.posts) {
+        state.activeListeners.posts = loadPosts(); 
+    }
+    if (view === 'chat' && !state.activeListeners.inbox) {
+        state.activeListeners.inbox = loadInbox();
+    }
+
+    if (view === 'wiki') renderWiki('rasy');
+    
+    if (view === 'places' && state.location.lat) {
+        if (state.placesLoaded) return; const container = document.getElementById('places-container');
+        container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
+        const places = await fetchNearbyParks(state.location.lat, state.location.lng); renderParksOnMap(places);
+        let html = "";
+        places.forEach(place => {
+            const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
+            html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
+                        <div><b style="font-size:16px; color:var(--text-color);">${place.name}</b><br><span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span></div>
+                    </div>
+                    <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                </div>`;
+        });
+        container.innerHTML = html; state.placesLoaded = true;
+    }
+});
 
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(pos => {
