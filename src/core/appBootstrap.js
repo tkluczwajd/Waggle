@@ -20,7 +20,8 @@ import { uploadImageToService as uploadImage } from '../services/postsService.js
 import { initGlobalUtils } from '../ui/globalUtils.js';
 import { fetchWeather } from '../services/weatherService.js';
 
-// Wyciągnięte z app.js funkcje modułu mapy/wiki
+// --- SEKCJA FUNKCJI POMOCNICZYCH ---
+
 function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -86,14 +87,13 @@ function loadSettings() {
     if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
 }
 
+// --- BOOTSTRAP APALIKACJI ---
+
 export function bootstrapApp() {
     initGlobalUtils();
-    initRouter();
-    initMap();
-    updateStatsUI();
-    state.map.instance = mapManager.map;
-    
-    // Mostki i Funkcje Globalne wystawione do window.Waggle
+    loadSettings();
+
+    // Wystawienie bezpiecznych mostków globalnych do okna okien
     window.Waggle = window.Waggle || {};
     window.Waggle.updateStatsUI = updateStatsUI;
     window.Waggle.executeSearch = (query) => { if (typeof searchUsers === 'function') searchUsers(query); };
@@ -107,7 +107,7 @@ export function bootstrapApp() {
         });
     };
 
-window.Waggle.submitAlert = async () => {
+    window.Waggle.submitAlert = async () => {
         const input = document.getElementById('alertInput') || document.getElementById('alertTextInput');
         const text = input?.value;
         if(!text || text.trim() === "") return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
@@ -124,122 +124,45 @@ window.Waggle.submitAlert = async () => {
         } catch (err) { console.error(err); window.Waggle.showToast("Błąd wysyłania!"); }
     };
 
-    // Usunęliśmy zepsuty nagłówek i zostawiamy czysty, prawidłowy start routera widoków:
+    // Obsługa przełączania zakładek z inteligentnym odpinaniem listenerów (Unsubscribe)
     eventBus.on('viewChanged', async (view) => {
         if (view !== 'community' && state.activeListeners.posts) {
             state.activeListeners.posts(); 
             state.activeListeners.posts = null;
         }
-    
-    // Odpinamy nasłuch czatu, jeśli użytkownik nie jest w zakładce wiadomości
-    if (view !== 'chat' && state.activeListeners.inbox) {
-        state.activeListeners.inbox();
-        state.activeListeners.inbox = null;
-    }
-
-    // Ponowne zapinanie na żądanie (Lazy Load), gdy user wraca do widoku:
-    if (view === 'community' && !state.activeListeners.posts) {
-        state.activeListeners.posts = loadPosts(); 
-    }
-    if (view === 'chat' && !state.activeListeners.inbox) {
-        state.activeListeners.inbox = loadInbox();
-    }
-
-    if (view === 'wiki') renderWiki('rasy');
-    
-    if (view === 'places' && state.location.lat) {
-        if (state.placesLoaded) return; const container = document.getElementById('places-container');
-        container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
-        const places = await fetchNearbyParks(state.location.lat, state.location.lng); renderParksOnMap(places);
-        let html = "";
-        places.forEach(place => {
-            const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
-            html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
-                    <div style="display:flex; align-items:center; gap:15px;">
-                        <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
-                        <div><b style="font-size:16px; color:var(--text-color);">${place.name}</b><br><span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span></div>
-                    </div>
-                    <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">Prowadź</button>
-                </div>`;
-        });
-        container.innerHTML = html; state.placesLoaded = true;
-    }
-});
-
-    if ("geolocation" in navigator) {
-        navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
-            const isFirstFix = !state.location.lat; state.location.lat = lat; state.location.lng = lng;
-                if(isFirstFix) { 
-                    // Mapa i router wstają precyzyjnie na Twojej pozycji!
-                    initRouter();
-                    initMap();
-                    state.map.instance = mapManager.map;
-                    
-                    fetchWeather(lat, lng); 
-                    mapManager.flyTo(lat, lng, 15);
-                (async () => {
-                    try {
-                        const container = document.getElementById('places-container'); const places = await fetchNearbyParks(lat, lng); renderParksOnMap(places);
-                        let html = "";
-                        places.forEach(place => {
-                            const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
-                            html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
-                                    <div style="display:flex; align-items:center; gap:15px;">
-                                        <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
-                                        <div><b style="font-size:16px; color:var(--text-color);">${place.name}</b><br><span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span></div>
-                                    </div>
-                                    <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">Prowadź</button>
-                                </div>`;
-                        });
-                        if (container) container.innerHTML = html; state.placesLoaded = true;
-                    } catch (e) { console.warn("Błąd auto-ładowania parków:", e); }
-                })();
-            }
-//  Wklej to w miejsce usuwanego fragmentu (NOWY FRAGMENT Z THROTTLINGIEM):
-if (state.isWalking && state.user && !state.isHiddenMode) {
-    let uLat = lat; 
-    let uLng = lng;
-    
-    if (state.isGhostMode && state.ghostOffset) { 
-        uLat += state.ghostOffset.lat; 
-        uLng += state.ghostOffset.lng; 
-    }
-
-    const now = Date.now();
-    const timePassed = (now - lastFirebaseUploadTime) / 1000; // w sekundach
-    
-    let shouldUpload = false;
-    if (!lastUploadedCoords.lat) {
-        shouldUpload = true; // Pierwsza pozycja w czasie spaceru zawsze leci
-    } else {
-        const distanceMoved = getDistanceInMeters(lastUploadedCoords.lat, lastUploadedCoords.lng, uLat, uLng);
-        // Optymalizacja kosztów: zapis do Firebase tylko co 30 sekund LUB po przejściu więcej niż 25 metrów
-        if (timePassed >= 30 || distanceMoved >= 25) {
-            shouldUpload = true;
+        if (view !== 'chat' && state.activeListeners.inbox) {
+            state.activeListeners.inbox();
+            state.activeListeners.inbox = null;
         }
-    }
+        if (view === 'community' && !state.activeListeners.posts) {
+            state.activeListeners.posts = loadPosts(); 
+        }
+        if (view === 'chat' && !state.activeListeners.inbox) {
+            state.activeListeners.inbox = loadInbox();
+        }
 
-    if (shouldUpload) {
-        db.collection("walks").doc(state.user.uid).set({
-            uid: state.user.uid, 
-            name: state.profile?.name || "Piesek", 
-            avatar: state.profile?.avatar || "", 
-            lat: uLat, 
-            lng: uLng, 
-            timestamp: now
-        }, { merge: true });
+        if (view === 'wiki') renderWiki('rasy');
+        
+        if (view === 'places' && state.location.lat) {
+            if (state.placesLoaded) return; const container = document.getElementById('places-container');
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">Szukam parków w okolicy... 🧭</p>';
+            const places = await fetchNearbyParks(state.location.lat, state.location.lng); renderParksOnMap(places);
+            let html = "";
+            places.forEach(place => {
+                const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
+                html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
+                            <div><b style="font-size:16px; color:var(--text-color);">${place.name}</b><br><span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span></div>
+                        </div>
+                        <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                    </div>`;
+            });
+            container.innerHTML = html; state.placesLoaded = true;
+        }
+    });
 
-        // Aktualizujemy punkty odniesienia dla kolejnego sprawdzenia ruchu
-        lastFirebaseUploadTime = now;
-        lastUploadedCoords = { lat: uLat, lng: uLng };
-    }
-}
-            if(!state.isHiddenMode) updateUserMarker(lat, lng);
-        }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
-    }
-
-    // Wielki Listener kliknięć i inputów (Super-Klej z app.js)
+    // Wielki centralny listener wejść tekstowych i zmian plików
     document.addEventListener('input', (e) => { if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') searchUsers(e.target.value); });
     document.addEventListener('change', (e) => {
         if (e.target.id === 'postImageInput') {
@@ -253,6 +176,7 @@ if (state.isWalking && state.user && !state.isHiddenMode) {
         }
     });
 
+    // Wielki listener wszystkich kliknięć Premium UI
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#addPostBtn')) { const modal = document.getElementById('post-creator-modal'); if(modal) modal.style.display = 'flex'; }
         if (e.target.closest('#addAlertBtnTab') || e.target.closest('#triggerAlertBtn')) { const modal = document.getElementById('alert-modal'); if(modal) modal.style.display = 'flex'; }
@@ -348,11 +272,6 @@ if (state.isWalking && state.user && !state.isHiddenMode) {
             state.isWalking = false; document.getElementById('stopWalkBtn').style.display = 'none'; document.getElementById('startWalkBtn').style.display = 'inline-block'; document.getElementById('statusInput').style.display = 'inline-block';
             if (state.user) db.collection("walks").doc(state.user.uid).delete(); window.Waggle.showToast("Spacer zakończony! 🏁");
         }
-        if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
-            const btn = e.target.closest('.top-pill'); document.querySelectorAll('#view-community .top-pill').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--text-color)'; });
-            btn.style.background = 'var(--text-color)'; btn.style.color = 'white';
-            const filter = btn.innerText.includes('Wszystko') ? 'all' : (btn.innerText.includes('Ustawki') ? 'events' : (btn.innerText.includes('Alerty') ? 'alerts' : 'info')); setPostFilter(filter);
-        }
         if (e.target.closest('#chatTabSearch')) {
             const inboxCont = document.getElementById('inbox-container'); if (inboxCont) inboxCont.style.display = 'none';
             const searchView = document.getElementById('chat-search-view'); if (searchView) searchView.style.display = 'block';
@@ -379,20 +298,95 @@ if (state.isWalking && state.user && !state.isHiddenMode) {
         if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; }
     });
 
-    // 🔥 CAŁĄ APLIKACJĘ URUCHAMIAMY PRZEZ BEZPIECZNY PAS STARTOWY AUTH:
+    // 🔥 SYNC STARTU OD KONSULTANTA: Inicjalizacja podzespołów dopiero gdy baza potwierdzi sesję użytkownika
     initAuth(() => {
-        updateStatsUI();
+        initRouter();
         initProfileListeners();
-        console.log("🚀 Waggle: Moduły bazy danych i profilu aktywne.");
+
+        // Aktywacja GPS i geolokalizacji z bezpiecznym Throttlingiem kosztów
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(pos => {
+                const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+                const isFirstFix = !state.location.lat; state.location.lat = lat; state.location.lng = lng;
+                
+                if(isFirstFix) { 
+                    // Mapa i widok startują automatycznie, idealnie wycentrowane na współrzędnych GPS użytkownika!
+                    initMap();
+                    state.map.instance = mapManager.map;
+                    updateStatsUI();
+
+                    // Wstępne subskrypcje bazy live
+                    state.activeListeners.walks = subscribeToWalks(walks => renderWalks(walks));
+                    state.activeListeners.alerts = subscribeToAlerts(alerts => renderAlerts(alerts));
+                    state.activeListeners.posts = loadPosts();
+                    state.activeListeners.inbox = loadInbox();
+
+                    fetchWeather(lat, lng); 
+                    mapManager.flyTo(lat, lng, 15); 
+                    
+                    (async () => {
+                        try {
+                            const container = document.getElementById('places-container'); const places = await fetchNearbyParks(lat, lng); renderParksOnMap(places);
+                            let html = "";
+                            places.forEach(place => {
+                                const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
+                                html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
+                                        <div style="display:flex; align-items:center; gap:15px;">
+                                            <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
+                                            <div><b style="font-size:16px; color:var(--text-color);">${place.name}</b><br><span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span></div>
+                                        </div>
+                                        <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                                    </div>`;
+                            });
+                            if (container) container.innerHTML = html; state.placesLoaded = true;
+                        } catch (e) { console.warn("Błąd auto-ładowania parków:", e); }
+                    })();
+                }
+                
+                // Throttling zapisu GPS w bazie (Zapis do Firebase tylko co 30 sekund lub co 25 metrów)
+                if (state.isWalking && state.user && !state.isHiddenMode) {
+                    let uLat = lat; let uLng = lng; if (state.isGhostMode && state.ghostOffset) { uLat += state.ghostOffset.lat; uLng += state.ghostOffset.lng; }
+                    const now = Date.now();
+                    const timePassed = (now - lastFirebaseUploadTime) / 1000;
+                    let shouldUpload = false;
+                    
+                    if (!lastUploadedCoords.lat) shouldUpload = true;
+                    else {
+                        const distanceMoved = getDistanceInMeters(lastUploadedCoords.lat, lastUploadedCoords.lng, uLat, uLng);
+                        if (timePassed >= 30 || distanceMoved >= 25) shouldUpload = true;
+                    }
+
+                    if (shouldUpload) {
+                        db.collection("walks").doc(state.user.uid).set({ uid: state.user.uid, name: state.profile?.name || "Piesek", avatar: state.profile?.avatar || "", lat: uLat, lng: uLng, timestamp: now }, { merge: true });
+                        lastFirebaseUploadTime = now; lastUploadedCoords = { lat: uLat, lng: uLng };
+                    }
+                }
+                if(!state.isHiddenMode) updateUserMarker(lat, lng);
+            }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
+        }
+
+        // Sprzątacz starych, zawieszonych sesji walks po restarcie
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection("walks").doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const diff = (Date.now() - (doc.data().timestamp || 0)) / 1000 / 60;
+                        if (diff > 30) { db.collection("walks").doc(user.uid).delete(); state.isWalking = false; }  
+                        else {
+                            state.isWalking = true;
+                            if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
+                            if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
+                        }
+                    }
+                });
+            }
+        });
     });
 
     console.log("🚀 Waggle: Bootstrap zainicjalizowany pomyślnie!");
 }
 
-// ==========================================
-// FORMULY POMOCNICZE GPS (ZOSTAJĄ NA SAMYM DOLE):
-// ==========================================
-
+// 🔥 OFICJALNA, JEDYNA DEKLARACJA FUNKCJI HAVERSINE NA SAMYM DOLE PLIKU:
 function getDistanceInMeters(lat1, lng1, lat2, lng2) {
     const R = 6371e3; const phi1 = lat1 * Math.PI / 180; const phi2 = lat2 * Math.PI / 180;
     const deltaPhi = (lat2 - lat1) * Math.PI / 180; const deltaLambda = (lng2 - lng1) * Math.PI / 180;
@@ -400,28 +394,5 @@ function getDistanceInMeters(lat1, lng1, lat2, lng2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
 }
 
-let lastFirebaseUploadTime = 0;
-let lastUploadedCoords = { lat: null, lng: null };
-
-// ==========================================
-// 🔥 TUTAJ WKLEJASZ TEN BLOK NA SAMYM DOLE:
-// ==========================================
-
-function getDistanceInMeters(lat1, lng1, lat2, lng2) {
-    const R = 6371e3; // promień Ziemi w metrach
-    const phi1 = lat1 * Math.PI / 180;
-    const phi2 = lat2 * Math.PI / 180;
-    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lng2 - lng1) * Math.PI / 180;
-
-    const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c; // dystans w metrach
-}
-
-// Zmienne kontrolne do Throttlingu (trzymane w pamięci)
 let lastFirebaseUploadTime = 0;
 let lastUploadedCoords = { lat: null, lng: null };
