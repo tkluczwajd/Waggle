@@ -175,10 +175,45 @@ export function bootstrapApp() {
                     } catch (e) { console.warn("Błąd auto-ładowania parków:", e); }
                 })();
             }
-            if (state.isWalking && state.user && !state.isHiddenMode) {
-                let uLat = lat; let uLng = lng; if (state.isGhostMode && state.ghostOffset) { uLat += state.ghostOffset.lat; uLng += state.ghostOffset.lng; }
-                db.collection("walks").doc(state.user.uid).set({ uid: state.user.uid, name: state.profile?.name || "Piesek", avatar: state.profile?.avatar || "", lat: uLat, lng: uLng, timestamp: Date.now() }, { merge: true });
-            }
+//  Wklej to w miejsce usuwanego fragmentu (NOWY FRAGMENT Z THROTTLINGIEM):
+if (state.isWalking && state.user && !state.isHiddenMode) {
+    let uLat = lat; 
+    let uLng = lng;
+    
+    if (state.isGhostMode && state.ghostOffset) { 
+        uLat += state.ghostOffset.lat; 
+        uLng += state.ghostOffset.lng; 
+    }
+
+    const now = Date.now();
+    const timePassed = (now - lastFirebaseUploadTime) / 1000; // w sekundach
+    
+    let shouldUpload = false;
+    if (!lastUploadedCoords.lat) {
+        shouldUpload = true; // Pierwsza pozycja w czasie spaceru zawsze leci
+    } else {
+        const distanceMoved = getDistanceInMeters(lastUploadedCoords.lat, lastUploadedCoords.lng, uLat, uLng);
+        // Optymalizacja kosztów: zapis do Firebase tylko co 30 sekund LUB po przejściu więcej niż 25 metrów
+        if (timePassed >= 30 || distanceMoved >= 25) {
+            shouldUpload = true;
+        }
+    }
+
+    if (shouldUpload) {
+        db.collection("walks").doc(state.user.uid).set({
+            uid: state.user.uid, 
+            name: state.profile?.name || "Piesek", 
+            avatar: state.profile?.avatar || "", 
+            lat: uLat, 
+            lng: uLng, 
+            timestamp: now
+        }, { merge: true });
+
+        // Aktualizujemy punkty odniesienia dla kolejnego sprawdzenia ruchu
+        lastFirebaseUploadTime = now;
+        lastUploadedCoords = { lat: uLat, lng: uLng };
+    }
+}
             if(!state.isHiddenMode) updateUserMarker(lat, lng);
         }, err => console.log("Czekam na GPS..."), { enableHighAccuracy: true });
     }
@@ -338,5 +373,29 @@ export function bootstrapApp() {
             });
         }
     });
+// ... tutaj kończy się funkcja bootstrapApp()
     console.log("🚀 Waggle: Bootstrap zainicjalizowany pomyślnie!");
 }
+
+// ==========================================
+// 🔥 TUTAJ WKLEJASZ TEN BLOK NA SAMYM DOLE:
+// ==========================================
+
+function getDistanceInMeters(lat1, lng1, lat2, lng2) {
+    const R = 6371e3; // promień Ziemi w metrach
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lng2 - lng1) * Math.PI / 180;
+
+    const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // dystans w metrach
+}
+
+// Zmienne kontrolne do Throttlingu (trzymane w pamięci)
+let lastFirebaseUploadTime = 0;
+let lastUploadedCoords = { lat: null, lng: null };
