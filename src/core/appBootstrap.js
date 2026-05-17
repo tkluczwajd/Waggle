@@ -170,8 +170,14 @@ window.Waggle.submitAlert = async () => {
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude; const lng = pos.coords.longitude;
             const isFirstFix = !state.location.lat; state.location.lat = lat; state.location.lng = lng;
-            if(isFirstFix) { 
-                fetchWeather(lat, lng); mapManager.flyTo(lat, lng, 15); 
+                if(isFirstFix) { 
+                    // Mapa i router wstają precyzyjnie na Twojej pozycji!
+                    initRouter();
+                    initMap();
+                    state.map.instance = mapManager.map;
+                    
+                    fetchWeather(lat, lng); 
+                    mapManager.flyTo(lat, lng, 15);
                 (async () => {
                     try {
                         const container = document.getElementById('places-container'); const places = await fetchNearbyParks(lat, lng); renderParksOnMap(places);
@@ -373,45 +379,29 @@ if (state.isWalking && state.user && !state.isHiddenMode) {
         if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; }
     });
 
-//  Wklej to na sam dół w miejsce usuwanej końcówki (NOWY BEZPIECZNY START):
+    // 🔥 CAŁĄ APLIKACJĘ URUCHAMIAMY PRZEZ BEZPIECZNY PAS STARTOWY AUTH:
     initAuth(() => {
-        // Podzespoły i mapa ruszają DOPIERO gdy baza potwierdzi zalogowanie użytkownika!
-        initRouter();
-        initMap();
-        state.map.instance = mapManager.map;
         updateStatsUI();
-
-        // Zapinamy bezpieczne subskrypcje i listenery w tle
-        loadPosts(); 
-        loadInbox(); 
-        initProfileListeners(); 
-        loadSettings();
-        
-        state.activeListeners.walks = subscribeToWalks(walks => renderWalks(walks));
-        state.activeListeners.alerts = subscribeToAlerts(alerts => renderAlerts(alerts));
-
-        eventBus.on('profileUpdated', () => updateStatsUI());
-
-        // Sprzątacz sesji walks po restarcie
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                db.collection("walks").doc(user.uid).get().then(doc => {
-                    if (doc.exists) {
-                        const diff = (Date.now() - (doc.data().timestamp || 0)) / 1000 / 60;
-                        if (diff > 30) { db.collection("walks").doc(user.uid).delete(); state.isWalking = false; }  
-                        else {
-                            state.isWalking = true;
-                            if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
-                            if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
-                        }
-                    }
-                });
-            }
-        });
+        initProfileListeners();
+        console.log("🚀 Waggle: Moduły bazy danych i profilu aktywne.");
     });
 
     console.log("🚀 Waggle: Bootstrap zainicjalizowany pomyślnie!");
 }
+
+// ==========================================
+// FORMULY POMOCNICZE GPS (ZOSTAJĄ NA SAMYM DOLE):
+// ==========================================
+
+function getDistanceInMeters(lat1, lng1, lat2, lng2) {
+    const R = 6371e3; const phi1 = lat1 * Math.PI / 180; const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180; const deltaLambda = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
+}
+
+let lastFirebaseUploadTime = 0;
+let lastUploadedCoords = { lat: null, lng: null };
 
 // ==========================================
 // 🔥 TUTAJ WKLEJASZ TEN BLOK NA SAMYM DOLE:
