@@ -25,11 +25,13 @@ import { initUiListeners } from '../ui/uiListeners.js';
 
 // --- SEKCJA FUNKCJI POMOCNICZYCH ---
 
+// 🎯 ZMIANA KOSZTOWA: Zamiana .onSnapshot() na jednorazowy .get() dla oszczędności Firebase Reads
 export function renderWiki(tab) {
     const container = document.getElementById('wiki-content');
     if (!container) return;
     container.innerHTML = '<p style="text-align:center; padding:20px;">Węszenie... 🐾</p>';
-    db.collection("wiki").where("category", "==", tab).onSnapshot(snap => {
+    
+    db.collection("wiki").where("category", "==", tab).get().then(snap => {
         let html = "";
         snap.forEach(doc => {
             const item = doc.data(); const id = doc.id;
@@ -40,6 +42,9 @@ export function renderWiki(tab) {
                 <div style="margin-top: 15px;"><span style="font-size:13px; cursor:pointer; font-weight:800; color:${hasLiked ? 'var(--danger)' : 'var(--text-muted)'}" onclick="Waggle.likeWiki('${id}')">${hasLiked ? '❤️' : '🤍'} ${item.likes ? item.likes.length : 0}</span></div></div>`;
         });
         container.innerHTML = html || '<p style="text-align:center;">Brak wpisów.</p>';
+    }).catch(err => {
+        console.error("Błąd Wiki:", err);
+        container.innerHTML = '<p style="text-align:center;">Nie udało się załadować wpisów.</p>';
     });
 }
 
@@ -76,6 +81,13 @@ function updateStatsUI() {
     if (p.walkCount >= 5) lvl = "🐕 Spacerowicz"; if (p.walkCount >= 20) lvl = "🐺 Weteran Osiedla"; if (p.walkCount >= 50) lvl = "👑 Alfa Stada";
     const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+    
+    // ☀️ DYNAMICZNA IKONA: Aktualizujemy mały widżet pogodowy na mapie (jeśli stan pogody już spłynął z API)
+    const tempEl = document.getElementById('weather-temp');
+    if (tempEl && state.weather) {
+        tempEl.innerText = `${state.weather.icon || '☀️'} ${state.weather.temp}°C`;
+    }
+
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 }
 
@@ -108,6 +120,9 @@ export function bootstrapApp() {
             const likes = doc.data().likes || [];
             if (likes.includes(state.user.uid)) { ref.update({ likes: fb.firestore.FieldValue.arrayRemove(state.user.uid) }); }
             else { ref.update({ likes: fb.firestore.FieldValue.arrayUnion(state.user.uid) }); window.Waggle.showToast("Dzięki za ocenę! ❤️"); }
+            // Po polubieniu odświeżamy widok Wiki jednorazowo, aby zaktualizować licznik serduszek
+            const activeTabBtn = document.querySelector('.wiki-tab-btn[style*="white"]');
+            if (activeTabBtn) renderWiki(activeTabBtn.getAttribute('data-tab'));
         });
     };
 
