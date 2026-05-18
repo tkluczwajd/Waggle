@@ -1,3 +1,4 @@
+// src/services/postsService.js
 import { db, fb } from '../core/firebase.js';
 
 const IMGBB_KEY = "af2b35f5ca54dd9c8fc91595fe525de9"; 
@@ -57,6 +58,7 @@ export function addCommentInDb(postId, commentData) {
     });
 }
 
+// 🔥 SZEFIE, TUTAJ ZASZŁA MAGIA OPTYMALIZACJI TRANSFERU:
 export async function uploadImageToService(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader(); 
@@ -67,17 +69,30 @@ export async function uploadImageToService(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                if(w > 800) { h = Math.round((h * 800)/w); w = 800; }
+                
+                // Podbijamy próg do 1024px dla lepszej ostrości, bo WebP i tak waży grosze!
+                const MAX_WIDTH = 1024;
+                if(w > MAX_WIDTH) { 
+                    h = Math.round((h * MAX_WIDTH) / w); 
+                    w = MAX_WIDTH; 
+                }
+                
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                
+                // 🎯 Przechodzimy na format 'image/webp' z kompresją 0.75.
+                // Zdjęcia z telefonów komórkowych będą teraz przesyłane błyskawicznie!
                 canvas.toBlob(blob => {
+                    if (!blob) return reject(new Error("Błąd konwersji zdjęcia."));
+                    
                     const fd = new FormData(); 
-                    fd.append("image", blob);
+                    fd.append("image", blob, "waggle_upload.webp"); // Narzucamy rozszerzenie .webp
+                    
                     fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd })
                         .then(r => r.json())
                         .then(res => resolve(res.data.url))
                         .catch(reject);
-                }, 'image/jpeg', 0.7);
+                }, 'image/webp', 0.75);
             };
         };
     });
