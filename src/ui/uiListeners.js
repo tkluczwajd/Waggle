@@ -225,5 +225,14 @@ export function initUiListeners() {
         
         if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
         if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; }
+
+        // Dopisz na samym dole listenera kliknięć w src/ui/uiListeners.js
+        if (e.target.id === 'closeWikiDetailsBtn' || e.target.closest('#closeWikiDetailsBtn')) {
+            document.getElementById('wiki-details-modal').style.display = 'none';
+        }
+        
+        if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
+        if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; } 
+}
     }); 
 }
