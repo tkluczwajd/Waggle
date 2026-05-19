@@ -1,5 +1,6 @@
 // src/data/wikiData.js
 import { BREEDS_A_L } from './breedsAL.js';
+import { BREEDS_M_Z } from './breedsMZ.js';
 
 export const WIKI = {
     trening: [
@@ -84,5 +85,5 @@ export const WIKI = {
             desc: "NIGDY nie wkładaj rąk w okolice pyskasz gryzących się psów, nie łap za obroże – zostaniesz dotkliwie pogryziony przez tzw. agresję przekierowaną. Najbezpieczniejsza metoda to 'Taczka': dwie osoby podchodzą jednocześnie od tyłu psów, łapią je mocno za tylne nogi na wysokości pachwin i unoszą do góry, cofając się w tył po łuku. Pies traci równowagę i puszcza uścisk. Jeśli jesteś sam, spróbuj narzucić na głowy psów dużą kurtkę, koc lub wylej na nie potężną ilość wody, aby wywołać dezorientację." 
         }
     ], // 🔥 TU DODALIŚMY BRAKUJĄCY PRZECINEK!
-    rasy: BREEDS_A_L
+rasy: [...BREEDS_A_L, ...BREEDS_M_Z]
 };
