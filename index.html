@@ -66,32 +66,44 @@
                 </div>
                 <button class="btn-main" id="addPostBtn" style="margin-top:10px; padding: 12px; background:var(--secondary);">➕ DODAJ POSTA</button>
                 <button class="btn-main" id="addAlertBtnTab" style="margin-top:10px; padding: 12px; background:var(--secondary);">➕ DODAJ ALERT</button>
-
             </div>
             <div id="posts-container"></div>
         </section>
 
-section id="view-wiki" class="view-section"
-
-<section id="view-chat" class="view-section">
-    <div class="sticky-header" style="background:var(--bg-color); z-index:100; padding: 20px 20px 5px 20px;">
-        <div style="display:flex; background:var(--panel-bg); border-radius:12px; overflow:hidden; margin-bottom:15px; border:1px solid var(--border-color); padding: 4px;">
-            <button id="chatTabInbox" style="flex:1; padding:12px; border:none; background:#2d3436; font-weight:900; color:white; border-radius:20px; cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">ROZMOWY</button>
-            <button id="chatTabSearch" style="flex:1; padding:12px; border:none; background:transparent; font-weight:900; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">STADO / SZUKAJ</button>
-        </div>
-        
-        <div id="chat-search-view" style="display: none; padding-top: 5px;">
-            <div style="margin-bottom: 10px;">
-                <input type="text" id="userSearchInput" placeholder="Szukaj miasta lub rasy..." oninput="window.Waggle.executeSearch(this.value)" style="width: 100%; padding: 14px 20px; border-radius: 25px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: inherit;">
+        <section id="view-wiki" class="view-section">
+            <div class="sticky-header" style="padding-bottom: 10px;">
+                <h3 style="margin:0;">Psia Wiedza</h3>
+                <div class="wiki-tabs">
+                    <button class="wiki-tab-btn active" data-tab="rasy" style="background:var(--secondary); color:white;">Rasy Psów</button>
+                    <button class="wiki-tab-btn" data-tab="trening">Szkolenie</button>
+                    <button class="wiki-tab-btn" data-tab="sytuacje">Sytuacje</button>
+                </div>
+                <div style="margin-top: 12px; padding: 0 5px;">
+                    <input type="text" id="wikiSearchInput" placeholder="Szukaj rasy, objawów lub haseł (np. rzepy, dzieci)..." style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: inherit; font-size: 13px;">
+                </div>
             </div>
-            <div id="users-list" style="max-height: 50vh; overflow-y: auto;"></div>
-        </div>
-    </div>
-    
-    <div id="inbox-container"></div>
-</section>
+            <div id="wiki-content" style="padding:0 10px; margin-top: 10px;"></div>
+        </section>
 
-<section id="view-profile" class="view-section">
+        <section id="view-chat" class="view-section">
+            <div class="sticky-header" style="background:var(--bg-color); z-index:100; padding: 20px 20px 5px 20px;">
+                <div style="display:flex; background:var(--panel-bg); border-radius:12px; overflow:hidden; margin-bottom:15px; border:1px solid var(--border-color); padding: 4px;">
+                    <button id="chatTabInbox" style="flex:1; padding:12px; border:none; background:#2d3436; font-weight:900; color:white; border-radius:20px; cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">ROZMOWY</button>
+                    <button id="chatTabSearch" style="flex:1; padding:12px; border:none; background:transparent; font-weight:900; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">STADO / SZUKAJ</button>
+                </div>
+                
+                <div id="chat-search-view" style="display: none; padding-top: 5px;">
+                    <div style="margin-bottom: 10px;">
+                        <input type="text" id="userSearchInput" placeholder="Szukaj miasta lub rasy..." oninput="window.Waggle.executeSearch(this.value)" style="width: 100%; padding: 14px 20px; border-radius: 25px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: inherit;">
+                    </div>
+                    <div id="users-list" style="max-height: 50vh; overflow-y: auto;"></div>
+                </div>
+            </div>
+            
+            <div id="inbox-container"></div>
+        </section>
+
+        <section id="view-profile" class="view-section">
             <div class="profile-header" style="padding:30px 20px; text-align:center;">
                 <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
                     <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
@@ -219,7 +231,7 @@ section id="view-wiki" class="view-section"
         </div>
     </div>
 
-<div id="alert-modal" class="modal">
+    <div id="alert-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
             <input type="text" id="alertTextInput" placeholder="Co się dzieje?" style="margin-bottom: 15px;">
