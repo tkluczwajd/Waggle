@@ -8,7 +8,7 @@ import { setPostFilter, addPostComment, saveCommunityPost } from '../modules/pos
 import { searchUsers, sendMessage, sendChatImage, loadInbox } from '../modules/chat/chatListeners.js';
 import { uploadImageToService as uploadImage } from '../services/postsService.js';
 
-// Importujemy funkcję renderowania wiki lokalnie, skoro też tu wędruje jej wywołanie
+// Importujemy funkcję renderowania wiki lokalnie
 import { renderWiki } from '../core/appBootstrap.js'; 
 
 export function initUiListeners() {
@@ -17,7 +17,7 @@ export function initUiListeners() {
         if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
             searchUsers(e.target.value); 
         }
-        // 🔥 NOWOŚĆ: Obsługa wyszukiwarki w Encyklopedii Wiki
+        // 🔥 Obsługa wyszukiwarki w Encyklopedii Wiki
         if (e.target.id === 'wikiSearchInput') {
             const activeTabBtn = document.querySelector('.wiki-tab-btn[style*="white"]') || document.querySelector('.wiki-tab-btn.active');
             const currentTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'rasy';
@@ -146,7 +146,6 @@ export function initUiListeners() {
         
         if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
         
-        // 🔥 POPRAWKA PRIVACY & GHOST MODE: Ujednolicenie id oraz obsługa suwaków w locie
         if (e.target.closest('#saveSettingsBtn')) {
             const ghostInput = document.getElementById('settingGhostMode') || document.getElementById('settingSearchable');
             const hiddenInput = document.getElementById('settingHiddenMode') || document.getElementById('settingHidden');
@@ -168,7 +167,6 @@ export function initUiListeners() {
             document.documentElement.style.setProperty('--base-font-size', font); 
             if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
             
-            // Wymuszenie natychmiastowego przerysowania markera na mapie przy zmianie trybu prywatności
             const updateMarkerFunc = window.Waggle?.triggerMarkerRefresh;
             if (typeof updateMarkerFunc === 'function' && state.location.lat) {
                 updateMarkerFunc(state.location.lat, state.location.lng);
@@ -227,5 +225,5 @@ export function initUiListeners() {
         
         if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
         if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; }
-    }); // 🎯 TU BYŁ BŁĄD: Dodaliśmy brakujące domknięcie wielkiego centralnego listenera kliknięć!
+    }); 
 }
