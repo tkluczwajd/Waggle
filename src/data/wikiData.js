@@ -19,7 +19,7 @@ export const WIKI = {
             id: "train_bingo", 
             title: "Przywołanie Awaryjne (Słowo Życia)", 
             keywords: ["ucieczka", "przywołanie", "bingo", "zagrożenie", "wróć", "wołąnie"], 
-            desc: "Wybierz jedno unikalne, dźwięczne słowo, którego NIGDY nie używasz na co dzień (np. 'BINGO!', 'BANAN!'). Przez kilka tygodni ćwicz w domu: wypowiedz słowo i natychmiast daj psu najlepszy smakołyk na świecie (np. kawałek pieczonego mięsa). To słowo ma kojarzyć się z absolutnym rajem. Używaj go w terenie TYLKO wtedy, gdy pies np. biegnie w stronę ulicy. Nigdy nie używaj go na darmo." 
+            desc: "Wybierz jedno unikalne, dźwięczne słowo, którego NIGDY nie używasz na co dzień (np. 'BINGO!', 'BANAN!'). Przez kilka tygodni ćwicz w domu: wypowiedz słowo i natychmiast daj psu najlepszy smakołyk na świecie (np. kawałek pieczonego mięsa). To słowo ma kojarzyć się z absolutnym rajem. Używaj lo w terenie TYLKO wtedy, gdy pies np. biegnie w stronę ulicy. Nigdy nie używaj go na darmo." 
         },
         { 
             id: "train_rule3", 
@@ -83,7 +83,6 @@ export const WIKI = {
             keywords: ["walka", "pogryzienie", "atak", "agresja", "rozdzielanie", "krew"], 
             desc: "NIGDY nie wkładaj rąk w okolice pyskasz gryzących się psów, nie łap za obroże – zostaniesz dotkliwie pogryziony przez tzw. agresję przekierowaną. Najbezpieczniejsza metoda to 'Taczka': dwie osoby podchodzą jednocześnie od tyłu psów, łapią je mocno za tylne nogi na wysokości pachwin i unoszą do góry, cofając się w tył po łuku. Pies traci równowagę i puszcza uścisk. Jeśli jesteś sam, spróbuj narzucić na głowy psów dużą kurtkę, koc lub wylej na nie potężną ilość wody, aby wywołać dezorientację." 
         }
-    ]
-    // 🔥 TUTAJ ŁĄCZYMY NASZĄ PACZKĘ RAS:
+    ], // 🔥 TU DODALIŚMY BRAKUJĄCY PRZECINEK!
     rasy: BREEDS_A_L
 };
