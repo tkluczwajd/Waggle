@@ -1,0 +1,229 @@
+// src/data/breedsAL.js
+
+export const BREEDS_A_L = [
+    {
+        id: "akita",
+        title: "Akita Inu",
+        desc: "Dumna, niezależna i niezwykle wierna rasa pochodząca z Japonii. Akity są psami jednego właściciela, bardzo powściągliwymi wobec obcych. Wymagają konsekwentnego prowadzenia i wczesnej socjalizacji. Mają silny instynkt łowiecki i terytorialny.",
+        img: "https://images.unsplash.com/photo-1592832122594-c0c6bad74837?auto=format&fit=crop&w=500&q=80",
+        tags: ["Szpice", "Stróżujący", "Japonia"],
+        keywords: ["akita", "inu", "japoński", "hachiko", "rudy"],
+        filters: { kidsFriendly: 2, apartmentLive: 3, easyToTrain: 2, energyLevel: 3 }
+    },
+    {
+        id: "amstaff",
+        title: "American Staffordshire Terrier",
+        desc: "Niezwykle silny, dynamiczny i lojalny pies. Wbrew stereotypom, odpowiednio wychowany Amstaff jest niezwykle czuły wobec ludzi i oddany rodzinie. Wymaga jednak bardzo odpowiedzialnego właściciela, jasnych zasad oraz sporej dawki aktywności fizycznej.",
+        img: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=500&q=80",
+        tags: ["Terriery", "Silny", "Aktywny"],
+        keywords: ["amstaff", "ast", "pitbull", "stafford", "terier"],
+        filters: { kidsFriendly: 3, apartmentLive: 4, easyToTrain: 3, energyLevel: 4 }
+    },
+    {
+        id: "australian-shepherd",
+        title: "Owczarek Australijski (Aussie)",
+        desc: "Wulkan energii i tytan pracy. To pies wybitnie inteligentny, który uczy się sztuczek w mgnieniu oka. Jeśli nie zapewnisz mu zajęcia umysłowego i długich spacerów, sam znajdzie sobie zajęcie – często niszcząc rzeczy. Kocha całą rodzinę.",
+        img: "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=500&q=80",
+        tags: ["Pasterskie", "Inteligentny", "Sportowiec"],
+        keywords: ["aussie", "australijski", "owczarek", "blue merle", "pasterski"],
+        filters: { kidsFriendly: 5, apartmentLive: 2, easyToTrain: 5, energyLevel: 5 }
+    },
+    {
+        id: "basenji",
+        title: "Basenji",
+        desc: "Afrykański pies, który... nie szczeka, lecz wydaje specyficzne dźwięki przypominające jodłowanie. Są niezwykle czyste, myją się jak koty i nie lubią deszczu. Mają bardzo niezależny charakter i silny instynkt pogoni za wszystkim, co ucieka.",
+        img: "https://images.unsplash.com/photo-1614963326505-843868e1d83a?auto=format&fit=crop&w=500&q=80",
+        tags: ["Pierwotne", "Cichy", "Koci charakter"],
+        keywords: ["basenji", "afrykański", "nie szczeka", "czysty"],
+        filters: { kidsFriendly: 3, apartmentLive: 5, easyToTrain: 2, energyLevel: 4 }
+    },
+    {
+        id: "beagle",
+        title: "Beagle",
+        desc: "Wesoły, towarzyski i wiecznie głodny pies gończy. Kochają dzieci i świetnie dogadują się z innymi psami. Ich wadą jest niesamowicie czuły nos – jeśli Beagle poczuje ciekawy zapach na spacerze, potrafi całkowicie odciąć się od komend właściciela.",
+        img: "https://images.unsplash.com/photo-1531804055935-76f44d7c3621?auto=format&fit=crop&w=500&q=80",
+        tags: ["Gończe", "Przyjazny", "Myśliwski"],
+        keywords: ["beagle", "bigiel", "gończy", "łaciaty", "nos"],
+        filters: { kidsFriendly: 5, apartmentLive: 4, easyToTrain: 2, energyLevel: 4 }
+    },
+    {
+        id: "bernese",
+        title: "Berneński Pies Pasterski",
+        desc: "Łagodny olbrzym o przepięknym, trójkolorowym umaszczeniu. Berneńczyki to oaza spokoju, uwielbiają dzieci i są niesamowicie cierpliwe. Ze względu na gabaryty i gęstą sierść źle znoszą upały. Potrzebują bliskości człowieka.",
+        img: "https://images.unsplash.com/photo-1582294101412-df43b67e7136?auto=format&fit=crop&w=500&q=80",
+        tags: ["Molosy", "Stado", "Łagodny"],
+        keywords: ["berneńczyk", "berneński", "pasterski", "duży", "misiek"],
+        filters: { kidsFriendly: 5, apartmentLive: 1, easyToTrain: 4, energyLevel: 3 }
+    },
+    {
+        id: "bichon",
+        title: "Bichon Frise",
+        desc: "Mały, biały piesek przypominający chmurkę lub pluszową zabawkę. Jest niezwykle wesoły, łagodny i nie linieje (ma włos, a nie sierść – dobry dla alergików). Idealny towarzysz do mieszkania w bloku, kocha pieszczoty i zabawę.",
+        img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?auto=format&fit=crop&w=500&q=80",
+        tags: ["Do towarzystwa", "Alergicy", "Mały"],
+        keywords: ["bichon", "frise", "biały", "mały", "włos", "hipoalergiczny"],
+        filters: { kidsFriendly: 5, apartmentLive: 5, easyToTrain: 4, energyLevel: 3 }
+    },
+    {
+        id: "border-collie",
+        title: "Border Collie",
+        desc: "Oficjalnie uznawany za najinteligentniejszą rasę psa na świecie. Border potrafi pracować bez przerwy. Błyskawicznie analizuje sytuację i uczy się komend po jednym powtórzeniu. Wymaga gigantycznej pracy umysłowej – sam spacer mu nie wystarczy.",
+        img: "https://images.unsplash.com/photo-1503256207526-0d5d80fa2f47?auto=format&fit=crop&w=500&q=80",
+        tags: ["Pasterskie", "Geniusz", "Praca"],
+        keywords: ["border", "collie", "inteligentny", "czarno biały", "agility"],
+        filters: { kidsFriendly: 4, apartmentLive: 2, easyToTrain: 5, energyLevel: 5 }
+    },
+    {
+        id: "boxer",
+        title: "Bokser",
+        desc: "Pies o charakterze wiecznego dziecka. Bokser jest niezwykle ekspresyjny, skoczny i pełen radości życia. Kocha dzieci, potrafi się z nimi bawić godzinami. Bywa uparty przy szkoleniu, ale nadrabia to ogromnym przywiązaniem do rodziny.",
+        img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=500&q=80",
+        tags: ["Molosy", "Energiczny", "Opiekun"],
+        keywords: ["boxer", "bokser", "faflun", "krótka sierść"],
+        filters: { kidsFriendly: 5, apartmentLive: 3, easyToTrain: 3, energyLevel: 5 }
+    },
+    {
+        id: "boston-terrier",
+        title: "Boston Terrier",
+        desc: "Nazywany 'amerykańskim dżentelmenem' z powodu swojego eleganckiego umaszczenia przypominającego smoking. To pies o genialnym charakterze – kompaktowy, bystry, bardzo dostosowujący się do trybu życia właściciela. Idealny do miasta.",
+        img: "https://images.unsplash.com/photo-1517423568366-8b83523034fd?auto=format&fit=crop&w=500&q=80",
+        tags: ["Do towarzystwa", "Miasto", "Wesoły"],
+        keywords: ["boston", "terrier", "terier", "smoking", "mały"],
+        filters: { kidsFriendly: 5, apartmentLive: 5, easyToTrain: 4, energyLevel: 3 }
+    },
+    {
+        id: "bulldog-french",
+        title: "Buldog Francuski",
+        desc: "Jeden z najpopularniejszych psów miejskich. Buldożki są zabawne, towarzyskie i bardzo uparte. Nie potrzebują ekstremalnie długich spacerów, źle znoszą upały z powodu skróconej kufy. Kochają spać na kanapie blisko człowieka.",
+        img: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=500&q=80",
+        tags: ["Do towarzystwa", "Kanapowiec", "Kompaktowy"],
+        keywords: ["buldog", "francuski", "frenchie", "mopsik", "uszatek"],
+        filters: { kidsFriendly: 4, apartmentLive: 5, easyToTrain: 3, energyLevel: 2 }
+    },
+    {
+        id: "bulldog-english",
+        title: "Buldog Angielski",
+        desc: "Masywny, przysadzisty i pełen flegmatycznego uroku osobistego. Buldog angielski to z reguły oaza spokoju, potrafi przespać większość dnia. Wymaga starannej pielęgnacji fałdek na pyszczku i uwagi ze względu na zdrowie.",
+        img: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=500&q=80",
+        tags: ["Do towarzystwa", "Spokojny", "Masywny"],
+        keywords: ["buldog", "angielski", "grubas", "flegmatyk"],
+        filters: { kidsFriendly: 4, apartmentLive: 5, easyToTrain: 2, energyLevel: 1 }
+    },
+    {
+        id: "bull-terrier",
+        title: "Bulterier",
+        desc: "Charakterystyczny pies o 'jajowatej' głowie. Bulteriery to psy niezwykle silne, oddane rodzinie i pełne zwariowanego humoru (często nazywane klaunami w psiej skórze). Potrzebują zdecydowanego prowadzenia, by nie zdominowały domu.",
+        img: "https://images.unsplash.com/photo-1560160920-57511a36a836?auto=format&fit=crop&w=500&q=80",
+        tags: ["Terriery", "Charakterystyczny", "Uparciuch"],
+        keywords: ["bulterier", "bull", "terrier", "jajogłowy", "gladiator"],
+        filters: { kidsFriendly: 4, apartmentLive: 4, easyToTrain: 2, energyLevel: 4 }
+    },
+    {
+        id: "cane-corso",
+        title: "Cane Corso",
+        desc: "Potężny, majestatyczny pies stróżujący i obronny pochodzący z Włoch. Wykazuje ogromną lojalność wobec własnego stada, z natury jest nieufny wobec obcych. Wymaga doskonałej socjalizacji od szczeniaka i doświadczonego przewodnika.",
+        img: "https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=500&q=80",
+        tags: ["Stróżujący", "Molosy", "Dla doświadczonych"],
+        keywords: ["cane", "corso", "włoski", "duży", "obronny", "masyw"],
+        filters: { kidsFriendly: 3, apartmentLive: 2, easyToTrain: 4, energyLevel: 3 }
+    },
+    {
+        id: "cavalier",
+        title: "Cavalier King Charles Spaniel",
+        desc: "Pies o spojrzeniu, które potrafi roztopić każde serce. Cavalier jest pozbawiony jakiejkolwiek agresji, niesamowicie łagodny i przyjacielski. Kocha cały świat – ludzi, inne psy i koty. Idealny wybór na pierwszego psa dla rodziny z dziećmi.",
+        img: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=500&q=80",
+        tags: ["Spaniele", "Łagodny", "Rodzinny"],
+        keywords: ["cavalier", "king", "charles", "spaniel", "łagodny", "uszy"],
+        filters: { kidsFriendly: 5, apartmentLive: 5, easyToTrain: 4, energyLevel: 3 }
+    },
+    {
+        id: "chihuahua",
+        title: "Chihuahua",
+        desc: "Najmniejszy pies świata o wielkim sercu i jeszcze większym temperamencie. Często nie zdaje sobie sprawy ze swoich mikrych gabarytów i potrafi oszczekać wielkiego owczarka. Bardzo przywiązuje się do jednego właściciela i uwielbia noszenie na rękach.",
+        img: "https://images.unsplash.com/photo-1548685913-fe6578346a99?auto=format&fit=crop&w=500&q=80",
+        tags: ["Do towarzystwa", "Miniaturowy", "Zadziorny"],
+        keywords: ["chihuahua", "czilala", "mały", "najmniejszy", "kieszonkowy"],
+        filters: { kidsFriendly: 2, apartmentLive: 5, easyToTrain: 3, energyLevel: 2 }
+    },
+    {
+        id: "chow-chow",
+        title: "Chow Chow",
+        desc: "Niezwykły pies o wyglądzie lwa i unikalnym, niebiesko-czarnym języku. Z charakteru przypomina kota – jest powściągliwy, niezależny, rzadko okazuje wylewnie uczucia. Nie jest fanem intensywnego szkolenia ani obcych ludzi.",
+        img: "https://images.unsplash.com/photo-1591161314358-150cc36ec1d1?auto=format&fit=crop&w=500&q=80",
+        tags: ["Szpice", "Niezależny", "Niebieski język"],
+        keywords: ["chow", "chowchow", "lew", "puchaty", "język"],
+        filters: { kidsFriendly: 2, apartmentLive: 4, easyToTrain: 1, energyLevel: 2 }
+    },
+    {
+        id: "cocker-spaniel",
+        title: "Cocker Spaniel Angielski",
+        desc: "Elegancki pies o pięknych, długich uszach i wiecznie machającym ogonie. Cocker spaniele to psy myśliwskie – uwielbiają wodę, węszenie i aportowanie. Są bardzo przyjacielskie, ale bywają też uparte i wymagają konsekwentnego wychowania.",
+        img: "https://images.unsplash.com/photo-1601758124540-4e99f4af33cf?auto=format&fit=crop&w=500&q=80",
+        tags: ["Spaniele", "Myśliwski", "Wesoły"],
+        keywords: ["cocker", "spaniel", "angielski", "rudy", "uszy"],
+        filters: { kidsFriendly: 4, apartmentLive: 4, easyToTrain: 4, energyLevel: 4 }
+    },
+    {
+        id: "dalmatian",
+        title: "Dalmatyńczyk",
+        desc: "Słynny pies w czarne lub brązowe kropki. Dalmatyńczyki to psy o ogromnej wytrzymałości – dawniej biegały za powozami konnymi. Potrzebują bardzo dużo ruchu. Są inteligentne, czujne i silnie przywiązują się do domowników.",
+        img: "https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=500&q=80",
+        tags: ["Gończe", "Kropki", "Biegacz"],
+        keywords: ["dalmatyńczyk", "kropki", "101", "biały w kropki", "dalmatyń"],
+        filters: { kidsFriendly: 4, apartmentLive: 3, easyToTrain: 4, energyLevel: 5 }
+    },
+    {
+        id: "doberman",
+        title: "Doberman",
+        desc: "Arystokrata wśród psów obronnych. Niezwykle inteligentny, szybki, silny i bezgranicznie oddany swojej rodzinie. Wbrew obiegowej opinii z filmów, dobrze prowadzony doberman to pies stabilny psychicznie, wrażliwy i bardzo czuły.",
+        img: "https://images.unsplash.com/photo-1560160920-57511a36a836?auto=format&fit=crop&w=500&q=80",
+        tags: ["Stróżujący", "Inteligentny", "Obrońca"],
+        keywords: ["doberman", "stróż", "czarny podpalany", "elegancki"],
+        filters: { kidsFriendly: 3, apartmentLive: 3, easyToTrain: 5, energyLevel: 4 }
+    },
+    {
+        id: "dogo-argentino",
+        title: "Dog Argentyński",
+        desc: "Potężny, biały pies stworzony w Argentynie do polowań na grubego zwierza. Posiada silny charakter, ogromną odwagę i instynkt obronny. Absolutnie wymaga doświadczonego przewodnika, rygorystycznego szkolenia oraz socjalizacji.",
+        img: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=500&q=80",
+        tags: ["Molosy", "Biały", "Dla doświadczonych"],
+        keywords: ["dog", "argentyński", "argentino", "biały dog"],
+        filters: { kidsFriendly: 2, apartmentLive: 2, easyToTrain: 3, energyLevel: 4 }
+    },
+    {
+        id: "golden-retriever",
+        title: "Golden Retriever",
+        desc: "Synonim psa rodzinnego. Goldeny kochają wszystkich i wszystko. Są niezwykle łagodne, cierpliwe wobec dzieci i chętne do współpracy z człowiekiem. Uwielbiają wodę i aportowanie. Wykorzystywane masowo w dogoterapii.",
+        img: "https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?auto=format&fit=crop&w=500&q=80",
+        tags: ["Retrievery", "Rodzinny", "Łagodny"],
+        keywords: ["golden", "retriever", "retriwer", "biszkoptowy", "łagodny"],
+        filters: { kidsFriendly: 5, apartmentLive: 3, easyToTrain: 5, energyLevel: 4 }
+    },
+    {
+        id: "great-dane",
+        title: "Dog Niemiecki",
+        desc: "Apollo wśród psów. Mimo gigantycznych rozmiarów (potrafią ważyć 90 kg), są to psy niezwykle delikatne, spokojne i wrażliwe. Kochają kanapę i tulenie do właściciela. Niestety, żyją bardzo krótko, jak większość ras olbrzymich.",
+        img: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=500&q=80",
+        tags: ["Molosy", "Olbrzym", "Spokojny"],
+        keywords: ["dog", "niemiecki", "wielki", "olbrzym", "arlekin"],
+        filters: { kidsFriendly: 5, apartmentLive: 2, easyToTrain: 4, energyLevel: 2 }
+    },
+    {
+        id: "jack-russell",
+        title: "Jack Russell Terrier",
+        desc: "Małe ciało, potężny charakter i nieskończone pokłady energii. Jack Russell to pies myśliwski na lisy – jest niezwykle odważny, uparty, uwielbia kopać dziury i gonić piłkę do upadłego. Nie nadaje się dla osób szukających spokoju.",
+        img: "https://images.unsplash.com/photo-1593134257782-e89567b7718a?auto=format&fit=crop&w=500&q=80",
+        tags: ["Terriery", "Wulkan energii", "Mały"],
+        keywords: ["jack", "russell", "jrt", "terier", "maskotka", "piłeczka"],
+        filters: { kidsFriendly: 4, apartmentLive: 5, easyToTrain: 3, energyLevel: 5 }
+    },
+    {
+        id: "labrador",
+        title: "Labrador Retriever",
+        desc: "Jeden z najpopularniejszych psów na globie. Labradory są silne, wesołe i niesamowicie zorientowane na jedzenie (mają tendencję do tycia). Uwielbiają pływać w każdej napotkanej kałuży. Wspaniałe psy asystujące i rodzinne.",
+        img: "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=500&q=80",
+        tags: ["Retrievery", "Rodzinny", "Żarłok"],
+        keywords: ["labrador", "labek", "retriever", "czekoladowy", "czarny"],
+        filters: { kidsFriendly: 5, apartmentLive: 3, easyToTrain: 5, energyLevel: 4 }
+    }
+];
