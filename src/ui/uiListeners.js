@@ -146,6 +146,7 @@ export function initUiListeners() {
         
         if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
         
+// Fragment do weryfikacji wewnątrz listenera kliknięć w src/ui/uiListeners.js
         if (e.target.closest('#saveSettingsBtn')) {
             const ghostInput = document.getElementById('settingGhostMode') || document.getElementById('settingSearchable');
             const hiddenInput = document.getElementById('settingHiddenMode') || document.getElementById('settingHidden');
@@ -164,6 +165,8 @@ export function initUiListeners() {
             state.isGhostMode = isGhost; 
             state.isHiddenMode = isHidden;
             
+            // 🔥 DYNAMICZNY ZAPIS CZCIONKI LIVE:
+            document.body.style.fontSize = font;
             document.documentElement.style.setProperty('--base-font-size', font); 
             if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
             
