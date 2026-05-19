@@ -20,16 +20,11 @@ import { uploadImageToService as uploadImage } from '../services/postsService.js
 import { initGlobalUtils } from '../ui/globalUtils.js';
 import { fetchWeather } from '../services/weatherService.js';
 
-// 🔥 NOWOŚĆ: Importujemy wycięty moduł klikalności oraz lokalny bank wiedzy offline
+// 🔥 Importujemy wycięty moduł klikalności oraz lokalny bank wiedzy offline
 import { initUiListeners } from '../ui/uiListeners.js';
 import { WIKI } from '../data/wikiData.js';
 
 // --- SEKCJA FUNKCJI POMOCNICZYCH ---
-
-// 🎯 ULTRA OPTYMALIZACJA UX & KOSZTÓW: Pobieranie wiedzy z lokalnego pliku (0ms czasu ładowania i 0 kosztów Firebase!)
-// Nadpisz tę funkcję w src/core/appBootstrap.js
-
-// Nadpisz sekcję renderWiki oraz początek mostków w src/core/appBootstrap.js
 
 export function renderWiki(tab, searchQuery = "") {
     const container = document.getElementById('wiki-content');
@@ -66,14 +61,12 @@ export function renderWiki(tab, searchQuery = "") {
             tagsHtml += `</div>`;
         }
 
-        // 🔥 POPRAWKA SKALOWANIA: Ustawiamy object-fit: cover oraz stały punkt zakotwiczenia (center)
         let imgHtml = item.img ? `
             <div style="width:100%; height:160px; overflow:hidden; border-radius:12px; margin-bottom:12px; border:1px solid var(--border-color);">
                 <img src="${item.img}" style="width:100%; height:100%; object-fit:cover; object-position:center;">
             </div>
         ` : "";
 
-        // 🔥 Dodajemy aktywne kliknięcie (cursor:pointer) otwierające modal szczegółów
         html += `
             <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" style="border-left: 4px solid var(--secondary); padding:18px; margin-bottom: 15px; text-align: left; background:var(--card-bg); cursor:pointer; transition: transform 0.2s;">
                 ${imgHtml}
@@ -86,14 +79,12 @@ export function renderWiki(tab, searchQuery = "") {
     container.innerHTML = html || '<p style="text-align:center; padding:30px; color:var(--text-muted); font-weight:700;">Nie znaleziono pasujących porad ani ras. 🐾</p>';
 }
 
-// Funkcja obsługująca zaawansowane okno szczegółów encyklopedii
 function openWikiDetails(id, tab) {
     const modal = document.getElementById('wiki-details-modal');
     const items = WIKI[tab] || [];
     const item = items.find(i => i.id === id);
     if (!modal || !item) return;
 
-    // Uzpelnianie podstawowych danych
     document.getElementById('wikiDetailsTitle').innerText = item.title;
     document.getElementById('wikiDetailsDesc').innerText = item.desc;
     
@@ -105,7 +96,6 @@ function openWikiDetails(id, tab) {
         imgEl.parentElement.style.display = "none";
     }
 
-    // Uzpelnianie tagów w modalu
     const tagsContainer = document.getElementById('wikiDetailsTags');
     tagsContainer.innerHTML = "";
     if (item.tags) {
@@ -114,7 +104,6 @@ function openWikiDetails(id, tab) {
         });
     }
 
-    // Budowanie paska statystyk liczbowych (tylko dla ras psów)
     const statsContainer = document.getElementById('wikiDetailsStats');
     if (item.filters && tab === 'rasy') {
         statsContainer.style.display = "grid";
@@ -135,7 +124,62 @@ function openWikiDetails(id, tab) {
     modal.style.display = "flex";
 }
 
-// --- BOOTSTRAP APLIKACJI (Fragment rejestracji mostków globalnych) ---
+function updateUserMarker(lat, lng) {
+    const L = window.L; if (!L) return;
+    if (state.isHiddenMode) {
+        if (window.userMarker) { mapManager.map.removeLayer(window.userMarker); window.userMarker = null; }
+        return; 
+    }
+    let displayLat = lat; let displayLng = lng;
+    if (state.isGhostMode) {
+        if (!state.ghostOffset) { state.ghostOffset = { lat: (Math.random() - 0.5) * 0.002, lng: (Math.random() - 0.5) * 0.002 }; }
+        displayLat += state.ghostOffset.lat; displayLng += state.ghostOffset.lng;
+    } else { state.ghostOffset = null; }
+
+    const avatarSrc = state.profile?.avatar;
+    let iconHtml = avatarSrc ? 
+        `<div style="width:38px; height:38px; border-radius:50%; border:3px solid var(--secondary); box-shadow:0 0 15px rgba(0,0,0,0.3); overflow:hidden; background:white;"><img src="${avatarSrc}" style="width:100%; height:100%; object-fit:cover;"></div>` : 
+        `<div style="background:#34ace0; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`;
+    
+    const icon = L.divIcon({ className: '', html: iconHtml, iconSize: avatarSrc ? [38,38] : [20,20] });
+    if (!window.userMarker) { window.userMarker = L.marker([displayLat, displayLng], { icon }); mapManager.addMarkerToLayer('user', window.userMarker); }
+    else { window.userMarker.setLatLng([displayLat, displayLng]); window.userMarker.setIcon(icon); }
+}
+
+function updateStatsUI() {
+    if (!state.profile) return; const p = state.profile;
+    const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
+    const walksEl = document.getElementById('statWalks'); if(walksEl) walksEl.innerText = p.walkCount || 0;
+    const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = ((p.walkCount || 0) * 1.2).toFixed(1);
+    const breedInput = document.getElementById('setupBreed'); if(breedInput) breedInput.value = state.profile.breed || "";
+    const cityInput = document.getElementById('setupCity'); if(cityInput) cityInput.value = state.profile.city || "";
+    let lvl = "🌱 Nowik";
+    if (p.walkCount >= 5) lvl = "🐕 Spacerowicz"; if (p.walkCount >= 20) lvl = "🐺 Weteran Osiedla"; if (p.walkCount >= 50) lvl = "👑 Alfa Stada";
+    const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
+    const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+    
+    const tempEl = document.getElementById('weather-temp');
+    if (tempEl && state.weather) {
+        tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
+    }
+
+    if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
+}
+
+// 🔥 PRZYWRÓCONA FUNKCJA STRATEGICZNA: Wczytywanie motywu i czcionek z pamięci telefonu
+function loadSettings() {
+    const theme = localStorage.getItem('waggle_theme') || 'light';
+    const font = localStorage.getItem('waggle_font') || '14px';
+    if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+    document.documentElement.style.setProperty('--base-font-size', font);
+    state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
+    state.isHiddenMode = localStorage.getItem('waggle_hidden_mode') === 'true';
+    if(document.getElementById('settingFontSize')) document.getElementById('settingFontSize').value = font;
+    if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
+}
+
+// --- BOOTSTRAP APLIKACJI ---
+
 export function bootstrapApp() {
     initGlobalUtils();
     loadSettings();
@@ -145,24 +189,19 @@ export function bootstrapApp() {
     window.Waggle.triggerMarkerRefresh = updateUserMarker;
     window.Waggle.executeSearch = (query) => { if (typeof searchUsers === 'function') searchUsers(query); };
     window.Waggle.centerOnTarget = (lat, lng) => { switchView('map'); setTimeout(() => mapManager.flyTo(lat, lng, 16), 300); };
-    window.Waggle.openWikiDetails = openWikiDetails; // 🔥 Rejestrujemy pomost otwierania modalu szczegółów Wiki
-window.Waggle.likeWiki = (id) => {
-        // Pobieramy dotychczasowe ulubione z pamieci telefonu lub tworzymy czystą tablicę
+    window.Waggle.openWikiDetails = openWikiDetails;
+    
+    window.Waggle.likeWiki = (id) => {
         let favorites = JSON.parse(localStorage.getItem('waggle_wiki_favorites')) || [];
-        
         if (favorites.includes(id)) {
-            // Jeśli już tam jest – usuwamy go (odlubienie)
             favorites = favorites.filter(favId => favId !== id);
             localStorage.setItem('waggle_wiki_favorites', JSON.stringify(favorites));
             window.Waggle.showToast("Usunięto z ulubionych 💔");
         } else {
-            // Jeśli go nie ma – dodajemy do listy offline
             favorites.push(id);
             localStorage.setItem('waggle_wiki_favorites', JSON.stringify(favorites));
             window.Waggle.showToast("Zapisano w ulubionych poradach! ❤️");
         }
-        
-        // Odświeżamy widok, by natychmiast zaktualizować kolor serduszka w UI
         const activeTabBtn = document.querySelector('.wiki-tab-btn.active');
         if (activeTabBtn) renderWiki(activeTabBtn.getAttribute('data-tab'));
     };
@@ -184,12 +223,9 @@ window.Waggle.likeWiki = (id) => {
         } catch (err) { console.error(err); window.Waggle.showToast("Błąd wysyłania!"); }
     };
 
-    // Odpalamy pas startowy Auth dopiero po udanym zalogowaniu
     initAuth(() => {
         initRouter();
         initProfileListeners();
-        
-        // 🔥 NOWOŚĆ: Inicjalizujemy globalne listenery kliknięć z nowego pliku!
         initUiListeners();
 
         if ("geolocation" in navigator) {
@@ -209,8 +245,6 @@ window.Waggle.likeWiki = (id) => {
 
                     fetchWeather(lat, lng); 
                     mapManager.flyTo(lat, lng, 15); 
-                    
-                    // 🔥 NOWOŚĆ AUTO-START: Inicjalnie napełniamy Wiki pierwszą kategorią bez czekania na kliknięcie!
                     renderWiki('rasy');
 
                     (async () => {
@@ -269,7 +303,6 @@ window.Waggle.likeWiki = (id) => {
             }
         });
 
-        // Obsługa przełączania widoków (Unsubscribe system)
         eventBus.on('viewChanged', async (view) => {
             if (view !== 'community' && state.activeListeners.posts) { state.activeListeners.posts(); state.activeListeners.posts = null; }
             if (view !== 'chat' && state.activeListeners.inbox) { state.activeListeners.inbox(); state.activeListeners.inbox = null; }
