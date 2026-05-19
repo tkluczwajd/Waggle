@@ -82,11 +82,9 @@ function updateStatsUI() {
     const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
     
-// ☀️ ROZWIĄZANIE NA PODWÓJNE SŁOŃCE (Zastosujemy w appBootstrap.js po Twoim powrocie):
+// ☀️ DYNAMICZNA IKONA (Czysta i szybka po korekcie HTML):
     const tempEl = document.getElementById('weather-temp');
     if (tempEl && state.weather) {
-        // Zamiast podmieniać tylko tekst i zostawiać stare słońce, 
-        // czyścimy cały kontener i wstrzykujemy czysty, zaktualizowany zestaw!
         tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     }
 
