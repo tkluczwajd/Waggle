@@ -11,7 +11,8 @@ import { uploadImageToService as uploadImage } from '../services/postsService.js
 // Importujemy funkcję renderowania wiki lokalnie, skoro też tu wędruje jej wywołanie
 import { renderWiki } from '../core/appBootstrap.js'; 
 
-// 1. Globalne nasłuchiwanie wejścia tekstowego (Wyszukiwarka)
+export function initUiListeners() {
+    // 1. Globalne nasłuchiwanie wejścia tekstowego (Wyszukiwarka)
     document.addEventListener('input', (e) => { 
         if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
             searchUsers(e.target.value); 
@@ -62,7 +63,7 @@ import { renderWiki } from '../core/appBootstrap.js';
             setPostFilter(filter);
         }
 
-if (e.target.classList.contains('wiki-tab-btn')) {
+        if (e.target.classList.contains('wiki-tab-btn')) {
             const tabs = document.querySelectorAll('.wiki-tab-btn'); 
             tabs.forEach(t => { t.style.background = 'transparent'; t.style.color = 'var(--text-muted)'; t.classList.remove('active'); });
             e.target.style.background = 'var(--secondary)'; e.target.style.color = 'white'; e.target.classList.add('active');
@@ -226,5 +227,5 @@ if (e.target.classList.contains('wiki-tab-btn')) {
         
         if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
         if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; }
-    });
-
+    }); // 🎯 TU BYŁ BŁĄD: Dodaliśmy brakujące domknięcie wielkiego centralnego listenera kliknięć!
+}
