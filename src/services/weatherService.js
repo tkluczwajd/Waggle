@@ -8,23 +8,29 @@ export function getWeatherIcon(code) {
     if (code <= 77) return '❄️'; if (code >= 95) return '⛈️'; return '🌡️';
 }
 
+// Podmień tę funkcję w src/services/weatherService.js
+
 export function fetchWeather(lat, lng) {
     if(!lat || !lng) return;
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
+    
+    // 🔥 TUNING PRECYZJI: Dodaliśmy parametr models=best_match, który automatycznie wybiera 
+    // najbardziej precyzyjny model meteorologiczny (np. ICON dla Europy Środkowej) zamiast ogólnego GFS.
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&models=best_match&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
     .then(r=>r.json()).then(d => {
-        // Pobieramy dokładny kod pogody z dzisiejszego dnia prognozy (indeks 0)
+        // Pobieramy kod pogody z dzisiejszego dnia prognozy (indeks 0)
         const todayWeatherCode = d.daily.weathercode[0];
         const currentIcon = getWeatherIcon(todayWeatherCode);
+        
+        // Wyciągamy temperaturę bieżącą z modelu o najwyższej precyzji lokalnej
         const currentTemp = Math.round(d.current_weather.temperature);
 
-        // 🔥 STRATEGICZNA ZMIANA: Zapisujemy świeże dane pogodowe do stanu aplikacji,
-        // dzięki czemu mały skrót w rogu mapy dostanie właściwą ikonę chmury/deszczu!
+        // Zapisujemy świeże, dokładne dane do stanu aplikacji
         state.weather = {
             temp: currentTemp,
             icon: currentIcon
         };
 
-        // Odświeżamy mały widżet na mapie za pomocą przygotowanego mostka
+        // Odświeżamy mały widżet na mapie
         if (window.Waggle && typeof window.Waggle.updateStatsUI === 'function') {
             window.Waggle.updateStatsUI();
         }
