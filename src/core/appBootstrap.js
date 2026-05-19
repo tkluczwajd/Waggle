@@ -82,10 +82,12 @@ function updateStatsUI() {
     const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
     
-    // ☀️ DYNAMICZNA IKONA: Aktualizujemy mały widżet pogodowy na mapie (jeśli stan pogody już spłynął z API)
+// ☀️ ROZWIĄZANIE NA PODWÓJNE SŁOŃCE (Zastosujemy w appBootstrap.js po Twoim powrocie):
     const tempEl = document.getElementById('weather-temp');
     if (tempEl && state.weather) {
-        tempEl.innerText = `${state.weather.icon || '☀️'} ${state.weather.temp}°C`;
+        // Zamiast podmieniać tylko tekst i zostawiać stare słońce, 
+        // czyścimy cały kontener i wstrzykujemy czysty, zaktualizowany zestaw!
+        tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     }
 
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
