@@ -1,88 +1,19 @@
 // src/data/wikiData.js
+import { BREEDS_A_L } from './breedsAL.js';
 
 export const WIKI = {
-    rasy: [
-        { 
-            id: "rasa_golden", 
-            title: "Golden Retriever", 
-            tags: ["✅ Dla początkujących", "⚡ Wysoka Energia", "💧 Kocha wodę"],
-            filters: { kidsFriendly: 5, easyToTrain: 5, energyLevel: 4, apartmentLive: 2 },
-            desc: "Inteligentne, nastawione na pracę z człowiekiem i chętne do nauki. Uwielbiają wodę i aportowanie. Idealne dla aktywnej rodziny, niezwykle cierpliwe wobec dzieci. Wymagają dbałości o stawy i regularnego czesania podszerstka.",
-            img: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=400"
-        },
-        { 
-            id: "rasa_border", 
-            title: "Border Collie", 
-            tags: ["❌ Wymagający", "⚡⚡ Ekstremalna Energia", "🧠 Super inteligentny"],
-            filters: { kidsFriendly: 4, easyToTrain: 4, energyLevel: 5, apartmentLive: 1 },
-            desc: "Absolutny tytan pracy i najmądrzejsza rasa świata. Jeśli nie dostanie zadania umysłowego (agility, frisbee, pasienie), zacznie zaganiać rowery, samochody lub dzieci. Niewskazany do małych mieszkań i dla leniwych osób.",
-            img: "https://images.unsplash.com/photo-1503256207526-0d5d80fa2f47?w=400"
-        },
-        { 
-            id: "rasa_mops", 
-            title: "Mops (Pug)", 
-            tags: ["✅ Dla początkujących", "🛋️ Kanapowiec", "⚠️ Krótka kufa"],
-            filters: { kidsFriendly: 5, easyToTrain: 3, energyLevel: 1, apartmentLive: 5 },
-            desc: "Wesoły, towarzyski klaun kanapowy. Doskonały do małych mieszkań. Bardzo przywiązany do właściciela. Ze względu na brachycefaliczną budowę czaszki (krótka kufa) absolutnie nie wolno go forsować i przegrzewać w upalne dni.",
-            img: "https://images.unsplash.com/photo-1517423568366-8b83523034fd?w=400"
-        },
-        { 
-            id: "rasa_on", 
-            title: "Owczarek Niemiecki", 
-            tags: ["🛡️ Stróżujący", "⚡ Wysoka Energia", "❤️ Lojalny"],
-            filters: { kidsFriendly: 4, easyToTrain: 5, energyLevel: 4, apartmentLive: 2 },
-            desc: "Pies o genialnym węchu i bezgranicznej lojalności. Wymaga jasnych zasad i konsekwentnego prowadzenia od szczeniaka. Szybko się uczy, ale bez odpowiedniej pracy może stać się reaktywny i terytorialny. Częste problemy z dysplazją biodrową.",
-            img: "https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=400"
-        },
-        { 
-            id: "rasa_buldog_fr", 
-            title: "Buldog Francuski", 
-            tags: ["✅ Dla początkujących", "🛋️ Kanapowiec", "⚠️ Wrażliwy profil"],
-            filters: { kidsFriendly: 5, easyToTrain: 3, energyLevel: 2, apartmentLive: 5 },
-            desc: "Uparty, ale niesamowicie czuły mikropies. Uwielbia spać w łóżku i towarzyszyć w każdej domowej czynności. Wymaga rygorystycznej diety antyalergicznej oraz regularnego czyszczenia fałdek skórnych na pyszczku.",
-            img: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400"
-        },
-        { 
-            id: "rasa_labrador", 
-            title: "Labrador Retriever", 
-            tags: ["✅ Dla początkujących", "🍖 Żarłok", "⚡ Wysoka Energia"],
-            filters: { kidsFriendly: 5, easyToTrain: 5, energyLevel: 4, apartmentLive: 3 },
-            desc: "Wieczny optymista i miłośnik jedzenia. Zje wszystko, co znajdzie na chodniku, dlatego od małego wymaga nauki rezygnacji. Kochający, łatwy w szkoleniu, ale ze względu na brak umiaru w jedzeniu ma ogromne tendencje do otyłości.",
-            img: "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=400"
-        },
-        { 
-            id: "rasa_york", 
-            title: "Yorkshire Terrier", 
-            tags: ["⚠️Charakterny", "✂️ Włos zamiast sierści", "🛋️ Do mieszkania"],
-            filters: { kidsFriendly: 3, easyToTrain: 3, energyLevel: 3, apartmentLive: 5 },
-            desc: "Choć wygląda jak maskotka, to w 100% nieustępliwy terrier. Ma silny instynkt łowiecki i potrafi być bardzo szczekliwy, jeśli traktuje się go jak zabawkę. Posiada włos humanoidalny, idealny dla alergików – wymaga regularnych wizyt u groomera.",
-            img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400"
-        },
-        { 
-            id: "rasa_cavalier", 
-            title: "Cavalier King Charles Spaniel", 
-            tags: ["✅ Idealny na start", "❤️ Ekstremalnie łagodny", "🛋️ Kanapowiec"],
-            filters: { kidsFriendly: 5, easyToTrain: 5, energyLevel: 2, apartmentLive: 5 },
-            desc: "Pozbawiony jakiejkolwiek agresji pies-cień. Kocha wszystkich ludzi i inne zwierzęta. Idealny wybór dla starszych osób oraz rodzin z malutkimi dziećmi. Wymaga regularnego badania serca (predyspozycje do choroby MVD).",
-            img: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400"
-        },
-        { 
-            id: "rasa_jack", 
-            title: "Jack Russell Terrier", 
-            tags: ["❌ Dla zaawansowanych", "⚡⚡ Petarda", "🦡 Instynkt łowcy"],
-            filters: { kidsFriendly: 3, easyToTrain: 3, energyLevel: 5, apartmentLive: 4 },
-            desc: "Niewielkie ciało, w którym zamknięto dynamit. Niezwykle skoczny, szybki i uparty. Jeśli wyczuje kreta lub mysz, przekopie cały ogródek. Wymaga potężnej dawki zmęczenia fizycznego i konsekwentnej pracy nad opanowaniem emocji.",
-            img: "https://images.unsplash.com/photo-1593134257782-e89567b7718a?w=400"
-        },
-        { 
-            id: "rasa_kundelek", 
-            title: "Kundelek", 
-            tags: ["❤️ Jedyny w swoim rodzaju", "🧬 Unikalne geny", "🎁 Niespodzianka"],
-            filters: { kidsFriendly: 4, easyToTrain: 4, energyLevel: 3, apartmentLive: 4 },
-            desc: "Najwspanialsza, niepowtarzalna krzyżówka genetyczna. Charakteryzują się zazwyczaj doskonałą odpornością i rzadziej zapadają na choroby typowo rasowe. Każdy kundelek to unikalny zestaw cech i bezgraniczna wdzięczność za adopcję.",
-            img: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150"
+    szkolenia: [
+        {
+            id: "przywolanie",
+            title: "Przywołanie awaryjne",
+            desc: "Naucz psa reagować na unikalne słowo (np. 'BONUS!'), które zawsze zwiastuje najlepszą nagrodę na świecie – np. kawałek pieczonego mięsa. Używaj tego słowa rzadko, wyłącznie w sytuacjach awaryjnych i NIGDY nie karć psa, gdy przybiegnie.",
+            img: "https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=500&q=80",
+            tags: ["Posłuszeństwo", "Spacer", "Bezpieczeństwo"]
         }
     ],
+    // 🔥 TUTAJ ŁĄCZYMY NASZĄ PACZKĘ RAS:
+    rasy: BREEDS_A_L
+};
     trening: [
         { 
             id: "train_tree", 
@@ -165,4 +96,35 @@ export const WIKI = {
             desc: "NIGDY nie wkładaj rąk w okolice pyskasz gryzących się psów, nie łap za obroże – zostaniesz dotkliwie pogryziony przez tzw. agresję przekierowaną. Najbezpieczniejsza metoda to 'Taczka': dwie osoby podchodzą jednocześnie od tyłu psów, łapią je mocno za tylne nogi na wysokości pachwin i unoszą do góry, cofając się w tył po łuku. Pies traci równowagę i puszcza uścisk. Jeśli jesteś sam, spróbuj narzucić na głowy psów dużą kurtkę, koc lub wylej na nie potężną ilość wody, aby wywołać dezorientację." 
         }
     ]
+// src/data/wikiData.js
+import { BREEDS_A_L } from './breedsAL.js';
+
+export const WIKI = {
+    sytuacje: [
+        {
+            id: "kleszcz",
+            title: "Kleszcz u psa",
+            desc: "Znalezienie kleszcza wymaga szybkiego działania. Użyj pęsety lub lasso, chwyć kleszcza tuż przy skórze i wyciągnij zdecydowanym ruchem w górę. Nie smaruj tłuszczem! Obserwuj psa przez 14 dni pod kątem babeszjozy (apatia, ciemny mocz).",
+            img: "https://images.unsplash.com/photo-1608454504242-a42227849551?auto=format&fit=crop&w=500&q=80",
+            tags: ["Zdrowie", "Lato", "Pasożyty"]
+        },
+        {
+            id: "zatrucie",
+            title: "Podejrzenie zatrucia",
+            desc: "Jeśli pies zjadł czekoladę, ksylitol, winogrona lub trutkę, natychmiast skontaktuj się z weterynarzem. Czas odgrywa kluczową rolę. Jeśli od spożycia minęło mniej niż 2 godziny, lekarz wywoła wymioty, ratując psu życie.",
+            img: "https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&w=500&q=80",
+            tags: ["PILNE", "Zdrowie", "Toksyny"]
+        }
+    ],
+    szkolenia: [
+        {
+            id: "przywolanie",
+            title: "Przywołanie awaryjne",
+            desc: "Naucz psa reagować na unikalne słowo (np. 'BONUS!'), które zawsze zwiastuje najlepszą nagrodę na świecie – np. kawałek pieczonego mięsa. Używaj tego słowa rzadko, wyłącznie w sytuacjach awaryjnych i NIGDY nie karć psa, gdy przybiegnie.",
+            img: "https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=500&q=80",
+            tags: ["Posłuszeństwo", "Spacer", "Bezpieczeństwo"]
+        }
+    ],
+    // 🔥 TUTAJ ŁĄCZYMY NASZĄ PACZKĘ RAS:
+    rasy: BREEDS_A_L
 };
