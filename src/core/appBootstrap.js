@@ -27,16 +27,38 @@ import { WIKI } from '../data/wikiData.js';
 // --- SEKCJA FUNKCJI POMOCNICZYCH ---
 
 // 🎯 ULTRA OPTYMALIZACJA UX & KOSZTÓW: Pobieranie wiedzy z lokalnego pliku (0ms czasu ładowania i 0 kosztów Firebase!)
-export function renderWiki(tab) {
+// Nadpisz tę funkcję w src/core/appBootstrap.js
+
+export function renderWiki(tab, searchQuery = "") {
     const container = document.getElementById('wiki-content');
     if (!container) return;
     
-    // Pobieramy wpisy z naszej lokalnej bazy danych WIKI
     const items = WIKI[tab] || [];
+    let query = searchQuery.toLowerCase().trim();
+    
+    // 🔥 FILTROWANIE LIVE: System przeszukuje teksty, tagi, słowa kluczowe oraz parametry behawioralne!
+    const filteredItems = items.filter(item => {
+        if (!query) return true;
+        
+        const matchText = item.title.toLowerCase().includes(query) || item.desc.toLowerCase().includes(query);
+        const matchTags = item.tags && item.tags.some(t => t.toLowerCase().includes(query));
+        const matchKeywords = item.keywords && item.keywords.some(k => k.toLowerCase().includes(query));
+        
+        // Specjalne filtry inteligentne (np. wpisujesz "dzieci" -> szuka psów z wysokim wskaźnikiem kidsFriendly)
+        let matchAdvanced = false;
+        if (item.filters) {
+            if (query.includes("dziec") && item.filters.kidsFriendly >= 4) matchAdvanced = true;
+            if (query.includes("mieszkan") && item.filters.apartmentLive >= 4) matchAdvanced = true;
+            if (query.includes("łatw") && item.filters.easyToTrain >= 4) matchAdvanced = true;
+            if (query.includes("kanap") && item.filters.energyLevel <= 2) matchAdvanced = true;
+        }
+        
+        return matchText || matchTags || matchKeywords || matchAdvanced;
+    });
+
     let html = "";
     
-    items.forEach(item => {
-        // Generujemy tagi (etykiety Premium), jeśli istnieją w danym wpisie (np. dla ras)
+    filteredItems.forEach(item => {
         let tagsHtml = "";
         if (item.tags && Array.isArray(item.tags)) {
             tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin: 8px 0 12px 0;">`;
@@ -46,9 +68,12 @@ export function renderWiki(tab) {
             tagsHtml += `</div>`;
         }
 
-        // Renderowanie czystej, ultra szybkiej karty wiedzy spacerowej
+        // Wsparcie dla zdjęć (wyrenderujemy je pięknie, gdy dodamy nasze grafiki AI)
+        let imgHtml = item.img ? `<img src="${item.img}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:12px; border:1px solid var(--border-color);">` : "";
+
         html += `
             <div class="post-card" style="border-left: 4px solid var(--secondary); padding:18px; margin-bottom: 15px; text-align: left; background:var(--card-bg);">
+                ${imgHtml}
                 <b style="font-size: 18px; color:var(--text-color);">⚡ ${item.title}</b>
                 ${tagsHtml}
                 <p style="margin-top:5px; font-size:14px; color:var(--text-muted); line-height: 1.5; font-weight:600;">${item.desc}</p>
@@ -56,7 +81,7 @@ export function renderWiki(tab) {
         `;
     });
     
-    container.innerHTML = html || '<p style="text-align:center; padding:20px; color:var(--text-muted);">Brak wpisów w tej kategorii. 🐾</p>';
+    container.innerHTML = html || '<p style="text-align:center; padding:30px; color:var(--text-muted); font-weight:700;">Nie znaleziono pasujących porad ani ras. 🐾</p>';
 }
 
 function updateUserMarker(lat, lng) {
