@@ -11,11 +11,16 @@ import { uploadImageToService as uploadImage } from '../services/postsService.js
 // Importujemy funkcję renderowania wiki lokalnie, skoro też tu wędruje jej wywołanie
 import { renderWiki } from '../core/appBootstrap.js'; 
 
-export function initUiListeners() {
-    // 1. Globalne nasłuchiwanie wejścia tekstowego (Wyszukiwarka)
+// 1. Globalne nasłuchiwanie wejścia tekstowego (Wyszukiwarka)
     document.addEventListener('input', (e) => { 
         if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
             searchUsers(e.target.value); 
+        }
+        // 🔥 NOWOŚĆ: Obsługa wyszukiwarki w Encyklopedii Wiki
+        if (e.target.id === 'wikiSearchInput') {
+            const activeTabBtn = document.querySelector('.wiki-tab-btn[style*="white"]') || document.querySelector('.wiki-tab-btn.active');
+            const currentTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'rasy';
+            renderWiki(currentTab, e.target.value);
         }
     });
 
@@ -57,10 +62,15 @@ export function initUiListeners() {
             setPostFilter(filter);
         }
 
-        if (e.target.classList.contains('wiki-tab-btn')) {
+if (e.target.classList.contains('wiki-tab-btn')) {
             const tabs = document.querySelectorAll('.wiki-tab-btn'); 
-            tabs.forEach(t => { t.style.background = 'transparent'; t.style.color = 'var(--text-muted)'; });
-            e.target.style.background = 'var(--secondary)'; e.target.style.color = 'white';
+            tabs.forEach(t => { t.style.background = 'transparent'; t.style.color = 'var(--text-muted)'; t.classList.remove('active'); });
+            e.target.style.background = 'var(--secondary)'; e.target.style.color = 'white'; e.target.classList.add('active');
+            
+            // Czyszczenie pola wyszukiwarki przy zmianie zakładki
+            const searchInput = document.getElementById('wikiSearchInput');
+            if (searchInput) searchInput.value = "";
+            
             if (typeof renderWiki === 'function') renderWiki(e.target.getAttribute('data-tab'));
         }
         
