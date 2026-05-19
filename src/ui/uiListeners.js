@@ -43,19 +43,20 @@ export function initUiListeners() {
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#addPostBtn')) { const modal = document.getElementById('post-creator-modal'); if(modal) modal.style.display = 'flex'; }
         if (e.target.closest('#addAlertBtnTab') || e.target.closest('#triggerAlertBtn')) { const modal = document.getElementById('alert-modal'); if(modal) modal.style.display = 'flex'; }
-        // 🔥 WKLEJ TO WEWNĄTRZ LISTENERA KLIKNIĘĆ W src/ui/uiListeners.js:
+        
         if (e.target.closest('.top-pill') && e.target.closest('#view-community')) {
             const btn = e.target.closest('.top-pill'); 
             document.querySelectorAll('#view-community .top-pill').forEach(b => { 
-              b.style.background = 'transparent'; 
-              b.style.color = 'var(--text-color)'; 
-              });
+                b.style.background = 'transparent'; 
+                b.style.color = 'var(--text-color)'; 
+            });
             btn.style.background = 'var(--text-color)'; 
             btn.style.color = 'white';
     
             const filter = btn.innerText.includes('Wszystko') ? 'all' : (btn.innerText.includes('Ustawki') ? 'events' : (btn.innerText.includes('Alerty') ? 'alerts' : 'info')); 
             setPostFilter(filter);
-            }
+        }
+
         if (e.target.classList.contains('wiki-tab-btn')) {
             const tabs = document.querySelectorAll('.wiki-tab-btn'); 
             tabs.forEach(t => { t.style.background = 'transparent'; t.style.color = 'var(--text-muted)'; });
@@ -134,18 +135,36 @@ export function initUiListeners() {
         
         if (e.target.closest('#openSettingsBtn')) document.getElementById('settings-modal').style.display = 'flex';
         
+        // 🔥 POPRAWKA PRIVACY & GHOST MODE: Ujednolicenie id oraz obsługa suwaków w locie
         if (e.target.closest('#saveSettingsBtn')) {
-            const isGhost = document.getElementById('settingSearchable')?.checked || false; const isHidden = document.getElementById('settingHidden')?.checked || false;
-            const font = document.getElementById('settingFontSize')?.value || '14px'; const theme = document.getElementById('settingTheme')?.value || 'light';
-            localStorage.setItem('waggle_ghost_mode', isGhost.toString()); localStorage.setItem('waggle_hidden_mode', isHidden.toString()); localStorage.setItem('waggle_font', font); localStorage.setItem('waggle_theme', theme);
-            state.isGhostMode = isGhost; state.isHiddenMode = isHidden;
-            document.documentElement.style.setProperty('--base-font-size', font); if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+            const ghostInput = document.getElementById('settingGhostMode') || document.getElementById('settingSearchable');
+            const hiddenInput = document.getElementById('settingHiddenMode') || document.getElementById('settingHidden');
             
-            // Dynamiczne wywołanie odświeżenia pozycji po zmianie ustawień prywatności ghost/hidden
+            const isGhost = ghostInput?.checked || false; 
+            const isHidden = hiddenInput?.checked || false;
+            
+            const font = document.getElementById('settingFontSize')?.value || '14px'; 
+            const theme = document.getElementById('settingTheme')?.value || 'light';
+            
+            localStorage.setItem('waggle_ghost_mode', isGhost.toString()); 
+            localStorage.setItem('waggle_hidden_mode', isHidden.toString()); 
+            localStorage.setItem('waggle_font', font); 
+            localStorage.setItem('waggle_theme', theme);
+            
+            state.isGhostMode = isGhost; 
+            state.isHiddenMode = isHidden;
+            
+            document.documentElement.style.setProperty('--base-font-size', font); 
+            if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+            
+            // Wymuszenie natychmiastowego przerysowania markera na mapie przy zmianie trybu prywatności
             const updateMarkerFunc = window.Waggle?.triggerMarkerRefresh;
-            if (typeof updateMarkerFunc === 'function' && state.location.lat) updateMarkerFunc(state.location.lat, state.location.lng);
+            if (typeof updateMarkerFunc === 'function' && state.location.lat) {
+                updateMarkerFunc(state.location.lat, state.location.lng);
+            }
             
-            document.getElementById('settings-modal').style.display = 'none'; window.Waggle.showToast("Ustawienia zapisane!");
+            document.getElementById('settings-modal').style.display = 'none'; 
+            window.Waggle.showToast("Ustawienia prywatności zaktualizowane! 🔐");
         }
         
         if (e.target.id === 'saveProfileBtn' || e.target.closest('#saveProfileBtn')) {
