@@ -227,4 +227,4 @@ if (e.target.classList.contains('wiki-tab-btn')) {
         if (e.target.closest('#weatherWidgetBtn')) document.getElementById('weather-modal').style.display = 'flex';
         if (e.target.closest('.close-modal-btn')) { const modal = e.target.closest('.modal') || e.target.closest('.modal-overlay'); if(modal) modal.style.display = 'none'; }
     });
-}
+
