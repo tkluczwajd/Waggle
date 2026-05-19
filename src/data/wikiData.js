@@ -2,18 +2,6 @@
 import { BREEDS_A_L } from './breedsAL.js';
 
 export const WIKI = {
-    szkolenia: [
-        {
-            id: "przywolanie",
-            title: "Przywołanie awaryjne",
-            desc: "Naucz psa reagować na unikalne słowo (np. 'BONUS!'), które zawsze zwiastuje najlepszą nagrodę na świecie – np. kawałek pieczonego mięsa. Używaj tego słowa rzadko, wyłącznie w sytuacjach awaryjnych i NIGDY nie karć psa, gdy przybiegnie.",
-            img: "https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=500&q=80",
-            tags: ["Posłuszeństwo", "Spacer", "Bezpieczeństwo"]
-        }
-    ],
-    // 🔥 TUTAJ ŁĄCZYMY NASZĄ PACZKĘ RAS:
-    rasy: BREEDS_A_L
-};
     trening: [
         { 
             id: "train_tree", 
@@ -96,35 +84,6 @@ export const WIKI = {
             desc: "NIGDY nie wkładaj rąk w okolice pyskasz gryzących się psów, nie łap za obroże – zostaniesz dotkliwie pogryziony przez tzw. agresję przekierowaną. Najbezpieczniejsza metoda to 'Taczka': dwie osoby podchodzą jednocześnie od tyłu psów, łapią je mocno za tylne nogi na wysokości pachwin i unoszą do góry, cofając się w tył po łuku. Pies traci równowagę i puszcza uścisk. Jeśli jesteś sam, spróbuj narzucić na głowy psów dużą kurtkę, koc lub wylej na nie potężną ilość wody, aby wywołać dezorientację." 
         }
     ]
-// src/data/wikiData.js
-import { BREEDS_A_L } from './breedsAL.js';
-
-export const WIKI = {
-    sytuacje: [
-        {
-            id: "kleszcz",
-            title: "Kleszcz u psa",
-            desc: "Znalezienie kleszcza wymaga szybkiego działania. Użyj pęsety lub lasso, chwyć kleszcza tuż przy skórze i wyciągnij zdecydowanym ruchem w górę. Nie smaruj tłuszczem! Obserwuj psa przez 14 dni pod kątem babeszjozy (apatia, ciemny mocz).",
-            img: "https://images.unsplash.com/photo-1608454504242-a42227849551?auto=format&fit=crop&w=500&q=80",
-            tags: ["Zdrowie", "Lato", "Pasożyty"]
-        },
-        {
-            id: "zatrucie",
-            title: "Podejrzenie zatrucia",
-            desc: "Jeśli pies zjadł czekoladę, ksylitol, winogrona lub trutkę, natychmiast skontaktuj się z weterynarzem. Czas odgrywa kluczową rolę. Jeśli od spożycia minęło mniej niż 2 godziny, lekarz wywoła wymioty, ratując psu życie.",
-            img: "https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&w=500&q=80",
-            tags: ["PILNE", "Zdrowie", "Toksyny"]
-        }
-    ],
-    szkolenia: [
-        {
-            id: "przywolanie",
-            title: "Przywołanie awaryjne",
-            desc: "Naucz psa reagować na unikalne słowo (np. 'BONUS!'), które zawsze zwiastuje najlepszą nagrodę na świecie – np. kawałek pieczonego mięsa. Używaj tego słowa rzadko, wyłącznie w sytuacjach awaryjnych i NIGDY nie karć psa, gdy przybiegnie.",
-            img: "https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=500&q=80",
-            tags: ["Posłuszeństwo", "Spacer", "Bezpieczeństwo"]
-        }
-    ],
     // 🔥 TUTAJ ŁĄCZYMY NASZĄ PACZKĘ RAS:
     rasy: BREEDS_A_L
 };
