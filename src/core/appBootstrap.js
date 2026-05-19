@@ -26,6 +26,8 @@ import { WIKI } from '../data/wikiData.js';
 
 // --- SEKCJA FUNKCJI POMOCNICZYCH ---
 
+// Podmień funkcję renderWiki w src/core/appBootstrap.js
+
 export function renderWiki(tab, searchQuery = "") {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -54,23 +56,27 @@ export function renderWiki(tab, searchQuery = "") {
     filteredItems.forEach(item => {
         let tagsHtml = "";
         if (item.tags && Array.isArray(item.tags)) {
-            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin: 8px 0 0 0;">`;
+            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin: 6px 0 0 0;">`;
             item.tags.forEach(tag => {
-                tagsHtml += `<span style="font-size:11px; font-weight:800; background:var(--panel-bg); color:var(--text-color); padding:4px 8px; border-radius:12px; border:1px solid var(--border-color);">${tag}</span>`;
+                tagsHtml += `<span style="font-size:10px; font-weight:800; background:var(--panel-bg); color:var(--text-color); padding:3px 6px; border-radius:12px; border:1px solid var(--border-color);">${tag}</span>`;
             });
             tagsHtml += `</div>`;
         }
 
         let imgHtml = item.img ? `
-            <div style="width:100%; height:160px; overflow:hidden; border-radius:12px; margin-bottom:12px; border:1px solid var(--border-color);">
+            <div style="width:100%; height:140px; overflow:hidden; border-radius:12px; margin-bottom:10px; border:1px solid var(--border-color);">
                 <img src="${item.img}" style="width:100%; height:100%; object-fit:cover; object-position:center;">
             </div>
         ` : "";
 
+        // 🔥 OPTYMALIZACJA LINII: Zmniejszamy font-size do 15px i dodajemy elastyczne zarządzanie białymi znakami, by tekst ładnie leżał w rzędzie
         html += `
-            <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" style="border-left: 4px solid var(--secondary); padding:18px; margin-bottom: 15px; text-align: left; background:var(--card-bg); cursor:pointer; transition: transform 0.2s;">
+            <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" style="border-left: 4px solid var(--secondary); padding:14px; margin-bottom: 12px; text-align: left; background:var(--card-bg); cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border-radius:16px;">
                 ${imgHtml}
-                <b style="font-size: 18px; color:var(--text-color);">⚡ ${item.title}</b>
+                <div style="display:flex; align-items:center; gap:5px; width:100%; overflow:hidden;">
+                    <span style="font-size:14px; flex-shrink:0;">⚡</span>
+                    <b style="font-size: 15px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${item.title}</b>
+                </div>
                 ${tagsHtml}
             </div>
         `;
@@ -167,13 +173,28 @@ function updateStatsUI() {
 }
 
 // 🔥 PRZYWRÓCONA FUNKCJA STRATEGICZNA: Wczytywanie motywu i czcionek z pamięci telefonu
+// 🔥 POPRAWKA BŁĘDU GRY: Wczytywanie ustawień z pełną synchronizacją HTML i dynamiczną zmianą czcionki body
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
     const font = localStorage.getItem('waggle_font') || '14px';
+    
+    // Synchronizacja motywu wizualnego
     if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+    
+    // 🔥 FIX CZCIONKI: Wymuszamy zmianę rozmiaru bezpośrednio na body, by ominąć blokady sztywnych pikseli w CSS
+    document.body.style.fontSize = font;
     document.documentElement.style.setProperty('--base-font-size', font);
+    
+    // Odczyt stanów prywatności
     state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
     state.isHiddenMode = localStorage.getItem('waggle_hidden_mode') === 'true';
+    
+    // 🔥 FIX PAMIĘCI TRYBU DUCHA: Szukamy suwaków w HTML i fizycznie ustawiamy ich zaznaczenie na start!
+    const ghostInput = document.getElementById('settingGhostMode') || document.getElementById('settingSearchable');
+    const hiddenInput = document.getElementById('settingHiddenMode') || document.getElementById('settingHidden');
+    if (ghostInput) ghostInput.checked = state.isGhostMode;
+    if (hiddenInput) hiddenInput.checked = state.isHiddenMode;
+    
     if(document.getElementById('settingFontSize')) document.getElementById('settingFontSize').value = font;
     if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
 }
