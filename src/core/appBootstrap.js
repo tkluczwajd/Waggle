@@ -30,6 +30,8 @@ import { WIKI } from '../data/wikiData.js';
 
 // Podmień funkcję renderWiki w src/core/appBootstrap.js
 
+// Nadpisz funkcję renderWiki w pliku src/core/appBootstrap.js
+
 export function renderWiki(tab, searchQuery = "") {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -58,43 +60,37 @@ export function renderWiki(tab, searchQuery = "") {
     filteredItems.forEach(item => {
         let tagsHtml = "";
         if (item.tags && Array.isArray(item.tags)) {
-            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top: 4px;">`;
-            // Wyświetlamy max 2 tagi na liście, żeby nie przepełnić małego wiersza
+            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top: 5px;">`;
             item.tags.slice(0, 2).forEach(tag => {
                 tagsHtml += `<span style="font-size:9px; font-weight:800; background:var(--panel-bg); color:var(--text-muted); padding:2px 6px; border-radius:8px; border:1px solid var(--border-color);">${tag}</span>`;
             });
             tagsHtml += `</div>`;
         }
 
-        // 🔥 FIX BRAKU ZDJĘCIA + UKŁAD LTR (Kompaktowa miniaturka z lewej)
-        // Jeśli img nie istnieje lub rzuci błąd ładowania, onerror podstawi ładny kontener zastępczy
-        const fallbackImg = `this.onerror=null; this.parentElement.innerHTML='<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--panel-bg);font-size:24px;\">🐾</div>';`;
+        // 🔥 BEZPIECZNY FALLBACK: Schludny, wektorowy placeholder SVG z ciemnoszarą łapką na jasnym tle
+        const svgFallback = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23b2bec3'><rect width='100%25' height='100%25' fill='%23f1f2f6'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='12'>🐾</text></svg>";
         
-        let imgHtml = `
-            <div style="width: 70px; height: 70px; min-width: 70px; overflow:hidden; border-radius: 12px; border:1px solid var(--border-color); background: var(--panel-bg); position: relative;">
-                <img src="${item.img || ''}" onerror="${fallbackImg}" style="width:100%; height:100%; object-fit:cover;">
-            </div>
-        `;
-
-        // Budujemy superlekki wiersz listy (horyzontalny flex)
+        // Budujemy czysty, horyzontalny wiersz listy
         html += `
             <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
-                 style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; margin-bottom: 8px; text-align: left; background: var(--card-bg); cursor: pointer; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: 0 2px 6px rgba(0,0,0,0.01);">
+                 style="display: flex; align-items: center; gap: 14px; padding: 12px; margin-bottom: 8px; text-align: left; background: var(--card-bg); cursor: pointer; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.01); box-sizing: border-box; width: 100%;">
                 
-                ${imgHtml}
+                <div style="width: 65px; height: 65px; min-width: 65px; overflow:hidden; border-radius: 12px; border:1px solid var(--border-color); background: var(--panel-bg); flex-shrink: 0;">
+                    <img src="${item.img || svgFallback}" onerror="this.onerror=null; this.src='${svgFallback}';" style="width:100%; height:100%; object-fit:cover; display:block;">
+                </div>
                 
                 <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="display:flex; align-items:center; gap:4px;">
+                    <div style="display:flex; align-items:center; gap:5px; width:100%;">
                         <span style="font-size:12px; flex-shrink:0;">⚡</span>
-                        <b style="font-size: 15px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${item.title}</b>
+                        <b style="font-size: 15px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-weight: 800;">${item.title}</b>
                     </div>
-                    <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">
                         ${item.desc}
                     </p>
                     ${tagsHtml}
                 </div>
                 
-                <div style="color: var(--text-muted); font-size: 14px; padding-left: 4px; font-weight: bold;">➔</div>
+                <div style="color: var(--text-muted); font-size: 12px; padding-left: 2px; font-weight: bold; flex-shrink: 0;">➔</div>
             </div>
         `;
     });
@@ -115,18 +111,24 @@ function openWikiDetails(id, tab) {
     document.getElementById('wikiDetailsDesc').innerText = item.desc;
     
     // 🔥 FIX ZABEZPIECZENIA ZDJĘCIA W MODALU
+  // Znajdź ten fragment wewnątrz funkcji openWikiDetails w src/core/appBootstrap.js i podmień go:
+
     const imgEl = document.getElementById('wikiDetailsImg');
+    const largeSvgFallback = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 100 100' preserveAspectRatio='none'><rect width='100%25' height='100%25' fill='%23f1f2f6'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16'>🐾 Waggle Wiki</text></svg>";
+
     if (imgEl) {
         if (item.img) {
-            imgEl.parentElement.style.display = "block";
             imgEl.src = item.img;
-            // Awaryjny autorski placeholder SVG, jeśli link z Unsplash wygaśnie
+            imgEl.parentElement.style.display = "block";
+            // Zabezpieczenie, jeśli duży link z Unsplash wygaśnie w locie
             imgEl.onerror = function() {
-                this.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23ccc'><rect width='100%' height='100%' fill='%23f1f2f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' font-weight='bold' fill='%23a4b0be'>🐾 Brak zdjęcia</text></svg>";
+                this.onerror = null;
+                this.src = largeSvgFallback;
             };
         } else {
-            // Jeśli obiekt w ogóle nie posiada zdefiniowanego zdjęcia
-            imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23ccc'><rect width='100%' height='100%' fill='%23f1f2f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' font-weight='bold' fill='%23a4b0be'>🐾 Brak zdjęcia</text></svg>";
+            // Jeśli rasa nie ma zdjęcia w bazie danych
+            imgEl.src = largeSvgFallback;
+            imgEl.parentElement.style.display = "block";
         }
     }
 
