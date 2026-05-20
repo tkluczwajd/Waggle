@@ -102,23 +102,35 @@ export function renderWiki(tab, searchQuery = "") {
     container.innerHTML = html || '<p style="text-align:center; padding:30px; color:var(--text-muted); font-weight:700;">Nie znaleziono pasujących porad ani ras. 🐾</p>';
 }
 
+// Podmień tę funkcję w src/core/appBootstrap.js
+
 function openWikiDetails(id, tab) {
     const modal = document.getElementById('wiki-details-modal');
     const items = WIKI[tab] || [];
     const item = items.find(i => i.id === id);
     if (!modal || !item) return;
 
+    // Uzupełnianie podstawowych danych tekstowych
     document.getElementById('wikiDetailsTitle').innerText = item.title;
     document.getElementById('wikiDetailsDesc').innerText = item.desc;
     
+    // 🔥 FIX ZABEZPIECZENIA ZDJĘCIA W MODALU
     const imgEl = document.getElementById('wikiDetailsImg');
-    if(item.img) {
-        imgEl.src = item.img;
-        imgEl.parentElement.style.display = "block";
-    } else {
-        imgEl.parentElement.style.display = "none";
+    if (imgEl) {
+        if (item.img) {
+            imgEl.parentElement.style.display = "block";
+            imgEl.src = item.img;
+            // Awaryjny autorski placeholder SVG, jeśli link z Unsplash wygaśnie
+            imgEl.onerror = function() {
+                this.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23ccc'><rect width='100%' height='100%' fill='%23f1f2f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' font-weight='bold' fill='%23a4b0be'>🐾 Brak zdjęcia</text></svg>";
+            };
+        } else {
+            // Jeśli obiekt w ogóle nie posiada zdefiniowanego zdjęcia
+            imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23ccc'><rect width='100%' height='100%' fill='%23f1f2f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' font-weight='bold' fill='%23a4b0be'>🐾 Brak zdjęcia</text></svg>";
+        }
     }
 
+    // Uzupełnianie tagów w modalu
     const tagsContainer = document.getElementById('wikiDetailsTags');
     tagsContainer.innerHTML = "";
     if (item.tags) {
@@ -127,6 +139,7 @@ function openWikiDetails(id, tab) {
         });
     }
 
+    // Budowanie paska statystyk liczbowych (tylko dla ras psów)
     const statsContainer = document.getElementById('wikiDetailsStats');
     if (item.filters && tab === 'rasy') {
         statsContainer.style.display = "grid";
