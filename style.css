@@ -49,6 +49,27 @@ html, body {
     pointer-events: auto;
 }
 
+.wiki-image-wrapper {
+    width: 100%;
+    /* Dzięki temu proporcje będą zawsze takie same, 
+       niezależnie od tego, jak szeroki jest telefon */
+    aspect-ratio: 16 / 9; 
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e0e0e0;
+}
+
+.wiki-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    /* Obraz wypełni całe 16/9, nie będzie pasów */
+    object-fit: cover; 
+    /* Środek zdjęcia będzie zawsze w centrum uwagi */
+    object-position: center; 
+}
+
 #auth-screen { z-index: 2000; background: linear-gradient(135deg, var(--bg-color) 0%, #e1e5eb 100%); align-items: center; justify-content: center; }
 .auth-card { background: var(--panel-bg); border-radius: 30px; padding: 40px 30px; width: 85%; box-sizing: border-box; box-shadow: var(--soft-shadow); text-align: center; display: flex; flex-direction: column; pointer-events: auto; }
 .logo-title { font-size: 55px; color: var(--primary); font-weight: 900; margin: 0 0 5px 0; letter-spacing: -2px; }
