@@ -91,10 +91,15 @@ export function openWikiDetails(id, tab) {
     document.getElementById('wikiDetailsTitle').innerText = item.title;
     document.getElementById('wikiDetailsDesc').innerText = item.desc;
     
+// Znajdź w src/ui/wikiRenderer.js funkcję openWikiDetails i zmień styl imgEl:
+
     const imgEl = document.getElementById('wikiDetailsImg');
     if (imgEl) {
         if (item.img && tab === 'rasy') {
             imgEl.src = item.img;
+            // 🔥 ZMIANA: object-fit: contain sprawi, że zdjęcie nie będzie "ucięte"
+            imgEl.style.objectFit = "contain"; 
+            imgEl.style.backgroundColor = "transparent"; // Opcjonalnie: tło za zdjęciem
             imgEl.parentElement.style.display = "block";
             imgEl.onerror = function() {
                 this.onerror = null;
