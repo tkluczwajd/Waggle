@@ -28,6 +28,8 @@ import { WIKI } from '../data/wikiData.js';
 
 // Podmień funkcję renderWiki w src/core/appBootstrap.js
 
+// Podmień funkcję renderWiki w src/core/appBootstrap.js
+
 export function renderWiki(tab, searchQuery = "") {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -56,28 +58,43 @@ export function renderWiki(tab, searchQuery = "") {
     filteredItems.forEach(item => {
         let tagsHtml = "";
         if (item.tags && Array.isArray(item.tags)) {
-            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin: 6px 0 0 0;">`;
-            item.tags.forEach(tag => {
-                tagsHtml += `<span style="font-size:10px; font-weight:800; background:var(--panel-bg); color:var(--text-color); padding:3px 6px; border-radius:12px; border:1px solid var(--border-color);">${tag}</span>`;
+            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top: 4px;">`;
+            // Wyświetlamy max 2 tagi na liście, żeby nie przepełnić małego wiersza
+            item.tags.slice(0, 2).forEach(tag => {
+                tagsHtml += `<span style="font-size:9px; font-weight:800; background:var(--panel-bg); color:var(--text-muted); padding:2px 6px; border-radius:8px; border:1px solid var(--border-color);">${tag}</span>`;
             });
             tagsHtml += `</div>`;
         }
 
-        let imgHtml = item.img ? `
-            <div style="width:100%; height:140px; overflow:hidden; border-radius:12px; margin-bottom:10px; border:1px solid var(--border-color);">
-                <img src="${item.img}" style="width:100%; height:100%; object-fit:cover; object-position:center;">
+        // 🔥 FIX BRAKU ZDJĘCIA + UKŁAD LTR (Kompaktowa miniaturka z lewej)
+        // Jeśli img nie istnieje lub rzuci błąd ładowania, onerror podstawi ładny kontener zastępczy
+        const fallbackImg = `this.onerror=null; this.parentElement.innerHTML='<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--panel-bg);font-size:24px;\">🐾</div>';`;
+        
+        let imgHtml = `
+            <div style="width: 70px; height: 70px; min-width: 70px; overflow:hidden; border-radius: 12px; border:1px solid var(--border-color); background: var(--panel-bg); position: relative;">
+                <img src="${item.img || ''}" onerror="${fallbackImg}" style="width:100%; height:100%; object-fit:cover;">
             </div>
-        ` : "";
+        `;
 
-        // 🔥 OPTYMALIZACJA LINII: Zmniejszamy font-size do 15px i dodajemy elastyczne zarządzanie białymi znakami, by tekst ładnie leżał w rzędzie
+        // Budujemy superlekki wiersz listy (horyzontalny flex)
         html += `
-            <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" style="border-left: 4px solid var(--secondary); padding:14px; margin-bottom: 12px; text-align: left; background:var(--card-bg); cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border-radius:16px;">
+            <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
+                 style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; margin-bottom: 8px; text-align: left; background: var(--card-bg); cursor: pointer; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: 0 2px 6px rgba(0,0,0,0.01);">
+                
                 ${imgHtml}
-                <div style="display:flex; align-items:center; gap:5px; width:100%; overflow:hidden;">
-                    <span style="font-size:14px; flex-shrink:0;">⚡</span>
-                    <b style="font-size: 15px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${item.title}</b>
+                
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <span style="font-size:12px; flex-shrink:0;">⚡</span>
+                        <b style="font-size: 15px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${item.title}</b>
+                    </div>
+                    <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${item.desc}
+                    </p>
+                    ${tagsHtml}
                 </div>
-                ${tagsHtml}
+                
+                <div style="color: var(--text-muted); font-size: 14px; padding-left: 4px; font-weight: bold;">➔</div>
             </div>
         `;
     });
