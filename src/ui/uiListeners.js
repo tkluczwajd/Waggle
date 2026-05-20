@@ -9,7 +9,8 @@ import { searchUsers, sendMessage, sendChatImage, loadInbox } from '../modules/c
 import { uploadImageToService as uploadImage } from '../services/postsService.js';
 
 // Importujemy funkcję renderowania wiki lokalnie
-import { renderWiki } from '../core/appBootstrap.js'; 
+// Zmień linię 11 w pliku src/ui/uiListeners.js na tę ścieżkę:
+import { renderWiki } from './wikiRenderer.js';
 
 export function initUiListeners() {
     // 1. Globalne nasłuchiwanie wejścia tekstowego (Wyszukiwarka)
