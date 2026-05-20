@@ -120,3 +120,19 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-colo
 /* Możesz dodać ikonkę ołówka w HTML obok obrazka */
 
 .stats-bar { display: flex; justify-content: space-around; background: var(--panel-bg); border-radius: 20px; padding: 20px; margin: 20px 20px 0 20px; box-shadow: var(--soft-shadow); }
+
+/* Zdejmujemy padding z całego okna modalnego dla Wiki, żeby karta dotykała krawędzi */
+#wiki-details-modal {
+    padding: 0 !important;
+}
+
+/* Karta w Wiki nie może mieć zaokrągleń po bokach, żeby obraz był "full bleed" */
+#wiki-details-modal .card {
+    border-radius: 0 !important; /* Usuwamy zaokrąglenia, żeby obraz był od krawędzi do krawędzi */
+    height: 100vh !important;    /* Karta wypełnia cały ekran */
+}
+
+/* Kontener na tekst potrzebuje paddingu, żeby tekst nie dotykał krawędzi */
+.wiki-text-content {
+    padding: 25px; 
+}
