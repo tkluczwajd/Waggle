@@ -20,162 +20,14 @@ import { uploadImageToService as uploadImage } from '../services/postsService.js
 import { initGlobalUtils } from '../ui/globalUtils.js';
 import { fetchWeather } from '../services/weatherService.js';
 
-// 🔥 Importujemy wycięty moduł klikalności oraz lokalny bank wiedzy offline
+// Importujemy zewnetrzny moduł klikalnosci oraz silnik Wiki
 import { initUiListeners } from '../ui/uiListeners.js';
-import { WIKI } from '../data/wikiData.js';
+import { renderWiki, openWikiDetails } from '../ui/wikiRenderer.js';
+
+// Re-eksport dla kompatybilnosci wstecznej modułów routera i ui
+export { renderWiki };
 
 // --- SEKCJA FUNKCJI POMOCNICZYCH ---
-
-// Podmień funkcję renderWiki w src/core/appBootstrap.js
-
-// Podmień funkcję renderWiki w src/core/appBootstrap.js
-
-// Nadpisz funkcję renderWiki w pliku src/core/appBootstrap.js
-
-// Nadpisz funkcję renderWiki w pliku src/core/appBootstrap.js
-
-export function renderWiki(tab, searchQuery = "") {
-    const container = document.getElementById('wiki-content');
-    if (!container) return;
-    
-    const items = WIKI[tab] || [];
-    let query = searchQuery.toLowerCase().trim();
-    
-    const filteredItems = items.filter(item => {
-        if (!query) return true;
-        const matchText = item.title.toLowerCase().includes(query) || item.desc.toLowerCase().includes(query);
-        const matchTags = item.tags && item.tags.some(t => t.toLowerCase().includes(query));
-        const matchKeywords = item.keywords && item.keywords.some(k => k.toLowerCase().includes(query));
-        
-        let matchAdvanced = false;
-        if (item.filters) {
-            if (query.includes("dziec") && item.filters.kidsFriendly >= 4) matchAdvanced = true;
-            if (query.includes("mieszkan") && item.filters.apartmentLive >= 4) matchAdvanced = true;
-            if (query.includes("łatw") && item.filters.easyToTrain >= 4) matchAdvanced = true;
-            if (query.includes("kanap") && item.filters.energyLevel <= 2) matchAdvanced = true;
-        }
-        return matchText || matchTags || matchKeywords || matchAdvanced;
-    });
-
-    let html = "";
-    
-    // 🔥 Płaski, bezpieczny obrazek zastępczy Base64 (Szary kwadrat z łapką) - w 100% odporny na blokady przeglądarek
-    const stableFallback = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH6gYVFA4XMS0UoQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkY2STAAAAlElEQVR42u3XwQkCQRBEQe08InM1YwsmY6vGg90ggh4M9KXuqqp76wEAAAAAAAAAAAAAAAAAALjGlfba077bK+v967v6ba+st0b767P6666st067Ndpfn9Vfd2W9ddqt0f76rP66K+ut026N9tdn9dddWW+ddmu0vz6rv+7Keuu0W6PdGu2vz+qvu7LeOu3WaH99Vn/dlfXW6X8BqNsTAQDgZgAAAAAElFTkSuQmCC";
-
-    filteredItems.forEach(item => {
-        // Generujemy tagi (tylko jeśli istnieją)
-        let tagsHtml = "";
-        if (item.tags && Array.isArray(item.tags)) {
-            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top: 5px;">`;
-            item.tags.slice(0, 2).forEach(tag => {
-                tagsHtml += `<span style="font-size:9px; font-weight:800; background:var(--panel-bg); color:var(--text-muted); padding:2px 6px; border-radius:8px; border:1px solid var(--border-color);">${tag}</span>`;
-            });
-            tagsHtml += `</div>`;
-        }
-
-        // 🔥 SELEKCJA UKŁADU BIZNESOWEGO:
-        if (tab === 'rasy') {
-            // 🐕 DLA RAS: Kompaktowy widok horyzontalny z miniaturką z lewej
-            html += `
-                <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
-                     style="display: flex; align-items: center; gap: 14px; padding: 12px; margin-bottom: 8px; text-align: left; background: var(--card-bg); cursor: pointer; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.01); box-sizing: border-box; width: 100%;">
-                    
-                    <div style="width: 65px; height: 65px; min-width: 65px; overflow:hidden; border-radius: 12px; border:1px solid var(--border-color); background: var(--panel-bg); flex-shrink: 0;">
-                        <img src="${item.img || stableFallback}" onerror="this.onerror=null; this.src='${stableFallback}';" style="width:100%; height:100%; object-fit:cover; display:block;">
-                    </div>
-                    
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <div style="display:flex; align-items:center; gap:5px; width:100%;">
-                            <span style="font-size:12px; flex-shrink:0;">⚡</span>
-                            <b style="font-size: 15px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-weight: 800;">${item.title}</b>
-                        </div>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">
-                            ${item.desc}
-                        </p>
-                        ${tagsHtml}
-                    </div>
-                    <div style="color: var(--text-muted); font-size: 11px; padding-left: 2px; font-weight: bold; flex-shrink: 0;">➔</div>
-                </div>
-            `;
-        } else {
-            // 📘 DLA SZKOLEŃ I SYTUACJI: Powrót do pierwotnego, przejrzystego i czystego widoku tekstowego Premium
-            html += `
-                <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
-                     style="padding: 16px 18px; margin-bottom: 10px; text-align: left; background: var(--card-bg); cursor: pointer; border-radius: 16px; border: 1px solid var(--border-color); border-left: 4px solid var(--secondary); box-shadow: 0 2px 8px rgba(0,0,0,0.01); box-sizing: border-box; width: 100%;">
-                    
-                    <div style="display:flex; align-items:center; gap:8px; width:100%;">
-                        <span style="font-size:14px; flex-shrink:0;">⚡</span>
-                        <b style="font-size: 16px; color:var(--text-color); font-weight: 800; line-height: 1.3;">${item.title}</b>
-                    </div>
-                    
-                    <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted); line-height: 1.4; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
-                        ${item.desc}
-                    </p>
-                    ${tagsHtml}
-                </div>
-            `;
-        }
-    });
-    
-    container.innerHTML = html || '<p style="text-align:center; padding:30px; color:var(--text-muted); font-weight:700;">Nie znaleziono pasujących porad ani ras. 🐾</p>';
-}
-
-// Podmień tę funkcję w src/core/appBootstrap.js
-
-// Zastąp funkcję openWikiDetails w pliku src/core/appBootstrap.js tym czystym kodem:
-
-function openWikiDetails(id, tab) {
-    const modal = document.getElementById('wiki-details-modal');
-    const items = WIKI[tab] || [];
-    const item = items.find(i => i.id === id);
-    if (!modal || !item) return;
-
-    document.getElementById('wikiDetailsTitle').innerText = item.title;
-    document.getElementById('wikiDetailsDesc').innerText = item.desc;
-    
-    const imgEl = document.getElementById('wikiDetailsImg');
-    if (imgEl) {
-        // Jeśli pozycja ma zdjęcie (głównie rasy), pokazujemy je
-        if (item.img && tab === 'rasy') {
-            imgEl.src = item.img;
-            imgEl.parentElement.style.display = "block";
-            imgEl.onerror = function() {
-                this.onerror = null;
-                this.parentElement.style.display = "none"; // Jeśli link wygaśnie, ukrywamy sekcję foto
-            };
-        } else {
-            // Dla szkoleń i sytuacji bez foto ukrywamy cały górny blok, by tekst dostał full-screen!
-            imgEl.parentElement.style.display = "none";
-        }
-    }
-
-    const tagsContainer = document.getElementById('wikiDetailsTags');
-    tagsContainer.innerHTML = "";
-    if (item.tags) {
-        item.tags.forEach(tag => {
-            tagsContainer.innerHTML += `<span style="font-size:12px; font-weight:800; background:var(--panel-bg); color:var(--text-color); padding:6px 12px; border-radius:12px; border:1px solid var(--border-color);">${tag}</span>`;
-        });
-    }
-
-    const statsContainer = document.getElementById('wikiDetailsStats');
-    if (item.filters && tab === 'rasy') {
-        statsContainer.style.display = "grid";
-        statsContainer.style.gridTemplateColumns = "1fr 1fr";
-        statsContainer.style.gap = "10px";
-        
-        const labels = { kidsFriendly: "👶 Przyjazny dzieciom", easyToTrain: "🧠 Łatwość szkolenia", energyLevel: "⚡ Poziom energii", apartmentLive: "🛋️ Życie w bloku" };
-        let statsHtml = "";
-        for (const [key, value] of Object.entries(item.filters)) {
-            let stars = "⭐".repeat(value);
-            statsHtml += `<div style="font-size:13px; font-weight:800; color:var(--text-color);">${labels[key] || key}: <span style="letter-spacing:1px;">${stars}</span></div>`;
-        }
-        statsContainer.innerHTML = statsHtml;
-    } else {
-        statsContainer.style.display = "none";
-    }
-
-    modal.style.display = "flex";
-}
 
 function updateUserMarker(lat, lng) {
     const L = window.L; if (!L) return;
@@ -219,24 +71,18 @@ function updateStatsUI() {
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 }
 
-// 🔥 PRZYWRÓCONA FUNKCJA STRATEGICZNA: Wczytywanie motywu i czcionek z pamięci telefonu
-// 🔥 POPRAWKA BŁĘDU GRY: Wczytywanie ustawień z pełną synchronizacją HTML i dynamiczną zmianą czcionki body
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
     const font = localStorage.getItem('waggle_font') || '14px';
     
-    // Synchronizacja motywu wizualnego
     if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
     
-    // 🔥 FIX CZCIONKI: Wymuszamy zmianę rozmiaru bezpośrednio na body, by ominąć blokady sztywnych pikseli w CSS
     document.body.style.fontSize = font;
     document.documentElement.style.setProperty('--base-font-size', font);
     
-    // Odczyt stanów prywatności
     state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
     state.isHiddenMode = localStorage.getItem('waggle_hidden_mode') === 'true';
     
-    // 🔥 FIX PAMIĘCI TRYBU DUCHA: Szukamy suwaków w HTML i fizycznie ustawiamy ich zaznaczenie na start!
     const ghostInput = document.getElementById('settingGhostMode') || document.getElementById('settingSearchable');
     const hiddenInput = document.getElementById('settingHiddenMode') || document.getElementById('settingHidden');
     if (ghostInput) ghostInput.checked = state.isGhostMode;
