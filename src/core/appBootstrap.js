@@ -9,7 +9,7 @@ import { setupSubscriptions } from './subscriptionInit.js';
 import { setupLocationTracking } from './locationInit.js';
 import { renderWiki } from '../ui/wikiRenderer.js';
 import { updateStatsUI, updateUserMarker, loadSettings } from '../ui/uiHelpers.js';
-import { initMap, mapManager } from '../modules/map/mapManager.js'; // 🔥 Poprawiony import mapy
+import { initMap } from '../modules/map/mapManager.js'; // 🔥 Tylko initMap, zero mapManagera!
 import { appState as state } from './state.js';
 import { fetchWeather } from '../services/weatherService.js';
 import { fetchNearbyParks } from '../services/parksService.js';
@@ -25,21 +25,25 @@ export function bootstrapApp() {
     setupAuth(() => {
         initRouter();
         initProfileListeners();
-        initUiListeners(); // 🔥 Teraz to się załaduje, więc przyciski ożyją!
+        initUiListeners(); // Rejestrujemy kliknięcia
 
         setupLocationTracking((lat, lng) => {
-            initMap();
-            state.map.instance = mapManager.map;
+            initMap(); // Ta funkcja sama tworzy mapę i zapisuje do state.map.instance
             updateStatsUI();
 
-            state.map.instance.setView([lat, lng], 15, { animate: false });
-            setTimeout(() => { if(state.map.instance) state.map.instance.invalidateSize(true); }, 300);
+            // 🔥 Fix od konsultanta - czyste, bezpieczne centrowanie mapy
+            if(state.map.instance) {
+                state.map.instance.setView([lat, lng], 15, { animate: false });
+                setTimeout(() => { 
+                    state.map.instance.invalidateSize(true); 
+                }, 300);
+            }
 
             setupSubscriptions();
             fetchWeather(lat, lng);
             renderWiki('rasy');
 
-            // Przywrócone ładowanie psich parków
+            // Ładowanie psich parków
             (async () => {
                 try {
                     const container = document.getElementById('places-container'); 
