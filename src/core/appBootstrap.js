@@ -104,22 +104,26 @@ export function bootstrapApp() {
                     state.map.instance = mapManager.map;
                     updateStatsUI();
 
+                    // 🔥 PANCERNY FIX MAPY: Przeglądarka sama pilnuje renderowania kafelków
+                    const mapContainer = document.getElementById('map');
+                    if (mapContainer && window.ResizeObserver) {
+                        const resizeObserver = new ResizeObserver(() => {
+                            if (state.map.instance) {
+                                state.map.instance.invalidateSize();
+                            }
+                        });
+                        resizeObserver.observe(mapContainer);
+                    }
+
+                    // Natychmiastowe ustawienie widoku, bez lotu
+                    state.map.instance.setView([lat, lng], 15, { animate: false });
+
                     state.activeListeners.walks = subscribeToWalks(walks => renderWalks(walks));
                     state.activeListeners.alerts = subscribeToAlerts(alerts => renderAlerts(alerts));
                     state.activeListeners.posts = loadPosts();
                     state.activeListeners.inbox = loadInbox();
 
                     fetchWeather(lat, lng); 
-                    
-                    // 🔥 ZMIANA: Czekamy 500ms by upewnić się, że ekran jest widoczny, 
-                    // następnie POBIERAMY ROZMIAR mapy, i dopiero wtedy SKACZEMY (bez animacji lotu).
-                    setTimeout(() => {
-                        if(state.map.instance) {
-                            state.map.instance.invalidateSize(); // 1. Mapo, sprawdź swoje wymiary
-                            state.map.instance.setView([lat, lng], 15, { animate: false }); // 2. Mapo, skocz dokładnie na środek
-                        }
-                    }, 500);
-
                     renderWiki('rasy');
 
                     (async () => {
@@ -184,11 +188,11 @@ export function bootstrapApp() {
             if (view === 'community' && !state.activeListeners.posts) { state.activeListeners.posts = loadPosts(); }
             if (view === 'chat' && !state.activeListeners.inbox) { state.activeListeners.inbox = loadInbox(); }
             
-            // 🔥 Jeśli wchodzisz na mapę z innej zakładki (np. z Czatów), też musimy dać jej ułamek sekundy na przeliczenie wymiarów
+            // W razie awaryjnego odświeżania na starszych przeglądarkach
             if (view === 'map') {
                 setTimeout(() => {
                     if (state.map.instance) state.map.instance.invalidateSize();
-                }, 100);
+                }, 150);
             }
         });
     });
