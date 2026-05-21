@@ -4,30 +4,25 @@ import { initMap, mapManager } from '../modules/map/mapManager.js';
 import { initAuth } from '../modules/auth.js';
 import { appState as state } from './state.js';
 import { eventBus } from './eventBus.js';
-import { auth, db, fb } from './firebase.js';
+import { auth, db } from './firebase.js';
 
 import { initProfileListeners } from '../modules/profile/profileListeners.js';
-import { loadPosts, setPostFilter, saveCommunityPost } from '../modules/posts/postsListeners.js';
-import { loadInbox, searchUsers } from '../modules/chat/chatListeners.js';
+import { loadPosts } from '../modules/posts/postsListeners.js';
+import { loadInbox } from '../modules/chat/chatListeners.js';
 import { fetchNearbyParks } from '../services/parksService.js';
 import { renderParksOnMap } from '../modules/map/parksRenderer.js';
 import { subscribeToWalks } from '../services/walkService.js';
 import { renderWalks } from '../modules/map/walksRenderer.js';
 import { subscribeToAlerts } from '../services/alertsService.js';
 import { renderAlerts } from '../modules/alerts/alertsRenderer.js'; 
-import { uploadImageToService as uploadImage } from '../services/postsService.js';
 
 import { initGlobalUtils } from '../ui/globalUtils.js';
 import { fetchWeather } from '../services/weatherService.js';
-
-// Importujemy zewnetrzny moduł klikalnosci oraz silnik Wiki
 import { initUiListeners } from '../ui/uiListeners.js';
-import { renderWiki, openWikiDetails } from '../ui/wikiRenderer.js';
+import { renderWiki } from '../ui/wikiRenderer.js';
+import { initWaggleApi } from './waggleApi.js';
 
-// Re-eksport dla kompatybilnosci wstecznej modułów routera i ui
 export { renderWiki };
-
-// --- SEKCJA FUNKCJI POMOCNICZYCH ---
 
 function updateUserMarker(lat, lng) {
     const L = window.L; if (!L) return;
@@ -64,9 +59,7 @@ function updateStatsUI() {
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
     
     const tempEl = document.getElementById('weather-temp');
-    if (tempEl && state.weather) {
-        tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
-    }
+    if (tempEl && state.weather) tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
 
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 }
@@ -74,68 +67,27 @@ function updateStatsUI() {
 function loadSettings() {
     const theme = localStorage.getItem('waggle_theme') || 'light';
     const font = localStorage.getItem('waggle_font') || '14px';
-    
     if (theme === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
-    
     document.body.style.fontSize = font;
     document.documentElement.style.setProperty('--base-font-size', font);
-    
     state.isGhostMode = localStorage.getItem('waggle_ghost_mode') === 'true';
     state.isHiddenMode = localStorage.getItem('waggle_hidden_mode') === 'true';
-    
     const ghostInput = document.getElementById('settingGhostMode') || document.getElementById('settingSearchable');
     const hiddenInput = document.getElementById('settingHiddenMode') || document.getElementById('settingHidden');
     if (ghostInput) ghostInput.checked = state.isGhostMode;
     if (hiddenInput) hiddenInput.checked = state.isHiddenMode;
-    
     if(document.getElementById('settingFontSize')) document.getElementById('settingFontSize').value = font;
     if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
 }
 
-// --- BOOTSTRAP APLIKACJI ---
-
 export function bootstrapApp() {
     initGlobalUtils();
     loadSettings();
-
-    window.Waggle = window.Waggle || {};
-    window.Waggle.updateStatsUI = updateStatsUI;
-    window.Waggle.triggerMarkerRefresh = updateUserMarker;
-    window.Waggle.executeSearch = (query) => { if (typeof searchUsers === 'function') searchUsers(query); };
-    window.Waggle.centerOnTarget = (lat, lng) => { switchView('map'); setTimeout(() => mapManager.flyTo(lat, lng, 16), 300); };
-    window.Waggle.openWikiDetails = openWikiDetails;
+    initWaggleApi(updateUserMarker);
+    window.Waggle.updateStatsUI = updateStatsUI; // Helper wstrzykiwany lokalnie
     
-    window.Waggle.likeWiki = (id) => {
-        let favorites = JSON.parse(localStorage.getItem('waggle_wiki_favorites')) || [];
-        if (favorites.includes(id)) {
-            favorites = favorites.filter(favId => favId !== id);
-            localStorage.setItem('waggle_wiki_favorites', JSON.stringify(favorites));
-            window.Waggle.showToast("Usunięto z ulubionych 💔");
-        } else {
-            favorites.push(id);
-            localStorage.setItem('waggle_wiki_favorites', JSON.stringify(favorites));
-            window.Waggle.showToast("Zapisano w ulubionych poradach! ❤️");
-        }
-        const activeTabBtn = document.querySelector('.wiki-tab-btn.active');
-        if (activeTabBtn) renderWiki(activeTabBtn.getAttribute('data-tab'));
-    };
-
-    window.Waggle.submitAlert = async () => {
-        const input = document.getElementById('alertInput') || document.getElementById('alertTextInput');
-        const text = input?.value;
-        if(!text || text.trim() === "") return window.Waggle.showToast("Wpisz treść ostrzeżenia!");
-        if(!state.location.lat) return window.Waggle.showToast("Brak GPS!");
-        try {
-            const timestamp = Date.now(); window.Waggle.showToast("Wysyłam zgłoszenie... ⚠️");
-            let alertUrl = null; if(state.pendingAlertFile) { alertUrl = await uploadImage(state.pendingAlertFile); state.pendingAlertFile = null; }
-            let finalLat = state.location.lat; let finalLng = state.location.lng;
-            if (state.isGhostMode && state.ghostOffset) { finalLat += state.ghostOffset.lat; finalLng += state.ghostOffset.lng; }
-            await db.collection("alerts").add({ text: text, lat: finalLat, lng: finalLng, createdAt: timestamp, imageUrl: alertUrl, userId: auth.currentUser ? auth.currentUser.uid : 'anon' });
-            await saveCommunityPost(`⚠️ ALERT: ${text}`, alertUrl, false, null, true, true);
-            const alertBtn = document.getElementById('alertAddPhotoBtn'); if (alertBtn) alertBtn.innerHTML = "📷 Dodaj zdjęcie zagrożenia";
-            document.getElementById('alert-modal').style.display = 'none'; if(input) input.value = ''; window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
-        } catch (err) { console.error(err); window.Waggle.showToast("Błąd wysyłania!"); }
-    };
+    let lastFirebaseUploadTime = 0;
+    let lastUploadedCoords = { lat: null, lng: null };
 
     initAuth(() => {
         initRouter();
@@ -234,6 +186,3 @@ function getDistanceInMeters(lat1, lng1, lat2, lng2) {
     const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
 }
-
-let lastFirebaseUploadTime = 0;
-let lastUploadedCoords = { lat: null, lng: null };
