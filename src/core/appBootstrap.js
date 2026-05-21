@@ -112,8 +112,7 @@ export function bootstrapApp() {
                     fetchWeather(lat, lng); 
                     
                     // 🔥 ZMIANA 1: Natychmiastowe ustawienie widoku zamiast długiego lotu (flyTo)
-                    state.map.instance.setView([lat, lng], 15); 
-                    
+                        state.map.instance.setView([lat, lng], 15, { animate: false });                    
                     // 🔥 ZMIANA 2: Wymuszenie przeliczenia rozmiaru, aby od razu wypełnić puste "kafelki"
                     setTimeout(() => {
                         if(state.map.instance) state.map.instance.invalidateSize();
@@ -177,18 +176,22 @@ export function bootstrapApp() {
             }
         });
 
-        eventBus.on('viewChanged', async (view) => {
+eventBus.on('viewChanged', async (view) => {
             if (view !== 'community' && state.activeListeners.posts) { state.activeListeners.posts(); state.activeListeners.posts = null; }
             if (view !== 'chat' && state.activeListeners.inbox) { state.activeListeners.inbox(); state.activeListeners.inbox = null; }
             if (view === 'community' && !state.activeListeners.posts) { state.activeListeners.posts = loadPosts(); }
             if (view === 'chat' && !state.activeListeners.inbox) { state.activeListeners.inbox = loadInbox(); }
             
-            // 🔥 ZMIANA 3: Automatyczne odświeżanie mapy za każdym razem, gdy na nią wracasz z innej zakładki
-            if (view === 'map' && state.map.instance) {
-                setTimeout(() => state.map.instance.invalidateSize(), 300);
+            // 🔥 NOWY, PANCERNY RESET MAPY 🔥
+            if (view === 'map') {
+                setTimeout(() => {
+                    if (state.map.instance) {
+                        state.map.instance.invalidateSize(); // Zmusza Leaflet do narysowania ukrytych kafelków
+                        window.dispatchEvent(new Event('resize')); // Sztuczny ruch oknem dla pewności
+                    }
+                }, 100); // 100ms daje czas animacji CSS na zakończenie przejścia
             }
         });
-    });
 
     console.log("🚀 Waggle: Bootstrap zainicjalizowany pomyślnie!");
 }
