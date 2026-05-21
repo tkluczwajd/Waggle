@@ -111,12 +111,14 @@ export function bootstrapApp() {
 
                     fetchWeather(lat, lng); 
                     
-                    // 🔥 ZMIANA 1: Natychmiastowe ustawienie widoku zamiast długiego lotu (flyTo)
-                        state.map.instance.setView([lat, lng], 15, { animate: false });                    
-                    // 🔥 ZMIANA 2: Wymuszenie przeliczenia rozmiaru, aby od razu wypełnić puste "kafelki"
+                    // 🔥 ZMIANA: Czekamy 500ms by upewnić się, że ekran jest widoczny, 
+                    // następnie POBIERAMY ROZMIAR mapy, i dopiero wtedy SKACZEMY (bez animacji lotu).
                     setTimeout(() => {
-                        if(state.map.instance) state.map.instance.invalidateSize();
-                    }, 400);
+                        if(state.map.instance) {
+                            state.map.instance.invalidateSize(); // 1. Mapo, sprawdź swoje wymiary
+                            state.map.instance.setView([lat, lng], 15, { animate: false }); // 2. Mapo, skocz dokładnie na środek
+                        }
+                    }, 500);
 
                     renderWiki('rasy');
 
@@ -176,22 +178,20 @@ export function bootstrapApp() {
             }
         });
 
-eventBus.on('viewChanged', async (view) => {
+        eventBus.on('viewChanged', async (view) => {
             if (view !== 'community' && state.activeListeners.posts) { state.activeListeners.posts(); state.activeListeners.posts = null; }
             if (view !== 'chat' && state.activeListeners.inbox) { state.activeListeners.inbox(); state.activeListeners.inbox = null; }
             if (view === 'community' && !state.activeListeners.posts) { state.activeListeners.posts = loadPosts(); }
             if (view === 'chat' && !state.activeListeners.inbox) { state.activeListeners.inbox = loadInbox(); }
             
-            // 🔥 NOWY, PANCERNY RESET MAPY 🔥
+            // 🔥 Jeśli wchodzisz na mapę z innej zakładki (np. z Czatów), też musimy dać jej ułamek sekundy na przeliczenie wymiarów
             if (view === 'map') {
                 setTimeout(() => {
-                    if (state.map.instance) {
-                        state.map.instance.invalidateSize(); // Zmusza Leaflet do narysowania ukrytych kafelków
-                        window.dispatchEvent(new Event('resize')); // Sztuczny ruch oknem dla pewności
-                    }
-                }, 100); // 100ms daje czas animacji CSS na zakończenie przejścia
+                    if (state.map.instance) state.map.instance.invalidateSize();
+                }, 100);
             }
         });
+    });
 
     console.log("🚀 Waggle: Bootstrap zainicjalizowany pomyślnie!");
 }
