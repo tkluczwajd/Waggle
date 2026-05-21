@@ -84,7 +84,7 @@ export function bootstrapApp() {
     initGlobalUtils();
     loadSettings();
     initWaggleApi(updateUserMarker);
-    window.Waggle.updateStatsUI = updateStatsUI; // Helper wstrzykiwany lokalnie
+    window.Waggle.updateStatsUI = updateStatsUI; 
     
     let lastFirebaseUploadTime = 0;
     let lastUploadedCoords = { lat: null, lng: null };
@@ -110,7 +110,15 @@ export function bootstrapApp() {
                     state.activeListeners.inbox = loadInbox();
 
                     fetchWeather(lat, lng); 
-                    mapManager.flyTo(lat, lng, 15); 
+                    
+                    // 🔥 ZMIANA 1: Natychmiastowe ustawienie widoku zamiast długiego lotu (flyTo)
+                    state.map.instance.setView([lat, lng], 15); 
+                    
+                    // 🔥 ZMIANA 2: Wymuszenie przeliczenia rozmiaru, aby od razu wypełnić puste "kafelki"
+                    setTimeout(() => {
+                        if(state.map.instance) state.map.instance.invalidateSize();
+                    }, 400);
+
                     renderWiki('rasy');
 
                     (async () => {
@@ -174,6 +182,11 @@ export function bootstrapApp() {
             if (view !== 'chat' && state.activeListeners.inbox) { state.activeListeners.inbox(); state.activeListeners.inbox = null; }
             if (view === 'community' && !state.activeListeners.posts) { state.activeListeners.posts = loadPosts(); }
             if (view === 'chat' && !state.activeListeners.inbox) { state.activeListeners.inbox = loadInbox(); }
+            
+            // 🔥 ZMIANA 3: Automatyczne odświeżanie mapy za każdym razem, gdy na nią wracasz z innej zakładki
+            if (view === 'map' && state.map.instance) {
+                setTimeout(() => state.map.instance.invalidateSize(), 300);
+            }
         });
     });
 
