@@ -7,18 +7,20 @@ class MapManager {
         this.layers = {};
     }
 
-    init(containerId) {
-        // 🔥 Defensive Check (Konsultant: Singelton pattern / Single Source of Truth)
+init(containerId) {
         if (state.map.instance) {
             console.warn("🗺️ Mapa już istnieje, przerywam inicjalizację.");
             return;
         }
 
-        // 🔥 Defensive Check (Konsultant: Czy Leaflet załadowany?)
+        // Defensive check: Czy Leaflet załadowany?
         if (!window.L) {
             console.error("Leaflet nie został wczytany!");
             return;
         }
+
+        // 🔥 Fix: Defensywne przypisanie lokalnej zmiennej L
+        const L = window.L;
 
         this.map = L.map(containerId, { zoomControl: false });
         state.map.instance = this.map;
@@ -27,7 +29,6 @@ class MapManager {
             attribution: '© OpenStreetMap'
         }).addTo(this.map);
 
-        // Inicjalizacja warstw
         this.layers = {
             user: L.layerGroup().addTo(this.map),
             walks: L.layerGroup().addTo(this.map),
@@ -35,7 +36,6 @@ class MapManager {
             parks: L.layerGroup().addTo(this.map)
         };
 
-        // 🔥 Map health log (Konsultant: Oszczędza godziny debugowania)
         console.log("🗺️ Map ready", this.map);
     }
 
