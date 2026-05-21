@@ -191,12 +191,15 @@ export function bootstrapApp() {
             if (view === 'community' && !state.activeListeners.posts) { state.activeListeners.posts = loadPosts(); }
             if (view === 'chat' && !state.activeListeners.inbox) { state.activeListeners.inbox = loadInbox(); }
             
-            // Poprawka dla starszych przeglądarek przy przełączaniu zakładek
-            if (view === 'map') {
-                setTimeout(() => {
-                    if (state.map.instance) state.map.instance.invalidateSize(true);
-                }, 150);
-            }
+// Wewnątrz eventBus.on('viewChanged', ...) w appBootstrap.js:
+if (view === 'map') {
+    setTimeout(() => {
+        if (state.map.instance) {
+            state.map.instance.invalidateSize(true);
+            console.log("🗺️ Map resized"); // 🔥 Log zdrowia mapy
+        }
+    }, 300);
+}
         });
     });
 
