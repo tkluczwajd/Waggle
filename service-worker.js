@@ -5,7 +5,6 @@ const urlsToCache = [
   '/style.css'
 ];
 
-// Instalacja Service Workera
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -15,15 +14,14 @@ self.addEventListener('install', event => {
   );
 });
 
-// Nasłuchiwanie zapytań (dzięki temu apka odpali się nawet bez internetu)
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
         if (response) {
-          return response; // Zwróć z cache
+          return response; 
         }
-        return fetch(event.request); // Pobierz z sieci
+        return fetch(event.request); 
       })
   );
 });
