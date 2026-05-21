@@ -1,5 +1,6 @@
+// src/core/authInit.js
 import { initAuth } from '../modules/auth.js';
-import { db } from './firebase.js';
+import { db, auth } from './firebase.js'; // 🔥 TUTAJ BRAKOWAŁO SŁOWA 'auth'
 import { appState as state } from './state.js';
 
 export function setupAuth(callback) {
@@ -19,6 +20,6 @@ export function setupAuth(callback) {
                 });
             }
         });
-        callback();
+        callback(); // To wywołanie było zablokowane przez błąd!
     });
 }
