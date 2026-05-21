@@ -104,19 +104,22 @@ export function bootstrapApp() {
                     state.map.instance = mapManager.map;
                     updateStatsUI();
 
-                    // 🔥 PANCERNY FIX MAPY: Przeglądarka sama pilnuje renderowania kafelków
+                    // 🔥 Zmiana od Konsultanta: Natychmiastowe ustawienie widoku i opóźnione przeliczenie mapy 🔥
+                    state.map.instance.setView([lat, lng], 15, { animate: false });
+                    setTimeout(() => {
+                        if(state.map.instance) {
+                            state.map.instance.invalidateSize(true);
+                        }
+                    }, 300);
+
+                    // Pancerne zabezpieczenie ResizeObserver
                     const mapContainer = document.getElementById('map');
                     if (mapContainer && window.ResizeObserver) {
                         const resizeObserver = new ResizeObserver(() => {
-                            if (state.map.instance) {
-                                state.map.instance.invalidateSize();
-                            }
+                            if (state.map.instance) state.map.instance.invalidateSize();
                         });
                         resizeObserver.observe(mapContainer);
                     }
-
-                    // Natychmiastowe ustawienie widoku, bez lotu
-                    state.map.instance.setView([lat, lng], 15, { animate: false });
 
                     state.activeListeners.walks = subscribeToWalks(walks => renderWalks(walks));
                     state.activeListeners.alerts = subscribeToAlerts(alerts => renderAlerts(alerts));
@@ -188,10 +191,10 @@ export function bootstrapApp() {
             if (view === 'community' && !state.activeListeners.posts) { state.activeListeners.posts = loadPosts(); }
             if (view === 'chat' && !state.activeListeners.inbox) { state.activeListeners.inbox = loadInbox(); }
             
-            // W razie awaryjnego odświeżania na starszych przeglądarkach
+            // Poprawka dla starszych przeglądarek przy przełączaniu zakładek
             if (view === 'map') {
                 setTimeout(() => {
-                    if (state.map.instance) state.map.instance.invalidateSize();
+                    if (state.map.instance) state.map.instance.invalidateSize(true);
                 }, 150);
             }
         });
