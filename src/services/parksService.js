@@ -3,22 +3,21 @@ import { getDistance } from './geolocationService.js';
 export async function fetchNearbyParks(lat, lng) {
     console.log("🌍 OSM START", lat, lng);
 
-// 🔥 Zaktualizowane zapytanie: dodane "relation", by łapać gigantyczne parki i lasy
     const query = `
-[out:json][timeout:25];
+[out:json][timeout:20];
 (
-    node["leisure"="dog_park"](around:10000,${lat},${lng});
-    way["leisure"="dog_park"](around:10000,${lat},${lng});
-    relation["leisure"="dog_park"](around:10000,${lat},${lng});
+    node["leisure"="dog_park"](around:15000,${lat},${lng});
+    way["leisure"="dog_park"](around:15000,${lat},${lng});
+    relation["leisure"="dog_park"](around:15000,${lat},${lng});
 
-    node["leisure"="park"](around:8000,${lat},${lng});
-    way["leisure"="park"](around:8000,${lat},${lng});
-    relation["leisure"="park"](around:8000,${lat},${lng});
+    node["leisure"="park"](around:12000,${lat},${lng});
+    way["leisure"="park"](around:12000,${lat},${lng});
+    relation["leisure"="park"](around:12000,${lat},${lng});
 
-    way["natural"="wood"](around:8000,${lat},${lng});
-    way["landuse"="forest"](around:8000,${lat},${lng});
-    relation["natural"="wood"](around:8000,${lat},${lng});
-    relation["landuse"="forest"](around:8000,${lat},${lng});
+    way["natural"="wood"](around:15000,${lat},${lng});
+    way["landuse"="forest"](around:15000,${lat},${lng});
+    relation["natural"="wood"](around:15000,${lat},${lng});
+    relation["landuse"="forest"](around:15000,${lat},${lng});
 );
 out center;
 `;
@@ -53,11 +52,9 @@ out center;
 
             const isDogPark = el.tags.leisure === 'dog_park';
             const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest';
-            
-            // Sprawdzamy czy park ma nazwę
             const isNamedPark = el.tags.leisure === 'park' && !!el.tags.name;
 
-            // 🔥 FILTR JAKOŚCI: Ignorujemy bezimienne skwerki i trawniki
+            // FILTR JAKOŚCI
             if (el.tags.leisure === 'park' && !isNamedPark) return;
 
             const name = el.tags.name || (isDogPark ? "Wybieg dla psów" : isForest ? "Las / Teren leśny" : "Park");
@@ -73,18 +70,9 @@ out center;
             });
         });
 
-        console.log("🏞️ FOUND (po odfiltrowaniu bezimiennych):", places.length);
-
         if (places.length === 0) {
             console.warn("⚠️ OSM pusty → fallback");
-            places.push({
-                name: "Park Waggle (Test)",
-                distance: 1,
-                lat: lat + 0.01,
-                lng: lng + 0.01,
-                isDogPark: true,
-                type: 'dogpark'
-            });
+            return [];
         }
 
         // ===== CLUSTER LASÓW =====
@@ -98,7 +86,6 @@ out center;
             const existing = used.find(c => {
                 const dLat = Math.abs(c.lat - f.lat);
                 const dLng = Math.abs(c.lng - f.lng);
-                // 🔥 Mniej agresywny klaster (ok. 1km zamiast 2km) - lasy będą dokładniejsze
                 return dLat < 0.010 && dLng < 0.010; 
             });
 
@@ -108,31 +95,32 @@ out center;
             }
         });
 
-        // PRIORYTET DLA WYBIEGÓW
-        const dogParks = others.filter(p => p.type === 'dogpark');
+        // ===== NOWA LOGIKA: ZARZĄDZANIE STREFAMI (ZONES) =====
+        const dogParks = others.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const normalParks = others.filter(p => p.type === 'park');
 
+        // Wszystkie parki i lasy wrzucamy do jednego wora i sortujemy
+        const allGreenery = [...normalParks, ...clusteredForests].sort((a,b) => a.distance - b.distance);
+
+        // Rozdzielamy zieleń na 3 koszyki odległościowe
+        const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 12); // Spacerówki: do 4 km (max 12 sztuk)
+        const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 12); // Autem: 4-9 km (max 12 sztuk)
+        const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 12); // Wypady: powyżej 9 km (max 12 sztuk)
+
+        // Składamy ostateczną listę
         const finalPlaces = [
-            // 1. Najpierw wybiegi
-            ...dogParks.sort((a,b) => a.distance - b.distance),
-            // 2. Potem nazwane parki
-            ...normalParks.sort((a,b) => a.distance - b.distance),
-            // 3. Na końcu lasy
-            ...clusteredForests.sort((a,b) => a.distance - b.distance)
+            ...dogParks, // Wybiegi wchodzą wszystkie jak leci (najwyższy priorytet)
+            ...zone1,
+            ...zone2,
+            ...zone3
         ];
 
-        // 🔥 Limit zwiększony z 25 na 40 - bogatsza mapa!
-        return finalPlaces.slice(0, 40);
+        console.log(`🗺️ Strefy: Wybiegi(${dogParks.length}), Blisko(${zone1.length}), Średnio(${zone2.length}), Daleko(${zone3.length})`);
+
+        return finalPlaces.slice(0, 50); // Bezpieczny limit maksymalny
 
     } catch (error) {
         console.error("❌ OSM ERROR:", error);
-        return [{
-            name: "Park Waggle",
-            distance: 1,
-            lat: lat + 0.01,
-            lng: lng + 0.01,
-            isDogPark: false,
-            type: 'park'
-        }];
+        return [];
     }
 }
