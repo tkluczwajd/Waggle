@@ -1,26 +1,57 @@
+// src/modules/map/parksRenderer.js
 import { mapManager } from './mapManager.js';
 
 export function renderParksOnMap(places) {
-    const L = window.L;
-    
-    // Najpierw czyścimy starą warstwę parków, żeby pineski się nie dublowały
+    // 1. Czyszczenie starej warstwy parków przed narysowaniem nowych
     mapManager.clearLayer('parks');
 
+    const L = window.L;
+    if (!L) return;
+
     places.forEach(place => {
-        const iconHtml = `<div style="background:${place.isDogPark ? '#4cd137' : '#00a8ff'}; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:2px solid white; box-shadow:var(--soft-shadow); font-size:16px;">${place.isDogPark ? '🏞️' : '🌳'}</div>`;
+        const nameLower = (place.name || "").toLowerCase();
+        
+        // 2. Inteligentny dobór ikony na mapę
+        let emoji = '🌳'; // Domyślnie zwykły park
+        let typeLabel = 'Park / Teren zielony';
+
+        if (place.isDogPark) {
+            emoji = '🏞️';
+            typeLabel = 'Wybieg dla psów 🐕';
+        } else if (nameLower.includes('las') || nameLower.includes('lasek') || place.type === 'forest') {
+            emoji = '🌲';
+            typeLabel = 'Las / Kompleks leśny 🌲';
+        }
+
+        // 3. Tworzenie pancernej ikony HTML dla Leafleta
+        const iconHtml = `<div style="font-size: 26px; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3)); text-align: center;">${emoji}</div>`;
         
         const icon = L.divIcon({
-            className: '',
+            className: 'waggle-park-marker',
             html: iconHtml,
-            iconSize: [30, 30]
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -10]
         });
-        
+
+        // 4. Tworzenie markera i przypisanie ładnego okienka Popup po kliknięciu
         const marker = L.marker([place.lat, place.lng], { icon });
         
-        // Dodajemy dymek po kliknięciu
-        marker.bindPopup(`<b>${place.name}</b><br>${place.distance.toFixed(2)} km`);
-        
-        // Wrzucamy marker do dedykowanej warstwy 'parks'
+        marker.bindPopup(`
+            <div style="font-family: 'Nunito', sans-serif; padding: 5px; min-width: 150px;">
+                <b style="font-size: 14px; color: var(--text-color); display: block; margin-bottom: 4px;">${place.name}</b>
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${typeLabel}</span>
+                <br>
+                <button class="btn-outline" style="padding: 4px 8px; font-size: 11px; margin-top: 8px; width: 100%; height: auto;" 
+                        onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">
+                    Nawiguj 🧭
+                </button>
+            </div>
+        `);
+
+        // 5. Bezpieczne dodanie do dedykowanej warstwy
         mapManager.addMarkerToLayer('parks', marker);
     });
+
+    console.log(`🌲 Map Health: Wyrenderowano ${places.length} zielonych punktów na mapie.`);
 }
