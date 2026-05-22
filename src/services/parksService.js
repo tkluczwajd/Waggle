@@ -12,11 +12,14 @@ function getDistanceInKm(lat1, lng1, lat2, lng2) {
 }
 
 export async function fetchNearbyParks(lat, lng) {
-    // 🔥 OPTYMALIZACJA QUERY: Wybiegi łapiemy z 10km, lasy i parki zawężamy do 4km, by uniknąć potopu danych
+    // 🔥 Pancerne zapytanie: szukamy oficjalnych tagów ORAZ słowa "wybieg" w nazwie (15km)
     const query = `[out:json];
     (
-      node["leisure"="dog_park"](around:10000,${lat},${lng});
-      way["leisure"="dog_park"](around:10000,${lat},${lng});
+      node["leisure"="dog_park"](around:15000,${lat},${lng});
+      way["leisure"="dog_park"](around:15000,${lat},${lng});
+      
+      node["name"~"wybieg",i](around:15000,${lat},${lng});
+      way["name"~"wybieg",i](around:15000,${lat},${lng});
 
       node["leisure"="park"](around:4000,${lat},${lng});
       way["leisure"="park"](around:4000,${lat},${lng});
@@ -32,7 +35,6 @@ export async function fetchNearbyParks(lat, lng) {
         const response = await fetch(url);
         const data = await response.json();
         
-        // Rozdzielamy punkty na dwie osobne kategorie
         const dogParks = [];
         const generalGreenAreas = [];
 
@@ -43,8 +45,12 @@ export async function fetchNearbyParks(lat, lng) {
             if (!eLat || !eLng || !el.tags) return;
 
             const dist = getDistanceInKm(lat, lng, eLat, eLng);
-            const isRun = el.tags.leisure === 'dog_park';
-            const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest';
+            const nameLower = (el.tags.name || "").toLowerCase();
+            
+            // 🔥 Czytamy w myślach polskich mapujących:
+            const isRun = el.tags.leisure === 'dog_park' || nameLower.includes('wybieg') || nameLower.includes('dla psów');
+            const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest' || nameLower.includes('las');
+            
             const name = el.tags.name || (isRun ? "Wybieg dla psów" : isForest ? "Las / Teren leśny" : "Park");
 
             const item = {
@@ -56,7 +62,6 @@ export async function fetchNearbyParks(lat, lng) {
                 type: isForest ? 'forest' : 'park'
             };
 
-            // Segregacja na starcie
             if (isRun) {
                 dogParks.push(item);
             } else {
@@ -64,15 +69,13 @@ export async function fetchNearbyParks(lat, lng) {
             }
         });
 
-        // Sortujemy obie grupy niezależnie od najbliższych
+        // Sortujemy najbliższe
         dogParks.sort((a, b) => a.distance - b.distance);
         generalGreenAreas.sort((a, b) => a.distance - b.distance);
 
-        // 🔥 STRATEGIA MIKSU: Zawsze pokazuj WSZYSTKIE znalezione wybiegi (bo to apka dla psów!), 
-        // a resztę listy uzupełnij najbliższymi parkami i lasami.
+        // Wybiegi idą ZAWSZE na samą górę listy
         const combinedPlaces = [...dogParks, ...generalGreenAreas];
 
-        // Zwracamy bezpieczne top 35 miejsc do wyrenderowania
         return combinedPlaces.slice(0, 35);
         
     } catch (error) {
