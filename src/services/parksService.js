@@ -3,18 +3,22 @@ import { getDistance } from './geolocationService.js';
 export async function fetchNearbyParks(lat, lng) {
     console.log("🌍 OSM START", lat, lng);
 
-    // 🔥 Zwiększony promień: wybiegi i lasy 15km, parki 10km
+// 🔥 Zaktualizowane zapytanie: dodane "relation", by łapać gigantyczne parki i lasy
     const query = `
-[out:json][timeout:20];
+[out:json][timeout:25];
 (
-    node["leisure"="dog_park"](around:15000,${lat},${lng});
-    way["leisure"="dog_park"](around:15000,${lat},${lng});
+    node["leisure"="dog_park"](around:10000,${lat},${lng});
+    way["leisure"="dog_park"](around:10000,${lat},${lng});
+    relation["leisure"="dog_park"](around:10000,${lat},${lng});
 
-    node["leisure"="park"](around:10000,${lat},${lng});
-    way["leisure"="park"](around:10000,${lat},${lng});
+    node["leisure"="park"](around:8000,${lat},${lng});
+    way["leisure"="park"](around:8000,${lat},${lng});
+    relation["leisure"="park"](around:8000,${lat},${lng});
 
-    way["natural"="wood"](around:15000,${lat},${lng});
-    way["landuse"="forest"](around:15000,${lat},${lng});
+    way["natural"="wood"](around:8000,${lat},${lng});
+    way["landuse"="forest"](around:8000,${lat},${lng});
+    relation["natural"="wood"](around:8000,${lat},${lng});
+    relation["landuse"="forest"](around:8000,${lat},${lng});
 );
 out center;
 `;
