@@ -12,22 +12,24 @@ function getDistanceInKm(lat1, lng1, lat2, lng2) {
 }
 
 export async function fetchNearbyParks(lat, lng) {
-    // 🔥 Pancerne zapytanie z uwzględnieniem "relation"
-    const query = `[out:json];
+    console.log("🌍 Rozpoczynam pobieranie danych z OSM (czekaj...)");
+
+    // Zmniejszony promień do 8km (wybiegi) i 3km (parki), dodany timeout
+    const query = `[out:json][timeout:25];
     (
-      node["leisure"="dog_park"](around:15000,${lat},${lng});
-      way["leisure"="dog_park"](around:15000,${lat},${lng});
-      relation["leisure"="dog_park"](around:15000,${lat},${lng});
+      node["leisure"="dog_park"](around:8000,${lat},${lng});
+      way["leisure"="dog_park"](around:8000,${lat},${lng});
+      relation["leisure"="dog_park"](around:8000,${lat},${lng});
       
-      node["name"~"wybieg",i](around:15000,${lat},${lng});
-      way["name"~"wybieg",i](around:15000,${lat},${lng});
-      relation["name"~"wybieg",i](around:15000,${lat},${lng});
+      node["name"~"wybieg",i](around:8000,${lat},${lng});
+      way["name"~"wybieg",i](around:8000,${lat},${lng});
+      relation["name"~"wybieg",i](around:8000,${lat},${lng});
 
-      node["leisure"="park"](around:4000,${lat},${lng});
-      way["leisure"="park"](around:4000,${lat},${lng});
+      node["leisure"="park"](around:3000,${lat},${lng});
+      way["leisure"="park"](around:3000,${lat},${lng});
 
-      way["natural"="wood"](around:4000,${lat},${lng});
-      way["landuse"="forest"](around:4000,${lat},${lng});
+      way["natural"="wood"](around:3000,${lat},${lng});
+      way["landuse"="forest"](around:3000,${lat},${lng});
     );
     out center;`;
 
@@ -49,7 +51,6 @@ export async function fetchNearbyParks(lat, lng) {
             const dist = getDistanceInKm(lat, lng, eLat, eLng);
             const nameLower = (el.tags.name || "").toLowerCase();
             
-            // Rozpoznawanie na podstawie oficjalnych tagów i polskich nazw
             const isRun = el.tags.leisure === 'dog_park' || nameLower.includes('wybieg') || nameLower.includes('dla psów');
             const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest' || nameLower.includes('las');
             
@@ -71,18 +72,12 @@ export async function fetchNearbyParks(lat, lng) {
             }
         });
 
-        // Sortowanie od najbliższych
         dogParks.sort((a, b) => a.distance - b.distance);
         generalGreenAreas.sort((a, b) => a.distance - b.distance);
 
-        // Debugger w konsoli od Konsultanta
-        console.log(
-            "🏞️ Dog parks:", dogParks.length,
-            "🌳 Green:", generalGreenAreas.length
-        );
+        console.log("🏞️ Dog parks:", dogParks.length, "🌳 Green:", generalGreenAreas.length);
 
         const combinedPlaces = [...dogParks, ...generalGreenAreas];
-
         return combinedPlaces.slice(0, 35);
         
     } catch (error) {
