@@ -1,8 +1,7 @@
 // src/services/parksService.js
 
-// Funkcja pomocnicza do obliczania dystansu w linii prostej (w kilometrach)
 function getDistanceInKm(lat1, lng1, lat2, lng2) {
-    const R = 6371; // Promień Ziemi w km
+    const R = 6371;
     const phi1 = lat1 * Math.PI / 180;
     const phi2 = lat2 * Math.PI / 180;
     const deltaPhi = (lat2 - lat1) * Math.PI / 180;
@@ -13,20 +12,17 @@ function getDistanceInKm(lat1, lng1, lat2, lng2) {
 }
 
 export async function fetchNearbyParks(lat, lng) {
-    // 🔥 Nowe, potężne zapytanie Overpass API (od Konsultanta)
+    // 🔥 OPTYMALIZACJA QUERY: Wybiegi łapiemy z 10km, lasy i parki zawężamy do 4km, by uniknąć potopu danych
     const query = `[out:json];
     (
       node["leisure"="dog_park"](around:10000,${lat},${lng});
       way["leisure"="dog_park"](around:10000,${lat},${lng});
 
-      node["leisure"="park"](around:10000,${lat},${lng});
-      way["leisure"="park"](around:10000,${lat},${lng});
+      node["leisure"="park"](around:4000,${lat},${lng});
+      way["leisure"="park"](around:4000,${lat},${lng});
 
-      way["natural"="wood"](around:10000,${lat},${lng});
-      way["landuse"="forest"](around:10000,${lat},${lng});
-
-      relation["natural"="wood"](around:10000,${lat},${lng});
-      relation["landuse"="forest"](around:10000,${lat},${lng});
+      way["natural"="wood"](around:4000,${lat},${lng});
+      way["landuse"="forest"](around:4000,${lat},${lng});
     );
     out center;`;
 
@@ -35,39 +31,49 @@ export async function fetchNearbyParks(lat, lng) {
     try {
         const response = await fetch(url);
         const data = await response.json();
-        const places = [];
+        
+        // Rozdzielamy punkty na dwie osobne kategorie
+        const dogParks = [];
+        const generalGreenAreas = [];
 
         data.elements.forEach(el => {
-            // Pobieranie współrzędnych (node ma lat/lon, a way/relation mają center.lat/center.lon dzięki 'out center;')
             const eLat = el.lat || (el.center && el.center.lat);
             const eLng = el.lon || (el.center && el.center.lon);
             
             if (!eLat || !eLng || !el.tags) return;
 
             const dist = getDistanceInKm(lat, lng, eLat, eLng);
-
-            // 🔥 Rozpoznawanie typu (od Konsultanta)
             const isRun = el.tags.leisure === 'dog_park';
             const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest';
-
-            // 🔥 Precyzyjne nazewnictwo
             const name = el.tags.name || (isRun ? "Wybieg dla psów" : isForest ? "Las / Teren leśny" : "Park");
 
-            places.push({
+            const item = {
                 name,
                 distance: dist,
                 lat: eLat,
                 lng: eLng,
                 isDogPark: isRun,
                 type: isForest ? 'forest' : 'park'
-            });
+            };
+
+            // Segregacja na starcie
+            if (isRun) {
+                dogParks.push(item);
+            } else {
+                generalGreenAreas.push(item);
+            }
         });
 
-        // Sortujemy od najbliższego do najdalszego
-        places.sort((a, b) => a.distance - b.distance);
+        // Sortujemy obie grupy niezależnie od najbliższych
+        dogParks.sort((a, b) => a.distance - b.distance);
+        generalGreenAreas.sort((a, b) => a.distance - b.distance);
 
-        // Zwracamy maksymalnie 30 najbliższych miejsc, żeby nie zamulić telefonu
-        return places.slice(0, 30);
+        // 🔥 STRATEGIA MIKSU: Zawsze pokazuj WSZYSTKIE znalezione wybiegi (bo to apka dla psów!), 
+        // a resztę listy uzupełnij najbliższymi parkami i lasami.
+        const combinedPlaces = [...dogParks, ...generalGreenAreas];
+
+        // Zwracamy bezpieczne top 35 miejsc do wyrenderowania
+        return combinedPlaces.slice(0, 35);
         
     } catch (error) {
         console.error("Błąd pobierania parków z OSM:", error);
