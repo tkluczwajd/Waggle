@@ -33,9 +33,31 @@ export function renderPostsList(posts, filter) {
         if (p.isEvent) {
             cardStyle = "position:relative; border: 2px solid var(--primary);";
             let eventDateStr = p.eventDate ? new Date(p.eventDate).toLocaleString('pl-PL', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : "Nieznana data";
-            eventBanner = `<div style="background:var(--primary); color:white; padding:10px 15px; border-radius:10px; margin-bottom:15px; font-size:13px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 10px rgba(52, 172, 224, 0.3);">
-                <div><b style="font-size:15px;">📅 Ustawka!</b><br><small style="font-weight:700;">${eventDateStr}</small></div>
-                <button onclick="window.Waggle.showToast('Zadeklarowałeś obecność! 🐾')" style="background:white; color:var(--primary); border:none; border-radius:20px; padding:6px 15px; font-weight:900; font-size:12px; cursor:pointer;">BĘDĘ!</button>
+            
+            // --- NOWA LOGIKA OBECNOŚCI ---
+            const attendees = p.attendees || [];
+            const isAttending = state.user && attendees.includes(state.user.uid);
+            
+            // Dynamiczny wygląd przycisku zależny od tego, czy użytkownik dołączył
+            const btnBg = isAttending ? 'transparent' : 'white';
+            const btnColor = isAttending ? 'white' : 'var(--primary)';
+            const btnBorder = isAttending ? '1px solid white' : 'none';
+            const btnText = isAttending ? 'Wypisz się ❌' : 'BĘDĘ! 🐾';
+            
+            // Licznik chętnych widoczny tylko, gdy ktoś się zapisze
+            const attendeesCountHtml = attendees.length > 0 
+                ? `<div style="margin-top: 6px; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.15); padding: 4px 8px; border-radius: 10px; display: inline-block;">👥 Chętnych psów: ${attendees.length}</div>` 
+                : '';
+
+            eventBanner = `<div style="background:var(--primary); color:white; padding:12px 15px; border-radius:10px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 10px rgba(52, 172, 224, 0.3);">
+                <div>
+                    <b style="font-size:15px;">📅 Ustawka!</b><br>
+                    <small style="font-weight:700; font-size:13px;">${eventDateStr}</small><br>
+                    ${attendeesCountHtml}
+                </div>
+                <button onclick="window.Waggle.toggleEventAttendance('${p.id}')" style="background:${btnBg}; color:${btnColor}; border:${btnBorder}; border-radius:20px; padding:8px 15px; font-weight:900; font-size:12px; cursor:pointer; transition:0.2s;">
+                    ${btnText}
+                </button>
             </div>`;
         } else if (p.isAlert) {
             cardStyle = "position:relative; border: 2px solid var(--danger);";
