@@ -12,9 +12,8 @@ function getDistanceInKm(lat1, lng1, lat2, lng2) {
 }
 
 export async function fetchNearbyParks(lat, lng) {
-    console.log("🌍 Rozpoczynam pobieranie danych z OSM (czekaj...)");
+    console.log("🌍 Rozpoczynam bezpieczne pobieranie danych z OSM (Metoda POST)...");
 
-    // Zmniejszony promień do 8km (wybiegi) i 3km (parki), dodany timeout
     const query = `[out:json][timeout:25];
     (
       node["leisure"="dog_park"](around:8000,${lat},${lng});
@@ -33,55 +32,77 @@ export async function fetchNearbyParks(lat, lng) {
     );
     out center;`;
 
-    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
     try {
-        const response = await fetch(url);
+        // 🔥 Zmiana na stabilne żądanie POST z kodowaniem formularza
+        const response = await fetch(
+            "https://overpass-api.de/api/interpreter",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `data=${encodeURIComponent(query)}`
+            }
+        );
+
+        // 📝 Log statusu odpowiedzi sieciowej
+        console.log("🌍 OSM status:", response.status);
+
+        if (!response.ok) {
+            throw new Error(`OSM ${response.status}`);
+        }
+
         const data = await response.json();
+
+        // 📝 Log surowej liczby elementów z serwera
+        console.log("🌳 OSM elements:", data.elements?.length || 0);
         
         const dogParks = [];
         const generalGreenAreas = [];
 
-        data.elements.forEach(el => {
-            const eLat = el.lat || (el.center && el.center.lat);
-            const eLng = el.lon || (el.center && el.center.lon);
-            
-            if (!eLat || !eLng || !el.tags) return;
+        if (data && data.elements) {
+            data.elements.forEach(el => {
+                const eLat = el.lat || (el.center && el.center.lat);
+                const eLng = el.lon || (el.center && el.center.lon);
+                
+                if (!eLat || !eLng || !el.tags) return;
 
-            const dist = getDistanceInKm(lat, lng, eLat, eLng);
-            const nameLower = (el.tags.name || "").toLowerCase();
-            
-            const isRun = el.tags.leisure === 'dog_park' || nameLower.includes('wybieg') || nameLower.includes('dla psów');
-            const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest' || nameLower.includes('las');
-            
-            const name = el.tags.name || (isRun ? "Wybieg dla psów" : isForest ? "Las / Teren leśny" : "Park");
+                const dist = getDistanceInKm(lat, lng, eLat, eLng);
+                const nameLower = (el.tags.name || "").toLowerCase();
+                
+                const isRun = el.tags.leisure === 'dog_park' || nameLower.includes('wybieg') || nameLower.includes('dla psów');
+                const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest' || nameLower.includes('las');
+                
+                const name = el.tags.name || (isRun ? "Wybieg dla psów" : isForest ? "Las / Teren leśny" : "Park");
 
-            const item = {
-                name,
-                distance: dist,
-                lat: eLat,
-                lng: eLng,
-                isDogPark: isRun,
-                type: isForest ? 'forest' : 'park'
-            };
+                const item = {
+                    name,
+                    distance: dist,
+                    lat: eLat,
+                    lng: eLng,
+                    isDogPark: isRun,
+                    type: isForest ? 'forest' : 'park'
+                };
 
-            if (isRun) {
-                dogParks.push(item);
-            } else {
-                generalGreenAreas.push(item);
-            }
-        });
+                if (isRun) {
+                    dogParks.push(item);
+                } else {
+                    generalGreenAreas.push(item);
+                }
+            });
+        }
 
         dogParks.sort((a, b) => a.distance - b.distance);
         generalGreenAreas.sort((a, b) => a.distance - b.distance);
 
-        console.log("🏞️ Dog parks:", dogParks.length, "🌳 Green:", generalGreenAreas.length);
+        // Dodatkowy log po naszej segregacji
+        console.log("🏞️ Przefiltrowane wybiegi:", dogParks.length, "🌳 Przefiltrowana zieleń:", generalGreenAreas.length);
 
         const combinedPlaces = [...dogParks, ...generalGreenAreas];
         return combinedPlaces.slice(0, 35);
         
     } catch (error) {
-        console.error("Błąd pobierania parków z OSM:", error);
+        console.error("Krytyczny błąd pobierania parków z OSM:", error);
         return [];
     }
 }
