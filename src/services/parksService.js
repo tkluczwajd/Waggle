@@ -1,175 +1,160 @@
-// src/services/postsService.js
-import { db, fb } from '../core/firebase.js';
+import { getDistance } from './geolocationService.js';
 
-const IMGBB_KEY = "af2b35f5ca54dd9c8fc91595fe525de9"; 
+export async function fetchNearbyParks(lat, lng) {
 
-export function subscribeToPosts(limit, callback) {
-    return db.collection("posts")
-        .orderBy("timestamp", "desc")
-        .limit(limit)
-        .onSnapshot(snap => {
-            const posts = [];
-            snap.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
-            callback(posts);
-        });
-}
+    console.log("🌍 OSM START", lat, lng);
 
-export async function addPost(postData) {
-    return db.collection("posts").add({
-        ...postData,
-        timestamp: fb.firestore.FieldValue.serverTimestamp()
-    });
-}
+    const query = `
+[out:json][timeout:20];
+(
+    node["leisure"="dog_park"](around:10000,${lat},${lng});
+    way["leisure"="dog_park"](around:10000,${lat},${lng});
 
-export function deletePostInDb(postId) {
-    return db.collection("posts").doc(postId).delete();
-}
+    node["leisure"="park"](around:8000,${lat},${lng});
+    way["leisure"="park"](around:8000,${lat},${lng});
 
-export function toggleLikeInDb(postId, userId) {
-    const ref = db.collection("posts").doc(postId);
+    way["natural"="wood"](around:8000,${lat},${lng});
+    way["landuse"="forest"](around:8000,${lat},${lng});
+);
+out center;
+`;
 
-    return ref.get().then(doc => {
-        const likes = doc.data().likes || [];
+    try {
 
-        if (likes.includes(userId)) {
-            return ref.update({
-                likes: fb.firestore.FieldValue.arrayRemove(userId)
-            });
-        } else {
-            return ref.update({
-                likes: fb.firestore.FieldValue.arrayUnion(userId)
-            });
+        const response = await fetch(
+            `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`OSM ${response.status}`);
         }
-    });
-}
 
-export function subscribeToComments(postId, callback) {
-    return db.collection("posts")
-        .doc(postId)
-        .collection("comments")
-        .orderBy("timestamp", "asc")
-        .onSnapshot(snap => {
+        const data = await response.json();
 
-            const comments = [];
+        const places = [];
+        const seen = new Set();
 
-            snap.forEach(doc =>
-                comments.push({
-                    id: doc.id,
-                    ...doc.data()
-                })
+        (data.elements || []).forEach(el => {
+
+            const eLat = el.lat || el.center?.lat;
+            const eLng = el.lon || el.center?.lon;
+
+            if (!eLat || !eLng || !el.tags) return;
+
+            const key =
+                Math.round(eLat * 10000) +
+                "_" +
+                Math.round(eLng * 10000);
+
+            if (seen.has(key)) return;
+            seen.add(key);
+
+            const isDogPark =
+                el.tags.leisure === 'dog_park';
+
+            const isForest =
+                el.tags.natural === 'wood' ||
+                el.tags.landuse === 'forest';
+
+            const name =
+                el.tags.name ||
+                (
+                    isDogPark
+                        ? "Wybieg dla psów"
+                        : isForest
+                        ? "Las"
+                        : "Park"
+                );
+
+            const dist = getDistance(
+                lat,
+                lng,
+                eLat,
+                eLng
             );
 
-            callback(comments);
+            places.push({
+                name,
+                distance: dist,
+                lat: eLat,
+                lng: eLng,
+                isDogPark,
+                type:
+                    isDogPark
+                        ? 'dogpark'
+                        : isForest
+                        ? 'forest'
+                        : 'park'
+            });
         });
-}
 
-export function addCommentInDb(postId, commentData) {
-    return db.collection("posts")
-        .doc(postId)
-        .collection("comments")
-        .add({
-            ...commentData,
-            timestamp: fb.firestore.FieldValue.serverTimestamp()
-        })
-        .then(() => {
-            return db.collection("posts")
-                .doc(postId)
-                .update({
-                    commentCount:
-                        fb.firestore.FieldValue.increment(1)
+        // ===== CLUSTER LASÓW =====
+        const forests =
+            places.filter(
+                p => p.type === 'forest'
+            );
+
+        const others =
+            places.filter(
+                p => p.type !== 'forest'
+            );
+
+        const clusteredForests = [];
+        const used = [];
+
+        forests.forEach(f => {
+
+            const existing = used.find(c => {
+
+                const dLat =
+                    Math.abs(c.lat - f.lat);
+
+                const dLng =
+                    Math.abs(c.lng - f.lng);
+
+                return (
+                    dLat < 0.018 &&
+                    dLng < 0.018
+                );
+            });
+
+            if (!existing) {
+
+                used.push(f);
+
+                clusteredForests.push({
+                    ...f,
+                    name: "Las"
                 });
+            }
         });
-}
 
-// 🔥 OPTYMALIZACJA UPLOADU + WEBP + IMGBB
-export async function uploadImageToService(file) {
+        const finalPlaces = [
+            ...others,
+            ...clusteredForests
+        ];
 
-    return new Promise((resolve, reject) => {
+        return finalPlaces
+            .sort(
+                (a, b) =>
+                    a.distance - b.distance
+            )
+            .slice(0, 25);
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
+    } catch (error) {
 
-        reader.onload = e => {
+        console.error(
+            "❌ OSM ERROR:",
+            error
+        );
 
-            const img = new Image();
-            img.src = e.target.result;
-
-            img.onload = () => {
-
-                const canvas =
-                    document.createElement('canvas');
-
-                let w = img.width;
-                let h = img.height;
-
-                // MAX szerokość
-                const MAX_WIDTH = 1024;
-
-                if (w > MAX_WIDTH) {
-                    h = Math.round(
-                        (h * MAX_WIDTH) / w
-                    );
-                    w = MAX_WIDTH;
-                }
-
-                canvas.width = w;
-                canvas.height = h;
-
-                canvas
-                    .getContext('2d')
-                    .drawImage(img, 0, 0, w, h);
-
-                // WEBP 75%
-                canvas.toBlob(blob => {
-
-                    if (!blob) {
-                        return reject(
-                            new Error(
-                                "Błąd konwersji zdjęcia."
-                            )
-                        );
-                    }
-
-                    const fd = new FormData();
-
-                    fd.append(
-                        "image",
-                        blob,
-                        "waggle_upload.webp"
-                    );
-
-                    fetch(
-                        `https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,
-                        {
-                            method: "POST",
-                            body: fd
-                        }
-                    )
-                        .then(r => r.json())
-                        .then(res => {
-
-                            if (
-                                res &&
-                                res.success &&
-                                res.data?.url
-                            ) {
-                                resolve(res.data.url);
-                            } else {
-                                reject(
-                                    new Error(
-                                        "ImgBB upload failed"
-                                    )
-                                );
-                            }
-                        })
-                        .catch(reject);
-
-                }, 'image/webp', 0.75);
-            };
-
-            img.onerror = reject;
-        };
-
-        reader.onerror = reject;
-    });
+        return [{
+            name: "Park Waggle",
+            distance: 1,
+            lat: lat + 0.01,
+            lng: lng + 0.01,
+            isDogPark: false,
+            type: 'park'
+        }];
+    }
 }
