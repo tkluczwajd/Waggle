@@ -9,7 +9,7 @@ import {
     toggleLikeInDb, 
     subscribeToComments, 
     addCommentInDb, 
-    uploadImageToService 
+    uploadImageToService, // 🔥 TUTAJ BRAKOWAŁO PRZECINKA!
     toggleAttendanceInDb
 } from '../../services/postsService.js';
 
@@ -71,12 +71,13 @@ export async function saveCommunityPost(content, imageUrl = null, isEvent = fals
         isEvent,
         eventDate,
         isInfo,
-        isAlert, // Teraz przyjmuje wartość z argumentu, a nie false na sztywno
+        isAlert, 
         category: isAlert ? 'alerts' : (isEvent ? 'events' : (isInfo ? 'info' : 'all')),
         likes: [], 
         commentCount: 0
     });
 }
+
 // --- BINDOWANIA GLOBALNE (DLA HTML) ---
 
 // Ten "bezpiecznik" sprawia, że jeśli Waggle jeszcze nie istnieje, to zostanie utworzony
@@ -109,7 +110,7 @@ export function openLightbox(url) {
 window.Waggle.openLightbox = openLightbox;
 export const uploadImage = uploadImageToService;
 
-// 🔥 FIX: Brakująca funkcja otwierająca profil użytkownika
+// FIX: Brakująca funkcja otwierająca profil użytkownika
 window.Waggle.openUserMenu = (uid, name, avatar) => {
     const modal = document.getElementById('user-action-modal');
     if (modal) {
