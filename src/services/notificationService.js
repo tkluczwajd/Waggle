@@ -2,55 +2,81 @@
 import { appState as state } from '../core/state.js';
 import { db } from '../core/firebase.js';
 
-export async function requestNotificationPermission() {
+export async function toggleNotifications() {
     if (!state.user) {
-        window.Waggle.showToast("Zaloguj się, aby włączyć powiadomienia.");
+        window.Waggle.showToast("Zaloguj się, aby zarządzać powiadomieniami. 🐾");
         return;
     }
 
     try {
-        console.log("🔔 Pytam użytkownika o zgodę na powiadomienia...");
-        const permission = await Notification.requestPermission();
+        const userRef = db.collection('users').doc(state.user.uid);
+        const doc = await userRef.get();
+        const userData = doc.data() || {};
         
-        if (permission === 'granted') {
-            console.log("✅ Zgoda przyznana! Inicjalizuję Firebase Messaging...");
-            
-            // Pobieramy globalną instancję Firebase zadeklarowaną w index.html
-            const messaging = window.firebase.messaging();
-            
-            // 🔥 TUTAJ UŻYWAMY TWOJEGO KLUCZA VAPID
-            const currentToken = await messaging.getToken({ 
-                vapidKey: 'BDe5V4WgJZisgVNjd8mmme9tlfqsyQL8BAWgNEyx5_ZCFac7SRFBA7K5EuOtn_cbM58Q4zkLo_V_huURv9gH5U0' 
-            });
-            
-            if (currentToken) {
-                console.log("📱 Wygenerowano FCM Token dla tego urządzenia:", currentToken);
-                
-                // Zapisujemy token do profilu użytkownika w bazie Firestore
-                await db.collection('users').doc(state.user.uid).update({
-                    fcmToken: currentToken
-                });
-                
-                window.Waggle.showToast("Powiadomienia włączone! 🔔");
-                
-                // Nasłuchujemy wiadomości również wtedy, gdy aplikacja jest OTWARTA
-                messaging.onMessage((payload) => {
-                    console.log('💬 Otrzymano wiadomość na żywo:', payload);
-                    window.Waggle.showToast(`Nowa wiadomość: ${payload.notification?.body}`);
-                });
+        // Sprawdzamy, czy użytkownik ma aktualnie włączone powiadomienia
+        const isCurrentlyEnabled = userData.pushEnabled === true;
 
-            } else {
-                console.warn("Brak tokena powiadomień (problem z rejestracją).");
-            }
+        if (isCurrentlyEnabled) {
+            // 🔴 AKCJA: WYŁĄCZANIE (Soft Disable)
+            await userRef.update({ pushEnabled: false });
+            window.Waggle.showToast("🔕 Powiadomienia wyciszone.");
+            updateNotificationBtnUI(false);
+            
         } else {
-            console.warn("❌ Użytkownik odmówił zgody na powiadomienia.");
-            window.Waggle.showToast("Powiadomienia zostały zablokowane.");
+            // 🟢 AKCJA: WŁĄCZANIE (Pytanie o zgodę i pobieranie tokena)
+            const permission = await Notification.requestPermission();
+            
+            if (permission === 'granted') {
+                const messaging = window.firebase.messaging();
+                const currentToken = await messaging.getToken({ 
+                    vapidKey: 'BDe5V4WgJZisgVNjd8mmme9tlfqsyQL8BAWgNEyx5_ZCFac7SRFBA7K5EuOtn_cbM58Q4zkLo_V_huURv9gH5U0' 
+                });
+                
+                if (currentToken) {
+                    // Zapisujemy token i włączamy zielone światło dla serwera
+                    await userRef.update({
+                        fcmToken: currentToken,
+                        pushEnabled: true
+                    });
+                    
+                    window.Waggle.showToast("🔔 Powiadomienia aktywne!");
+                    updateNotificationBtnUI(true);
+
+                    // Nasłuchujemy wiadomości również wtedy, gdy aplikacja jest OTWARTA
+                    messaging.onMessage((payload) => {
+                        console.log('💬 Otrzymano wiadomość na żywo (Foreground):', payload);
+                        const msgTitle = payload.notification?.title || 'Waggle';
+                        const msgBody = payload.notification?.body || 'Masz nową wiadomość!';
+                        window.Waggle.showToast(`💬 ${msgTitle}: ${msgBody}`);
+                    });
+                }
+            } else {
+                window.Waggle.showToast("❌ Odblokuj powiadomienia w ustawieniach przeglądarki!");
+            }
         }
     } catch (error) {
-        console.error("Błąd konfiguracji powiadomień:", error);
+        console.error("Błąd zarządzania powiadomieniami:", error);
     }
 }
 
-// Udostępniamy funkcję dla interfejsu HTML
+// Funkcja aktualizująca wygląd przycisku w zależności od statusu
+export function updateNotificationBtnUI(isEnabled) {
+    const btn = document.getElementById('togglePushBtn');
+    if (btn) {
+        if (isEnabled) {
+            btn.innerHTML = '🔕 WYCISZ POWIADOMIENIA';
+            btn.style.background = 'transparent';
+            btn.style.border = '2px solid var(--danger)';
+            btn.style.color = 'var(--danger)';
+        } else {
+            btn.innerHTML = '🔔 WŁĄCZ POWIADOMIENIA';
+            btn.style.background = '#ffb142'; // Złoty kolor Waggle
+            btn.style.border = 'none';
+            btn.style.color = '#2d3436';
+        }
+    }
+}
+
+// Eksport do globalnego obiektu, aby HTML mógł to kliknąć
 window.Waggle = window.Waggle || {};
-window.Waggle.requestPush = requestNotificationPermission;
+window.Waggle.toggleNotifications = toggleNotifications;
