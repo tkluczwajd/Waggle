@@ -12,14 +12,16 @@ function getDistanceInKm(lat1, lng1, lat2, lng2) {
 }
 
 export async function fetchNearbyParks(lat, lng) {
-    // 🔥 Pancerne zapytanie: szukamy oficjalnych tagów ORAZ słowa "wybieg" w nazwie (15km)
+    // 🔥 Pancerne zapytanie z uwzględnieniem "relation"
     const query = `[out:json];
     (
       node["leisure"="dog_park"](around:15000,${lat},${lng});
       way["leisure"="dog_park"](around:15000,${lat},${lng});
+      relation["leisure"="dog_park"](around:15000,${lat},${lng});
       
       node["name"~"wybieg",i](around:15000,${lat},${lng});
       way["name"~"wybieg",i](around:15000,${lat},${lng});
+      relation["name"~"wybieg",i](around:15000,${lat},${lng});
 
       node["leisure"="park"](around:4000,${lat},${lng});
       way["leisure"="park"](around:4000,${lat},${lng});
@@ -47,7 +49,7 @@ export async function fetchNearbyParks(lat, lng) {
             const dist = getDistanceInKm(lat, lng, eLat, eLng);
             const nameLower = (el.tags.name || "").toLowerCase();
             
-            // 🔥 Czytamy w myślach polskich mapujących:
+            // Rozpoznawanie na podstawie oficjalnych tagów i polskich nazw
             const isRun = el.tags.leisure === 'dog_park' || nameLower.includes('wybieg') || nameLower.includes('dla psów');
             const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest' || nameLower.includes('las');
             
@@ -69,11 +71,16 @@ export async function fetchNearbyParks(lat, lng) {
             }
         });
 
-        // Sortujemy najbliższe
+        // Sortowanie od najbliższych
         dogParks.sort((a, b) => a.distance - b.distance);
         generalGreenAreas.sort((a, b) => a.distance - b.distance);
 
-        // Wybiegi idą ZAWSZE na samą górę listy
+        // Debugger w konsoli od Konsultanta
+        console.log(
+            "🏞️ Dog parks:", dogParks.length,
+            "🌳 Green:", generalGreenAreas.length
+        );
+
         const combinedPlaces = [...dogParks, ...generalGreenAreas];
 
         return combinedPlaces.slice(0, 35);
