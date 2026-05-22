@@ -15,6 +15,14 @@ export function initPostUi() {
                 reader.readAsDataURL(file);
             }
         }
+        
+        // 🔥 FIX: Odkrywanie kalendarza, gdy klikniesz "Ustawka"
+        if (e.target.id === 'isEventCheckbox') {
+            const dateInput = document.getElementById('eventDetailsInput');
+            if (dateInput) {
+                dateInput.style.display = e.target.checked ? 'block' : 'none';
+            }
+        }
     });
 
     document.addEventListener('click', async (e) => {
@@ -33,10 +41,28 @@ export function initPostUi() {
             });
         }
         if (e.target.closest('#publishPostBtn')) {
-            const content = document.getElementById('postContent').value; const file = document.getElementById('postImageInput').files[0]; if(!content.trim() && !file) return;
-            window.Waggle.showToast("Publikuję... ⏳"); let url = file ? await uploadImage(file) : null;
-            await saveCommunityPost(content, url, document.getElementById('isEventCheckbox')?.checked, null, document.getElementById('isInfoCheckbox')?.checked);
-            document.getElementById('post-creator-modal').style.display = 'none'; document.getElementById('postContent').value = ''; document.getElementById('postImageInput').value = ''; window.Waggle.showToast("Opublikowano! 🐾");
+            const content = document.getElementById('postContent').value; 
+            const file = document.getElementById('postImageInput').files[0]; 
+            if(!content.trim() && !file) return;
+            
+            window.Waggle.showToast("Publikuję... ⏳"); 
+            let url = file ? await uploadImage(file) : null;
+            
+            // 🔥 FIX: Pobieranie daty wydarzenia z formularza
+            const isEvent = document.getElementById('isEventCheckbox')?.checked;
+            const eventDate = isEvent ? document.getElementById('eventDate')?.value : null;
+
+            await saveCommunityPost(content, url, isEvent, eventDate, document.getElementById('isInfoCheckbox')?.checked);
+            
+            // Czyszczenie modala po publikacji
+            document.getElementById('post-creator-modal').style.display = 'none'; 
+            document.getElementById('postContent').value = ''; 
+            document.getElementById('postImageInput').value = ''; 
+            if (document.getElementById('isEventCheckbox')) document.getElementById('isEventCheckbox').checked = false;
+            if (document.getElementById('eventDetailsInput')) document.getElementById('eventDetailsInput').style.display = 'none';
+            if (document.getElementById('eventDate')) document.getElementById('eventDate').value = '';
+            
+            window.Waggle.showToast("Opublikowano! 🐾");
         }
         if (e.target.closest('#sendCommentBtn')) { const input = document.getElementById('commentInput'); if (input && input.value.trim()) { addPostComment(input.value); input.value = ''; } }
     });
