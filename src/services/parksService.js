@@ -111,9 +111,39 @@ out center;
             });
         }
 
-        return places.sort(
-            (a, b) => a.distance - b.distance
-        );
+// CLUSTER LASÓW (żeby nie było 500 drzew)
+const forests = places.filter(p => p.type === 'forest');
+const others = places.filter(p => p.type !== 'forest');
+
+const clusteredForests = [];
+const forestSeen = [];
+
+forests.forEach(f => {
+
+    const nearby = forestSeen.find(c => {
+        const dLat = Math.abs(c.lat - f.lat);
+        const dLng = Math.abs(c.lng - f.lng);
+        return dLat < 0.006 && dLng < 0.006;
+    });
+
+    if (!nearby) {
+        forestSeen.push(f);
+
+        clusteredForests.push({
+            ...f,
+            name: f.name || "Las"
+        });
+    }
+});
+
+const finalPlaces = [
+    ...others,
+    ...clusteredForests
+];
+
+return finalPlaces.sort(
+    (a,b)=>a.distance-b.distance
+);
 
     } catch (error) {
 
