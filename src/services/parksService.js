@@ -129,17 +129,36 @@ out center;
             }
         });
 
-        const finalPlaces = [
-            ...others,
-            ...clusteredForests
-        ];
+// PRIORYTET DLA WYBIEGÓW
+const dogParks =
+    others.filter(
+        p => p.type === 'dogpark'
+    );
 
-        return finalPlaces
-            .sort(
-                (a, b) =>
-                    a.distance - b.distance
-            )
-            .slice(0, 25);
+const normalParks =
+    others.filter(
+        p => p.type === 'park'
+    );
+
+const finalPlaces = [
+
+    // najpierw wybiegi
+    ...dogParks.sort(
+        (a,b)=>a.distance-b.distance
+    ),
+
+    // potem parki
+    ...normalParks.sort(
+        (a,b)=>a.distance-b.distance
+    ),
+
+    // na końcu lasy
+    ...clusteredForests.sort(
+        (a,b)=>a.distance-b.distance
+    )
+];
+
+return finalPlaces.slice(0,25);
 
     } catch (error) {
 
