@@ -117,12 +117,13 @@
                     <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small>Spacerów</small></div>
                     <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary);">0.0</b><br><small>KM</small></div>
                 </div>
-                <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 10px;">
+               <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 10px;">
                     <button class="btn-main" id="openEditProfileBtn" style="background: var(--secondary);">✏️ EDYTUJ PROFIL</button>
                     <button class="btn-main" id="openSettingsBtn" style="background: #576574;">⚙️ USTAWIENIA</button>
                     <button class="btn-outline" id="logoutBtn" style="color: var(--danger); border-color: var(--danger);">WYLOGUJ SIĘ</button>
-                    <button class="btn-main" onclick="window.Waggle.requestPush()" style="background: #ffb142; color: #2d3436;">🔔 WŁĄCZ POWIADOMIENIA</button>
-                </div>
+    
+                   <button id="togglePushBtn" class="btn-main" onclick="window.Waggle.toggleNotifications()" style="background: #ffb142; color: #2d3436;">🔔 WŁĄCZ POWIADOMIENIA</button>
+               </div>
             </div>
         </section>
 
