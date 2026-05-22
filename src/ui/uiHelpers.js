@@ -1,6 +1,7 @@
 // src/ui/uiHelpers.js
 import { mapManager } from '../modules/map/mapManager.js';
 import { appState as state } from '../core/state.js';
+import { updateNotificationBtnUI } from '../services/notificationService.js';
 
 export function updateStatsUI() {
     if (!state.profile) return; const p = state.profile;
@@ -13,6 +14,10 @@ export function updateStatsUI() {
     if (p.walkCount >= 5) lvl = "🐕 Spacerowicz"; if (p.walkCount >= 20) lvl = "🐺 Weteran Osiedla"; if (p.walkCount >= 50) lvl = "👑 Alfa Stada";
     const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+    
+    // 🔥 TUTAJ DODAJEMY AKTUALIZACJĘ PRZYCISKU POWIADOMIEŃ
+    updateNotificationBtnUI(p.pushEnabled === true);
+
     const tempEl = document.getElementById('weather-temp');
     if (tempEl && state.weather) tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
