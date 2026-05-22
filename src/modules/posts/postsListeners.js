@@ -10,6 +10,7 @@ import {
     subscribeToComments, 
     addCommentInDb, 
     uploadImageToService 
+    toggleAttendanceInDb
 } from '../../services/postsService.js';
 
 import { renderPostsList, renderCommentsList } from './postsRenderer.js';
@@ -84,6 +85,18 @@ window.Waggle = window.Waggle || {};
 window.Waggle.deletePost = (id) => deletePostInDb(id);
 window.Waggle.togglePostLike = togglePostLike;
 window.Waggle.openPostComments = openPostComments;
+
+// Nasłuchiwacz kliknięcia w przycisk ustawki
+window.Waggle.toggleEventAttendance = async (postId) => {
+    if (!state.user) {
+        window.Waggle.showToast("Musisz być zalogowany, aby dołączyć do stada! 🐾");
+        return;
+    }
+    
+    // Zapobiegamy spamowaniu przycisku
+    window.Waggle.showToast("Aktualizuję... ⏳");
+    await toggleAttendanceInDb(postId, state.user.uid);
+};
 
 export function openLightbox(url) {
     const img = document.getElementById('lightbox-img');
