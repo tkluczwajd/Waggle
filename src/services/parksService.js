@@ -112,26 +112,30 @@ out center;
         }
 
 // CLUSTER LASÓW (żeby nie było 500 drzew)
+// MOCNY CLUSTER LASÓW
 const forests = places.filter(p => p.type === 'forest');
 const others = places.filter(p => p.type !== 'forest');
 
 const clusteredForests = [];
-const forestSeen = [];
+const used = [];
 
 forests.forEach(f => {
 
-    const nearby = forestSeen.find(c => {
+    const existing = used.find(c => {
+
         const dLat = Math.abs(c.lat - f.lat);
         const dLng = Math.abs(c.lng - f.lng);
-        return dLat < 0.006 && dLng < 0.006;
+
+        return dLat < 0.018 && dLng < 0.018;
     });
 
-    if (!nearby) {
-        forestSeen.push(f);
+    if (!existing) {
+
+        used.push(f);
 
         clusteredForests.push({
             ...f,
-            name: f.name || "Las"
+            name: "Las"
         });
     }
 });
@@ -141,8 +145,9 @@ const finalPlaces = [
     ...clusteredForests
 ];
 
-return finalPlaces.sort(
-    (a,b)=>a.distance-b.distance
+return finalPlaces
+    .sort((a,b)=>a.distance-b.distance)
+    .slice(0,25);
 );
 
     } catch (error) {
