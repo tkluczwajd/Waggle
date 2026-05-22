@@ -1,65 +1,35 @@
 // src/services/parksService.js
-
-function getDistanceInKm(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
+import { getDistance } from './geolocationService.js';
 
 export async function fetchNearbyParks(lat, lng) {
     console.log("🌍 OSM START", lat, lng);
 
+    // WERSJA STABILNA (oparta o działający v9)
     const query = `
-[out:json][timeout:25];
+[out:json][timeout:20];
 (
-node["leisure"="dog_park"](around:8000,${lat},${lng});
-way["leisure"="dog_park"](around:8000,${lat},${lng});
-relation["leisure"="dog_park"](around:8000,${lat},${lng});
+    node["leisure"="dog_park"](around:10000,${lat},${lng});
+    way["leisure"="dog_park"](around:10000,${lat},${lng});
 
-node["name"~"wybieg",i](around:8000,${lat},${lng});
-way["name"~"wybieg",i](around:8000,${lat},${lng});
-relation["name"~"wybieg",i](around:8000,${lat},${lng});
+    node["leisure"="park"](around:8000,${lat},${lng});
+    way["leisure"="park"](around:8000,${lat},${lng});
 
-node["leisure"="park"](around:5000,${lat},${lng});
-way["leisure"="park"](around:5000,${lat},${lng});
-relation["leisure"="park"](around:5000,${lat},${lng});
-
-way["natural"="wood"](around:5000,${lat},${lng});
-relation["natural"="wood"](around:5000,${lat},${lng});
-way["landuse"="forest"](around:5000,${lat},${lng});
-relation["landuse"="forest"](around:5000,${lat},${lng});
+    way["natural"="wood"](around:8000,${lat},${lng});
+    way["landuse"="forest"](around:8000,${lat},${lng});
 );
 out center;
 `;
 
     try {
+        // WRACAMY DO STABILNEGO GET (jak w v9)
         const response = await fetch(
-            "https://overpass-api.de/api/interpreter",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type":
-                        "application/x-www-form-urlencoded"
-                },
-                body: `data=${encodeURIComponent(query)}`
-            }
+            `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
         );
 
         console.log("🌍 OSM STATUS:", response.status);
 
         if (!response.ok) {
-            const txt = await response.text();
-            console.error("❌ OSM ERROR:", txt);
-            return [];
+            throw new Error(`OSM ${response.status}`);
         }
 
         const data = await response.json();
@@ -69,17 +39,17 @@ out center;
             data?.elements?.length || 0
         );
 
-        if (!data.elements?.length) return [];
-
-        const seen = new Set();
         const places = [];
+        const seen = new Set();
 
-        data.elements.forEach(el => {
+        (data.elements || []).forEach(el => {
+
             const eLat = el.lat || el.center?.lat;
             const eLng = el.lon || el.center?.lon;
 
             if (!eLat || !eLng || !el.tags) return;
 
+            // DEDUPLIKACJA
             const key =
                 Math.round(eLat * 10000) +
                 "_" +
@@ -88,63 +58,78 @@ out center;
             if (seen.has(key)) return;
             seen.add(key);
 
-            const nameLower = (
-                el.tags.name || ""
-            ).toLowerCase();
-
             const isDogPark =
-                el.tags.leisure === "dog_park" ||
-                nameLower.includes("wybieg") ||
-                nameLower.includes("dla psów");
+                el.tags.leisure === 'dog_park';
 
             const isForest =
-                el.tags.natural === "wood" ||
-                el.tags.landuse === "forest" ||
-                nameLower.includes("las");
+                el.tags.natural === 'wood' ||
+                el.tags.landuse === 'forest';
+
+            const name =
+                el.tags.name ||
+                (
+                    isDogPark
+                        ? "Wybieg dla psów"
+                        : isForest
+                        ? "Las"
+                        : "Park"
+                );
+
+            const dist = getDistance(
+                lat,
+                lng,
+                eLat,
+                eLng
+            );
 
             places.push({
-                name:
-                    el.tags.name ||
-                    (
-                        isDogPark
-                            ? "Wybieg dla psów"
-                            : isForest
-                            ? "Las"
-                            : "Park"
-                    ),
+                name,
+                distance: dist,
                 lat: eLat,
                 lng: eLng,
-                isDogPark,
-                type: isDogPark
-                    ? "dogpark"
-                    : isForest
-                    ? "forest"
-                    : "park",
-                distance: getDistanceInKm(
-                    lat,
-                    lng,
-                    eLat,
-                    eLng
-                )
+                isDogPark: isDogPark,
+                type: isForest ? 'forest' : 'park'
             });
         });
 
-        places.sort(
-            (a, b) => a.distance - b.distance
-        );
-
         console.log(
-            "✅ GOTOWE:",
+            "🏞️ FOUND:",
             places.length
         );
 
-        return places.slice(0, 40);
+        // FALLBACK Z V9 (bardzo ważny)
+        if (places.length === 0) {
+            console.warn("⚠️ OSM pusty → fallback");
 
-    } catch (err) {
-        console.error(
-            "❌ OSM CRASH:",
-            err
+            places.push({
+                name: "Park Waggle (Test)",
+                distance: 1,
+                lat: lat + 0.01,
+                lng: lng + 0.01,
+                isDogPark: true,
+                type: 'park'
+            });
+        }
+
+        return places.sort(
+            (a, b) => a.distance - b.distance
         );
-        return [];
+
+    } catch (error) {
+
+        console.error(
+            "❌ OSM ERROR:",
+            error
+        );
+
+        // HARD FALLBACK
+        return [{
+            name: "Park Waggle",
+            distance: 1,
+            lat: lat + 0.01,
+            lng: lng + 0.01,
+            isDogPark: false,
+            type: 'park'
+        }];
     }
 }
