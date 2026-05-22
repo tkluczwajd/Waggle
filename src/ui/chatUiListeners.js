@@ -18,15 +18,27 @@ export function initChatUi() {
             });
         }
         if (e.target.closest('#chatTabSearch')) {
-            document.getElementById('inbox-container').style.display = 'none'; document.getElementById('chat-search-view').style.display = 'block';
-            document.getElementById('chatTabSearch').style.cssText = 'background-color:#2d3436; color:#ffffff; border-radius:20px;';
-            document.getElementById('chatTabInbox').style.cssText = 'background-color:transparent; color:var(--text-muted);';
+            document.getElementById('inbox-container').style.display = 'none'; 
+            document.getElementById('chat-search-view').style.display = 'block';
+            
+            // 🔥 FIX: Zmieniamy tylko kolory, nie niszcząc formatowania Flexbox!
+            document.getElementById('chatTabSearch').style.background = '#2d3436';
+            document.getElementById('chatTabSearch').style.color = '#ffffff';
+            document.getElementById('chatTabInbox').style.background = 'transparent';
+            document.getElementById('chatTabInbox').style.color = 'var(--text-muted)';
+            
             window.Waggle.executeSearch(''); 
         }
         if (e.target.closest('#chatTabInbox')) {
-            document.getElementById('inbox-container').style.display = 'block'; document.getElementById('chat-search-view').style.display = 'none';
-            document.getElementById('chatTabInbox').style.cssText = 'background-color:#2d3436; color:#ffffff; border-radius:20px;';
-            document.getElementById('chatTabSearch').style.cssText = 'background-color:transparent; color:var(--text-muted);';
+            document.getElementById('inbox-container').style.display = 'block'; 
+            document.getElementById('chat-search-view').style.display = 'none';
+            
+            // 🔥 FIX: Przywracamy aktywny wygląd do skrzynki odbiorczej
+            document.getElementById('chatTabInbox').style.background = '#2d3436';
+            document.getElementById('chatTabInbox').style.color = '#ffffff';
+            document.getElementById('chatTabSearch').style.background = 'transparent';
+            document.getElementById('chatTabSearch').style.color = 'var(--text-muted)';
+            
             loadInbox();
         }
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
