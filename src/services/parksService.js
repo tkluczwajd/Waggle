@@ -130,7 +130,6 @@ forests.forEach(f => {
     });
 
     if (!existing) {
-
         used.push(f);
 
         clusteredForests.push({
@@ -146,24 +145,23 @@ const finalPlaces = [
 ];
 
 return finalPlaces
-    .sort((a,b)=>a.distance-b.distance)
-    .slice(0,25);
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 25);
 
-    } catch (error) {
+} catch (error) {
 
-        console.error(
-            "❌ OSM ERROR:",
-            error
-        );
+    console.error(
+        "❌ OSM ERROR:",
+        error
+    );
 
-        // HARD FALLBACK
-        return [{
-            name: "Park Waggle",
-            distance: 1,
-            lat: lat + 0.01,
-            lng: lng + 0.01,
-            isDogPark: false,
-            type: 'park'
-        }];
-    }
+    // HARD FALLBACK
+    return [{
+        name: "Park Waggle",
+        distance: 1,
+        lat: lat + 0.01,
+        lng: lng + 0.01,
+        isDogPark: false,
+        type: 'park'
+    }];
 }
