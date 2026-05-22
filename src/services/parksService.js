@@ -148,7 +148,6 @@ const finalPlaces = [
 return finalPlaces
     .sort((a,b)=>a.distance-b.distance)
     .slice(0,25);
-);
 
     } catch (error) {
 
