@@ -2,9 +2,9 @@
 import { getDistance } from './geolocationService.js';
 
 export async function fetchNearbyParks(lat, lng) {
+
     console.log("🌍 OSM START", lat, lng);
 
-    // WERSJA STABILNA (oparta o działający v9)
     const query = `
 [out:json][timeout:20];
 (
@@ -21,7 +21,7 @@ out center;
 `;
 
     try {
-        // WRACAMY DO STABILNEGO GET (jak w v9)
+
         const response = await fetch(
             `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
         );
@@ -49,7 +49,6 @@ out center;
 
             if (!eLat || !eLng || !el.tags) return;
 
-            // DEDUPLIKACJA
             const key =
                 Math.round(eLat * 10000) +
                 "_" +
@@ -87,7 +86,7 @@ out center;
                 distance: dist,
                 lat: eLat,
                 lng: eLng,
-                isDogPark: isDogPark,
+                isDogPark,
                 type: isForest ? 'forest' : 'park'
             });
         });
@@ -97,9 +96,12 @@ out center;
             places.length
         );
 
-        // FALLBACK Z V9 (bardzo ważny)
+        // FALLBACK
         if (places.length === 0) {
-            console.warn("⚠️ OSM pusty → fallback");
+
+            console.warn(
+                "⚠️ OSM pusty → fallback"
+            );
 
             places.push({
                 name: "Park Waggle (Test)",
@@ -111,57 +113,73 @@ out center;
             });
         }
 
-// CLUSTER LASÓW (żeby nie było 500 drzew)
-// MOCNY CLUSTER LASÓW
-const forests = places.filter(p => p.type === 'forest');
-const others = places.filter(p => p.type !== 'forest');
+        // ===== CLUSTER LASÓW =====
+        const forests =
+            places.filter(
+                p => p.type === 'forest'
+            );
 
-const clusteredForests = [];
-const used = [];
+        const others =
+            places.filter(
+                p => p.type !== 'forest'
+            );
 
-forests.forEach(f => {
+        const clusteredForests = [];
+        const used = [];
 
-    const existing = used.find(c => {
+        forests.forEach(f => {
 
-        const dLat = Math.abs(c.lat - f.lat);
-        const dLng = Math.abs(c.lng - f.lng);
+            const existing = used.find(c => {
 
-        return dLat < 0.018 && dLng < 0.018;
-    });
+                const dLat =
+                    Math.abs(c.lat - f.lat);
 
-    if (!existing) {
-        used.push(f);
+                const dLng =
+                    Math.abs(c.lng - f.lng);
 
-        clusteredForests.push({
-            ...f,
-            name: "Las"
+                return (
+                    dLat < 0.018 &&
+                    dLng < 0.018
+                );
+            });
+
+            if (!existing) {
+
+                used.push(f);
+
+                clusteredForests.push({
+                    ...f,
+                    name: "Las"
+                });
+            }
         });
+
+        const finalPlaces = [
+            ...others,
+            ...clusteredForests
+        ];
+
+        return finalPlaces
+            .sort(
+                (a, b) =>
+                    a.distance - b.distance
+            )
+            .slice(0, 25);
+
+    } catch (error) {
+
+        console.error(
+            "❌ OSM ERROR:",
+            error
+        );
+
+        return [{
+            name: "Park Waggle",
+            distance: 1,
+            lat: lat + 0.01,
+            lng: lng + 0.01,
+            isDogPark: false,
+            type: 'park'
+        }];
     }
-});
-
-const finalPlaces = [
-    ...others,
-    ...clusteredForests
-];
-
-return finalPlaces
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, 25);
-
-} catch (error) {
-
-    console.error(
-        "❌ OSM ERROR:",
-        error
-    );
-
-    // HARD FALLBACK
-    return [{
-        name: "Park Waggle",
-        distance: 1,
-        lat: lat + 0.01,
-        lng: lng + 0.01,
-        isDogPark: false,
-        type: 'park'
-    }];
 }
