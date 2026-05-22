@@ -56,6 +56,10 @@ out center;
                 el.tags.natural === 'wood' ||
                 el.tags.landuse === 'forest';
 
+            const isNamedPark =
+                el.tags.leisure === 'park' &&
+                !!el.tags.name;
+
             const name =
                 el.tags.name ||
                 (
@@ -73,6 +77,11 @@ out center;
                 eLng
             );
 
+            if (
+                el.tags.leisure === 'park' &&
+                !isNamedPark
+               ) return;
+            
             places.push({
                 name,
                 distance: dist,
