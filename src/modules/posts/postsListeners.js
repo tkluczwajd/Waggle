@@ -94,5 +94,23 @@ export function openLightbox(url) {
     }
 }
 window.Waggle.openLightbox = openLightbox;
-
 export const uploadImage = uploadImageToService;
+
+// 🔥 FIX: Brakująca funkcja otwierająca profil użytkownika
+window.Waggle.openUserMenu = (uid, name, avatar) => {
+    const modal = document.getElementById('user-action-modal');
+    if (modal) {
+        document.getElementById('actionUserName').innerText = name;
+        document.getElementById('actionUserAvatar').src = avatar;
+        modal.style.display = 'flex';
+        
+        // Zabezpieczenie przycisku wiadomości prywatnej (w przyszłości dopniesz tam bazę)
+        const msgBtn = document.getElementById('actionMsgBtn');
+        if (msgBtn) {
+            msgBtn.onclick = () => {
+                modal.style.display = 'none';
+                window.Waggle.showToast("Czat z tablicy w przygotowaniu! 🐾");
+            };
+        }
+    }
+};
