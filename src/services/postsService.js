@@ -97,3 +97,29 @@ export async function uploadImageToService(file) {
         };
     });
 }
+// Ożywia przycisk "Będę!" - dodaje lub usuwa użytkownika z listy uczestników ustawki
+export async function toggleAttendanceInDb(postId, uid) {
+    const postRef = db.collection('posts').doc(postId);
+    
+    try {
+        const doc = await postRef.get();
+        if (!doc.exists) return;
+        
+        const data = doc.data();
+        const attendees = data.attendees || [];
+        
+        if (attendees.includes(uid)) {
+            // Użytkownik już tam jest -> Wypisuje się
+            return postRef.update({
+                attendees: attendees.filter(id => id !== uid)
+            });
+        } else {
+            // Użytkownik dołącza -> Zapisuje się
+            return postRef.update({
+                attendees: [...attendees, uid]
+            });
+        }
+    } catch (error) {
+        console.error("Błąd podczas zmiany statusu obecności:", error);
+    }
+}
