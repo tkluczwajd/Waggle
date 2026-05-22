@@ -44,25 +44,50 @@ export function bootstrapApp() {
             renderWiki('rasy');
 
             // Ładowanie psich parków
+// Przywrócone i ulepszone ładowanie psich parków oraz lasów
             (async () => {
                 try {
                     const container = document.getElementById('places-container'); 
                     const places = await fetchNearbyParks(lat, lng); 
-                    renderParksOnMap(places);
+                    renderParksOnMap(places); // Odpala nasz nowy renderer z Kroku 1
+                    
                     let html = "";
                     places.forEach(place => {
-                        const color = place.isDogPark ? 'var(--secondary)' : 'var(--primary)';
+                        const nameLower = (place.name || "").toLowerCase();
+                        
+                        // Definiujemy domyślne wartości dla zwykłego parku
+                        let color = 'var(--primary)'; // Zielony kolor apki
+                        let emoji = '🌳';
+                        let label = 'Park';
+
+                        // Sprawdzamy czy to wybieg dla psów
+                        if (place.isDogPark) {
+                            color = 'var(--secondary)'; // Pomarańczowy/niebieski akcent
+                            emoji = '🏞️';
+                            label = 'Wybieg dla psów';
+                        } 
+                        // Sprawdzamy czy to las
+                        else if (nameLower.includes('las') || nameLower.includes('lasek') || place.type === 'forest') {
+                            color = '#2ecc71'; // Głęboka leśna zieleń
+                            emoji = '🌲';
+                            label = 'Las / Teren leśny';
+                        }
+
                         html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
                                 <div style="display:flex; align-items:center; gap:15px;">
-                                    <div style="font-size:30px;">${place.isDogPark ? '🏞️' : '🌳'}</div>
-                                    <div><b style="font-size:16px; color:var(--text-color);">${place.name}</b><br><span style="font-size:12px; color:var(--text-muted); font-weight:800;">${place.isDogPark ? 'Wybieg' : 'Park'} • ${place.distance.toFixed(1)} km</span></div>
+                                    <div style="font-size:30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${emoji}</div>
+                                    <div>
+                                        <b style="font-size:16px; color:var(--text-color);">${place.name}</b><br>
+                                        <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${label} • ${place.distance.toFixed(1)} km</span>
+                                    </div>
                                 </div>
                                 <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}', '_blank')">Prowadź</button>
                             </div>`;
                     });
-                    if (container) container.innerHTML = html; 
+                    
+                    if (container) container.innerHTML = html || '<p style="text-align:center; padding:20px; color:var(--text-muted);">Brak zielonych terenów w najbliższej okolicy. 🐾</p>'; 
                     state.placesLoaded = true;
-                } catch (e) { console.warn("Błąd auto-ładowania parków:", e); }
+                } catch (e) { console.warn("Błąd auto-ładowania parków/lasów:", e); }
             })();
 
         });
