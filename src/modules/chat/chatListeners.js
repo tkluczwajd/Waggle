@@ -134,14 +134,21 @@ export function sendMessage(text, imageUrl = null) {
         imageUrl 
     };
 
-    // Przekazujemy pełniejsze dane o sobie (z awatarem!), aby partner miał naszą ikonę na liście
-    const currentUserData = {
+    saveMessageInDb(state.currentChatId, msg, partnerUid, partnerName, {
         uid: state.user.uid,
         name: state.profile?.name,
         avatar: state.profile?.avatar || ""
-    };
+    });
 
-    saveMessageInDb(state.currentChatId, msg, partnerUid, partnerName, currentUserData);
+    // 🔥 NOWOŚĆ: Błyskawiczne czyszczenie interfejsu po wysłaniu
+    const inputEl = document.getElementById('chatInput');
+    if (inputEl) inputEl.value = '';
+    
+    const previewBox = document.getElementById('chat-preview-box');
+    if (previewBox) {
+        previewBox.innerHTML = '';
+        previewBox.style.display = 'none';
+    }
 }
 
 export function closeActiveChat() {
