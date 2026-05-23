@@ -36,10 +36,15 @@
 
     <div id="app-interface" class="screen-container">
         <section id="view-map" class="view-section active">
-            <div id="map-ui-layer">
+           <div id="map-ui-layer">
                 <div id="top-widgets">
                     <div class="top-pill" id="weatherWidgetBtn" style="cursor:pointer;"><span id="weather-temp">☀️ --°C</span></div>
                     <div id="active-alert-pill" class="top-pill" style="display:none; background:var(--danger); color:white; cursor:pointer;">⚠️ Alerty!</div>
+                </div>
+                
+                <div id="live-local-feed" style="position:absolute; top: 65px; left: 50%; transform: translate(-50%, -20px); z-index: 1000; width: 85%; max-width: 350px; opacity: 0; pointer-events: none; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; padding: 10px 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid var(--primary); display: flex; align-items: center; gap: 12px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                    <div id="feed-icon" style="font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🐾</div>
+                    <div id="feed-text" style="font-size: 13px; font-weight: 800; color: var(--text-color); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ktoś rozpoczął spacer!</div>
                 </div>
                 <div id="ctrl-panel">
                     <button class="map-ctrl-btn" id="centerBtn">🎯</button>
