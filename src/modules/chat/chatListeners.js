@@ -170,14 +170,33 @@ export function closeActiveChat() {
     if(currentChatUnsub) { currentChatUnsub(); currentChatUnsub = null; }
 }
 
-export async function sendChatImage(file) {
-    if(!file) return;
-    window.Waggle.showToast("Wysyłam zdjęcie... ⏳");
-    try {
-        const url = await uploadImage(file);
-        sendMessage("", url);
-    } catch(err) {
-        window.Waggle.showToast("Błąd wysyłania zdjęcia!");
+export async function sendChatImage(fileInputData) {
+    if(!fileInputData) return;
+    
+    // Konwersja na tablicę (obsługuje zarówno jeden plik, jak i całą zaznaczoną paczkę)
+    const files = (fileInputData instanceof FileList || Array.isArray(fileInputData)) 
+        ? Array.from(fileInputData) 
+        : [fileInputData];
+        
+    if(files.length === 0) return;
+    
+    // Zabezpieczenie przed zapchaniem sieci
+    if(files.length > 5) {
+        window.Waggle.showToast("Możesz wysłać maksymalnie 5 zdjęć na raz! 📸");
+        return;
+    }
+
+    window.Waggle.showToast(`Wysyłam zdjęcia (${files.length})... ⏳`);
+    
+    // Pętla wysyłająca każde zdjęcie z paczki jako osobną wiadomość w czacie
+    for (let file of files) {
+        try {
+            const url = await uploadImage(file);
+            sendMessage("", url);
+        } catch(err) {
+            window.Waggle.showToast("Błąd wysyłania jednego ze zdjęć!");
+            console.error("Błąd ładowania pliku:", err);
+        }
     }
 }
 
