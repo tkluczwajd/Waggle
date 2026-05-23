@@ -144,7 +144,10 @@
             <button class="nav-item active" data-view="map">📍<span>Mapa</span></button>
             <button class="nav-item" data-view="community">📱<span>Tablica</span></button>
             <button class="nav-item" data-view="wiki">📘<span>Wiedza</span></button>
-            <button class="nav-item" data-view="chat">💬<span>Czat</span></button>
+            <button class="nav-item" data-view="chat" style="position: relative;">
+            💬<span>Czat</span>
+          <div id="nav-chat-badge" style="display:none; position:absolute; top:2px; right:15px; background:var(--danger); color:white; font-size:10px; font-weight:900; padding:2px 6px; border-radius:10px; border:2px solid var(--panel-bg); z-index: 10;">0</div>
+         </button>
             <button class="nav-item" data-view="places">🌳<span>Miejsca</span></button>
             <button class="nav-item" data-view="profile">👤<span>Profil</span></button>
         </nav>
