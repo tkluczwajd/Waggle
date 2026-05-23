@@ -16,6 +16,7 @@ import { fetchNearbyParks } from '../services/parksService.js';
 import { renderParksOnMap } from '../modules/map/parksRenderer.js';
 // 🔥 NOWY IMPORT:
 import { initLiveFeed } from '../modules/map/liveFeed.js';
+import { loadInbox } from '../modules/chat/chatListeners.js';
 
 export function bootstrapApp() {
     initGlobalUtils();
@@ -35,7 +36,18 @@ export function bootstrapApp() {
         setupLocationTracking((lat, lng) => {
             initMap(); // Ta funkcja sama tworzy mapę i zapisuje do state.map.instance
             updateStatsUI();
+        
+        // Startujemy auth, po którym odpala się reszta aplikacji
+       setupAuth(() => {
+           initRouter();
+           initProfileListeners();
+           initUiListeners();
 
+        // Nasłuchiwanie okolicy:
+        initLiveFeed();
+        
+        // 🔥 NOWOŚĆ: Uruchamiamy globalny nasłuch nowych wiadomości w tle
+        loadInbox();
             // 🔥 Fix od konsultanta - czyste, bezpieczne centrowanie mapy
             if(state.map.instance) {
                 state.map.instance.setView([lat, lng], 15, { animate: false });
