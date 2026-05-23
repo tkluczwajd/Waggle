@@ -40,7 +40,7 @@ export function saveMessageInDb(chatId, msg, partnerUid, partnerName, currentUse
     // 1. Zapisujemy samą wiadomość
     db.collection("chats").doc(chatId).collection("messages").add(msg);
     
-    // 2. Aktualizujemy "okładkę" czatu (DODANO AWATARY I LICZNIK UNREAD)
+    // 2. Aktualizujemy "okładkę" czatu i PODBIJAMY LICZNIK (+1)
     return db.collection("chats").doc(chatId).set({
         lastMsg: msg.imageUrl ? "📷 Zdjęcie" : msg.text,
         lastUpdate: Date.now(),
@@ -52,7 +52,7 @@ export function saveMessageInDb(chatId, msg, partnerUid, partnerName, currentUse
         avatars: {
             [currentUser.uid]: currentUser.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150"
         },
-        // Zwiększamy licznik nieprzeczytanych wiadomości wyłącznie u naszego rozmówcy
+        // To jest klucz do powiadomień:
         [`unreadCount.${partnerUid}`]: fb.firestore.FieldValue.increment(1)
     }, { merge: true });
 }
