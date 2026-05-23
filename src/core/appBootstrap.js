@@ -51,6 +51,45 @@ export function bootstrapApp() {
             fetchWeather(lat, lng);
             renderWiki('rasy');
 
+            // [TUTAJ JEST TWÓJ OBECNY KOD OD ŁADOWANIA PARKÓW]
+            (async () => {
+                try {
+                    // ... obecna logika fetchNearbyParks ...
+                } catch (e) { 
+                    console.error("Krytyczny błąd podczas budowania listy parków:", e); 
+                }
+            })();
+
+            // 🔥 NOWOŚĆ: Wymuszenie odświeżenia parków po kliknięciu 🎯 na mapie
+            const centerBtn = document.getElementById('centerBtn');
+            if (centerBtn) {
+                // Usuwamy stare listenery, żeby się nie dublowały przy zmianie lokalizacji GPS
+                centerBtn.onclick = async () => {
+                    if (state.location.lat && state.location.lng) {
+                        window.Waggle.showToast("Skanuję nowe tereny wokół Ciebie... 🌳");
+                        
+                        // Centrujemy mapę
+                        if (state.map.instance) {
+                            state.map.instance.setView([state.location.lat, state.location.lng], 15, { animate: true });
+                        }
+                        
+                        // Pobieramy nowe parki dla nowych współrzędnych
+                        try {
+                            const newPlaces = await fetchNearbyParks(state.location.lat, state.location.lng);
+                            if (newPlaces && newPlaces.length > 0) {
+                                renderParksOnMap(newPlaces);
+                                window.Waggle.showToast("Gotowe! Miejscówki na mapie. 🐾");
+                            } else {
+                                window.Waggle.showToast("Brak zielonych terenów w tej okolicy.");
+                            }
+                        } catch (e) {
+                            window.Waggle.showToast("Błąd połączenia z bazą miejsc.");
+                        }
+                    }
+                };
+            }
+
+        // to jest zamknięcie setupLocationTracking
             // Ładowanie psich parków i lasów
             (async () => {
                 try {
