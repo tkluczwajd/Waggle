@@ -14,6 +14,8 @@ import { appState as state } from './state.js';
 import { fetchWeather } from '../services/weatherService.js';
 import { fetchNearbyParks } from '../services/parksService.js';
 import { renderParksOnMap } from '../modules/map/parksRenderer.js';
+// 🔥 NOWY IMPORT:
+import { initLiveFeed } from '../modules/map/liveFeed.js';
 
 export function bootstrapApp() {
     initGlobalUtils();
@@ -26,6 +28,9 @@ export function bootstrapApp() {
         initRouter();
         initProfileListeners();
         initUiListeners(); // Rejestrujemy kliknięcia
+
+        // 🔥 ODPALAMY NASŁUCHIWANIE OKOLICY (Live Feed):
+        initLiveFeed();
 
         setupLocationTracking((lat, lng) => {
             initMap(); // Ta funkcja sama tworzy mapę i zapisuje do state.map.instance
@@ -43,7 +48,7 @@ export function bootstrapApp() {
             fetchWeather(lat, lng);
             renderWiki('rasy');
 
-    // Ładowanie psich parków i lasów (Zabezpieczone przed błędami danych)
+            // Ładowanie psich parków i lasów (Zabezpieczone przed błędami danych)
             (async () => {
                 try {
                     const container = document.getElementById('places-container'); 
