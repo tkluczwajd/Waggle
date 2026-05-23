@@ -39,7 +39,8 @@ export function loadInbox() {
         let currentTotalUnread = 0;
 
         chats.forEach(chat => {
-            const unreads = (chat.unreadCount && chat.unreadCount[state.user.uid]) ? chat.unreadCount[state.user.uid] : 0;
+            // 🔥 POPRAWKA: Szukamy płaskiego klucza tekstowego z kropką
+            const unreads = chat[`unreadCount.${state.user.uid}`] || 0;
             const prevUnreads = chatUnreadStates[chat.id] || 0;
 
             console.log(`✉️ Czat ${chat.id}: nieprzeczytane = ${unreads} (poprzednio = ${prevUnreads})`);
