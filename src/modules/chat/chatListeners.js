@@ -1,6 +1,7 @@
 import { appState as state } from '../../core/state.js';
 import { uploadImageToService as uploadImage } from '../../services/postsService.js';
-import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb } from '../../services/chatService.js';
+// 🔥 DODANO markChatAsRead DO IMPORTÓW:
+import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
 
 let currentChatUnsub = null; 
@@ -12,29 +13,22 @@ export function loadInbox() {
     });
 }
 
-// Zastąp funkcję searchUsers w src/modules/chat/chatListeners.js:
-
 export function searchUsers(query) {
     const usersListCont = document.getElementById('users-list');
     if (!usersListCont) return;
 
-    // Odpalamy zapytanie pobierające stado z serwisu chatService
     searchUsersInDb('', (users) => {
         const currentUid = state.user?.uid;
         const cleanQuery = query.toLowerCase().trim();
         
-        // Lokalny, błyskawiczny i niewrażliwy na wielkość liter filtr stada
         const filteredUsers = users.filter(user => {
-            if (user.id === currentUid) return false; // Nie szukamy samych siebie
-
+            if (user.id === currentUid) return false;
             const name = (user.name || "").toLowerCase();
             const city = (user.city || "").toLowerCase();
             const breed = (user.breed || "").toLowerCase();
-
             return cleanQuery === "" || name.includes(cleanQuery) || city.includes(cleanQuery) || breed.includes(cleanQuery);
         });
 
-        // 🔥 WYMUSZAMY RENDEROWANIE: Jeśli renderer nawala, sami wstrzykujemy śliczny kod Premium UI
         let html = "";
         filteredUsers.forEach(user => {
             const avatarSrc = user.avatar && user.avatar.trim() !== "" 
@@ -74,6 +68,9 @@ export function openChat(uid, name) {
     
     document.getElementById('chat-window').style.display = 'flex';
 
+    // 🔥 KRYTYCZNE ZEROWANIE BADGE'A: Wejście w czat oznacza przeczytanie wiadomości
+    markChatAsRead(chatId, state.user.uid);
+
     if(currentChatUnsub) currentChatUnsub();
     currentChatUnsub = subscribeToMessages(chatId, (messages) => {
         renderChatMessages(messages, state.user.uid);
@@ -93,10 +90,14 @@ export function sendMessage(text, imageUrl = null) {
         imageUrl 
     };
 
-    saveMessageInDb(state.currentChatId, msg, partnerUid, partnerName, {
+    // Przekazujemy pełniejsze dane o sobie (z awatarem!), aby partner miał naszą ikonę na liście
+    const currentUserData = {
         uid: state.user.uid,
-        name: state.profile?.name
-    });
+        name: state.profile?.name,
+        avatar: state.profile?.avatar || ""
+    };
+
+    saveMessageInDb(state.currentChatId, msg, partnerUid, partnerName, currentUserData);
 }
 
 export function closeActiveChat() {
