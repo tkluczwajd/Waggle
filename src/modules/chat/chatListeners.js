@@ -8,51 +8,46 @@ let totalUnreadMessages = 0;
 let isInitialInboxLoad = true;
 let currentChatUnsub = null; 
 
-// A to jest nowa, globalna wersja funkcji loadInbox:
+// Dodaj to obok innych zmiennych na górze pliku:
+let inboxUnsub = null;
+let chatUnreadStates = {}; // Słownik pamiętający stan każdego czatu z osobna
+let isInitialInboxLoad = true;
+
 export function loadInbox() {
-    if (!state.user || inboxUnsub) return; // Zabezpieczenie: nasłuchujemy bazy tylko raz!
+    if (!state.user || inboxUnsub) return; 
     
     inboxUnsub = subscribeToInbox(state.user.uid, (chats) => {
-        let currentUnread = 0;
-        let newestChat = null;
+        let currentTotalUnread = 0;
 
-        // 1. Zliczamy wszystkie nieprzeczytane wiadomości z każdego czatu
         chats.forEach(chat => {
+            // Ile nieprzeczytanych mamy teraz w tym konkretnym czacie?
             const unreads = (chat.unreadCount && chat.unreadCount[state.user.uid]) ? chat.unreadCount[state.user.uid] : 0;
-            currentUnread += unreads;
-            
-            // Szukamy, z którego czatu przyszła najświeższa wiadomość
-            if (unreads > 0 && (!newestChat || chat.lastUpdate > newestChat.lastUpdate)) {
-                newestChat = chat;
+            // Ile było przy poprzednim sprawdzeniu?
+            const prevUnreads = chatUnreadStates[chat.id] || 0;
+
+            // 🔥 Jeśli liczba wzrosła (i to nie jest pierwsze ładowanie apki po starcie):
+            if (!isInitialInboxLoad && unreads > prevUnreads) {
+                // Pokazujemy powiadomienie, chyba że mamy właśnie otwarty ten konkretny czat
+                if (state.currentChatId !== chat.id) {
+                    const partnerUid = chat.users.find(u => u !== state.user.uid);
+                    const partnerName = chat.names ? chat.names[partnerUid] : 'Ktoś';
+                    window.Waggle.showToast(`💬 Nowa wiadomość od: ${partnerName}`);
+                }
             }
+
+            // Aktualizujemy pamięć podręczną
+            chatUnreadStates[chat.id] = unreads;
+            currentTotalUnread += unreads;
         });
 
-        // 2. Obsługa czerwonej kropki w dolnym menu
+        // Obsługa czerwonej kropki w dolnym menu
         const badge = document.getElementById('nav-chat-badge');
         if (badge) {
-            if (currentUnread > 0) {
-                badge.innerText = currentUnread;
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
+            badge.innerText = currentTotalUnread;
+            badge.style.display = currentTotalUnread > 0 ? 'flex' : 'none';
         }
 
-        // 3. Wyskakujący dymek (Toast), jeśli liczba nieprzeczytanych WZROSŁA
-        if (!isInitialInboxLoad && currentUnread > totalUnreadMessages && newestChat) {
-            const partnerUid = newestChat.users.find(u => u !== state.user.uid);
-            const partnerName = newestChat.names ? newestChat.names[partnerUid] : 'Ktoś';
-            
-            // Pokazujemy powiadomienie TYLKO jeśli NIE MAMY obecnie otwartego tego czatu na pełnym ekranie
-            if (state.currentChatId !== newestChat.id) {
-                window.Waggle.showToast(`💬 Nowa wiadomość od: ${partnerName}`);
-            }
-        }
-
-        totalUnreadMessages = currentUnread;
         isInitialInboxLoad = false;
-
-        // 4. Renderowanie zakładki "Rozmowy", żeby zawsze była aktualna
         renderInboxList(chats, state.user.uid);
     });
 }
