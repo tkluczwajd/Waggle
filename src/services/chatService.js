@@ -37,6 +37,34 @@ export function subscribeToMessages(chatId, callback) {
 }
 
 export function saveMessageInDb(chatId, msg, partnerUid, partnerName, currentUser) {
+    // 1. Zapisujemy samą wiadomość
+    db.collection("chats").doc(chatId).collection("messages").add(msg);
+    
+    // 2. Aktualizujemy "okładkę" czatu (DODANO AWATARY I LICZNIK UNREAD)
+    return db.collection("chats").doc(chatId).set({
+        lastMsg: msg.imageUrl ? "📷 Zdjęcie" : msg.text,
+        lastUpdate: Date.now(),
+        users: chatId.split("_"),
+        names: { 
+            [currentUser.uid]: currentUser.name || "Piesek", 
+            [partnerUid]: partnerName 
+        },
+        avatars: {
+            [currentUser.uid]: currentUser.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150"
+        },
+        // Zwiększamy licznik nieprzeczytanych wiadomości wyłącznie u naszego rozmówcy
+        [`unreadCount.${partnerUid}`]: fb.firestore.FieldValue.increment(1)
+    }, { merge: true });
+}
+
+// Funkcja zerująca nasz licznik po wejściu w czat
+export function markChatAsRead(chatId, myUid) {
+    return db.collection("chats").doc(chatId).set({
+        [`unreadCount.${myUid}`]: 0
+    }, { merge: true });
+}}
+
+export function saveMessageInDb(chatId, msg, partnerUid, partnerName, currentUser) {
     db.collection("chats").doc(chatId).collection("messages").add(msg);
     return db.collection("chats").doc(chatId).set({
         lastMsg: msg.imageUrl ? "📷 Zdjęcie" : msg.text,
