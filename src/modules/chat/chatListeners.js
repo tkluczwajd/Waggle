@@ -3,12 +3,56 @@ import { uploadImageToService as uploadImage } from '../../services/postsService
 // 🔥 DODANO markChatAsRead DO IMPORTÓW:
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
-
+let inboxUnsub = null;
+let totalUnreadMessages = 0;
+let isInitialInboxLoad = true;
 let currentChatUnsub = null; 
 
+// A to jest nowa, globalna wersja funkcji loadInbox:
 export function loadInbox() {
-    if (!state.user) return;
-    subscribeToInbox(state.user.uid, (chats) => {
+    if (!state.user || inboxUnsub) return; // Zabezpieczenie: nasłuchujemy bazy tylko raz!
+    
+    inboxUnsub = subscribeToInbox(state.user.uid, (chats) => {
+        let currentUnread = 0;
+        let newestChat = null;
+
+        // 1. Zliczamy wszystkie nieprzeczytane wiadomości z każdego czatu
+        chats.forEach(chat => {
+            const unreads = (chat.unreadCount && chat.unreadCount[state.user.uid]) ? chat.unreadCount[state.user.uid] : 0;
+            currentUnread += unreads;
+            
+            // Szukamy, z którego czatu przyszła najświeższa wiadomość
+            if (unreads > 0 && (!newestChat || chat.lastUpdate > newestChat.lastUpdate)) {
+                newestChat = chat;
+            }
+        });
+
+        // 2. Obsługa czerwonej kropki w dolnym menu
+        const badge = document.getElementById('nav-chat-badge');
+        if (badge) {
+            if (currentUnread > 0) {
+                badge.innerText = currentUnread;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // 3. Wyskakujący dymek (Toast), jeśli liczba nieprzeczytanych WZROSŁA
+        if (!isInitialInboxLoad && currentUnread > totalUnreadMessages && newestChat) {
+            const partnerUid = newestChat.users.find(u => u !== state.user.uid);
+            const partnerName = newestChat.names ? newestChat.names[partnerUid] : 'Ktoś';
+            
+            // Pokazujemy powiadomienie TYLKO jeśli NIE MAMY obecnie otwartego tego czatu na pełnym ekranie
+            if (state.currentChatId !== newestChat.id) {
+                window.Waggle.showToast(`💬 Nowa wiadomość od: ${partnerName}`);
+            }
+        }
+
+        totalUnreadMessages = currentUnread;
+        isInitialInboxLoad = false;
+
+        // 4. Renderowanie zakładki "Rozmowy", żeby zawsze była aktualna
         renderInboxList(chats, state.user.uid);
     });
 }
