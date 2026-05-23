@@ -9,12 +9,11 @@ import { setupSubscriptions } from './subscriptionInit.js';
 import { setupLocationTracking } from './locationInit.js';
 import { renderWiki } from '../ui/wikiRenderer.js';
 import { updateStatsUI, updateUserMarker, loadSettings } from '../ui/uiHelpers.js';
-import { initMap } from '../modules/map/mapManager.js'; // 🔥 Tylko initMap, zero mapManagera!
+import { initMap } from '../modules/map/mapManager.js';
 import { appState as state } from './state.js';
 import { fetchWeather } from '../services/weatherService.js';
 import { fetchNearbyParks } from '../services/parksService.js';
 import { renderParksOnMap } from '../modules/map/parksRenderer.js';
-// 🔥 NOWY IMPORT:
 import { initLiveFeed } from '../modules/map/liveFeed.js';
 import { loadInbox } from '../modules/chat/chatListeners.js';
 
@@ -28,27 +27,19 @@ export function bootstrapApp() {
     setupAuth(() => {
         initRouter();
         initProfileListeners();
-        initUiListeners(); // Rejestrujemy kliknięcia
+        initUiListeners();
 
-        // 🔥 ODPALAMY NASŁUCHIWANIE OKOLICY (Live Feed):
+        // 🔥 Nasłuchiwanie okolicy:
         initLiveFeed();
+        
+        // 🔥 Uruchamiamy globalny nasłuch nowych wiadomości w tle
+        loadInbox();
 
         setupLocationTracking((lat, lng) => {
-            initMap(); // Ta funkcja sama tworzy mapę i zapisuje do state.map.instance
+            initMap(); 
             updateStatsUI();
-        
-        // Startujemy auth, po którym odpala się reszta aplikacji
-       setupAuth(() => {
-           initRouter();
-           initProfileListeners();
-           initUiListeners();
-
-        // Nasłuchiwanie okolicy:
-        initLiveFeed();
-        
-        // 🔥 NOWOŚĆ: Uruchamiamy globalny nasłuch nowych wiadomości w tle
-        loadInbox();
-            // 🔥 Fix od konsultanta - czyste, bezpieczne centrowanie mapy
+            
+            // 🔥 Czyste, bezpieczne centrowanie mapy
             if(state.map.instance) {
                 state.map.instance.setView([lat, lng], 15, { animate: false });
                 setTimeout(() => { 
@@ -60,7 +51,7 @@ export function bootstrapApp() {
             fetchWeather(lat, lng);
             renderWiki('rasy');
 
-            // Ładowanie psich parków i lasów (Zabezpieczone przed błędami danych)
+            // Ładowanie psich parków i lasów
             (async () => {
                 try {
                     const container = document.getElementById('places-container'); 
@@ -87,7 +78,6 @@ export function bootstrapApp() {
                             label = 'Las / Teren leśny';
                         }
 
-                        // 🔥 BEZPIECZNE POBIERANIE ZMIENNYCH (Brak crasha jeśli brakuje danych!)
                         const distanceStr = place.distance ? place.distance.toFixed(1) : "?";
                         const placeName = place.name || "Teren zielony";
 
