@@ -1,16 +1,12 @@
 import { appState as state } from '../../core/state.js';
 import { uploadImageToService as uploadImage } from '../../services/postsService.js';
-// 🔥 DODANO markChatAsRead DO IMPORTÓW:
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
-let inboxUnsub = null;
-let totalUnreadMessages = 0;
-let isInitialInboxLoad = true;
-let currentChatUnsub = null; 
 
-// Dodaj to obok innych zmiennych na górze pliku:
+// Czyste deklaracje zmiennych globalnych dla tego pliku (bez duplikatów):
+let currentChatUnsub = null; 
 let inboxUnsub = null;
-let chatUnreadStates = {}; // Słownik pamiętający stan każdego czatu z osobna
+let chatUnreadStates = {};
 let isInitialInboxLoad = true;
 
 export function loadInbox() {
@@ -20,14 +16,10 @@ export function loadInbox() {
         let currentTotalUnread = 0;
 
         chats.forEach(chat => {
-            // Ile nieprzeczytanych mamy teraz w tym konkretnym czacie?
             const unreads = (chat.unreadCount && chat.unreadCount[state.user.uid]) ? chat.unreadCount[state.user.uid] : 0;
-            // Ile było przy poprzednim sprawdzeniu?
             const prevUnreads = chatUnreadStates[chat.id] || 0;
 
-            // 🔥 Jeśli liczba wzrosła (i to nie jest pierwsze ładowanie apki po starcie):
             if (!isInitialInboxLoad && unreads > prevUnreads) {
-                // Pokazujemy powiadomienie, chyba że mamy właśnie otwarty ten konkretny czat
                 if (state.currentChatId !== chat.id) {
                     const partnerUid = chat.users.find(u => u !== state.user.uid);
                     const partnerName = chat.names ? chat.names[partnerUid] : 'Ktoś';
@@ -35,12 +27,10 @@ export function loadInbox() {
                 }
             }
 
-            // Aktualizujemy pamięć podręczną
             chatUnreadStates[chat.id] = unreads;
             currentTotalUnread += unreads;
         });
 
-        // Obsługa czerwonej kropki w dolnym menu
         const badge = document.getElementById('nav-chat-badge');
         if (badge) {
             badge.innerText = currentTotalUnread;
@@ -107,7 +97,6 @@ export function openChat(uid, name) {
     
     document.getElementById('chat-window').style.display = 'flex';
 
-    // 🔥 KRYTYCZNE ZEROWANIE BADGE'A: Wejście w czat oznacza przeczytanie wiadomości
     markChatAsRead(chatId, state.user.uid);
 
     if(currentChatUnsub) currentChatUnsub();
@@ -135,7 +124,6 @@ export function sendMessage(text, imageUrl = null) {
         avatar: state.profile?.avatar || ""
     });
 
-    // 🔥 NOWOŚĆ: Błyskawiczne czyszczenie interfejsu po wysłaniu
     const inputEl = document.getElementById('chatInput');
     if (inputEl) inputEl.value = '';
     
