@@ -86,35 +86,4 @@ export function renderChatMessages(messages, currentUid) {
         msgBox.innerHTML = html;
         msgBox.scrollTop = msgBox.scrollHeight;
     }
-}    });
-    const container = document.getElementById('inbox-container');
-    if (container) container.innerHTML = html || "<p style='text-align:center; margin-top:20px;'>Nikogo nie znaleziono.</p>";
-}
-
-export function renderChatMessages(messages, currentUid) {
-    let html = "";
-    messages.forEach(msg => {
-        const isMine = msg.sender === currentUid;
-        const time = msg.time ? new Date(msg.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : "";
-        
-        let contentHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" style="width:100%; border-radius:10px; margin-bottom:5px; display:block;" onclick="window.Waggle.openLightbox('${msg.imageUrl}')">` : "";
-        if(msg.text) contentHtml += `<div style="word-break: break-word;">${msg.text}</div>`;
-        
-        // Dodajemy kontener z czasem na dole bąbelka
-        const timeHtml = `<div style="font-size:9px; opacity:0.7; text-align:right; margin-top:4px; font-weight:800;">${time}</div>`;
-
-        html += `
-            <div style="display: flex; justify-content: ${isMine ? 'flex-end' : 'flex-start'}; margin-bottom: 8px; width: 100%;">
-                <div class="chat-bubble ${isMine ? 'mine' : ''}" style="max-width: 75%; position: relative;">
-                    ${contentHtml}
-                    ${timeHtml}
-                </div>
-            </div>`;
-    });
-    
-    const msgBox = document.getElementById('chatMessages');
-    if(msgBox) {
-        msgBox.innerHTML = html;
-        msgBox.scrollTop = msgBox.scrollHeight;
-    }
 }
