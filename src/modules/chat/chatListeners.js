@@ -8,9 +8,39 @@ let currentChatUnsub = null;
 let inboxUnsub = null;
 let chatUnreadStates = {};
 let isInitialInboxLoad = true;
+// Czyste deklaracje zmiennych globalnych dla tego pliku (bez duplikatów):
+let currentChatUnsub = null; 
+let inboxUnsub = null;
+let chatUnreadStates = {};
+let isInitialInboxLoad = true;
+
+// Funkcja generująca czysty sygnał dźwiękowy bez użycia zewnętrznych plików mp3
+function playNotificationSound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // Nutka D5
+        gain.gain.setValueAtTime(0.08, ctx.currentTime); // Delikatna głośność
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12); // Krótkie piknięcie 120ms
+    } catch (e) {
+        console.warn("Sygnał audio zablokowany przez politykę prywatności przeglądarki:", e);
+    }
+}
 
 export function loadInbox() {
     if (!state.user || inboxUnsub) return; 
+    
+    console.log("🌐 Waggle: Uruchamiam globalny nasłuch wiadomości w tle...");
     
     inboxUnsub = subscribeToInbox(state.user.uid, (chats) => {
         let currentTotalUnread = 0;
@@ -19,7 +49,16 @@ export function loadInbox() {
             const unreads = (chat.unreadCount && chat.unreadCount[state.user.uid]) ? chat.unreadCount[state.user.uid] : 0;
             const prevUnreads = chatUnreadStates[chat.id] || 0;
 
+            console.log(`✉️ Czat ${chat.id}: nieprzeczytane = ${unreads} (poprzednio = ${prevUnreads})`);
+
+            // 🔥 Jeśli liczba wiadomości wzrosła i nie jest to pierwsze ładowanie po starcie:
             if (!isInitialInboxLoad && unreads > prevUnreads) {
+                console.log(`🔔 Wykryto nową wiadomość w czacie: ${chat.id}`);
+                
+                // Odgrywamy dźwięk w tle zawsze, gdy przychodzi coś nowego
+                playNotificationSound();
+
+                // Pokazujemy dymek tylko, jeśli nie rozmawiamy akurat z tą osobą na ekranie
                 if (state.currentChatId !== chat.id) {
                     const partnerUid = chat.users.find(u => u !== state.user.uid);
                     const partnerName = chat.names ? chat.names[partnerUid] : 'Ktoś';
