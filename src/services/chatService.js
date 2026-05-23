@@ -62,17 +62,4 @@ export function markChatAsRead(chatId, myUid) {
     return db.collection("chats").doc(chatId).set({
         [`unreadCount.${myUid}`]: 0
     }, { merge: true });
-}}
-
-export function saveMessageInDb(chatId, msg, partnerUid, partnerName, currentUser) {
-    db.collection("chats").doc(chatId).collection("messages").add(msg);
-    return db.collection("chats").doc(chatId).set({
-        lastMsg: msg.imageUrl ? "📷 Zdjęcie" : msg.text,
-        lastUpdate: Date.now(),
-        users: chatId.split("_"),
-        names: { 
-            [currentUser.uid]: currentUser.name || "Piesek", 
-            [partnerUid]: partnerName 
-        }
-    }, { merge: true });
 }
