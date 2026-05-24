@@ -67,8 +67,12 @@ export function renderPostsList(posts, filter) {
             cardStyle = "position:relative; border: 2px solid var(--danger);";
             eventBanner = `<div style="background:var(--danger); color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800;">⚠️ ZAGROŻENIE</div>`;
         } else if (p.isInfo) {
-            cardStyle = "position:relative; border: 2px solid #f39c12;";
-            eventBanner = `<div style="background:#f39c12; color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800;">ℹ️ OGŁOSZENIE</div>`;
+            // Zmieniliśmy kolor na taki, który kojarzy się z ofertami/ogłoszeniami (np. fiolet/niebieski), 
+            // ale jeśli wolisz stary pomarańczowy (#f39c12), możesz go zostawić!
+            cardStyle = "position:relative; border: 2px solid #8e44ad;";
+            eventBanner = `<div style="background:#8e44ad; color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800; display:flex; justify-content:space-between;">
+                <span>📢 OGŁOSZENIE / OFERTA</span>
+            </div>`;
         }
 
         const likesCount = p.likes ? p.likes.length : 0;
