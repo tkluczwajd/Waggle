@@ -71,8 +71,10 @@
                     <button class="top-pill" style="border:none; margin:0;">⚠️ Alerty</button>
                     <button class="top-pill" style="border:none; margin:0;">ℹ️ Info</button>
                 </div>
-                <button class="btn-main" id="addPostBtn" style="margin-top:10px; padding: 12px; background:var(--secondary);">➕ DODAJ POSTA</button>
-                <button class="btn-main" id="addAlertBtnTab" style="margin-top:10px; padding: 12px; background:var(--secondary);">➕ DODAJ ALERT</button>
+                  <div style="display: flex; gap: 10px; margin-top: 10px;">
+                     <button class="btn-main" id="addPostBtn" style="flex: 1; margin: 0; padding: 12px; background: var(--secondary); font-size: 13px; font-weight: 800;">➕ DODAJ POST</button>
+                     <button class="btn-main" id="addAlertBtnTab" style="flex: 1; margin: 0; padding: 12px; background: var(--danger); font-size: 13px; font-weight: 800;">⚠️ ZGŁOŚ ALERT</button>
+                </div>
             </div>
             <div id="posts-container"></div>
         </section>
