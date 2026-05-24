@@ -1,4 +1,4 @@
-import { searchUsers, sendMessage, sendChatImage, loadInbox } from '../modules/chat/chatListeners.js';
+import { searchUsers, sendMessage, loadInbox, handleChatImageSelect } from '../modules/chat/chatListeners.js';
 import { appState as state } from '../core/state.js';
 
 export function initChatUi() {
@@ -7,33 +7,48 @@ export function initChatUi() {
     });
 
     document.addEventListener('click', async (e) => {
+        
+        // 1. OBSŁUGA DODAWANIA ZDJĘĆ DO KOSZYKA
         if (e.target.closest('#chatAddPhotoBtn')) {
-            window.Waggle.selectPhotoSource((file) => {
-                state.pendingChatFile = file; 
-                const preview = document.getElementById('chat-preview-box') || document.getElementById('chat-preview-container');
-                if (preview) {
-                    preview.style.display = 'block';
-                    preview.innerHTML = `<div style="display:inline-block; position:relative; margin-top:10px;"><img src="${URL.createObjectURL(file)}" style="height:60px; border-radius:12px; border:2px solid var(--primary); object-fit:cover;"><span style="position:absolute; top:-8px; right:-8px; background:var(--danger); color:white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; cursor:pointer;" onclick="state.pendingChatFile=null; this.parentElement.parentElement.style.display='none'">✕</span></div>`;
-                }
-            });
+            if (window.Waggle && window.Waggle.selectPhotoSource) {
+                // Odpalamy Twój autorski modal Aparat/Galeria
+                window.Waggle.selectPhotoSource((file) => {
+                    // Zamiast starego przypisania, wrzucamy plik prosto do naszego nowego KOSZYKA
+                    handleChatImageSelect([file]); 
+                });
+            } else {
+                // Fallback, jeśli modala by nie było
+                const input = document.getElementById('chatImageInput');
+                if (input) input.click();
+            }
         }
+        
+        // 2. ZAKŁADKA STADO / SZUKAJ
         if (e.target.closest('#chatTabSearch')) {
             document.getElementById('inbox-container').style.display = 'none'; 
             document.getElementById('chat-search-view').style.display = 'block';
             
-            // 🔥 FIX: Zmieniamy tylko kolory, nie niszcząc formatowania Flexbox!
+            // Pokazujemy nową, przewijaną listę wyników
+            const listWrapper = document.getElementById('users-list-wrapper');
+            if(listWrapper) listWrapper.style.display = 'block';
+            
             document.getElementById('chatTabSearch').style.background = '#2d3436';
             document.getElementById('chatTabSearch').style.color = '#ffffff';
             document.getElementById('chatTabInbox').style.background = 'transparent';
             document.getElementById('chatTabInbox').style.color = 'var(--text-muted)';
             
-            window.Waggle.executeSearch(''); 
+            if(window.Waggle.executeSearch) window.Waggle.executeSearch(''); 
         }
+        
+        // 3. ZAKŁADKA ROZMOWY
         if (e.target.closest('#chatTabInbox')) {
             document.getElementById('inbox-container').style.display = 'block'; 
             document.getElementById('chat-search-view').style.display = 'none';
             
-            // 🔥 FIX: Przywracamy aktywny wygląd do skrzynki odbiorczej
+            // Ukrywamy listę wyników
+            const listWrapper = document.getElementById('users-list-wrapper');
+            if(listWrapper) listWrapper.style.display = 'none';
+            
             document.getElementById('chatTabInbox').style.background = '#2d3436';
             document.getElementById('chatTabInbox').style.color = '#ffffff';
             document.getElementById('chatTabSearch').style.background = 'transparent';
@@ -41,10 +56,16 @@ export function initChatUi() {
             
             loadInbox();
         }
+        
+        // 4. WYSYŁANIE WIADOMOŚCI
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
-            const input = document.getElementById('chatInput'); const text = input?.value.trim();
-            if(state.pendingChatFile) { await sendChatImage(state.pendingChatFile); state.pendingChatFile = null; document.getElementById('chat-preview-container').innerHTML = ''; }
-            if(text) { sendMessage(text); input.value = ''; }
+            const input = document.getElementById('chatInput'); 
+            const text = input ? input.value.trim() : "";
+            
+            // 🔥 NOWOŚĆ: Po prostu wywołujemy sendMessage. Nasza nowa funkcja 
+            // w chatListeners.js sama zorientuje się, że są zdjęcia w koszyku 
+            // i wyśle zarówno tekst, jak i po kolei wszystkie fotki!
+            sendMessage(text); 
         }
     });
 }
