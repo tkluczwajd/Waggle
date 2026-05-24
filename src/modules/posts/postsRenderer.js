@@ -5,9 +5,13 @@ export function renderPostsList(posts, filter) {
     const isAdmin = state.profile?.isAdmin === true;
     
     posts.forEach(p => { 
+        // 🔥 NOWA LOGIKA FILTROWANIA - Sztywne zasady dla Info
         if (filter === 'events' && !p.isEvent) return;
         if (filter === 'alerts' && !p.isAlert) return;
-        if (filter === 'info' && !p.isInfo) return;
+        // Wpuść tylko te, które są informacją, ale WYKLUCZ takie, które są alertem lub ustawką
+        if (filter === 'info' && (!p.isInfo || p.isAlert || p.isEvent)) return;
+
+        // ... reszta kodu bez zmian ...
 
         let timeString = "Przed chwilą";
         if (p.timestamp) {
