@@ -13,15 +13,12 @@ export function getWeatherIcon(code) {
 export function fetchWeather(lat, lng) {
     if(!lat || !lng) return;
     
-    // 🔥 TUNING PRECYZJI: Dodaliśmy parametr models=best_match, który automatycznie wybiera 
-    // najbardziej precyzyjny model meteorologiczny (np. ICON dla Europy Środkowej) zamiast ogólnego GFS.
+    // 🔥 TUNING PRECYZJI: Dodaliśmy parametr models=best_match
     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&models=best_match&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
     .then(r=>r.json()).then(d => {
-        // Pobieramy kod pogody z dzisiejszego dnia prognozy (indeks 0)
-        const todayWeatherCode = d.daily.weathercode[0];
-        const currentIcon = getWeatherIcon(todayWeatherCode);
         
-        // Wyciągamy temperaturę bieżącą z modelu o najwyższej precyzji lokalnej
+        // 🔥 POPRAWKA: Pobieramy kod pogody z TERAZ, a nie z całego dnia!
+        const currentIcon = getWeatherIcon(d.current_weather.weathercode);
         const currentTemp = Math.round(d.current_weather.temperature);
 
         // Zapisujemy świeże, dokładne dane do stanu aplikacji
@@ -39,6 +36,8 @@ export function fetchWeather(lat, lng) {
         if(contentEl) {
             let html = `<div style="text-align:center; margin-bottom:15px;"><b style="font-size:20px;">Dziś: ${currentTemp}°C ${currentIcon}</b></div>`;
             html += `<div style="display:flex; justify-content:space-around; border-top:1px solid var(--border-color); padding-top:15px;">`;
+            
+            // W prognozie 3-dniowej zostawiamy 'daily.weathercode', bo tam faktycznie chcemy widzieć trend na całe dni
             for(let i=0; i<3; i++) {
                 const date = new Date(d.daily.time[i]).toLocaleDateString('pl-PL', {weekday: 'short'});
                 html += `<div style="text-align:center;"><div style="font-size:11px; font-weight:800; color:var(--text-muted);">${date}</div><div style="font-size:24px;">${getWeatherIcon(d.daily.weathercode[i])}</div><div style="font-weight:900;">${Math.round(d.daily.temperature_2m_max[i])}°</div><div style="font-size:10px; color:var(--text-muted);">${Math.round(d.daily.temperature_2m_min[i])}°</div></div>`;
