@@ -1,12 +1,18 @@
 import { appState as state } from '../../core/state.js';
 import { uploadImageToService as uploadImage } from '../../services/postsService.js';
-import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead } from '../../services/chatService.js';
+// Dodano import createGroupInDb dla czatów grupowych
+import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead, createGroupInDb } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
 
 let currentChatUnsub = null; 
 let inboxUnsub = null;
 let chatUnreadStates = {};
 let isInitialInboxLoad = true;
+
+// 🔥 Globalny "koszyk" na wybrane zdjęcia
+let pendingChatImages = []; 
+// 🔥 Pamięć zaznaczonych psów do grupy
+let selectedGroupUsers = []; 
 
 function playNotificationSound() {
     try {
@@ -39,20 +45,15 @@ export function loadInbox() {
         let currentTotalUnread = 0;
 
         chats.forEach(chat => {
-            // 🔥 POPRAWKA: Szukamy płaskiego klucza tekstowego z kropką
             const unreads = chat[`unreadCount.${state.user.uid}`] || 0;
             const prevUnreads = chatUnreadStates[chat.id] || 0;
 
-            console.log(`✉️ Czat ${chat.id}: nieprzeczytane = ${unreads} (poprzednio = ${prevUnreads})`);
-
             if (!isInitialInboxLoad && unreads > prevUnreads) {
-                console.log(`🔔 Wykryto nową wiadomość w czacie: ${chat.id}`);
-                
                 playNotificationSound();
 
                 if (state.currentChatId !== chat.id) {
-                    const partnerUid = chat.users.find(u => u !== state.user.uid);
-                    const partnerName = chat.names ? chat.names[partnerUid] : 'Ktoś';
+                    // Sprawdzamy, czy to czat grupowy, czy prywatny, by dobrze wyświetlić nazwę
+                    const partnerName = chat.isGroup ? chat.groupName : (chat.names ? chat.names[chat.users.find(u => u !== state.user.uid)] : 'Ktoś');
                     window.Waggle.showToast(`💬 Nowa wiadomość od: ${partnerName}`);
                 }
             }
@@ -117,9 +118,14 @@ export function searchUsers(query) {
     });
 }
 
-export function openChat(uid, name) {
+export function openChat(uidOrGroupId, name) {
     if (!state.user) return;
-    const chatId = state.user.uid > uid ? `${state.user.uid}_${uid}` : `${uid}_${state.user.uid}`;
+    
+    // Jeśli to ID nie zawiera "_", to jest to nasz nowy czat grupowy (Stado), w przeciwnym razie czat 1v1
+    const chatId = uidOrGroupId.includes('_') ? 
+        (state.user.uid > uidOrGroupId ? `${state.user.uid}_${uidOrGroupId}` : `${uidOrGroupId}_${state.user.uid}`) // Sortowanie starych chatów
+        : uidOrGroupId; // Nowe czaty grupowe mają czyste, unikalne ID
+        
     state.currentChatId = chatId;
     
     const partnerNameEl = document.getElementById('chatPartnerName');
@@ -135,73 +141,223 @@ export function openChat(uid, name) {
     });
 }
 
-export function sendMessage(text, imageUrl = null) {
-    if (!state.currentChatId || (!text.trim() && !imageUrl)) return;
-    
-    const partnerUid = state.currentChatId.replace(state.user.uid, "").replace("_", "");
-    const partnerName = document.getElementById('chatPartnerName').innerText;
-    
-    const msg = { 
-        sender: state.user.uid, 
-        text: text.trim(), 
-        time: Date.now(), 
-        imageUrl 
-    };
-
-    saveMessageInDb(state.currentChatId, msg, partnerUid, partnerName, {
-        uid: state.user.uid,
-        name: state.profile?.name,
-        avatar: state.profile?.avatar || ""
-    });
-
-    const inputEl = document.getElementById('chatInput');
-    if (inputEl) inputEl.value = '';
-    
-    const previewBox = document.getElementById('chat-preview-box');
-    if (previewBox) {
-        previewBox.innerHTML = '';
-        previewBox.style.display = 'none';
-    }
-}
-
 export function closeActiveChat() {
     document.getElementById('chat-window').style.display = 'none';
     state.currentChatId = null;
     if(currentChatUnsub) { currentChatUnsub(); currentChatUnsub = null; }
 }
 
-export async function sendChatImage(fileInputData) {
-    if(!fileInputData) return;
+// ========================================================
+// 📸 SYSTEM OBSŁUGI ZDJĘĆ Z "KOSZYKIEM"
+// ========================================================
+
+export function handleChatImageSelect(files) {
+    if (!files || files.length === 0) return;
     
-    // Konwersja na tablicę (obsługuje zarówno jeden plik, jak i całą zaznaczoną paczkę)
-    const files = (fileInputData instanceof FileList || Array.isArray(fileInputData)) 
-        ? Array.from(fileInputData) 
-        : [fileInputData];
-        
-    if(files.length === 0) return;
+    // Dodajemy nowe pliki do koszyka
+    Array.from(files).forEach(file => {
+        if (pendingChatImages.length >= 5) {
+            window.Waggle.showToast("Możesz dodać maksymalnie 5 zdjęć na raz! 📸");
+            return;
+        }
+        pendingChatImages.push(file);
+    });
+
+    // Czyścimy input, by móc dodać kolejne
+    const inputEl = document.getElementById('chatImageInput');
+    if(inputEl) inputEl.value = '';
     
-    // Zabezpieczenie przed zapchaniem sieci
-    if(files.length > 5) {
-        window.Waggle.showToast("Możesz wysłać maksymalnie 5 zdjęć na raz! 📸");
+    renderChatImagePreviews();
+}
+
+export function removeChatImagePreview(index) {
+    pendingChatImages.splice(index, 1);
+    renderChatImagePreviews();
+}
+
+function renderChatImagePreviews() {
+    const previewBox = document.getElementById('chat-preview-box');
+    if (!previewBox) return;
+    
+    if (pendingChatImages.length === 0) {
+        previewBox.style.display = 'none';
+        previewBox.innerHTML = '';
         return;
     }
 
-    window.Waggle.showToast(`Wysyłam zdjęcia (${files.length})... ⏳`);
+    previewBox.style.display = 'flex';
+    previewBox.style.gap = '12px';
+    previewBox.style.flexWrap = 'wrap';
+    previewBox.style.paddingTop = '10px';
     
-    // Pętla wysyłająca każde zdjęcie z paczki jako osobną wiadomość w czacie
-    for (let file of files) {
-        try {
-            const url = await uploadImage(file);
-            sendMessage("", url);
-        } catch(err) {
-            window.Waggle.showToast("Błąd wysyłania jednego ze zdjęć!");
-            console.error("Błąd ładowania pliku:", err);
+    let html = '';
+    pendingChatImages.forEach((file, index) => {
+        const url = URL.createObjectURL(file);
+        html += `
+        <div style="position: relative; display: inline-block; margin-top: 5px;">
+            <img src="${url}" style="width: 65px; height: 65px; object-fit: cover; border-radius: 12px; border: 2px solid var(--primary); box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <button onclick="window.Waggle.removeChatImagePreview(${index})" style="position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
+        </div>`;
+    });
+    
+    previewBox.innerHTML = html;
+}
+
+export async function sendMessage(text) {
+    if (!state.currentChatId) return;
+    
+    const textToSend = text ? text.trim() : "";
+    const imagesToSend = [...pendingChatImages]; // Kopiujemy i czyścimy koszyk natychmiast
+    
+    if (!textToSend && imagesToSend.length === 0) return;
+    
+    const partnerUid = state.currentChatId.replace(state.user.uid, "").replace("_", "");
+    const partnerName = document.getElementById('chatPartnerName').innerText;
+    
+    const baseMsg = { 
+        sender: state.user.uid, 
+        time: Date.now() 
+    };
+
+    const senderData = {
+        uid: state.user.uid,
+        name: state.profile?.name || "Ktoś",
+        avatar: state.profile?.avatar || ""
+    };
+
+    // 1. Wysyłamy tekst (jeśli jakiś wpisano)
+    if (textToSend) {
+        saveMessageInDb(state.currentChatId, { ...baseMsg, text: textToSend, imageUrl: null }, partnerUid, partnerName, senderData);
+    }
+
+    // Czyszczenie interfejsu 
+    const inputEl = document.getElementById('chatInput');
+    if (inputEl) {
+        inputEl.value = '';
+        inputEl.style.height = 'auto'; // Reset wielkości pola tekstowego
+    }
+    
+    pendingChatImages = [];
+    renderChatImagePreviews();
+
+    // 2. Wysyłamy paczkę zdjęć w tle (jeśli jakieś były w koszyku)
+    if (imagesToSend.length > 0) {
+        window.Waggle.showToast(`Wysyłam zdjęcia (${imagesToSend.length})... ⏳`);
+        for (let file of imagesToSend) {
+            try {
+                const url = await uploadImage(file);
+                // Każde zdjęcie wysyłane jest jako osobna wiadomość z obrazkiem (bez tekstu)
+                saveMessageInDb(state.currentChatId, { ...baseMsg, text: "", imageUrl: url }, partnerUid, partnerName, senderData);
+            } catch(err) {
+                window.Waggle.showToast("Błąd wysyłania jednego ze zdjęć!");
+                console.error("Błąd ładowania pliku:", err);
+            }
         }
     }
 }
 
+// ========================================================
+// 🐾 TWORZENIE STADA (CZATY GRUPOWE)
+// ========================================================
+
+export function loadUsersForGroup() {
+    const listCont = document.getElementById('groupUsersList');
+    if (!listCont) return;
+    
+    listCont.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 12px; margin: 10px 0;">Szukam piesków w okolicy...</p>';
+    selectedGroupUsers = []; 
+
+    searchUsersInDb('', (users) => {
+        const currentUid = state.user?.uid;
+        const filteredUsers = users.filter(u => u.id !== currentUid);
+
+        if(filteredUsers.length === 0) {
+            listCont.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-weight: bold;">Brak innych piesków w bazie.</p>';
+            return;
+        }
+
+        let html = '';
+        filteredUsers.forEach(user => {
+            const avatarSrc = user.avatar && user.avatar.trim() !== "" 
+                ? user.avatar 
+                : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 15px; background:var(--bg-color); border-radius:12px; border:1px solid var(--border-color);">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <img src="${avatarSrc}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border: 2px solid var(--secondary);">
+                    <div>
+                        <b style="font-size:14px; color: var(--text-color);">${user.name || 'Piesek'}</b><br>
+                        <span style="font-size: 11px; color: var(--text-muted);">${user.city || 'Nieznane'}</span>
+                    </div>
+                </div>
+                <input type="checkbox" value="${user.id}" data-name="${user.name || 'Piesek'}" data-avatar="${avatarSrc}" onchange="window.Waggle.toggleGroupUser(this)" style="width:22px; height:22px; accent-color:var(--primary); cursor: pointer;">
+            </div>`;
+        });
+        listCont.innerHTML = html;
+    });
+}
+
+export function toggleGroupUser(checkbox) {
+    const uid = checkbox.value;
+    const name = checkbox.getAttribute('data-name');
+    const avatar = checkbox.getAttribute('data-avatar');
+
+    if(checkbox.checked) {
+        selectedGroupUsers.push({uid, name, avatar});
+    } else {
+        selectedGroupUsers = selectedGroupUsers.filter(u => u.uid !== uid);
+    }
+}
+
+export function createGroupChat() {
+    const nameInput = document.getElementById('groupNameInput');
+    const groupName = nameInput.value.trim();
+    
+    if(!groupName) {
+        window.Waggle.showToast("Wpisz najpierw nazwę stada! 🐕");
+        return;
+    }
+    if(selectedGroupUsers.length === 0) {
+        window.Waggle.showToast("Zaznacz przynajmniej jednego znajomego! 🐾");
+        return;
+    }
+
+    const myUid = state.user.uid;
+    const myName = state.profile?.name || "Ja";
+    const myAvatar = state.profile?.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+
+    let allUsersIds = [myUid, ...selectedGroupUsers.map(u => u.uid)];
+    
+    let namesMap = { [myUid]: myName };
+    let avatarsMap = { [myUid]: myAvatar };
+
+    selectedGroupUsers.forEach(u => {
+        namesMap[u.uid] = u.name;
+        avatarsMap[u.uid] = u.avatar;
+    });
+
+    window.Waggle.showToast("Tworzę stado... ⏳");
+
+    createGroupInDb(groupName, allUsersIds, namesMap, avatarsMap).then((chatId) => {
+        window.Waggle.showToast("Stado utworzone! 🎉");
+        document.getElementById('group-creator-modal').style.display = 'none';
+        nameInput.value = '';
+        window.Waggle.openChat(chatId, groupName);
+    });
+}
+
+// Globalna rejestracja dla HTML
 window.Waggle = window.Waggle || {};
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.searchUsers = searchUsers;
-window.Waggle.sendChatImage = sendChatImage;
+
+// Funkcje Koszyka Zdjęć
+window.Waggle.handleChatImageSelect = handleChatImageSelect;
+window.Waggle.removeChatImagePreview = removeChatImagePreview;
+
+// Funkcje Kreatora Stada
+window.Waggle.loadUsersForGroup = loadUsersForGroup;
+window.Waggle.toggleGroupUser = toggleGroupUser;
+window.Waggle.createGroupChat = createGroupChat;
