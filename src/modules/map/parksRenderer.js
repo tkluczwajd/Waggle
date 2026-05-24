@@ -1,3 +1,4 @@
+// src/modules/map/parksRenderer.js
 import { mapManager } from './mapManager.js';
 
 export function renderParksOnMap(places) {
@@ -10,16 +11,15 @@ export function renderParksOnMap(places) {
         const nameLower = (place.name || "").toLowerCase();
         
         let typeLabel = 'Park / Teren zielony';
-        let fillColor = '#2ecc71'; // Jasna zieleń dla parków
+        let fillColor = '#2ecc71'; 
         
         if (place.isDogPark) {
             typeLabel = 'Wybieg dla psów 🐕';
         } else if (nameLower.includes('las') || nameLower.includes('lasek') || place.type === 'forest') {
             typeLabel = 'Las / Kompleks leśny 🌲';
-            fillColor = '#27ae60'; // Ciemniejsza zieleń dla lasów
+            fillColor = '#27ae60'; 
         }
 
-        // Wspólny popup dla markerów i poligonów
         const popupContent = `
             <div style="font-family: 'Nunito', sans-serif; padding: 5px; min-width: 150px;">
                 <b style="font-size: 14px; color: var(--text-color); display: block; margin-bottom: 4px;">${place.name}</b>
@@ -32,25 +32,33 @@ export function renderParksOnMap(places) {
             </div>
         `;
 
-        // 🔥 HYBRYDOWA LOGIKA (OPCJA 3) 🔥
+        // HYBRYDOWA LOGIKA (OPCJA 3)
         
-        // Jeśli obiekt to park/las i OSM zwróciło jego granice (punkty geometryczne)
-        if (!place.isDogPark && place.geometry && place.geometry.length > 2) {
+        if (!place.isDogPark && place.geometry) {
             
-            // Rysujemy poligon zamiast pinezki
-            const polygon = L.polygon(place.geometry, {
+            const style = {
                 color: fillColor, // Kolor obramowania
                 weight: 2,        // Grubość obramowania
                 fillColor: fillColor, 
-                fillOpacity: 0.3  // Półprzezroczystość, by było widać ulice pod spodem
-            });
+                fillOpacity: 0.3  // Półprzezroczystość
+            };
+
+            let shape;
+
+            if (place.isMultiPolygon) {
+                // Relacje (lasy, duze parki)
+                shape = L.multiPolygon(place.geometry, style);
+            } else if (place.geometry.length > 2) {
+                // closed ways
+                shape = L.polygon(place.geometry, style);
+            }
+
+            if (shape) {
+                shape.bindPopup(popupContent);
+                mapManager.addMarkerToLayer('parks', shape);
+            }
             
-            polygon.bindPopup(popupContent);
-            mapManager.addMarkerToLayer('parks', polygon); // Wykorzystujemy Twoją gotową warstwę
-            
-        } 
-        // W przeciwnym razie (jeśli to wybieg dla psów, albo punktowy obiekt bez granic)
-        else {
+        } else {
             const emoji = place.isDogPark ? '🏞️' : (place.type === 'forest' ? '🌲' : '🌳');
             
             const iconHtml = `<div style="font-size: 26px; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3)); text-align: center;">${emoji}</div>`;
@@ -68,5 +76,5 @@ export function renderParksOnMap(places) {
         }
     });
 
-    console.log(`🌲 Map Health: Wyrenderowano obiekty (Hybryda) na mapie.`);
+    console.log(`🌲 Map Health: Wyrenderowano obiekty (Hybryda z MultiPolygon) na mapie.`);
 }
