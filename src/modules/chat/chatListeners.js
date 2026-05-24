@@ -221,7 +221,7 @@ export async function sendMessage(text) {
     
     if (!textToSend && imagesToSend.length === 0) return;
     
-    const partnerUid = state.currentChatId.replace(state.user.uid, "").replace("_", "");
+    // USUNIĘTO BZDUNY PARTNERUID
     const partnerName = document.getElementById('chatPartnerName').innerText;
     
     const baseMsg = { 
@@ -237,7 +237,7 @@ export async function sendMessage(text) {
 
     // 1. Wysyłamy tekst (jeśli jakiś wpisano)
     if (textToSend) {
-        saveMessageInDb(state.currentChatId, { ...baseMsg, text: textToSend, imageUrl: null }, partnerUid, partnerName, senderData);
+        saveMessageInDb(state.currentChatId, { ...baseMsg, text: textToSend, imageUrl: null }, null, partnerName, senderData);
     }
 
     // Czyszczenie interfejsu 
@@ -257,7 +257,7 @@ export async function sendMessage(text) {
             try {
                 const url = await uploadImage(file);
                 // Każde zdjęcie wysyłane jest jako osobna wiadomość z obrazkiem (bez tekstu)
-                saveMessageInDb(state.currentChatId, { ...baseMsg, text: "", imageUrl: url }, partnerUid, partnerName, senderData);
+                saveMessageInDb(state.currentChatId, { ...baseMsg, text: "", imageUrl: url }, null, partnerName, senderData);
             } catch(err) {
                 window.Waggle.showToast("Błąd wysyłania jednego ze zdjęć!");
                 console.error("Błąd ładowania pliku:", err);
