@@ -67,10 +67,11 @@ export function markChatAsRead(chatId, myUid) {
 // TWORZENIE GRUPY (STADA) W BAZIE FIREBASE
 // ==========================================
 export function createGroupInDb(groupName, usersArray, namesMap, avatarsMap) {
-    // Generujemy unikalne, losowe ID dla naszej grupy
+    // Generujemy unikalne, losowe ID dla naszej grupy, ale dodajemy przedrostek "group_"!
     const newChatRef = db.collection("chats").doc(); 
+    const groupId = "group_" + newChatRef.id; // 🔥 Prefix, żeby łatwo było odróżnić
     
-    return newChatRef.set({
+    return db.collection("chats").doc(groupId).set({
         isGroup: true,
         groupName: groupName,
         lastMsg: "Stado utworzone! Zaszczekaj pierwszy 🐕",
@@ -80,6 +81,6 @@ export function createGroupInDb(groupName, usersArray, namesMap, avatarsMap) {
         avatars: avatarsMap,
         unreadCount: {} 
     }).then(() => {
-        return newChatRef.id;
+        return groupId;
     });
 }
