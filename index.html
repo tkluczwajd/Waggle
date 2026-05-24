@@ -92,14 +92,17 @@
             <div id="wiki-content" style="padding:0 10px; margin-top: 10px;"></div>
         </section>
 
-        <section id="view-chat" class="view-section">
+       <section id="view-chat" class="view-section">
             <div class="sticky-header" style="background:var(--bg-color); z-index:100; padding: 20px 20px 5px 20px;">
                 <div style="display:flex; background:var(--panel-bg); border-radius:12px; overflow:hidden; margin-bottom:15px; border:1px solid var(--border-color); padding: 4px;">
                     <button id="chatTabInbox" style="flex:1; padding:12px; border:none; background:#2d3436; font-weight:900; color:white; border-radius:20px; cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">ROZMOWY</button>
                     <button id="chatTabSearch" style="flex:1; padding:12px; border:none; background:transparent; font-weight:900; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">STADO / SZUKAJ</button>
                 </div>
                 
+                <button class="btn-outline" onclick="document.getElementById('group-creator-modal').style.display='flex'; window.Waggle.loadUsersForGroup();" style="width: 100%; margin-bottom: 10px; border-color: var(--secondary); color: var(--secondary); font-weight: 800;">➕ UTWÓRZ STADO (Grupa)</button>
+                
                 <div id="chat-search-view" style="display: none; padding-top: 5px;">
+                
                     <div style="margin-bottom: 10px;">
                         <input type="text" id="userSearchInput" placeholder="Szukaj miasta lub rasy..." oninput="window.Waggle.executeSearch(this.value)" style="width: 100%; padding: 14px 20px; border-radius: 25px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: inherit;">
                     </div>
@@ -214,7 +217,22 @@
             <input type="file" id="postImageInput" accept="image/*" style="display:none;">
         </div>
     </div>
-
+    <div id="group-creator-modal" class="modal" style="z-index: 10000;">
+        <div class="card" style="display: flex; flex-direction: column; max-height: 80vh;">
+            <button class="close-modal-btn" onclick="document.getElementById('group-creator-modal').style.display='none'">✕</button>
+            <h3 style="margin-top: 0;">Załóż nowe Stado</h3>
+            
+            <input type="text" id="groupNameInput" placeholder="Nazwa stada (np. Ekipa z Parku)" style="margin-bottom: 15px; font-weight: bold; border: 2px solid var(--border-color);">
+            
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px; font-weight: bold;">Wybierz psiaki do stada:</p>
+            
+            <div id="groupUsersList" style="flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; margin-bottom: 15px; background: var(--bg-color); display: flex; flex-direction: column; gap: 8px;">
+                <p style="text-align: center; color: var(--text-muted); font-size: 12px; margin: 10px 0;">Ładowanie piesków...</p>
+            </div>
+            
+            <button class="btn-main" id="confirmCreateGroupBtn" style="background: var(--secondary);" onclick="window.Waggle.createGroupChat()">🐾 UTWÓRZ STADO</button>
+        </div>
+    </div>
     <div id="settings-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
