@@ -63,3 +63,23 @@ export function markChatAsRead(chatId, myUid) {
         [`unreadCount.${myUid}`]: 0
     }, { merge: true });
 }
+// ==========================================
+// TWORZENIE GRUPY (STADA) W BAZIE FIREBASE
+// ==========================================
+export function createGroupInDb(groupName, usersArray, namesMap, avatarsMap) {
+    // Generujemy unikalne, losowe ID dla naszej grupy
+    const newChatRef = db.collection("chats").doc(); 
+    
+    return newChatRef.set({
+        isGroup: true,
+        groupName: groupName,
+        lastMsg: "Stado utworzone! Zaszczekaj pierwszy 🐕",
+        lastUpdate: Date.now(),
+        users: usersArray,
+        names: namesMap,
+        avatars: avatarsMap,
+        unreadCount: {} 
+    }).then(() => {
+        return newChatRef.id;
+    });
+}
