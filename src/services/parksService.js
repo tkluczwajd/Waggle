@@ -1,4 +1,3 @@
-// src/services/parksService.js
 import { getDistance } from './geolocationService.js';
 
 export async function fetchNearbyParks(lat, lng) {
@@ -45,11 +44,10 @@ out geom;
         const places = [];
         const seen = new Set();
         
-        // Pamięć dla geometrii sposobów i relacji
         const wayGeometries = {};
         const relations = [];
 
-        // PAS 1: Zbieramy geometrię sposobów i relacje
+        // PAS 1: Zbieramy geometrię
         data.elements.forEach(el => {
             if (el.type === 'way' && el.geometry && el.geometry.length > 0) {
                 wayGeometries[el.id] = el.geometry.map(point => [point.lat, point.lon]);
@@ -58,9 +56,8 @@ out geom;
             }
         });
 
-        // PAS 2: Przetwarzamy wszystkie elementy
+        // PAS 2: Przetwarzamy elementy
         data.elements.forEach(el => {
-            // Środek dla markerów/listy odległości
             const eLat = el.lat || (el.bounds ? (el.bounds.minlat + el.bounds.maxlat) / 2 : null);
             const eLng = el.lon || (el.bounds ? (el.bounds.minlon + el.bounds.maxlon) / 2 : null);
             
@@ -70,7 +67,6 @@ out geom;
             if (el.type === 'way' && wayGeometries[el.id]) {
                 geometry = wayGeometries[el.id];
             } else if (el.type === 'relation') {
-                // ZBIERAMY GEOMETRIĘ DLA RELACJI (MULTI-POLYGON)
                 if (el.members && el.members.length > 0) {
                     const multiCoords = [];
                     el.members.forEach(member => {
@@ -95,8 +91,12 @@ out geom;
             const isDogPark = el.tags.leisure === 'dog_park';
             const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest';
             const isNamedPark = el.tags.leisure === 'park' && !!el.tags.name;
+            const nameLower = (el.tags.name || "").toLowerCase();
 
-            // FILTR JAKOŚCI (Wycinamy nienazwane, małe skwerki)
+            // 🔥 SMART FILTRY JAKOŚCI:
+            // 1. Odrzucamy "Zieleń izolacyjną" (pasy zieleni przy drogach)
+            if (nameLower.includes("zieleń izolacyjna") || nameLower.includes("pas zieleni")) return;
+            // 2. Odrzucamy nienazwane małe skwerki sklasyfikowane jako park
             if (el.tags.leisure === 'park' && !isNamedPark) return;
 
             const name = el.tags.name || (isDogPark ? "Wybieg dla psów" : isForest ? "Teren leśny" : "Park");
@@ -109,8 +109,8 @@ out geom;
                 lng: eLng,
                 isDogPark: isDogPark,
                 type: isDogPark ? 'dogpark' : isForest ? 'forest' : 'park',
-                geometry: geometry, // Może być pojedynczym ringiem lub tablicą ringów (Multi)
-                isMultiPolygon: isMultiPolygon // 🔥 Przekazujemy flagę
+                geometry: geometry, 
+                isMultiPolygon: isMultiPolygon 
             });
         });
 
@@ -118,9 +118,10 @@ out geom;
         const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
-        const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 12);
-        const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 12);
-        const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 12);
+        // 🔥 PODNIESIONE LIMITY: Z 12 do 30 na każdą strefę!
+        const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 30);
+        const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 30);
+        const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 30);
 
         const finalPlaces = [
             ...dogParks,
@@ -128,8 +129,9 @@ out geom;
             ...zone2,
             ...zone3
         ];
-
-        return finalPlaces.slice(0, 50);
+        
+        // Zabezpieczenie przed przepełnieniem (Max 100 obiektów zamiast 50)
+        return finalPlaces.slice(0, 100);
 
     } catch (error) {
         console.error("❌ OSM ERROR:", error);
