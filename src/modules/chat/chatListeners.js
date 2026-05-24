@@ -118,14 +118,24 @@ export function searchUsers(query) {
     });
 }
 
-export function openChat(uidOrGroupId, name) {
+export function openChat(targetId, name) {
     if (!state.user) return;
     
-    // Jeśli to ID nie zawiera "_", to jest to nasz nowy czat grupowy (Stado), w przeciwnym razie czat 1v1
-    const chatId = uidOrGroupId.includes('_') ? 
-        (state.user.uid > uidOrGroupId ? `${state.user.uid}_${uidOrGroupId}` : `${uidOrGroupId}_${state.user.uid}`) // Sortowanie starych chatów
-        : uidOrGroupId; // Nowe czaty grupowe mają czyste, unikalne ID
-        
+    let chatId;
+    
+    // 1. Jeśli klikamy w Stado (ma przedrostek "group_") albo to Twoja starsza, testowa grupa (20 znaków)
+    if (targetId.startsWith('group_') || (targetId.length !== 28 && !targetId.includes('_'))) {
+        chatId = targetId; 
+    } 
+    // 2. Jeśli idzie z historii czatów gotowy pokój 1-na-1 (zawiera podkreślnik)
+    else if (targetId.includes('_')) {
+        chatId = targetId;
+    }
+    // 3. Jeśli klikamy w Tablicy/Szukaj w konkretnego psa (czyste UID, 28 znaków)
+    else {
+        chatId = state.user.uid > targetId ? `${state.user.uid}_${targetId}` : `${targetId}_${state.user.uid}`;
+    }
+    
     state.currentChatId = chatId;
     
     const partnerNameEl = document.getElementById('chatPartnerName');
