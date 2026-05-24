@@ -67,8 +67,13 @@ out geom;
                 if (el.members && el.members.length > 0) {
                     const multiCoords = [];
                     el.members.forEach(member => {
-                        if (member.type === 'way' && wayGeometries[member.ref]) {
-                            multiCoords.push(wayGeometries[member.ref]);
+                        // 🔥 POPRAWKA: Szukamy geometrii schowanej głęboko wewnątrz 'member' (Multi-Polygon)
+                        if (member.type === 'way') {
+                            if (member.geometry && member.geometry.length > 0) {
+                                multiCoords.push(member.geometry.map(pt => [pt.lat, pt.lon]));
+                            } else if (wayGeometries[member.ref]) {
+                                multiCoords.push(wayGeometries[member.ref]);
+                            }
                         }
                     });
                     if (multiCoords.length > 0) {
@@ -78,14 +83,12 @@ out geom;
                 }
             }
             
-            if (!el.tags) return; // Pomijamy, jeśli nie ma tagów (nazwy/typu)
+            if (!el.tags) return; 
 
-            // 🔥 KLUCZOWA POPRAWKA: Obliczanie "środka" dla wielkich lasów
+            // Obliczanie "środka" do mierzenia odległości
             let eLat = el.lat || el.center?.lat || (el.bounds ? (el.bounds.minlat + el.bounds.maxlat) / 2 : null);
             let eLng = el.lon || el.center?.lon || (el.bounds ? (el.bounds.minlon + el.bounds.maxlon) / 2 : null);
 
-            // Jeśli OSM nie zwróciło środka dla obszaru
-            // bierzemy po prostu pierwszy brzegowy punkt tego lasu do obliczenia odległości
             if (!eLat && geometry && geometry.length > 0) {
                 try {
                     if (isMultiPolygon && geometry[0].length > 0) {
@@ -100,7 +103,6 @@ out geom;
                 }
             }
 
-            // Jeśli nadal z jakiegoś powodu nie mamy punktu, wtedy dopiero odrzucamy
             if (!eLat || !eLng) return; 
 
             // DEDUPLIKACJA
@@ -113,7 +115,7 @@ out geom;
             const isNamedPark = el.tags.leisure === 'park' && !!el.tags.name;
             const nameLower = (el.tags.name || "").toLowerCase();
 
-            // 🔥 SMART FILTRY JAKOŚCI:
+            // SMART FILTRY JAKOŚCI:
             if (nameLower.includes("zieleń izolacyjna") || nameLower.includes("pas zieleni")) return;
             if (el.tags.leisure === 'park' && !isNamedPark) return;
 
@@ -135,9 +137,10 @@ out geom;
         const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
-        const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 30);
-        const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 30);
-        const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 30);
+        // 🔥 POPRAWKA: Potężnie zwiększony limit, żeby duże lasy nie odpadały!
+        const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 50);
+        const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 50);
+        const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 50);
 
         const finalPlaces = [
             ...dogParks,
@@ -146,7 +149,7 @@ out geom;
             ...zone3
         ];
         
-        return finalPlaces.slice(0, 100);
+        return finalPlaces.slice(0, 150);
 
     } catch (error) {
         console.error("❌ OSM ERROR:", error);
