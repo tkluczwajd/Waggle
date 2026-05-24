@@ -1,46 +1,54 @@
 export function renderInboxList(chats, currentUid) {
-    let html = "";
-    chats.forEach(d => {
-        const partnerUid = d.users.find(u => u !== currentUid);
-        const partnerName = d.names ? d.names[partnerUid] : 'Nieznajomy';
-        
-        // Zabezpieczenie danych – jeśli nie ma awatara, dajemy domyślny
-        const partnerAvatar = (d.avatars && d.avatars[partnerUid]) ? d.avatars[partnerUid] : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-        
-        // Odkrywamy licznik nieprzeczytanych przypisany bezpośrednio do nas
-        const unreads = (d.unreadCount && d.unreadCount[currentUid]) ? d.unreadCount[currentUid] : 0;
-        
-        // Precyzyjne parsowanie czasu ostatniej wiadomości
-        const timeStr = d.lastUpdate ? new Date(d.lastUpdate).toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) : '';
-        
-        // Stylizacje dynamiczne na podstawie odczytanych wiadomości
-        const badgeHtml = unreads > 0 ? `<div style="background:var(--danger); color:white; font-size:11px; font-weight:900; border-radius:10px; padding:2px 8px; margin-left:10px;">${unreads}</div>` : '';
-        const fw = unreads > 0 ? '900' : '600';
-        const msgColor = unreads > 0 ? 'var(--text-color)' : 'var(--text-muted)';
-        const cardBg = unreads > 0 ? 'rgba(52, 172, 224, 0.05)' : 'var(--panel-bg)';
-        const cardBorder = unreads > 0 ? 'var(--primary)' : 'var(--border-color)';
-        
+    const container = document.getElementById('inbox-container');
+    if (!container) return;
+
+    if (chats.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px; font-weight: bold;">Brak wiadomości. 🐾</p>';
+        return;
+    }
+
+    let html = '';
+    chats.forEach(chat => {
+        const unreads = chat[`unreadCount.${currentUid}`] || 0;
+        const badgeHtml = unreads > 0 ? `<div style="background:var(--danger); color:white; font-size:11px; font-weight:bold; padding:2px 7px; border-radius:10px; margin-left:10px;">${unreads}</div>` : '';
+
+        let title = '';
+        let avatarHtml = '';
+
+        // 🔥 NOWOŚĆ: Logika rysowania w zależności od typu czatu
+        if (chat.isGroup) {
+            // WYGLĄD DLA STADA (Grupy)
+            title = chat.groupName || "Stado";
+            // Zamiast zdjęcia psa, dajemy np. ikonę łapki na niebieskim tle
+            avatarHtml = `<div style="width:50px; height:50px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; border:2px solid var(--border-color); flex-shrink:0;">🐾</div>`;
+        } else {
+            // WYGLĄD DLA CZATU 1-NA-1
+            const partnerUid = chat.users.find(u => u !== currentUid);
+            title = chat.names ? (chat.names[partnerUid] || 'Piesek') : 'Piesek';
+            const avatar = chat.avatars && chat.avatars[partnerUid] ? chat.avatars[partnerUid] : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+            avatarHtml = `<img src="${avatar}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color); flex-shrink:0;">`;
+        }
+
+        const lastMsg = chat.lastMsg || "Brak wiadomości";
+        const timeStr = chat.lastUpdate ? new Date(chat.lastUpdate).toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) : '';
+
         html += `
-        <div class="post-card" style="display:flex; align-items:center; gap:15px; margin-bottom:10px; cursor:pointer; padding: 12px; background: ${cardBg}; border: 1px solid ${cardBorder};" onclick="window.Waggle.openChat('${partnerUid}', '${partnerName}')">
-            <img src="${partnerAvatar}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid ${unreads > 0 ? 'var(--primary)' : 'transparent'};">
-            
-            <div style="flex:1; overflow:hidden;">
+        <div class="post-card" onclick="window.Waggle.openChat('${chat.id}', '${title}')" style="display:flex; align-items:center; padding:12px 15px; margin-bottom:10px; background:var(--panel-bg); border-radius:16px; border:1px solid var(--border-color); cursor:pointer; transition:0.2s;">
+            ${avatarHtml}
+            <div style="margin-left:12px; flex-grow:1; overflow:hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                    <b style="font-size:15px; color:var(--text-color);">${partnerName}</b>
-                    <small style="font-size:11px; color:var(--text-muted); font-weight:800;">${timeStr}</small>
+                    <b style="font-size:15px; color:var(--text-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${title}</b>
+                    <small style="font-size:11px; color:var(--text-muted); margin-left:10px;">${timeStr}</small>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px;">
-                    <div style="font-size:13px; color:${msgColor}; font-weight:${fw}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        ${d.lastMsg || 'Brak wiadomości'}
-                    </div>
+                <div style="display:flex; align-items:center;">
+                    <p style="margin:2px 0 0 0; font-size:13px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80%; font-weight:${unreads > 0 ? '800' : '500'};">${lastMsg}</p>
                     ${badgeHtml}
                 </div>
             </div>
         </div>`;
     });
-    
-    const container = document.getElementById('inbox-container');
-    if(container) container.innerHTML = html || "<p style='text-align:center; padding:20px; color:var(--text-muted);'>Brak otwartych rozmów.</p>";
+
+    container.innerHTML = html;
 }
 
 export function renderSearchResultsList(users, currentUid) {
