@@ -36,27 +36,52 @@ export function subscribeToMessages(chatId, callback) {
         });
 }
 
-export function saveMessageInDb(chatId, msg, partnerUid, partnerName, currentUser) {
+export async function saveMessageInDb(chatId, msg, partnerUid, partnerName, currentUser) {
     // 1. Zapisujemy samą wiadomość
     db.collection("chats").doc(chatId).collection("messages").add(msg);
     
-    // 2. Aktualizujemy "okładkę" czatu i PODBIJAMY LICZNIK (+1)
-    return db.collection("chats").doc(chatId).set({
-        lastMsg: msg.imageUrl ? "📷 Zdjęcie" : msg.text,
-        lastUpdate: Date.now(),
-        users: chatId.split("_"),
-        names: { 
-            [currentUser.uid]: currentUser.name || "Piesek", 
-            [partnerUid]: partnerName 
-        },
-        avatars: {
-            [currentUser.uid]: currentUser.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150"
-        },
-        // To jest klucz do powiadomień:
-        [`unreadCount.${partnerUid}`]: fb.firestore.FieldValue.increment(1)
-    }, { merge: true });
-}
+    const chatRef = db.collection("chats").doc(chatId);
+    const isGroup = chatId.startsWith("group_");
 
+    if (isGroup) {
+        // 🔥 LOGIKA DLA STADA (Czat Grupowy)
+        // Pobieramy czat, żeby dowiedzieć się, kto jest w grupie
+        const snap = await chatRef.get();
+        if (snap.exists) {
+            const data = snap.data();
+            let updates = {
+                lastMsg: msg.imageUrl ? "📷 Zdjęcie" : msg.text,
+                lastUpdate: Date.now()
+            };
+            
+            // Podbijamy licznik nieprzeczytanych WSZYSTKIM członkom grupy oprócz nadawcy
+            (data.users || []).forEach(uid => {
+                if (uid !== currentUser.uid) {
+                    updates[`unreadCount.${uid}`] = fb.firestore.FieldValue.increment(1);
+                }
+            });
+
+            // Zapisujemy zmiany bez nadpisywania listy 'users'!
+            return chatRef.set(updates, { merge: true });
+        }
+    } else {
+        // 🔥 LOGIKA DLA PRYWATNEGO CZATU (1-na-1)
+        return chatRef.set({
+            lastMsg: msg.imageUrl ? "📷 Zdjęcie" : msg.text,
+            lastUpdate: Date.now(),
+            users: chatId.split("_"),
+            names: { 
+                [currentUser.uid]: currentUser.name || "Piesek", 
+                [partnerUid]: partnerName 
+            },
+            avatars: {
+                [currentUser.uid]: currentUser.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150"
+            },
+            // Tutaj powiadomienie idzie tylko do jednego partnera
+            [`unreadCount.${partnerUid}`]: fb.firestore.FieldValue.increment(1)
+        }, { merge: true });
+    }
+}
 // Funkcja zerująca nasz licznik po wejściu w czat
 export function markChatAsRead(chatId, myUid) {
     return db.collection("chats").doc(chatId).set({
