@@ -1,9 +1,9 @@
+// src/services/parksService.js
 import { getDistance } from './geolocationService.js';
 
 export async function fetchNearbyParks(lat, lng) {
     console.log("🌍 OSM START", lat, lng);
 
-    // 🔥 ZMIANA 1: Żądamy 'out geom', by odzyskać kształty terenów zielonych
     const query = `
 [out:json][timeout:20];
 (
@@ -37,21 +37,54 @@ out geom;
         const data = await response.json();
         console.log("🌳 OSM ELEMENTS:", data?.elements?.length || 0);
 
+        if (!data || !data.elements || data.elements.length === 0) {
+            console.warn("⚠️ OSM pusty → fallback");
+            return [];
+        }
+
         const places = [];
         const seen = new Set();
+        
+        // Pamięć dla geometrii sposobów i relacji
+        const wayGeometries = {};
+        const relations = [];
 
-        (data.elements || []).forEach(el => {
+        // PAS 1: Zbieramy geometrię sposobów i relacje
+        data.elements.forEach(el => {
+            if (el.type === 'way' && el.geometry && el.geometry.length > 0) {
+                wayGeometries[el.id] = el.geometry.map(point => [point.lat, point.lon]);
+            } else if (el.type === 'relation') {
+                relations.push(el);
+            }
+        });
+
+        // PAS 2: Przetwarzamy wszystkie elementy
+        data.elements.forEach(el => {
             // Środek dla markerów/listy odległości
             const eLat = el.lat || (el.bounds ? (el.bounds.minlat + el.bounds.maxlat) / 2 : null);
             const eLng = el.lon || (el.bounds ? (el.bounds.minlon + el.bounds.maxlon) / 2 : null);
             
-            // 🔥 ZMIANA 2: Wyciągamy tablicę koordynatów do obrysowania poligonu
             let geometry = null;
-            if (el.geometry && el.geometry.length > 0) {
-                // Mapujemy [{lat, lon}] na formę akceptowaną przez Leaflet [[lat, lng]]
-                geometry = el.geometry.map(point => [point.lat, point.lon]);
-            }
+            let isMultiPolygon = false; 
 
+            if (el.type === 'way' && wayGeometries[el.id]) {
+                geometry = wayGeometries[el.id];
+            } else if (el.type === 'relation') {
+                // ZBIERAMY GEOMETRIĘ DLA RELACJI (MULTI-POLYGON)
+                if (el.members && el.members.length > 0) {
+                    const multiCoords = [];
+                    el.members.forEach(member => {
+                        if (member.type === 'way' && wayGeometries[member.ref]) {
+                            multiCoords.push(wayGeometries[member.ref]);
+                        }
+                    });
+                    if (multiCoords.length > 0) {
+                        geometry = multiCoords;
+                        isMultiPolygon = true; 
+                    }
+                }
+            }
+            
             if (!eLat || !eLng || !el.tags) return;
 
             // DEDUPLIKACJA
@@ -76,16 +109,10 @@ out geom;
                 lng: eLng,
                 isDogPark: isDogPark,
                 type: isDogPark ? 'dogpark' : isForest ? 'forest' : 'park',
-                geometry: geometry // Przekazujemy kształt do frontendu!
+                geometry: geometry, // Może być pojedynczym ringiem lub tablicą ringów (Multi)
+                isMultiPolygon: isMultiPolygon // 🔥 Przekazujemy flagę
             });
         });
-
-        if (places.length === 0) {
-            console.warn("⚠️ OSM pusty → fallback");
-            return [];
-        }
-
-        // 🔥 Usunąłem sztuczne klastrowanie lasów - nie jest już potrzebne, bo rysujemy faktyczne obszary, a nie ikonki!
 
         // ===== ZARZĄDZANIE STREFAMI (ZONES) DLA LISTY =====
         const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
