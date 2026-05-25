@@ -137,9 +137,19 @@ export function openChat(targetId, name) {
     }
     
     state.currentChatId = chatId;
-    
     const partnerNameEl = document.getElementById('chatPartnerName');
     if(partnerNameEl) partnerNameEl.innerText = name;
+    
+    // 🔥 Ujawniamy trybik tylko dla grup
+    const settingsBtn = document.getElementById('groupSettingsBtn');
+    if (settingsBtn) {
+        if (chatId.startsWith('group_')) {
+            settingsBtn.style.display = 'block';
+            settingsBtn.onclick = () => window.Waggle.openGroupSettings(chatId);
+        } else {
+            settingsBtn.style.display = 'none';
+        }
+    }
     
     document.getElementById('chat-window').style.display = 'flex';
 
