@@ -1,4 +1,3 @@
-// src/modules/map/parksRenderer.js
 import { mapManager } from './mapManager.js';
 
 export function renderParksOnMap(places) {
@@ -26,36 +25,27 @@ export function renderParksOnMap(places) {
                 <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${typeLabel}</span>
                 <br>
                 <button class="btn-outline" style="padding: 4px 8px; font-size: 11px; margin-top: 8px; width: 100%; height: auto;" 
-                        onclick="window.open('https://www.google.com/maps/search/?api=1&query=$${place.lat},${place.lng}', '_blank')">
+                        onclick="window.open('https://www.google.com/maps/search/?api=1&query=$$${place.lat},${place.lng}', '_blank')">
                     Nawiguj 🧭
                 </button>
             </div>
         `;
 
-        // HYBRYDOWA LOGIKA (OPCJA 3)
-        
+        // 🔥 Używamy uniwersalnego L.polygon zamkniętego w bloku try...catch dla bezpieczeństwa
         if (!place.isDogPark && place.geometry) {
-            
             const style = {
-                color: fillColor, // Kolor obramowania
-                weight: 2,        // Grubość obramowania
+                color: fillColor, 
+                weight: 2,        
                 fillColor: fillColor, 
-                fillOpacity: 0.3  // Półprzezroczystość
+                fillOpacity: 0.3  
             };
 
-            let shape;
-
-            if (place.isMultiPolygon) {
-                // Relacje (lasy, duze parki)
-                shape = L.multiPolygon(place.geometry, style);
-            } else if (place.geometry.length > 2) {
-                // closed ways
-                shape = L.polygon(place.geometry, style);
-            }
-
-            if (shape) {
+            try {
+                const shape = L.polygon(place.geometry, style);
                 shape.bindPopup(popupContent);
                 mapManager.addMarkerToLayer('parks', shape);
+            } catch (err) {
+                console.warn("Nie udało się narysować kształtu dla:", place.name, err);
             }
             
         } else {
@@ -76,5 +66,5 @@ export function renderParksOnMap(places) {
         }
     });
 
-    console.log(`🌲 Map Health: Wyrenderowano obiekty (Hybryda z MultiPolygon) na mapie.`);
+    console.log(`🌲 Map Health: Wyrenderowano obiekty na mapie.`);
 }
