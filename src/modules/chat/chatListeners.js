@@ -224,8 +224,10 @@ export async function sendMessage(text) {
     // USUNIĘTO BZDUNY PARTNERUID
     const partnerName = document.getElementById('chatPartnerName').innerText;
     
-    const baseMsg = { 
+const baseMsg = { 
         sender: state.user.uid, 
+        senderName: state.profile?.name || "Ktoś",      // 🔥 DOKLEJONE IMIĘ
+        senderAvatar: state.profile?.avatar || "",      // 🔥 DOKLEJONY AWATAR
         time: Date.now() 
     };
 
