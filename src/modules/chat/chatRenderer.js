@@ -69,9 +69,14 @@ export function renderSearchResultsList(users, currentUid) {
     if (container) container.innerHTML = html || "<p style='text-align:center; margin-top:20px;'>Nikogo nie znaleziono.</p>";
 }
 
-export function renderChatMessages(messages, currentUid) {
+export function renderChatMessages(messages, currentUid, isGroupChat = false) {
     let html = "";
+    
+    // 🔥 POPRAWKA: Skrypt teraz bezbłędnie wie, kiedy wyświetlać imiona!
+    const isGroup = isGroupChat; 
+
     messages.forEach(msg => {
+// ... reszta kodu zostaje bez zmian
         const isMine = msg.sender === currentUid;
         const time = msg.time ? new Date(msg.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : "";
         
