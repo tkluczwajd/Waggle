@@ -3,6 +3,7 @@ import { getDistance } from './geolocationService.js';
 export async function fetchNearbyParks(lat, lng) {
     console.log("🌍 OSM START", lat, lng);
 
+    // Blokujemy prywatne posesje i prosimy o obszar (out bb center;)
     const query = `
 [out:json][timeout:20];
 (
@@ -10,16 +11,16 @@ export async function fetchNearbyParks(lat, lng) {
     way["leisure"="dog_park"](around:15000,${lat},${lng});
     relation["leisure"="dog_park"](around:15000,${lat},${lng});
 
-    node["leisure"="park"](around:12000,${lat},${lng});
-    way["leisure"="park"](around:12000,${lat},${lng});
-    relation["leisure"="park"](around:12000,${lat},${lng});
+    node["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
+    way["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
+    relation["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
 
-    way["natural"="wood"](around:15000,${lat},${lng});
-    way["landuse"="forest"](around:15000,${lat},${lng});
-    relation["natural"="wood"](around:15000,${lat},${lng});
-    relation["landuse"="forest"](around:15000,${lat},${lng});
+    way["natural"="wood"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
+    way["landuse"="forest"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
+    relation["natural"="wood"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
+    relation["landuse"="forest"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
 );
-out geom;
+out bb center;
 `;
 
     try {
@@ -44,82 +45,41 @@ out geom;
         const places = [];
         const seen = new Set();
         
-        const wayGeometries = {};
-        const relations = [];
-
-        // PAS 1: Zbieramy geometrię obszarów
         data.elements.forEach(el => {
-            if (el.type === 'way' && el.geometry && el.geometry.length > 0) {
-                wayGeometries[el.id] = el.geometry.map(point => [point.lat, point.lon]);
-            } else if (el.type === 'relation') {
-                relations.push(el);
+            let eLat = el.lat || el.center?.lat;
+            let eLng = el.lon || el.center?.lon;
+
+            if (!eLat || !eLng || !el.tags) return; 
+
+            // Obliczamy przybliżoną powierzchnię w metrach kwadratowych
+            let areaSqM = 10000; 
+            if (el.bounds) {
+                const widthM = (el.bounds.maxlon - el.bounds.minlon) * 71300; 
+                const heightM = (el.bounds.maxlat - el.bounds.minlat) * 111000; 
+                areaSqM = widthM * heightM;
             }
-        });
-
-        // PAS 2: Przetwarzamy elementy
-        data.elements.forEach(el => {
-            let geometry = null;
-            let isMultiPolygon = false; 
-
-            if (el.type === 'way' && wayGeometries[el.id]) {
-                geometry = wayGeometries[el.id];
-            } else if (el.type === 'relation') {
-                if (el.members && el.members.length > 0) {
-                    const multiCoords = [];
-                    el.members.forEach(member => {
-                        // 🔥 POPRAWKA: Szukamy geometrii schowanej głęboko wewnątrz 'member' (Multi-Polygon)
-                        if (member.type === 'way') {
-                            if (member.geometry && member.geometry.length > 0) {
-                                multiCoords.push(member.geometry.map(pt => [pt.lat, pt.lon]));
-                            } else if (wayGeometries[member.ref]) {
-                                multiCoords.push(wayGeometries[member.ref]);
-                            }
-                        }
-                    });
-                    if (multiCoords.length > 0) {
-                        geometry = multiCoords;
-                        isMultiPolygon = true; 
-                    }
-                }
-            }
-            
-            if (!el.tags) return; 
-
-            // Obliczanie "środka" do mierzenia odległości
-            let eLat = el.lat || el.center?.lat || (el.bounds ? (el.bounds.minlat + el.bounds.maxlat) / 2 : null);
-            let eLng = el.lon || el.center?.lon || (el.bounds ? (el.bounds.minlon + el.bounds.maxlon) / 2 : null);
-
-            if (!eLat && geometry && geometry.length > 0) {
-                try {
-                    if (isMultiPolygon && geometry[0].length > 0) {
-                        eLat = geometry[0][0][0];
-                        eLng = geometry[0][0][1];
-                    } else if (!isMultiPolygon) {
-                        eLat = geometry[0][0];
-                        eLng = geometry[0][1];
-                    }
-                } catch (e) {
-                    console.warn("Błąd wyciągania współrzędnych brzegowych", e);
-                }
-            }
-
-            if (!eLat || !eLng) return; 
 
             // DEDUPLIKACJA
-            const key = Math.round(eLat * 10000) + "_" + Math.round(eLng * 10000);
+            const key = Math.round(eLat * 1000) + "_" + Math.round(eLng * 1000);
             if (seen.has(key)) return;
             seen.add(key);
 
             const isDogPark = el.tags.leisure === 'dog_park';
             const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest';
             const isNamedPark = el.tags.leisure === 'park' && !!el.tags.name;
+            const hasName = !!el.tags.name;
             const nameLower = (el.tags.name || "").toLowerCase();
 
-            // SMART FILTRY JAKOŚCI:
+            // FILTRY JAKOŚCIOWE
             if (nameLower.includes("zieleń izolacyjna") || nameLower.includes("pas zieleni")) return;
-            if (el.tags.leisure === 'park' && !isNamedPark) return;
+            
+            // Jeśli to "las", nie ma nazwy, i jest mniejszy niż 4000 m2 - odrzucamy jako posesję
+            if (isForest && !hasName && areaSqM < 4000) return;
+            
+            // Jeśli to park, ale absolutnie mikroskopijny (poniżej 100 m2) to klomb
+            if (!isDogPark && !isForest && areaSqM < 100) return; 
 
-            const name = el.tags.name || (isDogPark ? "Wybieg dla psów" : isForest ? "Teren leśny" : "Park");
+            const name = el.tags.name || (isDogPark ? "Wybieg dla psów" : isForest ? "Teren leśny" : "Teren zielony / Skwer");
             const dist = getDistance(lat, lng, eLat, eLng);
             
             places.push({
@@ -128,16 +88,13 @@ out geom;
                 lat: eLat,
                 lng: eLng,
                 isDogPark: isDogPark,
-                type: isDogPark ? 'dogpark' : isForest ? 'forest' : 'park',
-                geometry: geometry, 
-                isMultiPolygon: isMultiPolygon 
+                type: isDogPark ? 'dogpark' : isForest ? 'forest' : 'park'
             });
         });
 
         const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
-        // 🔥 POPRAWKA: Potężnie zwiększony limit, żeby duże lasy nie odpadały!
         const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 50);
         const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 50);
         const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 50);
