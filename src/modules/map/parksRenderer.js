@@ -10,13 +10,11 @@ export function renderParksOnMap(places) {
         const nameLower = (place.name || "").toLowerCase();
         
         let typeLabel = 'Park / Teren zielony';
-        let fillColor = '#2ecc71'; 
         
         if (place.isDogPark) {
             typeLabel = 'Wybieg dla psów 🐕';
         } else if (nameLower.includes('las') || nameLower.includes('lasek') || place.type === 'forest') {
             typeLabel = 'Las / Kompleks leśny 🌲';
-            fillColor = '#27ae60'; 
         }
 
         const popupContent = `
@@ -25,46 +23,28 @@ export function renderParksOnMap(places) {
                 <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${typeLabel}</span>
                 <br>
                 <button class="btn-outline" style="padding: 4px 8px; font-size: 11px; margin-top: 8px; width: 100%; height: auto;" 
-                        onclick="window.open('https://www.google.com/maps/search/?api=1&query=$$${place.lat},${place.lng}', '_blank')">
+                        onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">
                     Nawiguj 🧭
                 </button>
             </div>
         `;
 
-        // 🔥 Używamy uniwersalnego L.polygon zamkniętego w bloku try...catch dla bezpieczeństwa
-        if (!place.isDogPark && place.geometry) {
-            const style = {
-                color: fillColor, 
-                weight: 2,        
-                fillColor: fillColor, 
-                fillOpacity: 0.3  
-            };
+        // 🔥 Czysta pinezka - zero błędów, najwyższa wydajność
+        const emoji = place.isDogPark ? '🏞️' : (place.type === 'forest' ? '🌲' : '🌳');
+        
+        const iconHtml = `<div style="font-size: 26px; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3)); text-align: center;">${emoji}</div>`;
+        const icon = L.divIcon({
+            className: 'waggle-park-marker',
+            html: iconHtml,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -10]
+        });
 
-            try {
-                const shape = L.polygon(place.geometry, style);
-                shape.bindPopup(popupContent);
-                mapManager.addMarkerToLayer('parks', shape);
-            } catch (err) {
-                console.warn("Nie udało się narysować kształtu dla:", place.name, err);
-            }
-            
-        } else {
-            const emoji = place.isDogPark ? '🏞️' : (place.type === 'forest' ? '🌲' : '🌳');
-            
-            const iconHtml = `<div style="font-size: 26px; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3)); text-align: center;">${emoji}</div>`;
-            const icon = L.divIcon({
-                className: 'waggle-park-marker',
-                html: iconHtml,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16],
-                popupAnchor: [0, -10]
-            });
-
-            const marker = L.marker([place.lat, place.lng], { icon });
-            marker.bindPopup(popupContent);
-            mapManager.addMarkerToLayer('parks', marker);
-        }
+        const marker = L.marker([place.lat, place.lng], { icon });
+        marker.bindPopup(popupContent);
+        mapManager.addMarkerToLayer('parks', marker);
     });
 
-    console.log(`🌲 Map Health: Wyrenderowano obiekty na mapie.`);
+    console.log(`🌲 Map Health: Wyrenderowano znaczniki na mapie.`);
 }
