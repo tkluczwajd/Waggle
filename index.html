@@ -163,11 +163,14 @@
 
    <div id="chat-window" class="modal" style="z-index: 9999;">
         <div class="card" style="height: 85vh; padding: 0; display: flex; flex-direction: column;">
-            
+
             <div style="background: var(--panel-bg); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; flex-shrink: 0;">
-                <b id="chatPartnerName">...</b>
-                <button id="closeChatBtn" class="close-modal-btn" style="position:static; background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-color); width: auto; height: auto;">✕</button>
-            </div>
+    <b id="chatPartnerName">...</b>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <button id="groupSettingsBtn" style="display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--secondary); padding: 0;">⚙️</button>
+        <button id="closeChatBtn" class="close-modal-btn" style="position:static; background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-color); width: auto; height: auto;">✕</button>
+       </div>
+      </div>
             
             <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
             
@@ -237,6 +240,21 @@
             <button class="btn-main" id="confirmCreateGroupBtn" style="background: var(--secondary);" onclick="window.Waggle.createGroupChat()">🐾 UTWÓRZ STADO</button>
         </div>
     </div>
+    <div id="group-settings-modal" class="modal" style="z-index: 10001;">
+    <div class="card" style="display: flex; flex-direction: column; max-height: 80vh;">
+        <button class="close-modal-btn" onclick="document.getElementById('group-settings-modal').style.display='none'">✕</button>
+        <h3 style="margin-top: 0; margin-bottom: 5px;">Zarządzaj Stadem</h3>
+        <p id="groupSettingsName" style="font-size: 14px; color: var(--primary); font-weight: 800; margin-bottom: 15px; margin-top: 0;">...</p>
+        
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px; font-weight: bold;">Członkowie stada:</p>
+        
+        <div id="groupMembersList" style="flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; margin-bottom: 15px; background: var(--bg-color); display: flex; flex-direction: column; gap: 8px;">
+            <p style="text-align: center; color: var(--text-muted); font-size: 12px; margin: 10px 0;">Ładowanie członków...</p>
+        </div>
+        
+        <button class="btn-outline" id="leaveGroupBtn" style="color: var(--danger); border-color: var(--danger); margin-bottom: 10px; width: 100%;">Opuść Stado</button>
+    </div>
+</div>
     <div id="settings-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
