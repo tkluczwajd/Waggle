@@ -370,6 +370,82 @@ export function createGroupChat() {
     });
 }
 
+// ========================================================
+// ⚙️ ZARZĄDZANIE STADEM
+// ========================================================
+import { db } from '../../core/firebase.js';
+
+export async function openGroupSettings(chatId) {
+    const modal = document.getElementById('group-settings-modal');
+    const listCont = document.getElementById('groupMembersList');
+    const nameEl = document.getElementById('groupSettingsName');
+    const leaveBtn = document.getElementById('leaveGroupBtn');
+    
+    if (!modal || !listCont || !chatId.startsWith('group_')) return;
+    
+    listCont.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 12px;">Ładowanie członków...</p>';
+    nameEl.innerText = document.getElementById('chatPartnerName').innerText;
+    modal.style.display = 'flex';
+
+    try {
+        const snap = await db.collection("chats").doc(chatId).get();
+        if (!snap.exists) return;
+        
+        const data = snap.data();
+        let html = '';
+        
+        // Renderujemy każdego użytkownika z bazy tego czatu
+        (data.users || []).forEach(uid => {
+            const isMe = uid === state.user.uid;
+            const name = data.names ? data.names[uid] : "Piesek";
+            const avatar = data.avatars ? data.avatars[uid] : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+            
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--panel-bg); border-radius:12px; border:1px solid var(--border-color);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="${avatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border: 2px solid ${isMe ? 'var(--primary)' : 'var(--border-color)'};">
+                    <div>
+                        <b style="font-size:14px; color: var(--text-color);">${name} ${isMe ? '(Ty)' : ''}</b>
+                    </div>
+                </div>
+                ${!isMe ? `<button onclick="window.Waggle.openChat('${uid}', '${name}')" style="background:none; border:none; color:var(--secondary); font-size:16px; cursor:pointer;">💬</button>` : ''}
+            </div>`;
+        });
+        
+        listCont.innerHTML = html;
+        
+        // Logika opuszczania grupy
+        leaveBtn.onclick = async () => {
+            if(confirm("Czy na pewno chcesz opuścić to Stado? 🐕")) {
+                window.Waggle.showToast("Opuszczasz Stado... 🐾");
+                try {
+                    // Usuwamy UID użytkownika z tablicy "users"
+                    const fb = await import('../../core/firebase.js').then(m => m.fb);
+                    await db.collection("chats").doc(chatId).update({
+                        users: fb.firestore.FieldValue.arrayRemove(state.user.uid)
+                    });
+                    
+                    // Wysyłamy wiadomość systemową
+                    await saveMessageInDb(chatId, {
+                        sender: 'system',
+                        text: `💨 ${state.profile.name || "Ktoś"} opuścił stado.`,
+                        time: Date.now()
+                    }, null, null, state.user);
+                    
+                    modal.style.display = 'none';
+                    window.Waggle.closeActiveChat();
+                    window.Waggle.showToast("Stado opuszczone.");
+                } catch(e) {
+                    window.Waggle.showToast("Błąd! Spróbuj ponownie.");
+                }
+            }
+        };
+
+    } catch (e) {
+        listCont.innerHTML = '<p style="color:var(--danger); text-align:center;">Błąd ładowania danych.</p>';
+    }
+}
+
 // Globalna rejestracja dla HTML
 window.Waggle = window.Waggle || {};
 window.Waggle.openChat = openChat;
