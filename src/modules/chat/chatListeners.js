@@ -27,15 +27,11 @@ function playNotificationSound() {
         
         osc.start();
         osc.stop(ctx.currentTime + 0.12);
-    } catch (e) {
-        console.warn("Audio zablokowane:", e);
-    }
+    } catch (e) { console.warn("Audio zablokowane:", e); }
 }
 
 export function loadInbox() {
     if (!state.user || inboxUnsub) return; 
-    
-    console.log("🌐 Waggle: Uruchamiam globalny nasłuch wiadomości w tle...");
     
     inboxUnsub = subscribeToInbox(state.user.uid, (chats) => {
         let currentTotalUnread = 0;
@@ -46,7 +42,6 @@ export function loadInbox() {
 
             if (!isInitialInboxLoad && unreads > prevUnreads) {
                 playNotificationSound();
-
                 if (state.currentChatId !== chat.id) {
                     const partnerName = chat.isGroup ? chat.groupName : (chat.names ? chat.names[chat.users.find(u => u !== state.user.uid)] : 'Ktoś');
                     window.Waggle.showToast(`💬 Nowa wiadomość od: ${partnerName}`);
@@ -69,13 +64,9 @@ export function loadInbox() {
 }
 
 export function searchUsers(query) {
-    const usersListCont = document.getElementById('users-list');
-    if (!usersListCont) return;
-
     searchUsersInDb('', (users) => {
         const currentUid = state.user?.uid;
         const cleanQuery = query.toLowerCase().trim();
-        
         const filteredUsers = users.filter(user => {
             if (user.id === currentUid) return false;
             const name = (user.name || "").toLowerCase();
@@ -83,8 +74,7 @@ export function searchUsers(query) {
             const breed = (user.breed || "").toLowerCase();
             return cleanQuery === "" || name.includes(cleanQuery) || city.includes(cleanQuery) || breed.includes(cleanQuery);
         });
-
-        renderSearchResultsList(filteredUsers, usersListCont);
+        renderSearchResultsList(filteredUsers, currentUid);
     });
 }
 
@@ -95,18 +85,14 @@ export function openChat(targetId, name) {
     let isGroupChat = false; 
     
     if (targetId.startsWith('group_') || (targetId.length !== 28 && !targetId.includes('_'))) {
-        chatId = targetId; 
-        isGroupChat = true; 
-    } 
-    else if (targetId.includes('_')) {
+        chatId = targetId; isGroupChat = true; 
+    } else if (targetId.includes('_')) {
         chatId = targetId;
-    }
-    else {
+    } else {
         chatId = state.user.uid > targetId ? `${state.user.uid}_${targetId}` : `${targetId}_${state.user.uid}`;
     }
     
     state.currentChatId = chatId;
-    
     const partnerNameEl = document.getElementById('chatPartnerName');
     if(partnerNameEl) partnerNameEl.innerText = name;
     
@@ -115,9 +101,7 @@ export function openChat(targetId, name) {
         if (isGroupChat) {
             settingsBtn.style.display = 'block';
             settingsBtn.onclick = () => window.Waggle.openGroupSettings(chatId);
-        } else {
-            settingsBtn.style.display = 'none';
-        }
+        } else { settingsBtn.style.display = 'none'; }
     }
     
     document.getElementById('chat-window').style.display = 'flex';
@@ -137,18 +121,12 @@ export function closeActiveChat() {
 
 export function handleChatImageSelect(files) {
     if (!files || files.length === 0) return;
-    
     Array.from(files).forEach(file => {
-        if (pendingChatImages.length >= 5) {
-            window.Waggle.showToast("Możesz dodać maksymalnie 5 zdjęć na raz! 📸");
-            return;
-        }
+        if (pendingChatImages.length >= 5) return window.Waggle.showToast("Maksymalnie 5 zdjęć! 📸");
         pendingChatImages.push(file);
     });
-
     const inputEl = document.getElementById('chatImageInput');
     if(inputEl) inputEl.value = '';
-    
     const previewBox = document.getElementById('chat-preview-box');
     if (previewBox) renderChatImagePreviewsUI(pendingChatImages, previewBox);
 }
@@ -164,23 +142,18 @@ export async function sendMessage(text) {
     
     const textToSend = text ? text.trim() : "";
     const imagesToSend = [...pendingChatImages]; 
-    
     if (!textToSend && imagesToSend.length === 0) return;
     
     const partnerName = document.getElementById('chatPartnerName').innerText;
-    
     const baseMsg = { 
         sender: state.user.uid, 
         senderName: state.profile?.name || "Piesek",
         senderAvatar: state.profile?.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150",
         time: Date.now() 
     };
+    const senderData = { uid: state.user.uid, name: state.profile?.name, avatar: state.profile?.avatar };
 
-    const senderData = { uid: state.user.uid, name: state.profile?.name || "Piesek", avatar: state.profile?.avatar || "" };
-
-    if (textToSend) {
-        saveMessageInDb(state.currentChatId, { ...baseMsg, text: textToSend, imageUrl: null }, null, partnerName, senderData);
-    }
+    if (textToSend) saveMessageInDb(state.currentChatId, { ...baseMsg, text: textToSend, imageUrl: null }, null, partnerName, senderData);
 
     const inputEl = document.getElementById('chatInput');
     if (inputEl) { inputEl.value = ''; inputEl.style.height = 'auto'; }
@@ -195,14 +168,11 @@ export async function sendMessage(text) {
             try {
                 const url = await uploadImage(file);
                 saveMessageInDb(state.currentChatId, { ...baseMsg, text: "", imageUrl: url }, null, partnerName, senderData);
-            } catch(err) {
-                window.Waggle.showToast("Błąd wysyłania jednego ze zdjęć!");
-            }
+            } catch(err) { window.Waggle.showToast("Błąd wysyłania zdjęcia!"); }
         }
     }
 }
 
-// Globalna rejestracja dla HTML
 window.Waggle = window.Waggle || {};
 window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
