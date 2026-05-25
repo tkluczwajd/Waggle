@@ -1,9 +1,10 @@
 import { getDistance } from './geolocationService.js';
 
 export async function fetchNearbyParks(lat, lng) {
-    console.log("🌍 OSM START", lat, lng);
+    console.log("🌍 OSM START (Tylko oficjalne/nazwane miejsca)", lat, lng);
 
-    // Blokujemy prywatne posesje i prosimy o obszar (out bb center;)
+    // 🔥 KLUCZOWA ZMIANA: Wymuszamy tag ["name"] dla parków i lasów. 
+    // Bezimienne kępy drzew i prywatne klomby zostają permanentnie zablokowane na poziomie serwera.
     const query = `
 [out:json][timeout:20];
 (
@@ -11,16 +12,15 @@ export async function fetchNearbyParks(lat, lng) {
     way["leisure"="dog_park"](around:15000,${lat},${lng});
     relation["leisure"="dog_park"](around:15000,${lat},${lng});
 
-    node["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
-    way["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
-    relation["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
+    way["leisure"="park"]["name"](around:12000,${lat},${lng});
+    relation["leisure"="park"]["name"](around:12000,${lat},${lng});
 
-    way["natural"="wood"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
-    way["landuse"="forest"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
-    relation["natural"="wood"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
-    relation["landuse"="forest"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
+    way["natural"="wood"]["name"](around:15000,${lat},${lng});
+    way["landuse"="forest"]["name"](around:15000,${lat},${lng});
+    relation["natural"="wood"]["name"](around:15000,${lat},${lng});
+    relation["landuse"="forest"]["name"](around:15000,${lat},${lng});
 );
-out bb center;
+out center;
 `;
 
     try {
@@ -35,10 +35,10 @@ out bb center;
         }
 
         const data = await response.json();
-        console.log("🌳 OSM ELEMENTS:", data?.elements?.length || 0);
+        console.log("🌳 OSM ELEMENTS (Tylko oficjalne):", data?.elements?.length || 0);
 
         if (!data || !data.elements || data.elements.length === 0) {
-            console.warn("⚠️ OSM pusty → fallback");
+            console.warn("⚠️ OSM pusty");
             return [];
         }
 
@@ -46,40 +46,24 @@ out bb center;
         const seen = new Set();
         
         data.elements.forEach(el => {
-            let eLat = el.lat || el.center?.lat;
-            let eLng = el.lon || el.center?.lon;
+            const eLat = el.lat || el.center?.lat;
+            const eLng = el.lon || el.center?.lon;
 
             if (!eLat || !eLng || !el.tags) return; 
 
-            // Obliczamy przybliżoną powierzchnię w metrach kwadratowych
-            let areaSqM = 10000; 
-            if (el.bounds) {
-                const widthM = (el.bounds.maxlon - el.bounds.minlon) * 71300; 
-                const heightM = (el.bounds.maxlat - el.bounds.minlat) * 111000; 
-                areaSqM = widthM * heightM;
-            }
-
-            // DEDUPLIKACJA
+            // DEDUPLIKACJA (zaokrąglanie do 3 miejsc po przecinku daje ok. 100m bufora)
             const key = Math.round(eLat * 1000) + "_" + Math.round(eLng * 1000);
             if (seen.has(key)) return;
             seen.add(key);
 
             const isDogPark = el.tags.leisure === 'dog_park';
             const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest';
-            const isNamedPark = el.tags.leisure === 'park' && !!el.tags.name;
-            const hasName = !!el.tags.name;
             const nameLower = (el.tags.name || "").toLowerCase();
 
-            // FILTRY JAKOŚCIOWE
-            if (nameLower.includes("zieleń izolacyjna") || nameLower.includes("pas zieleni")) return;
-            
-            // Jeśli to "las", nie ma nazwy, i jest mniejszy niż 4000 m2 - odrzucamy jako posesję
-            if (isForest && !hasName && areaSqM < 4000) return;
-            
-            // Jeśli to park, ale absolutnie mikroskopijny (poniżej 100 m2) to klomb
-            if (!isDogPark && !isForest && areaSqM < 100) return; 
+            // Dodatkowe filtry bezpieczeństwa dla nazw
+            if (nameLower.includes("zieleń izolacyjna") || nameLower.includes("pas zieleni") || nameLower.includes("ogród prywatny")) return;
 
-            const name = el.tags.name || (isDogPark ? "Wybieg dla psów" : isForest ? "Teren leśny" : "Teren zielony / Skwer");
+            const name = el.tags.name || (isDogPark ? "Wybieg dla psów" : "Park");
             const dist = getDistance(lat, lng, eLat, eLng);
             
             places.push({
@@ -92,12 +76,13 @@ out bb center;
             });
         });
 
+        // Sortowanie i strefowanie odległości
         const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
-        const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 50);
-        const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 50);
-        const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 50);
+        const zone1 = allGreenery.filter(p => p.distance <= 4).slice(0, 30);
+        const zone2 = allGreenery.filter(p => p.distance > 4 && p.distance <= 9).slice(0, 30);
+        const zone3 = allGreenery.filter(p => p.distance > 9).slice(0, 30);
 
         const finalPlaces = [
             ...dogParks,
@@ -106,7 +91,7 @@ out bb center;
             ...zone3
         ];
         
-        return finalPlaces.slice(0, 150);
+        return finalPlaces.slice(0, 100);
 
     } catch (error) {
         console.error("❌ OSM ERROR:", error);
