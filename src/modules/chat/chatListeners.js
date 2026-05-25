@@ -386,20 +386,40 @@ export async function openGroupSettings(chatId) {
         const data = snap.data();
         let html = '';
         
+        // 🔥 LOGIKA ADMINA: Twórca grupy jest zawsze pierwszy na liście w bazie
+        const adminUid = data.users[0];
+        const iAmAdmin = adminUid === state.user.uid;
+        
         (data.users || []).forEach(uid => {
             const isMe = uid === state.user.uid;
             const name = data.names ? data.names[uid] : "Piesek";
             const avatar = data.avatars ? data.avatars[uid] : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
             
+            let actionBtns = '';
+            
+            if (!isMe) {
+                // Przycisk "Napisz na priv" (dostępny dla każdego)
+                actionBtns += `<button onclick="window.Waggle.openChat('${uid}', '${name}'); document.getElementById('group-settings-modal').style.display='none';" style="background:none; border:none; color:var(--secondary); font-size:16px; cursor:pointer;" title="Napisz prywatnie">💬</button>`;
+                
+                // 🔥 Przycisk "Wyrzuć" (Wyświetlany TYLKO dla admina)
+                if (iAmAdmin) {
+                    actionBtns += `<button onclick="window.Waggle.removeUserFromGroup('${chatId}', '${uid}', '${name}')" style="background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; margin-left:12px;" title="Wyrzuć ze Stada">🗑️</button>`;
+                }
+            }
+            
+            // Oznaczamy admina wizualnie
+            let badge = isMe ? '(Ty)' : '';
+            if (uid === adminUid) badge += ' <span style="font-size:12px;" title="Administrator grupy">👑</span>';
+
             html += `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--panel-bg); border-radius:12px; border:1px solid var(--border-color);">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <img src="${avatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border: 2px solid ${isMe ? 'var(--primary)' : 'var(--border-color)'};">
                     <div>
-                        <b style="font-size:14px; color: var(--text-color);">${name} ${isMe ? '(Ty)' : ''}</b>
+                        <b style="font-size:14px; color: var(--text-color);">${name} <span style="font-size:10px; color:var(--primary); font-weight:800;">${badge}</span></b>
                     </div>
                 </div>
-                ${!isMe ? `<button onclick="window.Waggle.openChat('${uid}', '${name}'); document.getElementById('group-settings-modal').style.display='none';" style="background:none; border:none; color:var(--secondary); font-size:16px; cursor:pointer;">💬</button>` : ''}
+                <div>${actionBtns}</div>
             </div>`;
         });
         
@@ -414,11 +434,14 @@ export async function openGroupSettings(chatId) {
                         users: fb.firestore.FieldValue.arrayRemove(state.user.uid)
                     });
                     
-                    await saveMessageInDb(chatId, {
-                        sender: 'system',
-                        text: `💨 ${state.profile.name || "Ktoś"} opuścił stado.`,
-                        time: Date.now()
-                    }, null, null, state.user);
+                    // Importujemy bezpiecznie funkcję do wysyłania wiadomości systemowej
+                    import('../../services/chatService.js').then(({ saveMessageInDb }) => {
+                        saveMessageInDb(chatId, {
+                            sender: 'system',
+                            text: `💨 ${state.profile.name || "Ktoś"} opuścił stado.`,
+                            time: Date.now()
+                        }, null, null, state.user);
+                    });
                     
                     modal.style.display = 'none';
                     window.Waggle.closeActiveChat();
@@ -431,6 +454,35 @@ export async function openGroupSettings(chatId) {
 
     } catch (e) {
         listCont.innerHTML = '<p style="color:var(--danger); text-align:center;">Błąd ładowania danych.</p>';
+    }
+}
+
+// 🔥 NOWA FUNKCJA: Wyrzucanie ze Stada (dla Admina)
+export async function removeUserFromGroup(chatId, userUid, userName) {
+    if(!confirm(`Czy na pewno chcesz wyrzucić pieska ${userName} ze Stada? 🛑`)) return;
+
+    window.Waggle.showToast(`Wyrzucam ${userName}... ⏳`);
+    try {
+        // Usuwamy gościa z tablicy w Firebase
+        const fb = await import('../../core/firebase.js').then(m => m.fb);
+        await db.collection("chats").doc(chatId).update({
+            users: fb.firestore.FieldValue.arrayRemove(userUid)
+        });
+        
+        // Wysyłamy czerwoną wiadomość systemową
+        import('../../services/chatService.js').then(({ saveMessageInDb }) => {
+            saveMessageInDb(chatId, {
+                sender: 'system',
+                text: `🚷 Administrator usunął ${userName} ze stada.`,
+                time: Date.now()
+            }, null, null, state.user);
+        });
+        
+        window.Waggle.showToast(`Piesek ${userName} wyrzucony ze Stada.`);
+        // Odświeżamy listę w otwartym modalu!
+        openGroupSettings(chatId);
+    } catch(e) {
+        window.Waggle.showToast("Wystąpił błąd podczas usuwania.");
     }
 }
 
@@ -447,5 +499,6 @@ window.Waggle.loadUsersForGroup = loadUsersForGroup;
 window.Waggle.toggleGroupUser = toggleGroupUser;
 window.Waggle.createGroupChat = createGroupChat;
 
-// 🔥 TEN EKSPORT NAPRAWIA BŁĄD Z TRYBIKIEM!
 window.Waggle.openGroupSettings = openGroupSettings;
+// 🔥 EKSPORT NOWEJ FUNKCJI!
+window.Waggle.removeUserFromGroup = removeUserFromGroup;
