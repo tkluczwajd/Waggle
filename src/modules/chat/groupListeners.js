@@ -58,7 +58,7 @@ export function createGroupChat() {
         window.Waggle.showToast("Stado utworzone! 🎉");
         document.getElementById('group-creator-modal').style.display = 'none';
         nameInput.value = '';
-        window.Waggle.openChat(chatId, groupName);
+        if(window.Waggle.openChat) window.Waggle.openChat(chatId, groupName);
     });
 }
 
@@ -101,11 +101,9 @@ export async function openGroupSettings(chatId) {
                     });
                     
                     modal.style.display = 'none';
-                    window.Waggle.closeActiveChat();
+                    if(window.Waggle.closeActiveChat) window.Waggle.closeActiveChat();
                     window.Waggle.showToast("Stado opuszczone.");
-                } catch(e) {
-                    window.Waggle.showToast("Błąd! Spróbuj ponownie.");
-                }
+                } catch(e) { window.Waggle.showToast("Błąd! Spróbuj ponownie."); }
             }
         };
 
@@ -134,12 +132,9 @@ export async function removeUserFromGroup(chatId, userUid, userName) {
         
         window.Waggle.showToast(`Piesek ${userName} wyrzucony ze Stada.`);
         openGroupSettings(chatId);
-    } catch(e) {
-        window.Waggle.showToast("Wystąpił błąd podczas usuwania.");
-    }
+    } catch(e) { window.Waggle.showToast("Wystąpił błąd podczas usuwania."); }
 }
 
-// Rejestracja globalna dla zdarzeń onClick z HTML
 window.Waggle = window.Waggle || {};
 window.Waggle.loadUsersForGroup = loadUsersForGroup;
 window.Waggle.toggleGroupUser = toggleGroupUser;
