@@ -1,17 +1,15 @@
 import { appState as state } from '../../core/state.js';
 import { uploadImageToService as uploadImage } from '../../services/postsService.js';
-// Dodano import createGroupInDb dla czatów grupowych
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead, createGroupInDb } from '../../services/chatService.js';
 import { renderInboxList, renderSearchResultsList, renderChatMessages } from './chatRenderer.js';
+import { db } from '../../core/firebase.js'; // Dodany import dla ustawień grupy
 
 let currentChatUnsub = null; 
 let inboxUnsub = null;
 let chatUnreadStates = {};
 let isInitialInboxLoad = true;
 
-// 🔥 Globalny "koszyk" na wybrane zdjęcia
 let pendingChatImages = []; 
-// 🔥 Pamięć zaznaczonych psów do grupy
 let selectedGroupUsers = []; 
 
 function playNotificationSound() {
@@ -52,7 +50,6 @@ export function loadInbox() {
                 playNotificationSound();
 
                 if (state.currentChatId !== chat.id) {
-                    // Sprawdzamy, czy to czat grupowy, czy prywatny, by dobrze wyświetlić nazwę
                     const partnerName = chat.isGroup ? chat.groupName : (chat.names ? chat.names[chat.users.find(u => u !== state.user.uid)] : 'Ktoś');
                     window.Waggle.showToast(`💬 Nowa wiadomość od: ${partnerName}`);
                 }
@@ -123,24 +120,22 @@ export function openChat(targetId, name) {
     
     let chatId;
     
-    // 1. Jeśli klikamy w Stado (ma przedrostek "group_") albo to Twoja starsza, testowa grupa (20 znaków)
     if (targetId.startsWith('group_') || (targetId.length !== 28 && !targetId.includes('_'))) {
         chatId = targetId; 
     } 
-    // 2. Jeśli idzie z historii czatów gotowy pokój 1-na-1 (zawiera podkreślnik)
     else if (targetId.includes('_')) {
         chatId = targetId;
     }
-    // 3. Jeśli klikamy w Tablicy/Szukaj w konkretnego psa (czyste UID, 28 znaków)
     else {
         chatId = state.user.uid > targetId ? `${state.user.uid}_${targetId}` : `${targetId}_${state.user.uid}`;
     }
     
     state.currentChatId = chatId;
+    
     const partnerNameEl = document.getElementById('chatPartnerName');
     if(partnerNameEl) partnerNameEl.innerText = name;
     
-    // 🔥 Ujawniamy trybik tylko dla grup
+    // 🔥 Ujawniamy trybik ustawień tylko dla grup
     const settingsBtn = document.getElementById('groupSettingsBtn');
     if (settingsBtn) {
         if (chatId.startsWith('group_')) {
@@ -155,9 +150,9 @@ export function openChat(targetId, name) {
 
     markChatAsRead(chatId, state.user.uid);
 
-if(currentChatUnsub) currentChatUnsub();
+    if(currentChatUnsub) currentChatUnsub();
     currentChatUnsub = subscribeToMessages(chatId, (messages) => {
-        // 🔥 POPRAWKA: Przekazujemy wprost 3 argument (true/false), czy to grupa!
+        // 🔥 Podajemy wprost, czy to grupa, by renderer wiedział, czy włączać imiona
         renderChatMessages(messages, state.user.uid, chatId.startsWith('group_'));
     });
 }
@@ -175,7 +170,6 @@ export function closeActiveChat() {
 export function handleChatImageSelect(files) {
     if (!files || files.length === 0) return;
     
-    // Dodajemy nowe pliki do koszyka
     Array.from(files).forEach(file => {
         if (pendingChatImages.length >= 5) {
             window.Waggle.showToast("Możesz dodać maksymalnie 5 zdjęć na raz! 📸");
@@ -184,7 +178,6 @@ export function handleChatImageSelect(files) {
         pendingChatImages.push(file);
     });
 
-    // Czyścimy input, by móc dodać kolejne
     const inputEl = document.getElementById('chatImageInput');
     if(inputEl) inputEl.value = '';
     
@@ -228,52 +221,47 @@ export async function sendMessage(text) {
     if (!state.currentChatId) return;
     
     const textToSend = text ? text.trim() : "";
-    const imagesToSend = [...pendingChatImages]; // Kopiujemy i czyścimy koszyk natychmiast
+    const imagesToSend = [...pendingChatImages]; 
     
     if (!textToSend && imagesToSend.length === 0) return;
     
-    // USUNIĘTO BZDUNY PARTNERUID
     const partnerName = document.getElementById('chatPartnerName').innerText;
     
-const baseMsg = { 
+    // 🔥 WSTRZYKUJEMY DANE NADAWCY BEZPOŚREDNIO W WIADOMOŚĆ (DLA GRUP)
+    const baseMsg = { 
         sender: state.user.uid, 
-        senderName: state.profile?.name || "Ktoś",      // 🔥 DOKLEJONE IMIĘ
-        senderAvatar: state.profile?.avatar || "",      // 🔥 DOKLEJONY AWATAR
+        senderName: state.profile?.name || "Piesek",
+        senderAvatar: state.profile?.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150",
         time: Date.now() 
     };
 
     const senderData = {
         uid: state.user.uid,
-        name: state.profile?.name || "Ktoś",
+        name: state.profile?.name || "Piesek",
         avatar: state.profile?.avatar || ""
     };
 
-    // 1. Wysyłamy tekst (jeśli jakiś wpisano)
     if (textToSend) {
         saveMessageInDb(state.currentChatId, { ...baseMsg, text: textToSend, imageUrl: null }, null, partnerName, senderData);
     }
 
-    // Czyszczenie interfejsu 
     const inputEl = document.getElementById('chatInput');
     if (inputEl) {
         inputEl.value = '';
-        inputEl.style.height = 'auto'; // Reset wielkości pola tekstowego
+        inputEl.style.height = 'auto'; 
     }
     
     pendingChatImages = [];
     renderChatImagePreviews();
 
-    // 2. Wysyłamy paczkę zdjęć w tle (jeśli jakieś były w koszyku)
     if (imagesToSend.length > 0) {
         window.Waggle.showToast(`Wysyłam zdjęcia (${imagesToSend.length})... ⏳`);
         for (let file of imagesToSend) {
             try {
                 const url = await uploadImage(file);
-                // Każde zdjęcie wysyłane jest jako osobna wiadomość z obrazkiem (bez tekstu)
                 saveMessageInDb(state.currentChatId, { ...baseMsg, text: "", imageUrl: url }, null, partnerName, senderData);
             } catch(err) {
                 window.Waggle.showToast("Błąd wysyłania jednego ze zdjęć!");
-                console.error("Błąd ładowania pliku:", err);
             }
         }
     }
@@ -371,9 +359,8 @@ export function createGroupChat() {
 }
 
 // ========================================================
-// ⚙️ ZARZĄDZANIE STADEM
+// ⚙️ ZARZĄDZANIE STADEM (MODAL)
 // ========================================================
-import { db } from '../../core/firebase.js';
 
 export async function openGroupSettings(chatId) {
     const modal = document.getElementById('group-settings-modal');
@@ -394,7 +381,6 @@ export async function openGroupSettings(chatId) {
         const data = snap.data();
         let html = '';
         
-        // Renderujemy każdego użytkownika z bazy tego czatu
         (data.users || []).forEach(uid => {
             const isMe = uid === state.user.uid;
             const name = data.names ? data.names[uid] : "Piesek";
@@ -408,24 +394,21 @@ export async function openGroupSettings(chatId) {
                         <b style="font-size:14px; color: var(--text-color);">${name} ${isMe ? '(Ty)' : ''}</b>
                     </div>
                 </div>
-                ${!isMe ? `<button onclick="window.Waggle.openChat('${uid}', '${name}')" style="background:none; border:none; color:var(--secondary); font-size:16px; cursor:pointer;">💬</button>` : ''}
+                ${!isMe ? `<button onclick="window.Waggle.openChat('${uid}', '${name}'); document.getElementById('group-settings-modal').style.display='none';" style="background:none; border:none; color:var(--secondary); font-size:16px; cursor:pointer;">💬</button>` : ''}
             </div>`;
         });
         
         listCont.innerHTML = html;
         
-        // Logika opuszczania grupy
         leaveBtn.onclick = async () => {
             if(confirm("Czy na pewno chcesz opuścić to Stado? 🐕")) {
                 window.Waggle.showToast("Opuszczasz Stado... 🐾");
                 try {
-                    // Usuwamy UID użytkownika z tablicy "users"
                     const fb = await import('../../core/firebase.js').then(m => m.fb);
                     await db.collection("chats").doc(chatId).update({
                         users: fb.firestore.FieldValue.arrayRemove(state.user.uid)
                     });
                     
-                    // Wysyłamy wiadomość systemową
                     await saveMessageInDb(chatId, {
                         sender: 'system',
                         text: `💨 ${state.profile.name || "Ktoś"} opuścił stado.`,
@@ -452,11 +435,12 @@ window.Waggle.openChat = openChat;
 window.Waggle.closeActiveChat = closeActiveChat;
 window.Waggle.searchUsers = searchUsers;
 
-// Funkcje Koszyka Zdjęć
 window.Waggle.handleChatImageSelect = handleChatImageSelect;
 window.Waggle.removeChatImagePreview = removeChatImagePreview;
 
-// Funkcje Kreatora Stada
 window.Waggle.loadUsersForGroup = loadUsersForGroup;
 window.Waggle.toggleGroupUser = toggleGroupUser;
 window.Waggle.createGroupChat = createGroupChat;
+
+// 🔥 TEN EKSPORT NAPRAWIA BŁĄD Z TRYBIKIEM!
+window.Waggle.openGroupSettings = openGroupSettings;
