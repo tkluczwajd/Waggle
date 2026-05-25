@@ -15,14 +15,10 @@ export function renderInboxList(chats, currentUid) {
         let title = '';
         let avatarHtml = '';
 
-        // 🔥 NOWOŚĆ: Logika rysowania w zależności od typu czatu
         if (chat.isGroup) {
-            // WYGLĄD DLA STADA (Grupy)
             title = chat.groupName || "Stado";
-            // Zamiast zdjęcia psa, dajemy np. ikonę łapki na niebieskim tle
             avatarHtml = `<div style="width:50px; height:50px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; border:2px solid var(--border-color); flex-shrink:0;">🐾</div>`;
         } else {
-            // WYGLĄD DLA CZATU 1-NA-1
             const partnerUid = chat.users.find(u => u !== currentUid);
             title = chat.names ? (chat.names[partnerUid] || 'Piesek') : 'Piesek';
             const avatar = chat.avatars && chat.avatars[partnerUid] ? chat.avatars[partnerUid] : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
@@ -72,11 +68,10 @@ export function renderSearchResultsList(users, currentUid) {
 export function renderChatMessages(messages, currentUid, isGroupChat = false) {
     let html = "";
     
-    // 🔥 POPRAWKA: Skrypt teraz bezbłędnie wie, kiedy wyświetlać imiona!
+    // Zabezpieczenie: skrypt wie czy to grupa
     const isGroup = isGroupChat; 
 
     messages.forEach(msg => {
-// ... reszta kodu zostaje bez zmian
         const isMine = msg.sender === currentUid;
         const time = msg.time ? new Date(msg.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : "";
         
@@ -85,8 +80,23 @@ export function renderChatMessages(messages, currentUid, isGroupChat = false) {
         
         const timeHtml = `<div style="font-size:9px; opacity:0.7; text-align:right; margin-top:4px; font-weight:800;">${time}</div>`;
 
+        // 🔥 LOGIKA PODPISÓW (IMIONA I AWATARY) W STADZIE
+        let senderIdentityHtml = "";
+        
+        if (isGroup && !isMine) {
+            const senderName = msg.senderName || "Piesek";
+            const senderAvatar = msg.senderAvatar && msg.senderAvatar.trim() !== "" ? msg.senderAvatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+            
+            senderIdentityHtml = `
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; margin-left:4px;">
+                <img src="${senderAvatar}" style="width:16px; height:16px; border-radius:50%; object-fit:cover;">
+                <span style="font-size:10px; font-weight:800; color:var(--text-muted);">${senderName}</span>
+            </div>`;
+        }
+
         html += `
-            <div style="display: flex; justify-content: ${isMine ? 'flex-end' : 'flex-start'}; margin-bottom: 8px; width: 100%;">
+            <div style="display: flex; flex-direction: column; align-items: ${isMine ? 'flex-end' : 'flex-start'}; margin-bottom: 12px; width: 100%;">
+                ${senderIdentityHtml}
                 <div class="chat-bubble ${isMine ? 'mine' : ''}" style="max-width: 75%; position: relative;">
                     ${contentHtml}
                     ${timeHtml}
