@@ -3,21 +3,21 @@ import { getDistance } from './geolocationService.js';
 export async function fetchNearbyParks(lat, lng) {
     console.log("🌍 OSM START", lat, lng);
 
-    const query = `
+const query = `
 [out:json][timeout:20];
 (
-    node["leisure"="dog_park"](around:15000,${lat},${lng});
-    way["leisure"="dog_park"](around:15000,${lat},${lng});
-    relation["leisure"="dog_park"](around:15000,${lat},${lng});
+    node["leisure"="dog_park"](around:8000,${lat},${lng});
+    way["leisure"="dog_park"](around:8000,${lat},${lng});
+    relation["leisure"="dog_park"](around:8000,${lat},${lng});
 
-    node["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
-    way["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
-    relation["leisure"="park"]["access"!="private"]["access"!="no"](around:12000,${lat},${lng});
+    node["leisure"="park"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
+    way["leisure"="park"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
+    relation["leisure"="park"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
 
-    way["natural"="wood"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
-    way["landuse"="forest"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
-    relation["natural"="wood"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
-    relation["landuse"="forest"]["access"!="private"]["access"!="no"](around:15000,${lat},${lng});
+    way["natural"="wood"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
+    way["landuse"="forest"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
+    relation["natural"="wood"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
+    relation["landuse"="forest"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
 );
 out bb center;
 `;
