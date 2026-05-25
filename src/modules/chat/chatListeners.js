@@ -119,13 +119,18 @@ export function openChat(targetId, name) {
     if (!state.user) return;
     
     let chatId;
+    let isGroupChat = false; // 🔥 NOWOŚĆ: Zmienna zapamiętująca, czy to stado
     
+    // Rozpoznajemy stado (nowe z "group_" oraz stare bez "_")
     if (targetId.startsWith('group_') || (targetId.length !== 28 && !targetId.includes('_'))) {
         chatId = targetId; 
+        isGroupChat = true; // Zaznaczamy flagę stada!
     } 
+    // Rozpoznajemy czat prywatny
     else if (targetId.includes('_')) {
         chatId = targetId;
     }
+    // Nowy czat prywatny
     else {
         chatId = state.user.uid > targetId ? `${state.user.uid}_${targetId}` : `${targetId}_${state.user.uid}`;
     }
@@ -135,10 +140,10 @@ export function openChat(targetId, name) {
     const partnerNameEl = document.getElementById('chatPartnerName');
     if(partnerNameEl) partnerNameEl.innerText = name;
     
-    // 🔥 Ujawniamy trybik ustawień tylko dla grup
+    // 🔥 Ujawniamy trybik ustawień w oparciu o uniwersalną flagę
     const settingsBtn = document.getElementById('groupSettingsBtn');
     if (settingsBtn) {
-        if (chatId.startsWith('group_')) {
+        if (isGroupChat) {
             settingsBtn.style.display = 'block';
             settingsBtn.onclick = () => window.Waggle.openGroupSettings(chatId);
         } else {
@@ -152,8 +157,8 @@ export function openChat(targetId, name) {
 
     if(currentChatUnsub) currentChatUnsub();
     currentChatUnsub = subscribeToMessages(chatId, (messages) => {
-        // 🔥 Podajemy wprost, czy to grupa, by renderer wiedział, czy włączać imiona
-        renderChatMessages(messages, state.user.uid, chatId.startsWith('group_'));
+        // Podajemy flagę do renderera, by rysował imiona
+        renderChatMessages(messages, state.user.uid, isGroupChat);
     });
 }
 
