@@ -145,9 +145,10 @@ export function openChat(targetId, name) {
 
     markChatAsRead(chatId, state.user.uid);
 
-    if(currentChatUnsub) currentChatUnsub();
+if(currentChatUnsub) currentChatUnsub();
     currentChatUnsub = subscribeToMessages(chatId, (messages) => {
-        renderChatMessages(messages, state.user.uid);
+        // 🔥 POPRAWKA: Przekazujemy wprost 3 argument (true/false), czy to grupa!
+        renderChatMessages(messages, state.user.uid, chatId.startsWith('group_'));
     });
 }
 
