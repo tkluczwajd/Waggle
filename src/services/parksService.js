@@ -3,7 +3,7 @@ import { getDistance } from './geolocationService.js';
 export async function fetchNearbyParks(lat, lng) {
     console.log("🌍 OSM START", lat, lng);
 
-const query = `
+    const query = `
 [out:json][timeout:20];
 (
     node["leisure"="dog_park"](around:8000,${lat},${lng});
@@ -70,7 +70,7 @@ out bb center;
             });
         });
 
-const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
+        const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
         // Ucinamy wszystko sztywno na 8 km, żeby nie pokazywało sąsiednich miast
@@ -79,5 +79,10 @@ const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distan
             ...allGreenery.filter(p => p.distance <= 8)
         ];
         return finalPlaces.slice(0, 150);
+
+    // 🔥 PONIŻSZEGO BLOKU BRAKOWAŁO!
+    } catch (error) {
+        console.error("❌ OSM ERROR:", error);
+        return [];
     }
 }
