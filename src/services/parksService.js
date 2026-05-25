@@ -70,12 +70,14 @@ out bb center;
             });
         });
 
-        const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
+const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
-        const finalPlaces = [...dogParks, ...allGreenery.filter(p => p.distance <= 9)];
+        // Ucinamy wszystko sztywno na 8 km, żeby nie pokazywało sąsiednich miast
+        const finalPlaces = [
+            ...dogParks.filter(p => p.distance <= 8), 
+            ...allGreenery.filter(p => p.distance <= 8)
+        ];
         return finalPlaces.slice(0, 150);
-    } catch (error) {
-        return [];
     }
 }
