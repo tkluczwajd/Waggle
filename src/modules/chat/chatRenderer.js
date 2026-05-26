@@ -157,10 +157,10 @@ export function renderGroupSettingsList(chatId, data, currentUid, iAmAdmin, cont
         if (uid === adminUid) badge += ' <span style="font-size:12px;" title="Administrator grupy">👑</span>';
 
         html += `
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--panel-bg); border-radius:12px; border:1px solid var(--border-color);">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <img src="${avatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border: 2px solid ${isMe ? 'var(--primary)' : 'var(--border-color)'};">
-                <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--panel-bg); border-radius:12px; border:1px solid var(--border-color); overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:10px; overflow:hidden; white-space:nowrap;">
+                <img src="${avatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border: 2px solid ${isMe ? 'var(--primary)' : 'var(--border-color)'}; flex-shrink:0;">
+                <div style="overflow:hidden; text-overflow:ellipsis;">
                     <b style="font-size:14px; color: var(--text-color);">${name} <span style="font-size:10px; color:var(--primary); font-weight:800;">${badge}</span></b>
                 </div>
             </div>
