@@ -1,18 +1,16 @@
-1. Zabezpieczenie techniczne (Canvas API do zdjęć) - wstrzyknięte do PostsService
+// src/core/appBootstrap.js
+// ... zachowaj wszystkie górne importy (router, profile, uiListeners itp.) bez zmian ...
 
-// 2. Magnes nr 1: Ożywiony lokalny feed (Lokalny radar)
-import '../modules/map/liveFeed.js';
+import { initMap } from '../modules/map/mapManager.js';
+import { appState as state } from './state.js';
+import { fetchWeather } from '../services/weatherService.js';
+import { fetchNearbyParks } from '../services/parksService.js';
+import { renderParksOnMap } from '../modules/map/parksRenderer.js';
 
-// 3. Import kalkulatora dystansu (do zapięcia hiperlokalności)
-import { getDistance } from '../services/geolocationService.js';
-
-// 4. 🔥 Magnes nr 2 (Refaktoryzacja) - Krok 4: Zupełnie nowy GroupListeners (Logika Stada)
-// Musi być importowany PRZED ChatListeners, by akcje edycji były gotowe.
-import '../modules/chat/groupListeners.js';
-
-// 5. 🔥 Magnes nr 2 (Refaktoryzacja) - Krok 3: Szczupły ChatListeners (Rdzeń wiadomości)
-// Podpina akcje z GroupListeners pod trybik dynamically.
-import '../modules/chat/chatListeners.js';
+// 🔥 POPRAWIONE IMPORTY RADARU I CZATU (ZUPEŁNY KONIEC SEKCJI IMPORTÓW):
+import { initLiveFeed } from '../modules/map/liveFeed.js';
+import { loadInbox } from '../modules/chat/chatListeners.js';
+import '../modules/chat/groupListeners.js'; // Ta linijka rejestruje Stado w window.Waggle i musi być na końcu
 
 export function bootstrapApp() {
     initGlobalUtils();
