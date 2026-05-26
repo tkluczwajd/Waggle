@@ -1,22 +1,18 @@
-// src/core/appBootstrap.js
-import { initRouter } from './router.js';
-import { initProfileListeners } from '../modules/profile/profileListeners.js';
-import { initGlobalUtils } from '../ui/globalUtils.js';
-import { initUiListeners } from '../ui/uiListeners.js';
-import { initWaggleApi } from './waggleApi.js';
-import { setupAuth } from './authInit.js';
-import { setupSubscriptions } from './subscriptionInit.js';
-import { setupLocationTracking } from './locationInit.js';
-import { renderWiki } from '../ui/wikiRenderer.js';
-import { updateStatsUI, updateUserMarker, loadSettings } from '../ui/uiHelpers.js';
-import { initMap } from '../modules/map/mapManager.js';
-import { appState as state } from './state.js';
-import { fetchWeather } from '../services/weatherService.js';
-import { fetchNearbyParks } from '../services/parksService.js';
-import { renderParksOnMap } from '../modules/map/parksRenderer.js';
-import { initLiveFeed } from '../modules/map/liveFeed.js';
-import { loadInbox } from '../modules/chat/chatListeners.js';
+1. Zabezpieczenie techniczne (Canvas API do zdjęć) - wstrzyknięte do PostsService
+
+// 2. Magnes nr 1: Ożywiony lokalny feed (Lokalny radar)
+import '../modules/map/liveFeed.js';
+
+// 3. Import kalkulatora dystansu (do zapięcia hiperlokalności)
+import { getDistance } from '../services/geolocationService.js';
+
+// 4. 🔥 Magnes nr 2 (Refaktoryzacja) - Krok 4: Zupełnie nowy GroupListeners (Logika Stada)
+// Musi być importowany PRZED ChatListeners, by akcje edycji były gotowe.
 import '../modules/chat/groupListeners.js';
+
+// 5. 🔥 Magnes nr 2 (Refaktoryzacja) - Krok 3: Szczupły ChatListeners (Rdzeń wiadomości)
+// Podpina akcje z GroupListeners pod trybik dynamically.
+import '../modules/chat/chatListeners.js';
 
 export function bootstrapApp() {
     initGlobalUtils();
