@@ -1,5 +1,5 @@
-// Zmieniamy wersję na v2! (Przy kolejnej aktualizacji zmienisz na v3 itd.)
-const CACHE_NAME = 'waggle-cache-v2';
+// Podbijamy do v3, żeby wymusić nadpisanie tego zepsutego cache'a!
+const CACHE_NAME = 'waggle-cache-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -7,6 +7,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
+  self.skipWaiting(); // 🔥 Wymusza natychmiastową instalację u użytkownika
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -15,7 +16,6 @@ self.addEventListener('install', event => {
   );
 });
 
-// 🔥 NOWOŚĆ: Automatyczne usuwanie starych cache'y
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -27,18 +27,21 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // 🔥 Przejmuje kontrolę natychmiast po instalacji
   );
 });
 
 self.addEventListener('fetch', event => {
+  // 🔥 OCHRONA FIREBASE: Ignorujemy wszystko, co nie jest zwykłym pobieraniem Twoich plików (GET)
+  // To pozwala bazie Firestore, Auth i ImgBB działać bez żadnych zakłóceń!
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return; 
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        if (response) {
-          return response; 
-        }
-        return fetch(event.request); 
+        return response || fetch(event.request); 
       })
   );
 });
