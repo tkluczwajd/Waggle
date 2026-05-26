@@ -12,10 +12,8 @@ export function initLiveFeed() {
     const feedIcon = document.getElementById('feed-icon');
     
     if (!feedEl) return;
-
     const appStartTime = new Date();
 
-    // 1. NASŁUCH POSTÓW (Alerty i Ustawki)
     db.collection("posts")
       .where("timestamp", ">", appStartTime)
       .onSnapshot(snap => {
@@ -23,30 +21,18 @@ export function initLiveFeed() {
               if (change.type === "added") {
                   const data = change.doc.data();
                   if (data.uid === state.user?.uid) return; 
-
-                  let icon = "💬";
-                  let text = `${data.author || 'Ktoś'} dodał wpis na tablicy.`;
-                  let distanceStr = "";
-
+                  let icon = "💬", text = `${data.author || 'Ktoś'} dodał wpis.`, distanceStr = "";
                   if (state.location?.lat && data.lat && data.lng) {
                       const dist = getDistance(state.location.lat, state.location.lng, data.lat, data.lng);
                       distanceStr = dist < 1 ? ` (${(dist * 1000).toFixed(0)}m)` : ` (${dist.toFixed(1)}km)`;
                   }
-
-                  if (data.isAlert) {
-                      icon = "⚠️";
-                      text = `Uwaga! Nowy alert${distanceStr}`;
-                  } else if (data.isEvent) {
-                      icon = "📅";
-                      text = `Nowa ustawka${distanceStr}!`;
-                  }
-
+                  if (data.isAlert) { icon = "⚠️", text = `Nowy alert${distanceStr}`; }
+                  else if (data.isEvent) { icon = "📅", text = `Nowa ustawka${distanceStr}!`; }
                   addToFeedQueue(icon, text);
               }
           });
       });
 
-    // 2. NASŁUCH NOWYCH SPACERÓW
     db.collection("walks")
       .where("timestamp", ">", appStartTime.getTime() - 600000) 
       .onSnapshot(snap => {
@@ -54,11 +40,10 @@ export function initLiveFeed() {
               if (change.type === "added" && change.doc.data().timestamp > appStartTime.getTime()) {
                   const data = change.doc.data();
                   if (data.uid === state.user?.uid) return;
-                  
                   if (state.location?.lat && data.lat && data.lng) {
                       const dist = getDistance(state.location.lat, state.location.lng, data.lat, data.lng);
                       if (dist <= 4) { 
-                         const distStr = dist < 1 ? `${(dist * 1000).toFixed(0)}m stąd` : `${dist.toFixed(1)}km stąd`;
+                         const distStr = dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`;
                          addToFeedQueue("🐾", `${data.name} rozpoczął spacer (${distStr})!`);
                       }
                   }
@@ -66,45 +51,27 @@ export function initLiveFeed() {
           });
       });
 
-    // 3. PULS OKOLICY
     setInterval(() => {
         const storiesContainer = document.getElementById('stories-container');
         if (!storiesContainer) return;
-        
         let others = 0;
         storiesContainer.querySelectorAll('.story-circle').forEach(el => {
             if(!el.innerText.includes('Ty')) others++;
         });
-        
-        if (others > 0) {
-            addToFeedQueue("🌳", `${others} psich kumpli spaceruje teraz w okolicy.`);
-        }
-    }, 180000); // 3 minuty
+        if (others > 0) { addToFeedQueue("🌳", `${others} psich kumpli spaceruje.`); }
+    }, 180000); 
 
-    function addToFeedQueue(icon, text) {
-        feedQueue.push({ icon, text });
-        processQueue();
-    }
+    function addToFeedQueue(icon, text) { feedQueue.push({ icon, text }); processQueue(); }
 
     function processQueue() {
         if (isDisplaying || feedQueue.length === 0) return;
-        
         isDisplaying = true;
         const item = feedQueue.shift();
-        
-        feedIcon.innerText = item.icon;
-        feedText.innerText = item.text;
-        
-        feedEl.style.opacity = '1';
-        feedEl.style.transform = 'translate(-50%, 0)';
-        
+        feedIcon.innerText = item.icon; feedText.innerText = item.text;
+        feedEl.style.opacity = '1'; feedEl.style.transform = 'translate(-50%, 0)';
         setTimeout(() => {
-            feedEl.style.opacity = '0';
-            feedEl.style.transform = 'translate(-50%, -20px)';
-            setTimeout(() => {
-                isDisplaying = false;
-                processQueue();
-            }, 1000); 
+            feedEl.style.opacity = '0'; feedEl.style.transform = 'translate(-50%, -20px)';
+            setTimeout(() => { isDisplaying = false; processQueue(); }, 1000); 
         }, 4000);
     }
 }
