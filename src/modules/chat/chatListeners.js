@@ -17,14 +17,11 @@ function playNotificationSound() {
         const ctx = new AudioContext();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        
         osc.connect(gain);
         gain.connect(ctx.destination);
-        
         osc.type = 'sine';
         osc.frequency.setValueAtTime(587.33, ctx.currentTime);
         gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        
         osc.start();
         osc.stop(ctx.currentTime + 0.12);
     } catch (e) { console.warn("Audio zablokowane:", e); }
@@ -47,7 +44,6 @@ export function loadInbox() {
                     window.Waggle.showToast(`💬 Nowa wiadomość od: ${partnerName}`);
                 }
             }
-
             chatUnreadStates[chat.id] = unreads;
             currentTotalUnread += unreads;
         });
@@ -100,6 +96,7 @@ export function openChat(targetId, name) {
     if (settingsBtn) {
         if (isGroupChat) {
             settingsBtn.style.display = 'block';
+            // 🔥 AKCJA: Podpinamy nową globalną funkcję zarządzania stadem
             settingsBtn.onclick = () => window.Waggle.openGroupSettings(chatId);
         } else { settingsBtn.style.display = 'none'; }
     }
