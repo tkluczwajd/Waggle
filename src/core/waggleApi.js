@@ -1,4 +1,3 @@
-// src/core/waggleApi.js
 import { searchUsers } from '../modules/chat/chatListeners.js';
 import { switchView } from './router.js';
 import { mapManager } from '../modules/map/mapManager.js';
@@ -7,7 +6,7 @@ import { db, auth } from './firebase.js';
 import { appState as state } from './state.js';
 import { uploadImageToService as uploadImage } from '../services/postsService.js';
 import { saveCommunityPost } from '../modules/posts/postsListeners.js';
-import { toggleFollowUserInDb } from '../services/profileService.js'; // 🔥 Importujemy nową funkcję
+import { toggleFollowUserInDb } from '../services/profileService.js'; // 🔥 Import nowej funkcji
 
 export function initWaggleApi(updateUserMarker) {
     window.Waggle = window.Waggle || {};
@@ -23,13 +22,14 @@ export function initWaggleApi(updateUserMarker) {
         if (favorites.includes(id)) {
             favorites = favorites.filter(favId => favId !== id);
             localStorage.setItem('waggle_wiki_favorites', JSON.stringify(favorites));
-            window.Waggle.showToast("Usunięto z ulubionych.");
+            window.Waggle.showToast("Usunięto z ulubionych 💔");
         } else {
             favorites.push(id);
             localStorage.setItem('waggle_wiki_favorites', JSON.stringify(favorites));
-            window.Waggle.showToast("Dodano do ulubionych! ❤️");
+            window.Waggle.showToast("Zapisano w ulubionych poradach! ❤️");
         }
-        renderWiki('rasy', document.getElementById('wikiSearchInput')?.value || '');
+        const activeTabBtn = document.querySelector('.wiki-tab-btn.active');
+        if (activeTabBtn) renderWiki(activeTabBtn.getAttribute('data-tab'));
     };
 
     window.Waggle.submitAlert = async () => {
@@ -46,14 +46,12 @@ export function initWaggleApi(updateUserMarker) {
             await saveCommunityPost(`⚠️ ALERT: ${text}`, alertUrl, false, null, true, true);
             const alertBtn = document.getElementById('alertAddPhotoBtn'); if (alertBtn) alertBtn.innerHTML = "📷 Dodaj zdjęcie zagrożenia";
             document.getElementById('alert-modal').style.display = 'none'; if(input) input.value = ''; window.Waggle.showToast("Zgłoszono zagrożenie! ⚠️");
-        } catch (e) {
-            window.Waggle.showToast("Błąd wysyłania alertu.");
-        }
+        } catch (err) { console.error(err); window.Waggle.showToast("Błąd wysyłania!"); }
     };
 
-    // 🔥 MAGNES 2: Dynamiczny Profil Psa (Uruchamiany po kliknięciu ikonki na mapie)
+    // 🔥 MAGNES: Dynamiczny Profil Psa z opcją obserwowania
     window.Waggle.openUserMenu = (targetUid, name, avatar, lat, lng) => {
-        if (targetUid === state.user?.uid) return; // Kliknięcie we własną ikonę ignorujemy
+        if (targetUid === state.user?.uid) return; 
         
         const following = state.profile?.following || [];
         const isFollowing = following.includes(targetUid);
@@ -81,7 +79,7 @@ export function initWaggleApi(updateUserMarker) {
                 
                 <div style="display:flex; flex-direction:column; gap:10px;">
                     <button onclick="window.Waggle.toggleFollow('${targetUid}'); this.closest('#user-menu-overlay').style.display='none'" style="background:${bg}; color:${textCol}; border:${border}; padding:12px; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer; transition:0.2s;">${btnText}</button>
-                    <button onclick="window.Waggle.openChat('${targetUid}', '${name}'); this.closest('#user-menu-overlay').style.display='none'" style="background:var(--primary); color:white; border:none; padding:12px; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer;">💬 Wyślij wiadomość</button>
+                    <button onclick="window.Waggle.openChat('${targetUid}', '${name}'); this.closest('#user-menu-overlay').style.display='none'" style="background:var(--primary); color:white; border:none; padding:12px; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer;">💬 Napisz wiadomość</button>
                 </div>
             </div>
         `;
@@ -92,7 +90,6 @@ export function initWaggleApi(updateUserMarker) {
         window.Waggle.showToast("Aktualizuję Twój Psi Krąg... ⏳");
         try {
             await toggleFollowUserInDb(state.user.uid, targetUid);
-            // Zmiana stanu w locie, żeby przycisk zmienił się od razu przy kolejnym kliknięciu
             let following = state.profile.following || [];
             if (following.includes(targetUid)) {
                 state.profile.following = following.filter(id => id !== targetUid);
