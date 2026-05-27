@@ -2,7 +2,9 @@
 import { appState as state } from '../../core/state.js';
 import { uploadImageToService as uploadImage } from '../../services/postsService.js';
 import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead } from '../../services/chatService.js';
-import { renderInboxList, renderSearchResultsList, renderChatMessages, renderChatImagePreviewsUI } from './chatRenderer.js';
+import { renderInboxList } from './inboxRenderer.js';
+import { renderChatMessages, renderChatImagePreviewsUI } from './messageRenderer.js';
+import { renderSearchResultsList } from './groupRenderer.js';
 
 let currentChatUnsub = null; 
 let inboxUnsub = null;
