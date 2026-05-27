@@ -136,3 +136,55 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-colo
 .wiki-text-content {
     padding: 25px; 
 }
+
+/* --- INBOX PREMIUM & WHATSAPP FEELING --- */
+
+/* Nowoczesne dymki czatu */
+.chat-bubble {
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    position: relative;
+    color: var(--text-color);
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 4px; /* Ogonek dla cudzych wiadomości */
+}
+
+/* Nasze wiadomości (po prawej) */
+.chat-bubble.mine {
+    background: var(--secondary);
+    color: white;
+    border: none;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 4px; /* Ogonek po prawej */
+}
+
+/* Wyróżnienie nieprzeczytanej konwersacji w skrzynce */
+.inbox-unread-dot {
+    width: 12px; 
+    height: 12px;
+    background: var(--primary);
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px rgba(255, 82, 82, 0.4);
+    flex-shrink: 0;
+}
+
+/* Minimalistyczny czas wiadomości w dymku */
+.chat-time {
+    font-size: 10px;
+    opacity: 0.65;
+    text-align: right;
+    margin-top: 4px;
+    font-weight: 700;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+}
+.chat-bubble.mine .chat-time {
+    color: rgba(255, 255, 255, 0.9);
+}
