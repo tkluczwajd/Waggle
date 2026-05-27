@@ -1,4 +1,3 @@
-// src/modules/map/liveFeed.js
 import { db } from '../../core/firebase.js';
 import { appState as state } from '../../core/state.js';
 import { getDistance } from '../../services/geolocationService.js';
@@ -41,16 +40,15 @@ export function initLiveFeed() {
                   const data = change.doc.data();
                   if (data.uid === state.user?.uid) return;
                   
-                  // 🔥 MAGNES 2: Sprawdzamy, czy to pies z "Mojego Kręgu"
+                  // 🔥 MAGNES: VIP status dla obserwowanych psów
                   const isFollowed = state.profile?.following?.includes(data.uid);
                   
                   if (state.location?.lat && data.lat && data.lng) {
                       const dist = getDistance(state.location.lat, state.location.lng, data.lat, data.lng);
                       
-                      // Jeżeli to VIP (obserwowany), dystans nie ma znaczenia, zawsze informujemy
+                      // VIPy dostają powiadomienie zawsze, inni tylko w promieniu 4km
                       if (dist <= 4 || isFollowed) { 
                          const distStr = dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`;
-                         
                          if (isFollowed) {
                              addToFeedQueue("⭐", `${data.name} z Twojego Kręgu wyszedł na spacer (${distStr})!`);
                          } else {
@@ -62,7 +60,7 @@ export function initLiveFeed() {
           });
       });
 
-    // 🔥 MAGNES 1: Inteligentny Puls Okolicy (co 3 minuty)
+    // 🔥 MAGNES: Puls Okolicy badający rzeczywiste Ustawki w bazie
     setInterval(async () => {
         const storiesContainer = document.getElementById('stories-container');
         if (!storiesContainer) return;
@@ -83,10 +81,10 @@ export function initLiveFeed() {
                     eventsToday++;
                 }
             });
-        } catch(e) { console.warn("Puls: Błąd pobierania ustawek.", e); }
+        } catch(e) { console.warn("Puls: Błąd pobierania ustawek."); }
         
         if (eventsToday > 0) { 
-            addToFeedQueue("📅", `W okolicy zaplanowano dziś ${eventsToday} ustawki. Sprawdź Tablicę!`); 
+            addToFeedQueue("📅", `W okolicy zaplanowano dziś ${eventsToday} ustawki! Sprawdź Tablicę.`); 
         } else if (others > 0) { 
             addToFeedQueue("🌳", `${others} psich kumpli spaceruje teraz wokół Ciebie.`); 
         }
@@ -103,7 +101,7 @@ export function initLiveFeed() {
         setTimeout(() => {
             feedEl.style.opacity = '0'; feedEl.style.transform = 'translate(-50%, -20px)';
             setTimeout(() => { isDisplaying = false; processQueue(); }, 1000); 
-        }, 4500);
+        }, 4000);
     }
 }
 
