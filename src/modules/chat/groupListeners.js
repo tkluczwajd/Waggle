@@ -2,7 +2,7 @@
 import { appState as state } from '../../core/state.js';
 import { db } from '../../core/firebase.js';
 import { searchUsersInDb, createGroupInDb } from '../../services/chatService.js';
-import { renderGroupUsersList, renderGroupSettingsList } from './chatRenderer.js';
+import { renderGroupUsersList, renderGroupSettingsList } from './groupRenderer.js';
 
 let selectedGroupUsers = []; 
 
