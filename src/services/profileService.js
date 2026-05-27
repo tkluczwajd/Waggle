@@ -1,11 +1,10 @@
-// src/services/profileService.js
 import { db, fb } from '../core/firebase.js';
 
 export function saveProfileData(uid, data) {
     return db.collection("users").doc(uid).set(data, { merge: true });
 }
 
-// 🔥 NOWOŚĆ: MAGNES 2 - Logika dodawania do "Psiego Kręgu"
+// 🔥 MAGNES: Logika dodawania do "Psiego Kręgu"
 export async function toggleFollowUserInDb(myUid, targetUid) {
     const ref = db.collection("users").doc(myUid);
     const doc = await ref.get();
@@ -17,7 +16,7 @@ export async function toggleFollowUserInDb(myUid, targetUid) {
     
     const following = doc.data().following || [];
     
-    // Atomowe dodawanie/usuwanie z tablicy (wymaga obiektu `fb` importowanego wyżej)
+    // Atomowe dodawanie/usuwanie z tablicy
     if (following.includes(targetUid)) {
         return ref.update({ following: fb.firestore.FieldValue.arrayRemove(targetUid) });
     } else {
