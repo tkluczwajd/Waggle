@@ -8,6 +8,28 @@ import { renderGroupUsersList, renderGroupSettingsList } from './chatRenderer.js
 
 let selectedGroupUsers = []; 
 
+// 🔥 Nowa funkcja: Własne okienko potwierdzenia zamiast brzydkiego confirm()
+window.Waggle.showCustomConfirm = function(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-confirm-modal');
+        const msgEl = document.getElementById('custom-confirm-msg');
+        const btnOk = document.getElementById('custom-confirm-ok');
+        const btnCancel = document.getElementById('custom-confirm-cancel');
+
+        if (!modal) {
+            // Jeśli ktoś zapomniał wkleić HTML, awaryjnie włącz brzydki systemowy
+            resolve(confirm(message));
+            return;
+        }
+
+        msgEl.innerText = message;
+        modal.style.display = 'flex';
+
+        btnOk.onclick = () => { modal.style.display = 'none'; resolve(true); };
+        btnCancel.onclick = () => { modal.style.display = 'none'; resolve(false); };
+    });
+};
+
 export function loadUsersForGroup() {
     const listCont = document.getElementById('groupUsersList');
     if (!listCont) return;
@@ -86,15 +108,16 @@ export async function openGroupSettings(chatId) {
         const iAmAdmin = data.users[0] === state.user.uid;
         renderGroupSettingsList(chatId, data, state.user.uid, iAmAdmin, listCont);
         
-        leaveBtn.onclick = async () => {
-            if(confirm("Czy opuścić to Stado? 🐕")) {
+leaveBtn.onclick = async () => {
+            // 👇 Tutaj też podpinamy nasz ładny modal!
+            const isConfirmed = await window.Waggle.showCustomConfirm("Czy na pewno chcesz opuścić to Stado?");
+            if(isConfirmed) {
                 window.Waggle.showToast("Opuszczasz Stado... 🐾");
                 try {
                     await db.collection("chats").doc(chatId).update({
                         users: fb.firestore.FieldValue.arrayRemove(state.user.uid)
                     });
                     
-                    // Wysłanie czystej wiadomości systemowej
                     await sendSystemMessage(chatId, `💨 ${state.profile.name || "Ktoś"} opuścił stado.`);
                     
                     modal.style.display = 'none';
@@ -107,14 +130,16 @@ export async function openGroupSettings(chatId) {
 }
 
 export async function removeUserFromGroup(chatId, userUid, userName) {
-    if(!confirm(`Czy wyrzucić psa: ${userName}? 🛑`)) return;
+    // 👇 Zastępujemy confirm() naszą nową funkcją asynchroniczną
+    const isConfirmed = await window.Waggle.showCustomConfirm(`Czy na pewno wyrzucić psa: ${userName}?`);
+    if (!isConfirmed) return;
+    
     window.Waggle.showToast(`Wyrzucam ${userName}... ⏳`);
     try {
         await db.collection("chats").doc(chatId).update({ 
             users: fb.firestore.FieldValue.arrayRemove(userUid) 
         });
         
-        // Wysłanie czystej wiadomości systemowej
         await sendSystemMessage(chatId, `🚷 Admin usunął użytkownika ${userName} ze stada.`);
         
         window.Waggle.showToast(`Piesek wyrzucony.`);
