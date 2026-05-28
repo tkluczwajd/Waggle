@@ -1,8 +1,10 @@
 // src/modules/chat/groupListeners.js
 import { appState as state } from '../../core/state.js';
-import { db } from '../../core/firebase.js';
+import { db, fb } from '../../core/firebase.js';
 import { searchUsersInDb, createGroupInDb } from '../../services/chatService.js';
-import { renderGroupUsersList, renderGroupSettingsList } from './groupRenderer.js';
+
+// Jeśli rozbiłeś już renderery, zmień 'chatRenderer.js' na 'groupRenderer.js'
+import { renderGroupUsersList, renderGroupSettingsList } from './chatRenderer.js'; 
 
 let selectedGroupUsers = []; 
 
@@ -47,6 +49,27 @@ export function createGroupChat() {
     });
 }
 
+// 🔥 NOWOŚĆ: Bezpieczna, w 100% bezpośrednia funkcja do komunikatów systemowych
+async function sendSystemMessage(chatId, text) {
+    const msg = {
+        sender: 'system',
+        senderName: 'Waggle System',
+        senderAvatar: 'https://placehold.co/150x150/ff5252/FFF?text=!',
+        text: text,
+        time: Date.now(),
+        imageUrl: null
+    };
+    try {
+        await db.collection("chats").doc(chatId).collection("messages").add(msg);
+        await db.collection("chats").doc(chatId).update({
+            lastMsg: text,
+            lastUpdate: msg.time
+        });
+    } catch (e) {
+        console.error("Błąd wysyłania wiadomości systemowej:", e);
+    }
+}
+
 export async function openGroupSettings(chatId) {
     const modal = document.getElementById('group-settings-modal');
     const listCont = document.getElementById('groupMembersList');
@@ -62,17 +85,18 @@ export async function openGroupSettings(chatId) {
         const data = snap.data();
         const iAmAdmin = data.users[0] === state.user.uid;
         renderGroupSettingsList(chatId, data, state.user.uid, iAmAdmin, listCont);
+        
         leaveBtn.onclick = async () => {
             if(confirm("Czy opuścić to Stado? 🐕")) {
                 window.Waggle.showToast("Opuszczasz Stado... 🐾");
                 try {
-                    const fb = await import('../../core/firebase.js').then(m => m.fb);
                     await db.collection("chats").doc(chatId).update({
                         users: fb.firestore.FieldValue.arrayRemove(state.user.uid)
                     });
-                    import('../../services/chatService.js').then(({ saveMessageInDb }) => {
-                        saveMessageInDb(chatId, { sender: 'system', text: `💨 ${state.profile.name || "Ktoś"} opuścił stado.`, time: Date.now() }, null, null, state.user);
-                    });
+                    
+                    // Wysłanie czystej wiadomości systemowej
+                    await sendSystemMessage(chatId, `💨 ${state.profile.name || "Ktoś"} opuścił stado.`);
+                    
                     modal.style.display = 'none';
                     if(window.Waggle.closeActiveChat) window.Waggle.closeActiveChat();
                     window.Waggle.showToast("Stado opuszczone.");
@@ -83,14 +107,16 @@ export async function openGroupSettings(chatId) {
 }
 
 export async function removeUserFromGroup(chatId, userUid, userName) {
-    if(!confirm(`Czy wyrzucić ${userName}? 🛑`)) return;
+    if(!confirm(`Czy wyrzucić psa: ${userName}? 🛑`)) return;
     window.Waggle.showToast(`Wyrzucam ${userName}... ⏳`);
     try {
-        const fb = await import('../../core/firebase.js').then(m => m.fb);
-        await db.collection("chats").doc(chatId).update({ users: fb.firestore.FieldValue.arrayRemove(userUid) });
-        import('../../services/chatService.js').then(({ saveMessageInDb }) => {
-            saveMessageInDb(chatId, { sender: 'system', text: `🚷 Admin usunął ${userName} ze stada.`, time: Date.now() }, null, null, state.user);
+        await db.collection("chats").doc(chatId).update({ 
+            users: fb.firestore.FieldValue.arrayRemove(userUid) 
         });
+        
+        // Wysłanie czystej wiadomości systemowej
+        await sendSystemMessage(chatId, `🚷 Admin usunął użytkownika ${userName} ze stada.`);
+        
         window.Waggle.showToast(`Piesek wyrzucony.`);
         openGroupSettings(chatId);
     } catch(e) { window.Waggle.showToast("Błąd wyrzucania!"); }
