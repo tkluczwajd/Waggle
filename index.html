@@ -374,6 +374,17 @@
           event.target.style.height = (event.target.scrollHeight) + 'px';
       }
   });
+        <div id="custom-confirm-modal" class="modal" style="z-index: 20000;">
+        <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🛑</div>
+            <h3 style="margin-top: 0; color: var(--danger); font-size: 22px;">Uwaga</h3>
+            <p id="custom-confirm-msg" style="font-weight: 700; color: var(--text-color); margin-bottom: 25px; font-size: 15px;">Czy na pewno chcesz to zrobić?</p>
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <button id="custom-confirm-cancel" class="btn-outline" style="flex: 1; padding: 12px; font-size: 14px;">Anuluj</button>
+                <button id="custom-confirm-ok" class="btn-main" style="background: var(--danger); flex: 1; padding: 12px; font-size: 14px; box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4);">Tak, wyrzuć</button>
+            </div>
+        </div>
+    </div>
 </script>
 </body>
 </html>
