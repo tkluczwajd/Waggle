@@ -36,13 +36,33 @@
 
     <div id="app-interface" class="screen-container">
         
-        <section id="view-home" class="view-section active">
-            <div class="sticky-header">
-                <h3 style="margin:0;">Mój Pies</h3>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
+<section id="view-home" class="view-section active">
+            <div class="sticky-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="margin:0;">Mój Pies</h3>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
+                </div>
+                <button id="openSettingsBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">⚙️</button>
             </div>
-            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
-                <p>Szkielet HOME (Profil psa, QR, Waggle Tag, statystyki, szybkie akcje)</p>
+            
+            <div class="profile-header" style="padding:20px; text-align:center;">
+                <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
+                    <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
+                    <div style="position: absolute; bottom: 0; right: 0; background: var(--secondary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); pointer-events: none; border: 2px solid white;">✎</div>
+                </div>
+                <h2 id="profileNameDisplay" style="margin: 15px 0 0 0; font-weight:900; font-size:26px;">...</h2>
+                <div id="profileLevelDisplay" style="color:#78e08f; font-weight:800; font-size:14px; margin-top:5px; margin-bottom:15px;">🌱 Nowik</div>
+                
+                <div class="stats-bar">
+                    <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small>Spacerów</small></div>
+                    <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary);">0.0</b><br><small>KM</small></div>
+                </div>
+                
+               <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 10px;">
+                    <button class="btn-main" id="openEditProfileBtn" style="background: var(--secondary);">✏️ EDYTUJ PROFIL PSA</button>
+                    <button id="togglePushBtn" class="btn-main" onclick="window.Waggle.toggleNotifications()" style="background: #ffb142; color: #2d3436;">🔔 WŁĄCZ POWIADOMIENIA</button>
+                    <button class="btn-outline" id="logoutBtn" style="color: var(--danger); border-color: var(--danger);">WYLOGUJ SIĘ</button>
+               </div>
             </div>
         </section>
 
@@ -139,28 +159,6 @@
             </div>
             
             <div id="inbox-container"></div>
-        </section>
-
-        <section id="view-profile" class="view-section">
-            <div class="profile-header" style="padding:30px 20px; text-align:center;">
-                <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
-                    <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
-                    <div style="position: absolute; bottom: 0; right: 0; background: var(--secondary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); pointer-events: none; border: 2px solid white;">✎</div>
-                </div>
-                <h2 id="profileNameDisplay" style="margin: 15px 0 0 0; font-weight:900; font-size:26px;">...</h2>
-                <div id="profileLevelDisplay" style="color:#78e08f; font-weight:800; font-size:14px; margin-top:5px; margin-bottom:15px;">🌱 Nowik</div>
-                <div class="stats-bar">
-                    <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small>Spacerów</small></div>
-                    <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary);">0.0</b><br><small>KM</small></div>
-                </div>
-               <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 10px;">
-                    <button class="btn-main" id="openEditProfileBtn" style="background: var(--secondary);">✏️ EDYTUJ PROFIL</button>
-                    <button class="btn-main" id="openSettingsBtn" style="background: #576574;">⚙️ USTAWIENIA</button>
-                    <button class="btn-outline" id="logoutBtn" style="color: var(--danger); border-color: var(--danger);">WYLOGUJ SIĘ</button>
-    
-                   <button id="togglePushBtn" class="btn-main" onclick="window.Waggle.toggleNotifications()" style="background: #ffb142; color: #2d3436;">🔔 WŁĄCZ POWIADOMIENIA</button>
-               </div>
-            </div>
         </section>
 
         <section id="view-places" class="view-section">
