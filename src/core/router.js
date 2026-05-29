@@ -14,8 +14,8 @@ export function switchView(view) {
 
     setState('ui.activeView', view);
     
-    // NAPRAWA SZAREJ MAPY: Wymuszenie przeliczenia rozmiaru kontenera
-    if (view === 'map' && appState.map && appState.map.instance) {
+    // NAPRAWA SZAREJ MAPY: Przeliczenie rozmiaru dla nowego widoku "local"
+    if (view === 'local' && appState.map && appState.map.instance) {
         setTimeout(() => {
             appState.map.instance.invalidateSize();
             // Jeśli nadal byłoby szare, powtarzamy po pół sekundy
