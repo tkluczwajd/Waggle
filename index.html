@@ -42,27 +42,29 @@
                     <h3 style="margin:0;">Mój Pies</h3>
                     <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
                 </div>
-                <button id="openSettingsBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">⚙️</button>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <button id="logoutBtn" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wyloguj się">🚪</button>
+                    <button id="openSettingsBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Ustawienia">⚙️</button>
+                </div>
             </div>
             
-            <div class="profile-header" style="padding:20px; text-align:center;">
+            <div class="profile-header" style="padding: 20px 20px 5px 20px; text-align:center;">
                 <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
                     <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
-                    <div style="position: absolute; bottom: 0; right: 0; background: var(--secondary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); pointer-events: none; border: 2px solid white;">✎</div>
+                    <div id="openEditProfileBtn" style="position: absolute; bottom: 0; right: 0; background: var(--secondary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; border: 2px solid white; z-index: 5;" title="Edytuj profil">✎</div>
                 </div>
+                
                 <h2 id="profileNameDisplay" style="margin: 15px 0 0 0; font-weight:900; font-size:26px;">...</h2>
                 <div id="profileLevelDisplay" style="color:#78e08f; font-weight:800; font-size:14px; margin-top:5px; margin-bottom:15px;">🌱 Nowik</div>
                 
-                <div class="stats-bar">
-                    <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary);">0</b><br><small>Spacerów</small></div>
-                    <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary);">0.0</b><br><small>KM</small></div>
+                <div class="stats-bar" style="margin: 10px 10px 0 10px; padding: 15px; border-radius: 16px;">
+                    <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary); font-size: 22px;">0</b><br><small style="font-weight: 800;">Spacerów</small></div>
+                    <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary); font-size: 22px;">0.0</b><br><small style="font-weight: 800;">KM</small></div>
                 </div>
-                
-               <div class="profile-actions" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding: 0 10px;">
-                    <button class="btn-main" id="openEditProfileBtn" style="background: var(--secondary);">✏️ EDYTUJ PROFIL PSA</button>
-                    <button id="togglePushBtn" class="btn-main" onclick="window.Waggle.toggleNotifications()" style="background: #ffb142; color: #2d3436;">🔔 WŁĄCZ POWIADOMIENIA</button>
-                    <button class="btn-outline" id="logoutBtn" style="color: var(--danger); border-color: var(--danger);">WYLOGUJ SIĘ</button>
-               </div>
+            </div>
+            
+            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                <p style="font-size: 12px; margin-top: 20px;">[Miejsce na moduł statusu Waggle Tag / QR]</p>
             </div>
         </section>
 
@@ -264,25 +266,35 @@
         </div>
     </div>
 
-    <div id="settings-modal" class="modal">
+<div id="settings-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
-            <h3>Ustawienia</h3>
-            <select id="settingTheme"><option value="light">☀️ Jasny</option><option value="dark">🌙 Ciemny</option></select>
-            <select id="settingFontSize">
-                <option value="14px">Mała</option>
-                <option value="16px">Średnia</option>
-                <option value="18px">Duża</option>
+            <h3 style="margin-top: 0;">Ustawienia</h3>
+            
+            <select id="settingTheme">
+                <option value="light">☀️ Jasny Motyw</option>
+                <option value="dark">🌙 Ciemny Motyw</option>
             </select>
-            <div class="legal-checkbox-container" style="margin-bottom: 10px; margin-top: 10px;">
+            <select id="settingFontSize">
+                <option value="14px">Czcionka: Mała</option>
+                <option value="16px">Czcionka: Średnia</option>
+                <option value="18px">Czcionka: Duża</option>
+            </select>
+            
+            <div class="legal-checkbox-container" style="margin-bottom: 10px; margin-top: 10px; text-align: left;">
                 <input type="checkbox" id="settingSearchable">
-                <label for="settingSearchable">Tryb Ducha (przybliżona lokalizacja)</label>
+                <label for="settingSearchable" style="font-size: 13px;">Tryb Ducha (przybliżona lokalizacja)</label>
             </div>
-            <div class="legal-checkbox-container" style="margin-bottom: 15px;">
+            <div class="legal-checkbox-container" style="margin-bottom: 20px; text-align: left;">
                 <input type="checkbox" id="settingHidden">
-                <label for="settingHidden">Całkowicie ukryty (na mapie i spacerach)</label>
+                <label for="settingHidden" style="font-size: 13px;">Całkowicie ukryty (na mapie i spacerach)</label>
             </div>
-            <button class="btn-main" id="saveSettingsBtn">ZAPISZ</button>
+
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 15px 0 20px 0;">
+            
+            <button id="togglePushBtn" class="btn-main" onclick="window.Waggle.toggleNotifications()" style="background: #ffb142; color: #2d3436; margin-bottom: 15px;">🔔 WŁĄCZ POWIADOMIENIA</button>
+
+            <button class="btn-main" id="saveSettingsBtn">ZAPISZ ZMIANY</button>
         </div>
     </div>
 
