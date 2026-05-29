@@ -5,7 +5,13 @@ import { updateNotificationBtnUI } from '../services/notificationService.js';
 
 export function updateStatsUI() {
     if (!state.profile) return; const p = state.profile;
+    
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
+    
+    // 👇 NOWOŚĆ: Rysowanie Miasta i Rasy na nowym ekranie HOME
+    const cityDisplay = document.getElementById('profileCityDisplay'); if(cityDisplay) cityDisplay.innerText = p.city || "Nie podano";
+    const breedDisplay = document.getElementById('profileBreedDisplay'); if(breedDisplay) breedDisplay.innerText = p.breed || "Nie podano";
+    
     const walksEl = document.getElementById('statWalks'); if(walksEl) walksEl.innerText = p.walkCount || 0;
     const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = ((p.walkCount || 0) * 1.2).toFixed(1);
     const breedInput = document.getElementById('setupBreed'); if(breedInput) breedInput.value = state.profile.breed || "";
