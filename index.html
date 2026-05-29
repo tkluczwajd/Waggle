@@ -35,7 +35,28 @@
     </div>
 
     <div id="app-interface" class="screen-container">
-        <section id="view-map" class="view-section active">
+        
+        <section id="view-home" class="view-section active">
+            <div class="sticky-header">
+                <h3 style="margin:0;">Mój Pies</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
+            </div>
+            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                <p>Szkielet HOME (Profil psa, QR, Waggle Tag, statystyki, szybkie akcje)</p>
+            </div>
+        </section>
+
+        <section id="view-safe" class="view-section">
+            <div class="sticky-header">
+                <h3 style="margin:0; color: var(--danger);">Ochrona</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Zarządzanie bezpieczeństwem</p>
+            </div>
+            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                <p>Szkielet SAFE (Lost mode, adresówka 3D)</p>
+            </div>
+        </section>
+
+        <section id="view-local" class="view-section">
            <div id="map-ui-layer">
                 <div id="top-widgets">
                     <div class="top-pill" id="weatherWidgetBtn" style="cursor:pointer;"><span id="weather-temp">☀️ --°C</span></div>
@@ -81,7 +102,7 @@
             </div>
         </section>
 
-        <section id="view-wiki" class="view-section">
+        <section id="view-help" class="view-section">
             <div class="sticky-header" style="padding-bottom: 10px;">
                 <h3 style="margin:0;">Psia Wiedza</h3>
                 <div class="wiki-tabs">
@@ -151,51 +172,43 @@
         </section>
 
         <nav class="bottom-nav">
-            <button class="nav-item active" data-view="map">📍<span>Mapa</span></button>
-            <button class="nav-item" data-view="community">📱<span>Tablica</span></button>
-            <button class="nav-item" data-view="wiki">📘<span>Wiedza</span></button>
-            <button class="nav-item" data-view="chat" style="position: relative;">
-            💬<span>Czat</span>
+            <button class="nav-item active" data-view="home">🏠<span>Home</span></button>
+            <button class="nav-item" data-view="safe">🛡️<span>Safe</span></button>
+            <button class="nav-item" data-view="help">📘<span>Help</span></button>
+            <button class="nav-item" data-view="local">📍<span>Local</span></button>
+            <button class="nav-item" data-view="community" style="position: relative;">
+            💬<span>Stado</span>
           <div id="nav-chat-badge" style="display:none; position:absolute; top:2px; right:15px; background:var(--danger); color:white; font-size:10px; font-weight:900; padding:2px 6px; border-radius:10px; border:2px solid var(--panel-bg); z-index: 10;">0</div>
          </button>
-            <button class="nav-item" data-view="places">🌳<span>Miejsca</span></button>
-            <button class="nav-item" data-view="profile">👤<span>Profil</span></button>
         </nav>
     </div>
 
-   <div id="chat-window" class="modal" style="z-index: 9999;">
+    <div id="chat-window" class="modal" style="z-index: 9999;">
         <div class="card" style="height: 85vh; padding: 0; display: flex; flex-direction: column;">
-
             <div style="background: var(--panel-bg); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; flex-shrink: 0;">
-    <b id="chatPartnerName">...</b>
-    <div style="display: flex; gap: 15px; align-items: center;">
-        <button id="groupSettingsBtn" style="display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--secondary); padding: 0;">⚙️</button>
-        <button id="closeChatBtn" class="close-modal-btn" style="position:static; background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-color); width: auto; height: auto;">✕</button>
-       </div>
-      </div>
+                <b id="chatPartnerName">...</b>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <button id="groupSettingsBtn" style="display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--secondary); padding: 0;">⚙️</button>
+                    <button id="closeChatBtn" class="close-modal-btn" style="position:static; background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-color); width: auto; height: auto;">✕</button>
+                </div>
+            </div>
             
             <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
             
             <div style="display: flex; flex-direction: column; width: 100%; box-sizing: border-box; background: var(--bg-color); border-top: 1px solid var(--border-color); padding: 12px; border-radius: 0 0 20px 20px; flex-shrink: 0;">
-                
                 <div id="chat-preview-box" style="display: none; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; width: 100%; max-height: 100px; overflow-y: auto;"></div>
-
-<div style="display: flex; gap: 10px; align-items: flex-end;">
-        
-        <button id="chatAddPhotoBtn" style="background:none; border:none; font-size:24px; cursor:pointer; padding: 10px 5px; flex-shrink: 0;">📷</button>
-        
-        <textarea id="chatInput" placeholder="Napisz..." style="flex-grow: 1; min-height: 44px; max-height: 120px; border-radius: 22px; padding: 12px 16px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-color); font-family: inherit; font-size: 15px; resize: none; overflow-y: auto; line-height: 1.4; outline: none; margin: 0; box-sizing: border-box;"></textarea>
-        
-        <button id="sendMsgBtn" style="background: var(--primary); color: white; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: -2px;">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-        </button>
-    </div>
-    <input type="file" id="chatImageInput" accept="image/*" multiple style="display:none;" onchange="window.Waggle.handleChatImageSelect(this.files)">
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <button id="chatAddPhotoBtn" style="background:none; border:none; font-size:24px; cursor:pointer; padding: 10px 5px; flex-shrink: 0;">📷</button>
+                    <textarea id="chatInput" placeholder="Napisz..." style="flex-grow: 1; min-height: 44px; max-height: 120px; border-radius: 22px; padding: 12px 16px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-color); font-family: inherit; font-size: 15px; resize: none; overflow-y: auto; line-height: 1.4; outline: none; margin: 0; box-sizing: border-box;"></textarea>
+                    <button id="sendMsgBtn" style="background: var(--primary); color: white; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: -2px;">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <input type="file" id="chatImageInput" accept="image/*" multiple style="display:none;" onchange="window.Waggle.handleChatImageSelect(this.files)">
             </div>
-            
         </div>
     </div>
 
@@ -226,37 +239,33 @@
             <input type="file" id="postImageInput" accept="image/*" style="display:none;">
         </div>
     </div>
+
     <div id="group-creator-modal" class="modal" style="z-index: 10000;">
         <div class="card" style="display: flex; flex-direction: column; max-height: 80vh;">
             <button class="close-modal-btn" onclick="document.getElementById('group-creator-modal').style.display='none'">✕</button>
             <h3 style="margin-top: 0;">Załóż nowe Stado</h3>
-            
             <input type="text" id="groupNameInput" placeholder="Nazwa stada (np. Ekipa z Parku)" style="margin-bottom: 15px; font-weight: bold; border: 2px solid var(--border-color);">
-            
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px; font-weight: bold;">Wybierz psiaki do stada:</p>
-            
             <div id="groupUsersList" style="flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; margin-bottom: 15px; background: var(--bg-color); display: flex; flex-direction: column; gap: 8px;">
                 <p style="text-align: center; color: var(--text-muted); font-size: 12px; margin: 10px 0;">Ładowanie piesków...</p>
             </div>
-            
             <button class="btn-main" id="confirmCreateGroupBtn" style="background: var(--secondary);" onclick="window.Waggle.createGroupChat()">🐾 UTWÓRZ STADO</button>
         </div>
     </div>
+
     <div id="group-settings-modal" class="modal" style="z-index: 10001;">
-    <div class="card" style="display: flex; flex-direction: column; max-height: 80vh;">
-        <button class="close-modal-btn" onclick="document.getElementById('group-settings-modal').style.display='none'">✕</button>
-        <h3 style="margin-top: 0; margin-bottom: 5px;">Zarządzaj Stadem</h3>
-        <p id="groupSettingsName" style="font-size: 14px; color: var(--primary); font-weight: 800; margin-bottom: 15px; margin-top: 0;">...</p>
-        
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px; font-weight: bold;">Członkowie stada:</p>
-        
-        <div id="groupMembersList" style="flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; margin-bottom: 15px; background: var(--bg-color); display: flex; flex-direction: column; gap: 8px;">
-            <p style="text-align: center; color: var(--text-muted); font-size: 12px; margin: 10px 0;">Ładowanie członków...</p>
+        <div class="card" style="display: flex; flex-direction: column; max-height: 80vh;">
+            <button class="close-modal-btn" onclick="document.getElementById('group-settings-modal').style.display='none'">✕</button>
+            <h3 style="margin-top: 0; margin-bottom: 5px;">Zarządzaj Stadem</h3>
+            <p id="groupSettingsName" style="font-size: 14px; color: var(--primary); font-weight: 800; margin-bottom: 15px; margin-top: 0;">...</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px; font-weight: bold;">Członkowie stada:</p>
+            <div id="groupMembersList" style="flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; margin-bottom: 15px; background: var(--bg-color); display: flex; flex-direction: column; gap: 8px;">
+                <p style="text-align: center; color: var(--text-muted); font-size: 12px; margin: 10px 0;">Ładowanie członków...</p>
+            </div>
+            <button class="btn-outline" id="leaveGroupBtn" style="color: var(--danger); border-color: var(--danger); margin-bottom: 10px; width: 100%;">Opuść Stado</button>
         </div>
-        
-        <button class="btn-outline" id="leaveGroupBtn" style="color: var(--danger); border-color: var(--danger); margin-bottom: 10px; width: 100%;">Opuść Stado</button>
     </div>
-</div>
+
     <div id="settings-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
@@ -267,7 +276,6 @@
                 <option value="16px">Średnia</option>
                 <option value="18px">Duża</option>
             </select>
-            
             <div class="legal-checkbox-container" style="margin-bottom: 10px; margin-top: 10px;">
                 <input type="checkbox" id="settingSearchable">
                 <label for="settingSearchable">Tryb Ducha (przybliżona lokalizacja)</label>
@@ -276,7 +284,6 @@
                 <input type="checkbox" id="settingHidden">
                 <label for="settingHidden">Całkowicie ukryty (na mapie i spacerach)</label>
             </div>
-
             <button class="btn-main" id="saveSettingsBtn">ZAPISZ</button>
         </div>
     </div>
@@ -330,6 +337,33 @@
         </div>
     </div>
 
+    <div id="wiki-details-modal" class="modal" style="z-index: 10000;">
+        <div class="card" style="display: flex; flex-direction: column; padding: 0; overflow-y: auto; background: var(--bg-color);">
+            <button id="closeWikiDetailsBtn" class="close-modal-btn" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; z-index: 10005;">✕</button>
+            <div style="width: 100%; height: 250px; flex-shrink: 0;">
+                <img id="wikiDetailsImg" src="" style="width: 100%; height: 100%; object-fit: cover; object-position: center center;">
+            </div>
+            <div class="wiki-text-content">
+                <h2 id="wikiDetailsTitle" style="margin: 0 0 10px 0; font-weight: 900; font-size: 24px; color: var(--text-color);">...</h2>
+                <div id="wikiDetailsTags" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px;"></div>
+                <div id="wikiDetailsStats" style="margin-bottom: 20px; background: var(--panel-bg); padding: 15px; border-radius: 16px; border: 1px solid var(--border-color); display: none;"></div>
+                <p id="wikiDetailsDesc" style="font-size: 15px; color: var(--text-muted); line-height: 1.6; font-weight: 600; margin: 0;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-confirm-modal" class="modal" style="z-index: 20000;">
+        <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🛑</div>
+            <h3 style="margin-top: 0; color: var(--danger); font-size: 22px;">Uwaga</h3>
+            <p id="custom-confirm-msg" style="font-weight: 700; color: var(--text-color); margin-bottom: 25px; font-size: 15px;">Czy na pewno chcesz to zrobić?</p>
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <button id="custom-confirm-cancel" class="btn-outline" style="flex: 1; padding: 12px; font-size: 14px;">Anuluj</button>
+                <button id="custom-confirm-ok" class="btn-main" style="background: var(--danger); flex: 1; padding: 12px; font-size: 14px; box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4);">Tak</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -337,54 +371,26 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <script type="module" src="/src/app.js?v=1001"></script>
 
-<div id="wiki-details-modal" class="modal" style="z-index: 10000;">
-    <div class="card" style="display: flex; flex-direction: column; padding: 0; overflow-y: auto; background: var(--bg-color);">
-        
-        <button id="closeWikiDetailsBtn" class="close-modal-btn" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; z-index: 10005;">✕</button>
-
-        <div style="width: 100%; height: 250px; flex-shrink: 0;">
-            <img id="wikiDetailsImg" src="" style="width: 100%; height: 100%; object-fit: cover; object-position: center center;">
-        </div>
-
-        <div class="wiki-text-content">
-            <h2 id="wikiDetailsTitle" style="margin: 0 0 10px 0; font-weight: 900; font-size: 24px; color: var(--text-color);">...</h2>
-            <div id="wikiDetailsTags" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px;"></div>
-            <div id="wikiDetailsStats" style="margin-bottom: 20px; background: var(--panel-bg); padding: 15px; border-radius: 16px; border: 1px solid var(--border-color); display: none;"></div>
-            <p id="wikiDetailsDesc" style="font-size: 15px; color: var(--text-muted); line-height: 1.6; font-weight: 600; margin: 0;"></p>
-        </div>
-    </div>
-</div>
     <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(registration => {
-          console.log('✅ Service Worker zarejestrowany!', registration.scope);
-        })
-        .catch(err => {
-          console.error('❌ Błąd rejestracji Service Workera:', err);
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('✅ Service Worker zarejestrowany!', registration.scope);
+            })
+            .catch(err => {
+              console.error('❌ Błąd rejestracji Service Workera:', err);
+            });
         });
-    });
-  }
-
-  // Skrypt automatycznie powiększający nowe pole tekstowe w czacie
-  document.addEventListener('input', function (event) {
-      if (event.target.id === 'chatInput') {
-          event.target.style.height = 'auto';
-          event.target.style.height = (event.target.scrollHeight) + 'px';
       }
-  });
-        <div id="custom-confirm-modal" class="modal" style="z-index: 20000;">
-        <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center;">
-            <div style="font-size: 40px; margin-bottom: 10px;">🛑</div>
-            <h3 style="margin-top: 0; color: var(--danger); font-size: 22px;">Uwaga</h3>
-            <p id="custom-confirm-msg" style="font-weight: 700; color: var(--text-color); margin-bottom: 25px; font-size: 15px;">Czy na pewno chcesz to zrobić?</p>
-            <div style="display: flex; gap: 12px; width: 100%;">
-                <button id="custom-confirm-cancel" class="btn-outline" style="flex: 1; padding: 12px; font-size: 14px;">Anuluj</button>
-                <button id="custom-confirm-ok" class="btn-main" style="background: var(--danger); flex: 1; padding: 12px; font-size: 14px; box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4);">Tak, wyrzuć</button>
-            </div>
-        </div>
-    </div>
-</script>
+
+      // Skrypt automatycznie powiększający nowe pole tekstowe w czacie
+      document.addEventListener('input', function (event) {
+          if (event.target.id === 'chatInput') {
+              event.target.style.height = 'auto';
+              event.target.style.height = (event.target.scrollHeight) + 'px';
+          }
+      });
+    </script>
 </body>
 </html>
