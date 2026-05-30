@@ -51,7 +51,7 @@ export function bootstrapApp() {
 
             setupSubscriptions();
             fetchWeather(lat, lng);
-            renderWiki('rasy');
+            renderWiki('sytuacje');
 
             // Ładowanie psich parków, lasów i generowanie listy w panelu
             (async () => {
