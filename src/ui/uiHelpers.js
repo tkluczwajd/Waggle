@@ -5,7 +5,29 @@ import { updateNotificationBtnUI } from '../services/notificationService.js';
 
 export function updateStatsUI() {
     if (!state.profile) return; const p = state.profile;
-    
+    // 🔥 AKTUALIZACJA KARTOTEKI MEDYCZNEJ (Ekran SAFE)
+    const chipDisplay = document.getElementById('displayChip');
+    if (chipDisplay) {
+        const hasSafeData = p.chip || p.allergies || p.meds || p.vet;
+        const displayBlock = document.getElementById('safe-data-display');
+        const fallbackText = document.getElementById('safe-data-fallback');
+        const openBtn = document.getElementById('openSafeSetupBtn');
+
+        if (hasSafeData) {
+            if (displayBlock) displayBlock.style.display = 'block';
+            if (fallbackText) fallbackText.style.display = 'none';
+            if (openBtn) openBtn.innerText = "✏️ EDYTUJ DANE RATUNKOWE";
+            
+            if (document.getElementById('displayChip')) document.getElementById('displayChip').innerText = p.chip || "Brak danych";
+            if (document.getElementById('displayAllergies')) document.getElementById('displayAllergies').innerText = p.allergies || "Brak";
+            if (document.getElementById('displayMeds')) document.getElementById('displayMeds').innerText = p.meds || "Brak";
+            if (document.getElementById('displayVet')) document.getElementById('displayVet').innerText = p.vet || "Brak kontaktu";
+        } else {
+            if (displayBlock) displayBlock.style.display = 'none';
+            if (fallbackText) fallbackText.style.display = 'block';
+            if (openBtn) openBtn.innerText = "Wypełnij dane ratunkowe";
+        }
+    }
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
     
     // 👇 NOWOŚĆ: Rysowanie Miasta i Rasy na nowym ekranie HOME
