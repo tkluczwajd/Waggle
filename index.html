@@ -88,7 +88,7 @@
 <section id="view-safe" class="view-section">
             <div class="sticky-header" style="background: var(--panel-bg); border-bottom: 1px solid var(--border-color);">
                 <h3 style="margin:0; color: var(--danger); font-weight: 900;">Centrum Ochrony</h3>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 700;">Waggle Tag & Bezpieczeństwo</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 700;">Zarządzanie bezpieczeństwem</p>
             </div>
     
             <div style="padding: 20px; padding-bottom: 100px;">
@@ -104,39 +104,35 @@
                     </div>
                     
                     <p style="font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 20px; position: relative; z-index: 2; color: var(--text-color);">
-                        Jeśli Twój pies się zgubi, uruchom ten tryb. Natychmiast powiadomimy wszystkich spacerowiczów w promieniu 10 km, wysyłając im zdjęcie i dokładną lokalizację ucieczki.
+                        Jeśli Twój pies się zgubi, uruchom ten tryb. Natychmiast powiadomimy spacerowiczów w okolicy, wysyłając im zdjęcie i dokładną lokalizację ucieczki.
                     </p>
                     
                     <button class="btn-main" style="background: var(--danger); box-shadow: 0 4px 15px rgba(255,82,82,0.4); position: relative; z-index: 2;" onclick="window.Waggle.showToast('Funkcja Trybu Zaginięcia w przygotowaniu!')">ZGŁOŚ ZAGINIĘCIE PSA</button>
                 </div>
     
-                <div class="post-card" style="margin: 0; border: 2px solid var(--secondary);">
+                <div class="post-card" style="margin: 0 0 15px 0; border: 2px solid var(--secondary);">
                     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                        <div style="font-size: 38px; filter: drop-shadow(0 4px 6px rgba(52,172,224,0.3));">🏷️</div>
+                        <div style="font-size: 38px; filter: drop-shadow(0 4px 6px rgba(52,172,224,0.3));">🏥</div>
                         <div>
-                            <h4 style="margin: 0; color: var(--secondary); font-size: 20px; font-weight: 900;">Twój Waggle Tag</h4>
-                            <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 800;">Adresówka nowej generacji</p>
+                            <h4 style="margin: 0; color: var(--secondary); font-size: 20px; font-weight: 900;">Dane Ratunkowe</h4>
+                            <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 800;">Cyfrowa kartoteka medyczna</p>
                         </div>
-                    </div>
-                    
-                    <div style="background: var(--bg-color); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 15px; border: 1px solid var(--border-color);">
-                        <div id="qr-code-container" style="width: 140px; height: 140px; background: white; margin: 0 auto; border-radius: 16px; padding: 10px; box-shadow: var(--soft-shadow); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color); cursor: pointer;">
-                            <span style="font-size: 40px; opacity: 0.3;">📱</span>
-                        </div>
-                        <p style="font-size: 12px; color: var(--text-muted); font-weight: 800; margin-top: 12px;">Twój unikalny profil QR</p>
                     </div>
     
-                    <p style="font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 20px; text-align: center; color: var(--text-color);">
-                        Ktoś znalazł Twojego psa? Wystarczy, że zbliży telefon do adresówki, by natychmiast zobaczyć profil medyczny i zatelefonować do Ciebie.
+                    <p style="font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 20px; color: var(--text-color);">
+                        Numer chipa, alergie, przyjmowane leki i kontakt do weterynarza. Miej wszystkie krytyczne informacje o zdrowiu psa zawsze pod ręką.
                     </p>
                     
-                    <div style="display: flex; gap: 10px; flex-direction: column;">
-                        <button class="btn-main" style="background: var(--secondary); font-size: 14px; box-shadow: 0 4px 15px rgba(52,172,224,0.3);" onclick="window.Waggle.showToast('Wyświetlam Twój profil publiczny...')">Pokaż mój profil medyczny</button>
-                        <button class="btn-outline" style="border-color: var(--secondary); color: var(--secondary); font-size: 14px;" onclick="window.Waggle.showToast('Kreator adresówek wkrótce!')">Zamów fizyczną adresówkę 3D</button>
-                    </div>
+                    <button class="btn-main" style="background: var(--secondary); font-size: 14px; box-shadow: 0 4px 15px rgba(52,172,224,0.3);" onclick="window.Waggle.showToast('Karta zdrowia w przygotowaniu!')">Wypełnij dane ratunkowe</button>
+                </div>
+                
+                <div style="text-align: center; padding: 10px; opacity: 0.4;">
+                    <span style="font-size: 20px;">🏷️</span>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: 800;">Fizyczne adresówki Waggle Tag wkrótce...</p>
                 </div>
             </div>
         </section>
+        
         <section id="view-local" class="view-section">
            <div id="map-ui-layer">
                 <div id="top-widgets">
