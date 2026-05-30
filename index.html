@@ -85,32 +85,7 @@
             </div>
         </section>
 
-<section id="view-safe" class="view-section">
-            <div class="sticky-header" style="background: var(--panel-bg); border-bottom: 1px solid var(--border-color);">
-                <h3 style="margin:0; color: var(--danger); font-weight: 900;">Centrum Ochrony</h3>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 700;">Zarządzanie bezpieczeństwem</p>
-            </div>
-    
-            <div style="padding: 20px; padding-bottom: 100px;">
-                <div class="post-card" style="margin: 0 0 20px 0; border: 2px solid var(--danger); background: linear-gradient(135deg, rgba(255,82,82,0.05) 0%, rgba(255,255,255,1) 100%); position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: -20px; right: -20px; font-size: 100px; opacity: 0.05;">🚨</div>
-                    
-                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; position: relative; z-index: 2;">
-                        <div style="font-size: 38px; filter: drop-shadow(0 4px 6px rgba(255,82,82,0.3));">🚨</div>
-                        <div>
-                            <h4 style="margin: 0; color: var(--danger); font-size: 20px; font-weight: 900;">Tryb Zaginięcia</h4>
-                            <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 800;">Uruchom lokalny alarm</p>
-                        </div>
-                    </div>
-                    
-                    <p style="font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 20px; position: relative; z-index: 2; color: var(--text-color);">
-                        Jeśli Twój pies się zgubi, uruchom ten tryb. Natychmiast powiadomimy spacerowiczów w okolicy, wysyłając im zdjęcie i dokładną lokalizację ucieczki.
-                    </p>
-                    
-                    <button class="btn-main" style="background: var(--danger); box-shadow: 0 4px 15px rgba(255,82,82,0.4); position: relative; z-index: 2;" onclick="window.Waggle.showToast('Funkcja Trybu Zaginięcia w przygotowaniu!')">ZGŁOŚ ZAGINIĘCIE PSA</button>
-                </div>
-    
-                <div class="post-card" style="margin: 0 0 15px 0; border: 2px solid var(--secondary);">
+<div class="post-card" style="margin: 0 0 15px 0; border: 2px solid var(--secondary); text-align: left;">
                     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                         <div style="font-size: 38px; filter: drop-shadow(0 4px 6px rgba(52,172,224,0.3));">🏥</div>
                         <div>
@@ -119,19 +94,19 @@
                         </div>
                     </div>
     
-                    <p style="font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 20px; color: var(--text-color);">
+                    <div id="safe-data-display" style="font-size: 13px; line-height: 1.7; margin-bottom: 15px; background: var(--bg-color); padding: 15px; border-radius: 16px; display: none; border: 1px solid var(--border-color);">
+                        <div style="margin-bottom: 4px;"><b>🪪 Numer Chip:</b> <span id="displayChip" style="font-weight: 700; color: var(--text-color);">-</span></div>
+                        <div style="margin-bottom: 4px;"><b>⚠️ Alergie:</b> <span id="displayAllergies" style="font-weight: 700; color: var(--text-color);">-</span></div>
+                        <div style="margin-bottom: 4px;"><b>💊 Leki:</b> <span id="displayMeds" style="font-weight: 700; color: var(--text-color);">-</span></div>
+                        <div><b>🧑‍⚕️ Weterynarz:</b> <span id="displayVet" style="font-weight: 700; color: var(--text-color);">-</span></div>
+                    </div>
+                    
+                    <p id="safe-data-fallback" style="font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 20px; color: var(--text-color);">
                         Numer chipa, alergie, przyjmowane leki i kontakt do weterynarza. Miej wszystkie krytyczne informacje o zdrowiu psa zawsze pod ręką.
                     </p>
                     
-                    <button class="btn-main" style="background: var(--secondary); font-size: 14px; box-shadow: 0 4px 15px rgba(52,172,224,0.3);" onclick="window.Waggle.showToast('Karta zdrowia w przygotowaniu!')">Wypełnij dane ratunkowe</button>
+                    <button class="btn-main" id="openSafeSetupBtn" style="background: var(--secondary); font-size: 14px; box-shadow: 0 4px 15px rgba(52,172,224,0.3);">Wypełnij dane ratunkowe</button>
                 </div>
-                
-                <div style="text-align: center; padding: 10px; opacity: 0.4;">
-                    <span style="font-size: 20px;">🏷️</span>
-                    <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: 800;">Fizyczne adresówki Waggle Tag wkrótce...</p>
-                </div>
-            </div>
-        </section>
         
         <section id="view-local" class="view-section">
            <div id="map-ui-layer">
@@ -372,6 +347,21 @@
                 <option value="Inna rasa">Inna rasa</option>
             </select>
             <button class="btn-main" id="saveProfileBtn">ZAPISZ</button>
+        </div>
+    </div>
+
+    <div id="safe-setup-modal" class="modal" style="z-index: 10005;">
+        <div class="card">
+            <button class="close-modal-btn">✕</button>
+            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--secondary); font-weight: 900;">Karta Zdrowia Psa</h3>
+            <p style="font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 20px;">Wprowadź krytyczne informacje ratunkowe</p>
+            
+            <input type="text" id="setupChip" placeholder="Numer chipa / paszportu">
+            <input type="text" id="setupAllergies" placeholder="Alergie (np. kurczak, brak)">
+            <input type="text" id="setupMeds" placeholder="Przyjmowane leki (np. apoquel, brak)">
+            <input type="text" id="setupVet" placeholder="Telefon do weterynarza lub kliniki">
+            
+            <button class="btn-main" id="saveSafeBtn" style="background: var(--secondary); box-shadow: 0 4px 15px rgba(52,172,224,0.3); margin-top: 10px;">ZAPISZ KARTOTEKĘ 🏥</button>
         </div>
     </div>
 
