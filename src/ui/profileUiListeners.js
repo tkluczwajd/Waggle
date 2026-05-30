@@ -22,6 +22,43 @@ export function initProfileUi() {
                 document.getElementById('profile-setup-modal').style.display = 'none'; window.Waggle.showToast("Profil zaktualizowany! ✨");
             } catch (err) { console.error(err); window.Waggle.showToast("Błąd zapisu!"); }
         }
+        // 🔥 OTWIERANIE MODALU DANYCH RATUNKOWYCH
+        if (e.target.id === 'openSafeSetupBtn' || e.target.closest('#openSafeSetupBtn')) {
+            const modal = document.getElementById('safe-setup-modal');
+            if (modal) {
+                if (document.getElementById('setupChip')) document.getElementById('setupChip').value = state.profile?.chip || "";
+                if (document.getElementById('setupAllergies')) document.getElementById('setupAllergies').value = state.profile?.allergies || "";
+                if (document.getElementById('setupMeds')) document.getElementById('setupMeds').value = state.profile?.meds || "";
+                if (document.getElementById('setupVet')) document.getElementById('setupVet').value = state.profile?.vet || "";
+                modal.style.display = 'flex';
+            }
+        }
+        
+        // 🔥 ZAPISYWANIE DANYCH RATUNKOWYCH DO FIREBASE
+        if (e.target.id === 'saveSafeBtn' || e.target.closest('#saveSafeBtn')) {
+            const newChip = document.getElementById('setupChip')?.value || "";
+            const newAllergies = document.getElementById('setupAllergies')?.value || "";
+            const newMeds = document.getElementById('setupMeds')?.value || "";
+            const newVet = document.getElementById('setupVet')?.value || "";
+            
+            window.Waggle.showToast("Zapisuję kartotekę medyczną... ⏳");
+            try {
+                await db.collection("users").doc(state.user.uid).update({
+                    chip: newChip,
+                    allergies: newAllergies,
+                    meds: newMeds,
+                    vet: newVet
+                });
+                // Aktualizujemy stan globalny w locie
+                state.profile = { ...state.profile, chip: newChip, allergies: newAllergies, meds: newMeds, vet: newVet };
+                window.Waggle.updateStatsUI();
+                document.getElementById('safe-setup-modal').style.display = 'none';
+                window.Waggle.showToast("Kartoteka zaktualizowana! 🏥✨");
+            } catch (err) {
+                console.error(err);
+                window.Waggle.showToast("Błąd zapisu danych medycznych.");
+            }
+        }
         if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) {
             window.Waggle.selectPhotoSource(async (file) => {
                 window.Waggle.showToast("Wysyłam nowe zdjęcie profilowe... ⏳");
