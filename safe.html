@@ -32,7 +32,7 @@
         }
         .safe-card { 
             background: white; 
-            border-radius: 32px; /* Bardziej miękkie, nowoczesne zaokrąglenie */
+            border-radius: 32px; 
             padding: 40px 24px 30px 24px; 
             width: 100%; 
             max-width: 380px; 
@@ -47,13 +47,13 @@
             border-radius: 50%; 
             object-fit: cover; 
             border: 6px solid white; 
-            box-shadow: 0 12px 30px rgba(52, 172, 224, 0.25); /* Miękki, niebieski blask */
-            margin: -80px auto 20px auto; /* Awatar wystający poza kartę! */
+            box-shadow: 0 12px 30px rgba(52, 172, 224, 0.25); 
+            margin: -80px auto 20px auto; 
             background: white;
             display: block;
         }
         .info-box { 
-            background: rgba(52, 172, 224, 0.05); /* Bardzo delikatny błękit */
+            background: rgba(52, 172, 224, 0.05); 
             border-radius: 20px; 
             padding: 20px; 
             text-align: left; 
@@ -118,10 +118,61 @@
         </p>
     </div>
 
-    ```
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-*(Pamiętaj, żeby zostawić nienaruszone tagi `<script>` z Firebase i funkcją na samym dole pliku, których tu nie wklejałem dla przejrzystości).*
+    <script type="module">
+        import { db } from './src/core/firebase.js';
 
-Ten lifting "wyciąga" awatar na zewnątrz karty, nadając mu efekt 3D, łagodzi kolory i wprowadza dużo przestrzeni (tzw. breathing room), co jest standardem w dzisiejszych nowoczesnych interfejsach. 
+        async function loadSafeProfile() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const safeId = urlParams.get('id');
 
-Czy taki bardziej sterylny, nowoczesny kierunek lepiej oddaje wizję, którą masz dla całego Waggle?
+            if (!safeId) {
+                showError();
+                return;
+            }
+
+            try {
+                const doc = await db.collection("safe_profiles").doc(safeId).get();
+                
+                if (doc.exists && doc.data().active) {
+                    const data = doc.data();
+                    
+                    document.getElementById('dogName').innerText = data.dogName || "Piesek";
+                    document.getElementById('dogBreed').innerText = data.breed || "Rasa nieznana";
+                    
+                    const notes = data.notes || "Brak dodatkowych informacji medycznych.";
+                    document.getElementById('dogNotes').innerHTML = notes.replace(/\n/g, '<br>');
+                    
+                    const imgEl = document.getElementById('dogImage');
+                    imgEl.src = data.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300";
+
+                    const callBtn = document.getElementById('callBtn');
+                    if (data.phone && data.allowPhone) {
+                        callBtn.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`; 
+                    } else {
+                        callBtn.style.display = 'none'; 
+                    }
+
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('safe-content').style.display = 'block';
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error("Błąd pobierania profilu:", error);
+                showError();
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-content').style.display = 'block';
+        }
+
+        loadSafeProfile();
+    </script>
+</body>
+</html>
