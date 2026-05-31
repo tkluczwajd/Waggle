@@ -19,6 +19,9 @@ export function updateStatsUI() {
             if (fallbackText) fallbackText.style.display = 'none';
             if (openBtn) openBtn.innerText = "✏️ EDYTUJ DANE RATUNKOWE";
             
+            // 👇 NOWOŚĆ: Przekazanie imienia psa z głównego profilu
+            if (document.getElementById('displaySafeName')) document.getElementById('displaySafeName').innerText = p.name || "Nieznane";
+            
             if (document.getElementById('displayChip')) document.getElementById('displayChip').innerText = p.chip || "Brak danych";
             if (document.getElementById('displayAllergies')) document.getElementById('displayAllergies').innerText = p.allergies || "Brak";
             if (document.getElementById('displayMeds')) document.getElementById('displayMeds').innerText = p.meds || "Brak";
