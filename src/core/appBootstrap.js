@@ -26,7 +26,7 @@ export function bootstrapApp() {
     initWaggleApi(updateUserMarker);
     window.Waggle.updateStatsUI = updateStatsUI; 
 
-    // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
+// Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
     setupAuth(() => {
         initRouter();
         initProfileListeners();
@@ -36,10 +36,15 @@ export function bootstrapApp() {
         initLiveFeed();
         loadInbox();
 
+        // 🔥 POPRAWKA: Rysujemy profil natychmiast po zalogowaniu (nie czekamy na GPS!)
+        updateStatsUI();
+
         // Geolokalizacja i dynamiczne ładowanie otoczenia
         setupLocationTracking((lat, lng) => {
             initMap(); 
-            updateStatsUI();
+            updateStatsUI(); // Zostawiamy to tutaj również, żeby po znalezieniu GPS zaktualizowała się np. pogoda
+
+            // Czyste, stabilne centrowanie mapy na start
             
             // Czyste, stabilne centrowanie mapy na start
             if(state.map.instance) {
