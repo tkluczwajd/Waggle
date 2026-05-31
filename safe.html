@@ -5,139 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Waggle SAFE - Profil Psa</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
+        :root {
+            --waggle-blue: #34ace0;
+            --waggle-dark: #2d3436;
+            --text-muted: #636e72;
+            --bg-color: #f4f6f9;
+        }
         body { 
-            background: #f5f6fa; 
+            background: var(--bg-color); 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            padding: 30px 20px; 
+            padding: 40px 20px; 
             font-family: 'Nunito', sans-serif; 
             margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .header-title {
+            color: var(--waggle-blue);
+            font-weight: 900;
+            font-size: 28px;
+            margin: 0 0 4px 0;
+            letter-spacing: -0.5px;
         }
         .safe-card { 
             background: white; 
-            border-radius: 24px; 
-            padding: 30px 20px; 
+            border-radius: 32px; /* Bardziej miękkie, nowoczesne zaokrąglenie */
+            padding: 40px 24px 30px 24px; 
             width: 100%; 
-            max-width: 400px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            max-width: 380px; 
+            box-shadow: 0 12px 40px rgba(0,0,0,0.06); 
             text-align: center; 
-            margin-top: 20px; 
+            margin-top: 30px; 
+            position: relative;
         }
         .safe-avatar { 
-            width: 160px; 
-            height: 160px; 
+            width: 140px; 
+            height: 140px; 
             border-radius: 50%; 
             object-fit: cover; 
-            border: 6px solid var(--danger, #ff5252); 
-            box-shadow: 0 4px 20px rgba(255,82,82,0.3); 
-            margin: 0 auto 20px auto; 
+            border: 6px solid white; 
+            box-shadow: 0 12px 30px rgba(52, 172, 224, 0.25); /* Miękki, niebieski blask */
+            margin: -80px auto 20px auto; /* Awatar wystający poza kartę! */
             background: white;
+            display: block;
         }
         .info-box { 
-            background: #f8f9fa; 
-            border-radius: 16px; 
+            background: rgba(52, 172, 224, 0.05); /* Bardzo delikatny błękit */
+            border-radius: 20px; 
             padding: 20px; 
             text-align: left; 
             margin-bottom: 25px; 
-            border: 2px solid #eeeeee; 
+            border: 1px solid rgba(52, 172, 224, 0.15); 
+        }
+        .call-btn {
+            background: linear-gradient(135deg, #10ac84, #1dd1a1);
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            font-size: 16px; 
+            padding: 18px; 
+            box-shadow: 0 8px 25px rgba(29, 209, 161, 0.4); 
+            border-radius: 100px; 
+            color: white; 
+            font-weight: 900; 
+            transition: all 0.3s ease;
+        }
+        .call-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 15px rgba(29, 209, 161, 0.3);
         }
     </style>
 </head>
 <body>
-    <div style="text-align: center;">
-        <h1 style="color: var(--danger, #ff5252); font-weight: 900; margin-bottom: 5px; font-size: 32px;">Waggle SAFE <span style="font-size: 28px;">🚨</span></h1>
-        <p style="color: #636e72; font-weight: 800; margin-top: 0; font-size: 14px;">Cyfrowy profil bezpieczeństwa</p>
+    <div style="text-align: center; margin-top: 20px;">
+        <h1 class="header-title">Waggle SAFE <span style="font-size: 24px;">🛡️</span></h1>
+        <p style="color: var(--text-muted); font-weight: 800; margin: 0; font-size: 14px;">Cyfrowa Adresówka Psa</p>
     </div>
 
-    <div id="loading" style="margin-top: 60px; font-weight: 900; color: #b2bec3; font-size: 18px; text-align: center;">
-        <div style="font-size: 40px; margin-bottom: 10px; animation: pulse 1.5s infinite;">🐾</div>
-        Szukam profilu psa...
+    <div id="loading" style="margin-top: 80px; font-weight: 900; color: #b2bec3; font-size: 16px; text-align: center;">
+        <div style="font-size: 40px; margin-bottom: 15px; animation: pulse 1.5s infinite;">🐾</div>
+        Wczytuję dane...
     </div>
 
     <div id="safe-content" class="safe-card" style="display: none;">
         <img id="dogImage" class="safe-avatar" src="" alt="Pies">
         
-        <h2 id="dogName" style="font-size: 36px; font-weight: 900; margin: 0 0 5px 0; color: #2d3436; line-height: 1.1;">...</h2>
-        <p id="dogBreed" style="font-size: 16px; color: #636e72; font-weight: 800; margin: 0 0 25px 0;">...</p>
+        <h2 id="dogName" style="font-size: 32px; font-weight: 900; margin: 0 0 5px 0; color: var(--waggle-dark); letter-spacing: -0.5px;">...</h2>
+        <p id="dogBreed" style="font-size: 15px; color: var(--text-muted); font-weight: 800; margin: 0 0 25px 0;">...</p>
 
         <div class="info-box">
-            <h3 style="margin: 0 0 12px 0; font-size: 15px; color: #2d3436; font-weight: 900; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 20px;">🏥</span> Kartoteka ratunkowa
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: var(--waggle-blue); font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">🏥</span> Ważne informacje
             </h3>
-            <p id="dogNotes" style="margin: 0; font-size: 14px; line-height: 1.6; color: #2d3436; font-weight: 700;">...</p>
+            <p id="dogNotes" style="margin: 0; font-size: 14px; line-height: 1.7; color: var(--waggle-dark); font-weight: 700;">...</p>
         </div>
 
-        <a id="callBtn" href="#" style="background: #2ecc71; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; padding: 18px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4); border-radius: 50px; color: white; font-weight: 900; transition: transform 0.2s;">
-            <span style="font-size: 26px;">📞</span> ZADZWOŃ DO WŁAŚCICIELA
+        <a id="callBtn" class="call-btn" href="#">
+            <span style="font-size: 22px;">📞</span> SKONTAKTUJ SIĘ Z OPIEKUNEM
         </a>
     </div>
 
-    <div id="error-content" class="safe-card" style="display: none; border: 3px solid var(--danger, #ff5252);">
-        <div style="font-size: 60px; margin-bottom: 15px;">😢</div>
-        <h3 style="color: var(--danger, #ff5252); margin-top: 0; font-weight: 900; font-size: 22px;">Nie znaleziono profilu</h3>
-        <p style="color: #636e72; font-size: 14px; font-weight: 700; line-height: 1.5;">
-            Ten kod SAFE jest nieaktywny, nieprawidłowy lub właściciel usunął dane.
+    <div id="error-content" class="safe-card" style="display: none; border: 2px solid #ff5252;">
+        <div style="font-size: 50px; margin-bottom: 15px;">😢</div>
+        <h3 style="color: #ff5252; margin-top: 0; font-weight: 900; font-size: 20px;">Profil niedostępny</h3>
+        <p style="color: var(--text-muted); font-size: 14px; font-weight: 700; line-height: 1.6;">
+            Ten kod Waggle Tag jest nieaktywny lub właściciel ukrył dane swojego psa.
         </p>
     </div>
 
-   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script> 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    ```
 
-    <script type="module">
-        import { db } from './src/core/firebase.js';
+*(Pamiętaj, żeby zostawić nienaruszone tagi `<script>` z Firebase i funkcją na samym dole pliku, których tu nie wklejałem dla przejrzystości).*
 
-        async function loadSafeProfile() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const safeId = urlParams.get('id');
+Ten lifting "wyciąga" awatar na zewnątrz karty, nadając mu efekt 3D, łagodzi kolory i wprowadza dużo przestrzeni (tzw. breathing room), co jest standardem w dzisiejszych nowoczesnych interfejsach. 
 
-            if (!safeId) {
-                showError();
-                return;
-            }
-
-            try {
-                const doc = await db.collection("safe_profiles").doc(safeId).get();
-                
-                if (doc.exists && doc.data().active) {
-                    const data = doc.data();
-                    
-                    document.getElementById('dogName').innerText = data.dogName || "Piesek";
-                    document.getElementById('dogBreed').innerText = data.breed || "Rasa nieznana";
-                    
-                    const notes = data.notes || "Brak dodatkowych informacji medycznych.";
-                    document.getElementById('dogNotes').innerHTML = notes.replace(/\n/g, '<br>');
-                    
-                    const imgEl = document.getElementById('dogImage');
-                    imgEl.src = data.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300";
-
-                    const callBtn = document.getElementById('callBtn');
-                    if (data.phone && data.allowPhone) {
-                        callBtn.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`; 
-                    } else {
-                        callBtn.style.display = 'none'; 
-                    }
-
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('safe-content').style.display = 'block';
-                } else {
-                    showError();
-                }
-            } catch (error) {
-                console.error("Błąd pobierania profilu:", error);
-                showError();
-            }
-        }
-
-        function showError() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error-content').style.display = 'block';
-        }
-
-        loadSafeProfile();
-    </script>
-</body>
-</html>
+Czy taki bardziej sterylny, nowoczesny kierunek lepiej oddaje wizję, którą masz dla całego Waggle?
