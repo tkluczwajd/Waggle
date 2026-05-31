@@ -19,6 +19,7 @@ import { renderParksOnMap } from '../modules/map/parksRenderer.js';
 import { initLiveFeed } from '../modules/map/liveFeed.js';
 import { loadInbox } from '../modules/chat/chatListeners.js';
 import '../modules/chat/groupListeners.js'; // Rejestruje Stado w window.Waggle przed startem UI
+import { listenForSafeAlerts } from '../services/safeService.js';
 
 export function bootstrapApp() {
     initGlobalUtils();
