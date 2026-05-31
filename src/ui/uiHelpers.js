@@ -6,6 +6,7 @@ import { updateNotificationBtnUI } from '../services/notificationService.js';
 export function updateStatsUI() {
     if (!state.profile) return; const p = state.profile;
     // 🔥 AKTUALIZACJA KARTOTEKI MEDYCZNEJ (Ekran SAFE)
+// 🔥 AKTUALIZACJA KARTOTEKI MEDYCZNEJ (Ekran SAFE)
     const chipDisplay = document.getElementById('displayChip');
     if (chipDisplay) {
         const hasSafeData = p.chip || p.allergies || p.meds || p.vet;
@@ -22,7 +23,23 @@ export function updateStatsUI() {
             if (document.getElementById('displayAllergies')) document.getElementById('displayAllergies').innerText = p.allergies || "Brak";
             if (document.getElementById('displayMeds')) document.getElementById('displayMeds').innerText = p.meds || "Brak";
             if (document.getElementById('displayVet')) document.getElementById('displayVet').innerText = p.vet || "Brak kontaktu";
+            
+            // 👇 NOWY FRAGMENT WKLEJONY TUTAJ (PRZED ELSE) 👇
+            if (p.safeId) {
+                let safeLinkEl = document.getElementById('displaySafeLink');
+                if (!safeLinkEl) {
+                    safeLinkEl = document.createElement('div');
+                    safeLinkEl.id = 'displaySafeLink';
+                    safeLinkEl.style.marginTop = '10px';
+                    safeLinkEl.style.paddingTop = '10px';
+                    safeLinkEl.style.borderTop = '1px dashed var(--border-color)';
+                    displayBlock.appendChild(safeLinkEl);
+                }
+                safeLinkEl.innerHTML = `<b>🔗 Mój publiczny link SAFE:</b> <br><span style="color: var(--primary); font-weight: 800; font-size: 14px;">joinwaggle.com/safe/${p.safeId}</span>`;
+            }
+
         } else {
+            // 👆 TUTAJ JEST ELSE
             if (displayBlock) displayBlock.style.display = 'none';
             if (fallbackText) fallbackText.style.display = 'block';
             if (openBtn) openBtn.innerText = "Wypełnij dane ratunkowe";
