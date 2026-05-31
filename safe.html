@@ -7,10 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --waggle-blue: #34ace0;
             --waggle-dark: #2d3436;
-            --text-muted: #636e72;
-            --bg-color: #f4f6f9;
+            --text-muted: #879296;
+            --bg-color: #f8f9fa;
+            --primary-btn: #2ecc71;
+            --secondary-btn: #f1f2f6;
         }
         body { 
             background: var(--bg-color); 
@@ -24,9 +25,9 @@
             box-sizing: border-box;
         }
         .header-title {
-            color: var(--waggle-blue);
+            color: var(--waggle-dark);
             font-weight: 900;
-            font-size: 28px;
+            font-size: 26px;
             margin: 0 0 4px 0;
             letter-spacing: -0.5px;
         }
@@ -36,62 +37,82 @@
             padding: 40px 24px 30px 24px; 
             width: 100%; 
             max-width: 380px; 
-            box-shadow: 0 12px 40px rgba(0,0,0,0.06); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.04); 
             text-align: center; 
-            margin-top: 30px; 
+            margin-top: 40px; 
             position: relative;
         }
         .safe-avatar { 
-            width: 140px; 
-            height: 140px; 
+            width: 150px; 
+            height: 150px; 
             border-radius: 50%; 
             object-fit: cover; 
             border: 6px solid white; 
-            box-shadow: 0 12px 30px rgba(52, 172, 224, 0.25); 
-            margin: -80px auto 20px auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+            margin: -90px auto 20px auto; 
             background: white;
             display: block;
         }
         .info-box { 
-            background: rgba(52, 172, 224, 0.05); 
+            background: #e8f5e9; /* Miękki, medyczny zielony */
             border-radius: 20px; 
             padding: 20px; 
             text-align: left; 
             margin-bottom: 25px; 
-            border: 1px solid rgba(52, 172, 224, 0.15); 
+            border: 1px solid #c8e6c9; 
         }
-        .call-btn {
-            background: linear-gradient(135deg, #10ac84, #1dd1a1);
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .btn-primary {
+            background: var(--primary-btn);
             text-decoration: none; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            gap: 12px; 
+            gap: 10px; 
             font-size: 16px; 
             padding: 18px; 
-            box-shadow: 0 8px 25px rgba(29, 209, 161, 0.4); 
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3); 
             border-radius: 100px; 
             color: white; 
             font-weight: 900; 
-            transition: all 0.3s ease;
+            transition: transform 0.2s;
         }
-        .call-btn:active {
+        .btn-secondary {
+            background: var(--secondary-btn);
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px; 
+            font-size: 15px; 
+            padding: 16px; 
+            border-radius: 100px; 
+            color: var(--waggle-dark); 
+            font-weight: 800; 
+            transition: transform 0.2s;
+        }
+        .btn-primary:active, .btn-secondary:active {
             transform: translateY(2px);
-            box-shadow: 0 4px 15px rgba(29, 209, 161, 0.3);
         }
     </style>
 </head>
 <body>
-    <div style="text-align: center; margin-top: 20px;">
-        <h1 class="header-title">Waggle SAFE <span style="font-size: 24px;">🛡️</span></h1>
-        <p style="color: var(--text-muted); font-weight: 800; margin: 0; font-size: 14px;">Cyfrowa Adresówka Psa</p>
+    <div style="text-align: center; margin-top: 10px;">
+        <h1 class="header-title">🐶 Waggle SAFE</h1>
+        <p style="color: var(--text-muted); font-weight: 800; margin: 0; font-size: 15px;">Pomóż mi wrócić do domu</p>
     </div>
 
+    <!-- Ekran ładowania -->
     <div id="loading" style="margin-top: 80px; font-weight: 900; color: #b2bec3; font-size: 16px; text-align: center;">
         <div style="font-size: 40px; margin-bottom: 15px; animation: pulse 1.5s infinite;">🐾</div>
-        Wczytuję dane...
+        Wczytuję dane psa...
     </div>
 
+    <!-- Prawidłowy profil psa -->
     <div id="safe-content" class="safe-card" style="display: none;">
         <img id="dogImage" class="safe-avatar" src="" alt="Pies">
         
@@ -99,29 +120,37 @@
         <p id="dogBreed" style="font-size: 15px; color: var(--text-muted); font-weight: 800; margin: 0 0 25px 0;">...</p>
 
         <div class="info-box">
-            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: var(--waggle-blue); font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 18px;">🏥</span> Ważne informacje
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #2e7d32; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">🩺</span> Kartoteka bezpieczeństwa
             </h3>
             <p id="dogNotes" style="margin: 0; font-size: 14px; line-height: 1.7; color: var(--waggle-dark); font-weight: 700;">...</p>
         </div>
 
-        <a id="callBtn" class="call-btn" href="#">
-            <span style="font-size: 22px;">📞</span> SKONTAKTUJ SIĘ Z OPIEKUNEM
-        </a>
+        <div class="action-buttons">
+            <a id="callBtn" class="btn-primary" href="#">
+                <span style="font-size: 20px;">📞</span> ZADZWOŃ DO OPIEKUNA
+            </a>
+            <a id="smsBtn" class="btn-secondary" href="#">
+                <span style="font-size: 20px;">💬</span> NAPISZ WIADOMOŚĆ
+            </a>
+        </div>
     </div>
 
+    <!-- Komunikat o błędzie -->
     <div id="error-content" class="safe-card" style="display: none; border: 2px solid #ff5252;">
         <div style="font-size: 50px; margin-bottom: 15px;">😢</div>
         <h3 style="color: #ff5252; margin-top: 0; font-weight: 900; font-size: 20px;">Profil niedostępny</h3>
         <p style="color: var(--text-muted); font-size: 14px; font-weight: 700; line-height: 1.6;">
-            Ten kod Waggle Tag jest nieaktywny lub właściciel ukrył dane swojego psa.
+            Ten profil bezpieczeństwa jest nieaktywny.
         </p>
     </div>
 
+    <!-- 🔥 BIBLIOTEKI FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+    <!-- Import logiki bazy i uruchomienie strony -->
     <script type="module">
         import { db } from './src/core/firebase.js';
 
@@ -150,10 +179,16 @@
                     imgEl.src = data.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300";
 
                     const callBtn = document.getElementById('callBtn');
+                    const smsBtn = document.getElementById('smsBtn');
+                    
                     if (data.phone && data.allowPhone) {
-                        callBtn.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`; 
+                        const cleanPhone = data.phone.replace(/[^0-9+]/g, '');
+                        callBtn.href = `tel:${cleanPhone}`; 
+                        // Generowanie gotowego linku SMS z predefiniowaną wiadomością
+                        smsBtn.href = `sms:${cleanPhone}?body=Hej!%20Znalazłem%20Twojego%20psa%20(${encodeURIComponent(data.dogName)}).%20Proszę%20o%20kontakt!`;
                     } else {
                         callBtn.style.display = 'none'; 
+                        smsBtn.style.display = 'none'; 
                     }
 
                     document.getElementById('loading').style.display = 'none';
