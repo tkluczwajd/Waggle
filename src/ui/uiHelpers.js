@@ -35,7 +35,7 @@ export function updateStatsUI() {
                     safeLinkEl.style.borderTop = '1px dashed var(--border-color)';
                     displayBlock.appendChild(safeLinkEl);
                 }
-                safeLinkEl.innerHTML = `<b>🔗 Mój publiczny link SAFE:</b> <br><span style="color: var(--primary); font-weight: 800; font-size: 14px;">joinwaggle.com/safe/${p.safeId}</span>`;
+                safeLinkEl.innerHTML = `<b>🔗 Mój publiczny link SAFE:</b> <br><span style="color: var(--primary); font-weight: 800; font-size: 14px;">joinwaggle.com/safe.html?id=${p.safeId}</span>`;
             }
 
         } else {
