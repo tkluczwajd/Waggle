@@ -54,7 +54,11 @@ export function bootstrapApp() {
 
                     // 2. Dodajemy awaryjny znacznik na mapę (zakładając, że masz obiekt mapy pod window.map lub podobnie)
                     // Zmień `map` na zmienną, pod którą trzymasz swoją mapę Leaflet (np. window.Waggle.map)
-                    if (map) { 
+                    // 2. Dodajemy awaryjny znacznik na mapę, używając Twojego globalnego stanu
+                    if (state.map.instance) { 
+                        // 🔥 Defensywne przypisanie 'L' - dla pewności
+                        const L = window.L;
+
                         const sosIcon = L.divIcon({
                             className: 'sos-marker',
                             html: '<div style="font-size: 35px; animation: pulse 1s infinite;">🚨</div>',
@@ -63,12 +67,14 @@ export function bootstrapApp() {
                         });
 
                         L.marker([lat, lng], { icon: sosIcon, zIndexOffset: 9999 })
-                            .addTo(map)
+                            .addTo(state.map.instance)
                             .bindPopup(`<b>📍 OSTATNIA LOKALIZACJA PSA</b><br>Zgłoszona przez znalazcę!`)
                             .openPopup();
 
                         // 3. Automatycznie przesuwamy kamerę na miejsce znalezienia
-                        map.setView([lat, lng], 16);
+                        state.map.instance.setView([lat, lng], 16);
+                    } else {
+                        console.error("Radar SAFE odebrał sygnał, ale mapa (state.map.instance) jeszcze się nie załadowała.");
                     }
                 }
             });
