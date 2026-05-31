@@ -211,6 +211,63 @@
         }
 
         loadSafeProfile();
+        // Obsługa wysyłania lokalizacji znalazcy
+        const locationBtn = document.getElementById('locationBtn');
+        
+        locationBtn.addEventListener('click', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const safeId = urlParams.get('id');
+            
+            if (!safeId) return;
+
+            // Zmiana stanu przycisku (feedback dla znalazcy)
+            const originalText = locationBtn.innerHTML;
+            locationBtn.innerHTML = `<span>⏳</span> Pobieram GPS...`;
+            locationBtn.style.opacity = '0.7';
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    try {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        // Zapis do Firebase (Kolekcja safe_messages)
+                        await db.collection("safe_messages").add({
+                            safeId: safeId,
+                            type: "sighting",
+                            location: new firebase.firestore.GeoPoint(lat, lng),
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            status: "unread"
+                        });
+
+                        // Sukces - uspokajamy znalazcę
+                        locationBtn.innerHTML = `<span style="font-size: 20px;">✅</span> LOKALIZACJA WYSŁANA`;
+                        locationBtn.style.background = '#2ecc71';
+                        locationBtn.style.color = 'white';
+                        locationBtn.style.borderColor = '#2ecc71';
+                        locationBtn.style.opacity = '1';
+                        locationBtn.disabled = true; // Blokujemy, by nie klikał 10 razy
+
+                    } catch (error) {
+                        console.error("Błąd zapisu do bazy: ", error);
+                        locationBtn.innerHTML = originalText;
+                        alert("Wystąpił błąd sieci. Spróbuj zadzwonić.");
+                    }
+                }, (error) => {
+                    // Odmowa dostępu do GPS
+                    console.warn("Brak zgody na GPS: ", error);
+                    locationBtn.innerHTML = originalText;
+                    locationBtn.style.opacity = '1';
+                    alert("Musisz zezwolić przeglądarce na dostęp do lokalizacji, aby wysłać punkt na mapie.");
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                });
+            } else {
+                alert("Twoja przeglądarka nie obsługuje geolokalizacji.");
+                locationBtn.innerHTML = originalText;
+            }
+        });
     </script>
 </body>
 </html>
