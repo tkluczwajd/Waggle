@@ -1,6 +1,7 @@
 import { appState as state } from '../core/state.js';
 import { db } from '../core/firebase.js';
 import { uploadImageToService as uploadImage } from '../services/postsService.js';
+import { createOrUpdateSafeProfile } from '../services/safeService.js';
 
 export function initProfileUi() {
     document.addEventListener('click', async (e) => {
@@ -35,6 +36,7 @@ export function initProfileUi() {
         }
         
         // 🔥 ZAPISYWANIE DANYCH RATUNKOWYCH DO FIREBASE
+// 🔥 ZAPISYWANIE DANYCH RATUNKOWYCH DO FIREBASE I GENEROWANIE SAFE ID
         if (e.target.id === 'saveSafeBtn' || e.target.closest('#saveSafeBtn')) {
             const newChip = document.getElementById('setupChip')?.value || "";
             const newAllergies = document.getElementById('setupAllergies')?.value || "";
@@ -43,14 +45,21 @@ export function initProfileUi() {
             
             window.Waggle.showToast("Zapisuję kartotekę medyczną... ⏳");
             try {
+                // 1. Aktualizacja prywatnego profilu użytkownika
                 await db.collection("users").doc(state.user.uid).update({
                     chip: newChip,
                     allergies: newAllergies,
                     meds: newMeds,
                     vet: newVet
                 });
-                // Aktualizujemy stan globalny w locie
+                
+                // 2. Aktualizacja lokalnego stanu aplikacji
                 state.profile = { ...state.profile, chip: newChip, allergies: newAllergies, meds: newMeds, vet: newVet };
+                
+                // 3. 🔥 TWORZENIE PUBLICZNEGO PROFILU SAFE I POBRANIE UNIKALNEGO KODU
+                const safeId = await createOrUpdateSafeProfile(state.user.uid, state.profile);
+                state.profile.safeId = safeId; // Zapisujemy kod w pamięci podręcznej
+                
                 window.Waggle.updateStatsUI();
                 document.getElementById('safe-setup-modal').style.display = 'none';
                 window.Waggle.showToast("Kartoteka zaktualizowana! 🏥✨");
