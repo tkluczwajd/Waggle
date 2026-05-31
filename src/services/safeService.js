@@ -63,3 +63,29 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
         throw error;
     }
 }
+// 🔥 NASŁUCHIWANIE NA SYGNAŁ SOS OD ZNALAZCY
+export function listenForSafeAlerts(safeId, onAlertReceived) {
+    if (!safeId) return;
+
+    console.log("🚨 Uruchamiam radar SAFE dla ID:", safeId);
+
+    // Nasłuchujemy tylko na nowe, nieprzeczytane zgłoszenia
+    return db.collection("safe_messages")
+        .where("safeId", "==", safeId)
+        .where("status", "==", "unread")
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const alertData = change.doc.data();
+                    
+                    // Oznaczamy jako przeczytane, żeby alarm nie wył za każdym odświeżeniem aplikacji
+                    change.doc.ref.update({ status: 'read' });
+                    
+                    // Przekazujemy dane do mapy
+                    onAlertReceived(alertData);
+                }
+            });
+        }, (error) => {
+            console.error("Błąd radaru SAFE:", error);
+        });
+}
