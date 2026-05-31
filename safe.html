@@ -83,11 +83,13 @@
         </p>
     </div>
 
+   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <script type="module">
         import { db } from './src/core/firebase.js';
 
         async function loadSafeProfile() {
-            // 1. Wyciągnięcie końcówki np. "?id=HYCJV7" z paska adresu
             const urlParams = new URLSearchParams(window.location.search);
             const safeId = urlParams.get('id');
 
@@ -97,33 +99,27 @@
             }
 
             try {
-                // 2. Zapytanie do odizolowanej kolekcji publicznej
                 const doc = await db.collection("safe_profiles").doc(safeId).get();
                 
                 if (doc.exists && doc.data().active) {
                     const data = doc.data();
                     
-                    // 3. Renderowanie profilu
                     document.getElementById('dogName').innerText = data.dogName || "Piesek";
                     document.getElementById('dogBreed').innerText = data.breed || "Rasa nieznana";
                     
-                    // Bezpieczne wstawienie notatek (podmiana enterów na nowe linie w HTML)
                     const notes = data.notes || "Brak dodatkowych informacji medycznych.";
                     document.getElementById('dogNotes').innerHTML = notes.replace(/\n/g, '<br>');
                     
                     const imgEl = document.getElementById('dogImage');
                     imgEl.src = data.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300";
 
-                    // Podpięcie numeru pod guzik
                     const callBtn = document.getElementById('callBtn');
                     if (data.phone && data.allowPhone) {
-                        // Tworzy specjalny link uruchamiający dialer w telefonie
                         callBtn.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`; 
                     } else {
-                        callBtn.style.display = 'none'; // Ukrywa guzik, jeśli brak telefonu
+                        callBtn.style.display = 'none'; 
                     }
 
-                    // Przełączanie widoków
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('safe-content').style.display = 'block';
                 } else {
@@ -140,7 +136,6 @@
             document.getElementById('error-content').style.display = 'block';
         }
 
-        // Odpalenie skryptu natychmiast po załadowaniu
         loadSafeProfile();
     </script>
 </body>
