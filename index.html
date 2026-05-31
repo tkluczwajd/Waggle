@@ -94,7 +94,11 @@
                         </div>
                     </div>
     
+                    <!-- Panel wyświetlający dane (widoczny tylko gdy dane są uzupełnione) -->
                     <div id="safe-data-display" style="font-size: 13px; line-height: 1.7; margin-bottom: 15px; background: var(--bg-color); padding: 15px; border-radius: 16px; display: none; border: 1px solid var(--border-color);">
+                        <!-- 👇 NOWOŚĆ: Imię psa na samej górze -->
+                        <div style="margin-bottom: 8px; font-size: 15px;"><b>🐶 Imię psa:</b> <span id="displaySafeName" style="font-weight: 900; color: var(--primary);">-</span></div>
+                        
                         <div style="margin-bottom: 4px;"><b>🪪 Numer Chip:</b> <span id="displayChip" style="font-weight: 700; color: var(--text-color);">-</span></div>
                         <div style="margin-bottom: 4px;"><b>⚠️ Alergie:</b> <span id="displayAllergies" style="font-weight: 700; color: var(--text-color);">-</span></div>
                         <div style="margin-bottom: 4px;"><b>💊 Leki:</b> <span id="displayMeds" style="font-weight: 700; color: var(--text-color);">-</span></div>
