@@ -40,6 +40,40 @@ export function bootstrapApp() {
         // 🔥 POPRAWKA: Rysujemy profil natychmiast po zalogowaniu (nie czekamy na GPS!)
         updateStatsUI();
 
+        // ... Twoje poprzednie funkcje (loadInbox, updateStatsUI itp.) ...
+
+        // 🔥 ODPALAMY RADAR SAFE (jeśli pies ma wygenerowany kod)
+        if (state.profile && state.profile.safeId) {
+            listenForSafeAlerts(state.profile.safeId, (alertData) => {
+                if (alertData.type === 'sighting' && alertData.location) {
+                    const lat = alertData.location.latitude;
+                    const lng = alertData.location.longitude;
+
+                    // 1. Wyświetlamy potężny komunikat w aplikacji
+                    window.Waggle.showToast("🚨 UWAGA! Ktoś namierzył Twojego psa! Sprawdź mapę!", 8000); 
+
+                    // 2. Dodajemy awaryjny znacznik na mapę (zakładając, że masz obiekt mapy pod window.map lub podobnie)
+                    // Zmień `map` na zmienną, pod którą trzymasz swoją mapę Leaflet (np. window.Waggle.map)
+                    if (map) { 
+                        const sosIcon = L.divIcon({
+                            className: 'sos-marker',
+                            html: '<div style="font-size: 35px; animation: pulse 1s infinite;">🚨</div>',
+                            iconSize: [35, 35],
+                            iconAnchor: [17, 17]
+                        });
+
+                        L.marker([lat, lng], { icon: sosIcon, zIndexOffset: 9999 })
+                            .addTo(map)
+                            .bindPopup(`<b>📍 OSTATNIA LOKALIZACJA PSA</b><br>Zgłoszona przez znalazcę!`)
+                            .openPopup();
+
+                        // 3. Automatycznie przesuwamy kamerę na miejsce znalezienia
+                        map.setView([lat, lng], 16);
+                    }
+                }
+            });
+        }
+
         // Geolokalizacja i dynamiczne ładowanie otoczenia
         setupLocationTracking((lat, lng) => {
             initMap(); 
