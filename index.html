@@ -36,23 +36,19 @@
 
     <div id="app-interface" class="screen-container">
         
-<!-- 🔥 NOWY ROOT: HOME / MY DOG (Czysty Dashboard z danymi) -->
-        <section id="view-home" class="view-section active">
+<section id="view-home" class="view-section active">
             <div class="sticky-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h3 style="margin:0;">Mój Pies</h3>
                     <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <!-- 🔥 NOWY PRZYCISK INBOX -->
                     <button onclick="window.Waggle.openInbox()" style="position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wiadomości">
                         💬
                         <span id="unread-chat-badge-home" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; align-items: center; justify-content: center; border: 2px solid white;">1</span>
                     </button>
 
-                    <!-- Ikonka Ustawień po lewej -->
                     <button id="openSettingsBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Ustawienia">⚙️</button>
-                    <!-- Profesjonalna ikona Wyloguj (SVG) po prawej -->
                     <button id="logoutBtn" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--danger); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wyloguj się">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -71,7 +67,6 @@
                 
                 <h2 id="profileNameDisplay" style="margin: 15px 0 5px 0; font-weight:900; font-size:26px;">...</h2>
                 
-                <!-- 🔥 WYCIĄGNIĘTE DANE: Miasto i Rasa -->
                 <div style="font-size: 14px; color: var(--text-muted); font-weight: 800; margin-bottom: 5px; display: flex; justify-content: center; gap: 10px; align-items: center;">
                     <span>📍 <span id="profileCityDisplay">Miasto</span></span>
                     <span>•</span>
@@ -87,11 +82,7 @@
             </div>
             
             <div style="padding: 20px; text-align: center; color: var(--text-muted);">
-                <p style="font-size: 12px; margin-top: 10px;">[Miejsce na moduł statusu Waggle Tag / QR]</p>
-            </div>
-        </section>
-
-<div class="post-card" style="margin: 0 0 15px 0; border: 2px solid var(--secondary); text-align: left;">
+                <div class="post-card" style="margin: 0 0 15px 0; border: 2px solid var(--secondary); text-align: left;">
                     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                         <div style="font-size: 38px; filter: drop-shadow(0 4px 6px rgba(52,172,224,0.3));">🏥</div>
                         <div>
@@ -100,11 +91,8 @@
                         </div>
                     </div>
     
-                    <!-- Panel wyświetlający dane (widoczny tylko gdy dane są uzupełnione) -->
                     <div id="safe-data-display" style="font-size: 13px; line-height: 1.7; margin-bottom: 15px; background: var(--bg-color); padding: 15px; border-radius: 16px; display: none; border: 1px solid var(--border-color);">
-                        <!-- 👇 NOWOŚĆ: Imię psa na samej górze -->
                         <div style="margin-bottom: 8px; font-size: 15px;"><b>🐶 Imię psa:</b> <span id="displaySafeName" style="font-weight: 900; color: var(--primary);">-</span></div>
-                        
                         <div style="margin-bottom: 4px;"><b>🪪 Numer Chip:</b> <span id="displayChip" style="font-weight: 700; color: var(--text-color);">-</span></div>
                         <div style="margin-bottom: 4px;"><b>⚠️ Alergie:</b> <span id="displayAllergies" style="font-weight: 700; color: var(--text-color);">-</span></div>
                         <div style="margin-bottom: 4px;"><b>💊 Leki:</b> <span id="displayMeds" style="font-weight: 700; color: var(--text-color);">-</span></div>
@@ -117,7 +105,9 @@
                     
                     <button class="btn-main" id="openSafeSetupBtn" style="background: var(--secondary); font-size: 14px; box-shadow: 0 4px 15px rgba(52,172,224,0.3);">Wypełnij dane ratunkowe</button>
                 </div>
-        
+            </div>
+        </section>
+
         <section id="view-local" class="view-section">
            <div id="map-ui-layer">
                 <div id="top-widgets">
@@ -150,7 +140,6 @@
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <div id="stories-container" style="display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;"></div>
                         
-                        <!-- 🔥 PRZYCISK INBOX -->
                         <button onclick="window.Waggle.openInbox()" style="position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 0;" title="Wiadomości">
                             💬
                             <span id="unread-chat-badge-feed" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; align-items: center; justify-content: center; border: 2px solid white;">1</span>
@@ -188,30 +177,6 @@
             <div id="wiki-content" style="padding:0 10px; margin-top: 10px;"></div>
         </section>
 
-        <section id="view-chat" class="view-section">
-            <div class="sticky-header" style="background:var(--bg-color); z-index:100; padding: 20px 20px 5px 20px;">
-                <div style="display:flex; background:var(--panel-bg); border-radius:12px; overflow:hidden; margin-bottom:15px; border:1px solid var(--border-color); padding: 4px;">
-                    <button id="chatTabInbox" onclick="document.getElementById('inbox-container').style.display='block'; document.getElementById('chat-search-view').style.display='none'; document.getElementById('users-list-wrapper').style.display='none'; this.style.background='#2d3436'; this.style.color='white'; document.getElementById('chatTabSearch').style.background='transparent'; document.getElementById('chatTabSearch').style.color='var(--text-muted)';" style="flex:1; padding:12px; border:none; background:#2d3436; font-weight:900; color:white; border-radius:20px; cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">ROZMOWY</button>
-                    
-                    <button id="chatTabSearch" onclick="document.getElementById('inbox-container').style.display='none'; document.getElementById('chat-search-view').style.display='block'; document.getElementById('users-list-wrapper').style.display='block'; this.style.background='#2d3436'; this.style.color='white'; document.getElementById('chatTabInbox').style.background='transparent'; document.getElementById('chatTabInbox').style.color='var(--text-muted)';" style="flex:1; padding:12px; border:none; background:transparent; font-weight:900; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:13px; transition:0.2s;">STADO / SZUKAJ</button>
-                </div>
-                
-                <button class="btn-outline" onclick="document.getElementById('group-creator-modal').style.display='flex'; window.Waggle.loadUsersForGroup();" style="width: 100%; margin-bottom: 10px; border-color: var(--secondary); color: var(--secondary); font-weight: 800;">➕ UTWÓRZ STADO (Grupa)</button>
-                
-                <div id="chat-search-view" style="display: none; padding-top: 5px;">
-                    <div style="margin-bottom: 10px;">
-                        <input type="text" id="userSearchInput" placeholder="Szukaj miasta lub rasy..." oninput="window.Waggle.executeSearch(this.value)" style="width: 100%; padding: 14px 20px; border-radius: 25px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: inherit;">
-                    </div>
-                </div>
-            </div>
-            
-            <div id="users-list-wrapper" style="display: none; padding: 0 20px 80px 20px;">
-                <div id="users-list"></div>
-            </div>
-            
-            <div id="inbox-container"></div>
-        </section>
-
         <section id="view-places" class="view-section">
             <div class="sticky-header">
                 <h3 style="margin:0;">Psie Miejscówki</h3>
@@ -220,12 +185,12 @@
             <div id="places-container"></div>
         </section>
 
-       <nav class="bottom-nav">
+        <nav class="bottom-nav">
             <button class="nav-item active" data-view="home">🏠<span>Profil</span></button>
-            <button class="nav-item" data-view="local">🗺️<span>Mapa</span></button>
             <button class="nav-item" data-view="safe">🛡️<span>SAFE</span></button>
-            <button class="nav-item" data-view="community">🐾<span>Tablica</span></button>
             <button class="nav-item" data-view="help">🧠<span>Wiedza</span></button>
+            <button class="nav-item" data-view="local">🗺️<span>Mapa</span></button>
+            <button class="nav-item" data-view="community">🐾<span>Tablica</span></button>
         </nav>
     </div>
 
@@ -255,6 +220,17 @@
                 </div>
                 <input type="file" id="chatImageInput" accept="image/*" multiple style="display:none;" onchange="window.Waggle.handleChatImageSelect(this.files)">
             </div>
+        </div>
+    </div>
+
+    <div id="inbox-modal" class="modal" style="z-index: 99998;">
+        <div class="card" style="height: 85vh; display: flex; flex-direction: column; padding: 0;">
+            <div style="background: var(--panel-bg); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0;">
+                <b style="font-size: 18px; color: var(--text-color);">Rozmowy</b>
+                <button onclick="document.getElementById('inbox-modal').style.display='none'" style="background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-color);">✕</button>
+            </div>
+            
+            <div id="inbox-container" style="flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-color);"></div>
         </div>
     </div>
 
@@ -312,7 +288,7 @@
         </div>
     </div>
 
-<div id="settings-modal" class="modal">
+    <div id="settings-modal" class="modal">
         <div class="card">
             <button class="close-modal-btn">✕</button>
             <h3 style="margin-top: 0;">Ustawienia</h3>
