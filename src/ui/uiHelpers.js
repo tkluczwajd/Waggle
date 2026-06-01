@@ -106,3 +106,62 @@ export function loadSettings() {
     if(document.getElementById('settingFontSize')) document.getElementById('settingFontSize').value = font;
     if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
 }
+
+// 🔥 NOWY MODUŁ KONTEKSTOWY: Karta Użytkownika i Start Czatu
+window.Waggle.openUserMenu = (uid, name, avatar) => {
+    // Sprawdzamy, czy użytkownik nie klika we własny profil
+    const isMe = state.user && state.user.uid === uid;
+    
+    let modal = document.getElementById('user-action-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'user-action-modal';
+        modal.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+        
+        // Zamykanie po kliknięciu w ciemne tło
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+        document.body.appendChild(modal);
+    }
+
+    // Zabezpieczenie na wypadek braku zdjęcia
+    const safeAvatar = avatar && avatar.trim() !== "" && avatar !== "undefined" 
+        ? avatar 
+        : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
+
+    modal.innerHTML = `
+        <div style="background:white; width:85%; max-width:320px; border-radius:28px; padding:35px 20px 25px 20px; text-align:center; position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+            <button class="close-modal-btn" onclick="document.getElementById('user-action-modal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--bg-color); border:none; width:32px; height:32px; border-radius:50%; font-size:18px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+            
+            <img src="${safeAvatar}" style="width:110px; height:110px; border-radius:50%; object-fit:cover; border:4px solid white; box-shadow:0 10px 25px rgba(52, 172, 224, 0.2); margin-bottom:15px;">
+            <h3 style="margin:0 0 5px 0; color:var(--text-color); font-size:24px; font-weight:900; letter-spacing:-0.5px;">${name}</h3>
+            <p style="color:var(--text-muted); margin:0 0 25px 0; font-size:14px; font-weight:700;">W okolicy 📍</p>
+            
+            ${!isMe ? `
+            <button onclick="window.Waggle.startDirectChat('${uid}', '${name}', '${safeAvatar}')" style="background:linear-gradient(135deg, var(--primary), #0984e3); color:white; border:none; padding:16px; border-radius:100px; width:100%; font-weight:900; font-size:15px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-shadow:0 8px 20px rgba(52, 172, 224, 0.4); transition:transform 0.2s;">
+                <span style="font-size:20px;">💬</span> NAPISZ WIADOMOŚĆ
+            </button>
+            ` : `
+            <div style="background:#f4f6f9; color:var(--text-muted); padding:16px; border-radius:100px; font-weight:800; font-size:14px;">
+                To jest Twój profil 🐾
+            </div>
+            `}
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+};
+
+// Funkcja przechwytująca kliknięcie w przycisk czatu
+window.Waggle.startDirectChat = (uid, name, avatar) => {
+    // 1. Zamykamy wizytówkę
+    document.getElementById('user-action-modal').style.display = 'none';
+    
+    // 2. Tymczasowy alert testowy (zaraz go podmienimy na właściwe otwarcie okna czatu)
+    if (typeof window.Waggle.openChat === 'function') {
+        window.Waggle.openChat(uid, name, avatar);
+    } else {
+        alert(`Uruchamiam czat z: ${name} 💬! (Silnik podepniemy w kolejnym kroku)`);
+    }
+};
