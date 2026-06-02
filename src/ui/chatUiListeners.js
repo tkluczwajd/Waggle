@@ -2,9 +2,20 @@ import { searchUsers, sendMessage, loadInbox, handleChatImageSelect } from '../m
 import { appState as state } from '../core/state.js';
 
 export function initChatUi() {
-    document.addEventListener('input', (e) => { 
+    // Wymuszenie ładowania wiadomości po wejściu w zakładkę "Rozmowy"
+    document.addEventListener('click', (e) => {
+        const chatNavBtn = e.target.closest('[data-view="chat"]');
+        if (chatNavBtn) {
+            console.log("💬 Otwarto główną zakładkę Rozmowy - ładuję Inbox...");
+            // Jeśli element istnieje, Firebase wypełni go rozmowami
+            if (document.getElementById('inbox-container')) {
+                loadInbox();
+            }
+        }
+    });
         if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') searchUsers(e.target.value); 
     });
+    
 
     document.addEventListener('click', async (e) => {
         
