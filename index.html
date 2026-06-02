@@ -36,7 +36,7 @@
 
     <div id="app-interface" class="screen-container">
         
-<!-- 🔥 NOWY ROOT: HOME / MY DOG (Hub i Centrum dowodzenia) -->
+        <!-- 🔥 NOWY ROOT: HOME / MY DOG (Hub i Centrum dowodzenia) -->
         <section id="view-home" class="view-section active">
             <div class="sticky-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -44,9 +44,7 @@
                     <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <!-- Ikonka Ustawień -->
                     <button id="openSettingsBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Ustawienia">⚙️</button>
-                    <!-- Profesjonalna ikona Wyloguj (SVG) -->
                     <button id="logoutBtn" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--danger); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wyloguj się">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -65,16 +63,29 @@
                 
                 <h2 id="profileNameDisplay" style="margin: 15px 0 5px 0; font-weight:900; font-size:26px;">...</h2>
                 
-                <!-- Miasto i Rasa -->
                 <div style="font-size: 14px; color: var(--text-muted); font-weight: 800; margin-bottom: 5px; display: flex; justify-content: center; gap: 10px; align-items: center;">
                     <span>📍 <span id="profileCityDisplay">Miasto</span></span>
                     <span>•</span>
                     <span>🐕 <span id="profileBreedDisplay">Rasa</span></span>
                 </div>
             </div>
+
+            <!-- 🔥 STATYSTYKI PRZENIESIONE NA GÓRĘ -->
+            <div style="padding: 0 20px; margin-top: 5px; margin-bottom: 25px;">
+                <div style="background: white; border-radius: 20px; padding: 20px; display: flex; box-shadow: 0 10px 25px rgba(0,0,0,0.04); border: 1px solid var(--border-color);">
+                    <div style="flex:1; text-align: center; border-right: 1px dashed var(--border-color);">
+                        <b id="statWalks" style="color: var(--primary); font-size: 32px; font-weight: 900; line-height: 1;">0</b><br>
+                        <small style="font-weight: 900; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; display: block;">Spacerów</small>
+                    </div>
+                    <div style="flex:1; text-align: center;">
+                        <b id="statDist" style="color: var(--secondary); font-size: 32px; font-weight: 900; line-height: 1;">0.0</b><br>
+                        <small style="font-weight: 900; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; display: block;">Kilometrów</small>
+                    </div>
+                </div>
+            </div>
             
             <div style="padding: 0 20px 20px 20px;">
-                <!-- 🔥 MINI-DASHBOARD (Hub informacyjny) -->
+                <!-- MINI-DASHBOARD (Hub informacyjny) -->
                 <div style="background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border-color);">
                     <h4 style="margin: 0 0 15px 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Sytuacja w okolicy</h4>
                     
@@ -120,12 +131,6 @@
                     </p>
                     
                     <button class="btn-main" id="openSafeSetupBtn" style="background: var(--secondary); font-size: 14px; box-shadow: 0 4px 15px rgba(52,172,224,0.3);">Wypełnij dane ratunkowe</button>
-                </div>
-
-                <!-- Statystyki -->
-                <div class="stats-bar" style="margin: 0; padding: 15px; border-radius: 16px;">
-                    <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary); font-size: 22px;">0</b><br><small style="font-weight: 800;">Spacerów</small></div>
-                    <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary); font-size: 22px;">0.0</b><br><small style="font-weight: 800;">KM</small></div>
                 </div>
             </div>
         </section>
@@ -184,17 +189,16 @@
             </div>
         </section>
 
-        <!-- 🔥 PRZYWRÓCONA SEKCJA ROZMÓW W GŁÓWNYM MENU -->
+        <!-- 🔥 ZMODERNIZOWANA SEKCJA ROZMÓW -->
         <section id="view-chat" class="view-section">
-            <div class="sticky-header" style="padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); background: var(--bg-color); z-index: 100;">
+            <div class="sticky-header" style="padding: 20px; background: rgba(244, 246, 249, 0.95); backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.05);">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="margin:0; font-size: 22px; font-weight: 900;">Rozmowy</h3>
-                    <button class="btn-outline" onclick="document.getElementById('group-creator-modal').style.display='flex'; window.Waggle.loadUsersForGroup();" style="border-color: var(--secondary); color: var(--secondary); font-weight: 800; padding: 6px 12px; font-size: 12px;">➕ UTWÓRZ STADO</button>
+                    <h3 style="margin:0; font-size: 28px; font-weight: 900; letter-spacing: -0.5px; color: var(--text-color);">Rozmowy</h3>
+                    <button class="btn-main" onclick="document.getElementById('group-creator-modal').style.display='flex'; window.Waggle.loadUsersForGroup();" style="background: var(--primary); padding: 10px 18px; font-size: 13px; border-radius: 100px; box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3); border: none; font-weight: 800; width: auto;">➕ Nowe Stado</button>
                 </div>
             </div>
             
-            <!-- Główny kontener na listę konwersacji (Inbox) -->
-            <div id="inbox-container" style="padding: 15px; overflow-y: auto;">
+            <div id="inbox-container" style="padding: 10px 20px 90px 20px; overflow-y: auto;">
                 <p style="text-align: center; color: var(--text-muted); font-weight: 700; margin-top: 30px;">Ładowanie rozmów...</p>
             </div>
         </section>
