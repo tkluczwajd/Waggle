@@ -21,8 +21,8 @@ export function renderPostsList(posts, filter) {
 
         const avatarSrc = p.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
         let postImgHtml = p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%; height:200px; object-fit:cover; border-radius:16px; margin:15px 0; box-shadow:var(--soft-shadow); cursor:pointer;" onclick="window.Waggle.openLightbox('${p.imageUrl}')">` : "";
-        let delBtn = (p.uid === state.user?.uid || isAdmin) ? `<button onclick="window.Waggle.deletePost('${p.id}')" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; padding:5px; z-index:10;">🗑️</button>` : "";
-        
+        // Elegancki, minimalistyczny przycisk usuwania zamiast emoji kosza
+        let delBtn = (p.uid === state.user?.uid || isAdmin) ? `<button onclick="window.Waggle.deletePost('${p.id}')" style="position:absolute; top:12px; right:12px; background:rgba(255,255,255,0.2); border:none; color:white; cursor:pointer; font-size:14px; width:28px; height:28px; border-radius:50%; display:flex; justify-content:center; align-items:center; z-index:10; backdrop-filter:blur(2px);">✕</button>` : "";        
         let userHeader = `<button onclick="window.Waggle.openUserMenu('${p.uid}', '${p.author || 'Piesek'}', '${avatarSrc}')" style="background:none; border:none; padding:0; cursor:pointer; text-align:left; display:flex; align-items:center; gap:12px; width:100%;">
             <img src="${avatarSrc}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
             <div style="line-height:1.2;">
