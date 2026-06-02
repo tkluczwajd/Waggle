@@ -23,20 +23,20 @@ export function renderInboxList(chats, currentUid) {
         let title = '';
         let avatarElement = '';
 
-        // Rysowanie awatara: Grupa vs Pojedynczy użytkownik
+        // Rysowanie awatara: Mniejsze wymiary (48px zamiast 55px)
         if (chat.isGroup) {
             title = chat.groupName || "Stado";
-            avatarElement = `<div style="width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, #ff7b7b 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">🐾</div>`;
+            avatarElement = `<div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, #ff7b7b 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">🐾</div>`;
         } else {
             const partnerUid = chat.users.find(u => u !== currentUid);
             title = chat.names ? (chat.names[partnerUid] || 'Piesek') : 'Piesek';
             const avatar = chat.avatars && chat.avatars[partnerUid] ? chat.avatars[partnerUid] : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
-            avatarElement = `<img src="${avatar}" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">`;
+            avatarElement = `<img src="${avatar}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">`;
         }
 
         const lastMsg = chat.lastMsg || "Brak wiadomości";
         
-        // Formatowanie czasu (godzina jeśli dzisiaj, data jeśli starsze)
+        // Formatowanie czasu
         let timeStr = '';
         if (chat.lastUpdate) {
             const date = new Date(chat.lastUpdate);
@@ -48,20 +48,20 @@ export function renderInboxList(chats, currentUid) {
             }
         }
 
-        // 🔥 NOWY, KRYSTALICZNIE CZYSTY STYL KARTY
+        // 🔥 ODCHUDZONY STYL: Mniejszy padding (12px 16px), mniejszy odstęp (8px), spójniejsze zaokrąglenia (16px)
         html += `
-        <div onclick="window.Waggle.openChat('${chat.id}', '${title}')" style="display: flex; align-items: center; gap: 15px; background: white; padding: 16px; border-radius: 20px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid transparent;">
+        <div onclick="window.Waggle.openChat('${chat.id}', '${title}')" style="display: flex; align-items: center; gap: 14px; background: white; padding: 12px 16px; border-radius: 16px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid transparent;">
             <div style="position: relative; flex-shrink: 0;">
                 ${avatarElement}
-                ${isUnread ? `<div style="position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: var(--danger); border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>` : ''}
+                ${isUnread ? `<div style="position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: var(--danger); border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>` : ''}
             </div>
             
             <div style="flex: 1; overflow: hidden;">
-                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
-                    <b style="font-size: 16px; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${title}</b>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px;">
+                    <b style="font-size: 15px; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${title}</b>
                     <span style="font-size: 11px; color: var(--text-muted); font-weight: 800; flex-shrink: 0;">${timeStr}</span>
                 </div>
-                <p style="margin: 0; font-size: 14px; color: ${isUnread ? 'var(--text-color)' : 'var(--text-muted)'}; font-weight: ${isUnread ? '800' : '600'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <p style="margin: 0; font-size: 13px; color: ${isUnread ? 'var(--text-color)' : 'var(--text-muted)'}; font-weight: ${isUnread ? '800' : '600'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     ${lastMsg}
                 </p>
             </div>
@@ -69,6 +69,5 @@ export function renderInboxList(chats, currentUid) {
         `;
     });
 
-    // Zrzucenie gotowego HTML do kontenera na stronie
     container.innerHTML = html;
 }
