@@ -2,24 +2,26 @@ import { searchUsers, sendMessage, loadInbox, handleChatImageSelect } from '../m
 import { appState as state } from '../core/state.js';
 
 export function initChatUi() {
-    // Wymuszenie ładowania wiadomości po wejściu w zakładkę "Rozmowy"
-    document.addEventListener('click', (e) => {
+    // 1. Nasłuchiwacz wpisywania (wyszukiwanie użytkowników)
+    document.addEventListener('input', (e) => { 
+        if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') {
+            searchUsers(e.target.value); 
+        }
+    });
+
+    // 2. Główny nasłuchiwacz kliknięć dla całego interfejsu czatu
+    document.addEventListener('click', async (e) => {
+        
+        // Wymuszenie ładowania wiadomości po wejściu w zakładkę "Rozmowy" z dolnego menu
         const chatNavBtn = e.target.closest('[data-view="chat"]');
         if (chatNavBtn) {
             console.log("💬 Otwarto główną zakładkę Rozmowy - ładuję Inbox...");
-            // Jeśli element istnieje, Firebase wypełni go rozmowami
             if (document.getElementById('inbox-container')) {
                 loadInbox();
             }
         }
-    });
-        if (e.target.id === 'userSearchInput' || e.target.id === 'chatSearchInput') searchUsers(e.target.value); 
-    });
-    
-
-    document.addEventListener('click', async (e) => {
         
-        // 1. OBSŁUGA DODAWANIA ZDJĘĆ DO KOSZYKA
+        // OBSŁUGA DODAWANIA ZDJĘĆ DO KOSZYKA
         if (e.target.closest('#chatAddPhotoBtn')) {
             if (window.Waggle && window.Waggle.selectPhotoSource) {
                 // Odpalamy Twój autorski modal Aparat/Galeria
@@ -33,7 +35,7 @@ export function initChatUi() {
             }
         }
         
-        // 2. ZAKŁADKA STADO / SZUKAJ (Zachowane dla kompatybilności)
+        // ZAKŁADKA STADO / SZUKAJ (Zachowane dla kompatybilności starych przycisków w UI)
         if (e.target.closest('#chatTabSearch')) {
             const inboxContainer = document.getElementById('inbox-container');
             const searchView = document.getElementById('chat-search-view');
@@ -58,7 +60,7 @@ export function initChatUi() {
             if(window.Waggle.executeSearch) window.Waggle.executeSearch(''); 
         }
         
-        // 3. ZAKŁADKA ROZMOWY (Zachowane dla kompatybilności)
+        // ZAKŁADKA ROZMOWY (Zachowane dla kompatybilności starych przycisków w UI)
         if (e.target.closest('#chatTabInbox')) {
             const inboxContainer = document.getElementById('inbox-container');
             const searchView = document.getElementById('chat-search-view');
@@ -83,48 +85,56 @@ export function initChatUi() {
             loadInbox();
         }
         
-        // 4. WYSYŁANIE WIADOMOŚCI
+        // WYSYŁANIE WIADOMOŚCI
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput'); 
             const text = input ? input.value.trim() : "";
             
-            // 🔥 Po prostu wywołujemy sendMessage. Nasza funkcja w chatListeners.js 
-            // sama zorientuje się, że są zdjęcia w koszyku i wyśle je z tekstem!
+            // 🔥 Wywołujemy sendMessage. Funkcja w chatListeners.js sama sprawdzi 
+            // czy są zdjęcia i wyśle je razem z tekstem.
             sendMessage(text); 
         }
-    });
+    }); // <-- Zamknięcie głównego listenera click
 }
 
 // ============================================================================
-// 🔥 NOWE FUNKCJE WYWOŁUJĄCE PRAWDZIWY CZAT (Zamiast sztucznych okienek)
+// 🔥 GLOBALNE FUNKCJE WYWOŁUJĄCE INTERFEJS
 // ============================================================================
-
-// Globalna funkcja otwierająca okno Inboxa z górnego paska
-window.Waggle.openInbox = () => {
-    const inboxModal = document.getElementById('inbox-modal');
-    if (inboxModal) {
-        inboxModal.style.display = 'flex';
-        // Automatycznie wymuszamy załadowanie wiadomości z bazy
-        loadInbox(); 
-    }
-};
 
 // Funkcja przechwytująca kliknięcie "Napisz wiadomość" w nowej wizytówce
 window.Waggle.startDirectChat = (uid, name, avatar) => {
-    // 1. Ukrywamy kartę profilu
+    // 1. Ukrywamy kartę profilu, z której kliknięto
     const actionModal = document.getElementById('user-action-modal');
     if (actionModal) actionModal.style.display = 'none';
     
-    // 2. Odpalamy Twój oryginalny silnik czatu
+    // 2. Odpalamy oryginalny silnik czatu
     if (typeof window.Waggle.openChat === 'function') {
         window.Waggle.openChat(uid, name, avatar);
     } else {
         console.warn("Nie znaleziono globalnej funkcji openChat. Próba ręcznego otwarcia...");
-        // Awaryjne, bezpośrednie otwarcie okna czatu w razie gdyby funkcja nie była podpięta
+        // Awaryjne otwarcie okna czatu, gdyby silnik był niezainicjowany
         const chatWindow = document.getElementById('chat-window');
         if (chatWindow) {
-            document.getElementById('chatPartnerName').innerText = name;
+            const nameField = document.getElementById('chatPartnerName');
+            if (nameField) nameField.innerText = name;
             chatWindow.style.display = 'flex';
         }
     }
+};
+
+// Globalna funkcja otwierająca okno z konkretnym obrazkiem na pełen ekran (Lightbox)
+window.Waggle.openLightbox = (url) => {
+    const modal = document.getElementById('lightbox-modal');
+    const img = document.getElementById('lightbox-img');
+    if (modal && img) {
+        img.src = url;
+        modal.style.display = 'flex';
+    }
+};
+
+// Jeśli potrzebujesz otworzyć pustą Skrzynkę z zewnątrz np. po kliknięciu ikonki z dzwoneczkiem:
+window.Waggle.openInbox = () => {
+    // Wywołuje kliknięcie na ukrytą lub nową zakładkę czatu w dolnym menu
+    const chatTab = document.querySelector('[data-view="chat"]');
+    if (chatTab) chatTab.click();
 };
