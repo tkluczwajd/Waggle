@@ -36,19 +36,17 @@
 
     <div id="app-interface" class="screen-container">
         
-<section id="view-home" class="view-section active">
+<!-- 🔥 NOWY ROOT: HOME / MY DOG (Hub i Centrum dowodzenia) -->
+        <section id="view-home" class="view-section active">
             <div class="sticky-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h3 style="margin:0;">Mój Pies</h3>
                     <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <button onclick="window.Waggle.openInbox()" style="position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wiadomości">
-                        💬
-                        <span id="unread-chat-badge-home" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; align-items: center; justify-content: center; border: 2px solid white;">1</span>
-                    </button>
-
+                    <!-- Ikonka Ustawień -->
                     <button id="openSettingsBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Ustawienia">⚙️</button>
+                    <!-- Profesjonalna ikona Wyloguj (SVG) -->
                     <button id="logoutBtn" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--danger); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wyloguj się">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -59,7 +57,7 @@
                 </div>
             </div>
             
-            <div class="profile-header" style="padding: 20px 20px 5px 20px; text-align:center;">
+            <div class="profile-header" style="padding: 20px 20px 15px 20px; text-align:center;">
                 <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
                     <img id="profileAvatar" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid white; box-shadow:var(--soft-shadow); object-fit:cover;">
                     <div id="openEditProfileBtn" style="position: absolute; bottom: 0; right: 0; background: var(--secondary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; border: 2px solid white; z-index: 5;" title="Edytuj profil">✎</div>
@@ -67,21 +65,39 @@
                 
                 <h2 id="profileNameDisplay" style="margin: 15px 0 5px 0; font-weight:900; font-size:26px;">...</h2>
                 
+                <!-- Miasto i Rasa -->
                 <div style="font-size: 14px; color: var(--text-muted); font-weight: 800; margin-bottom: 5px; display: flex; justify-content: center; gap: 10px; align-items: center;">
                     <span>📍 <span id="profileCityDisplay">Miasto</span></span>
                     <span>•</span>
                     <span>🐕 <span id="profileBreedDisplay">Rasa</span></span>
                 </div>
-                
-                <div id="profileLevelDisplay" style="color:#78e08f; font-weight:800; font-size:14px; margin-bottom:15px;">🌱 Nowik</div>
-                
-                <div class="stats-bar" style="margin: 10px 10px 0 10px; padding: 15px; border-radius: 16px;">
-                    <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary); font-size: 22px;">0</b><br><small style="font-weight: 800;">Spacerów</small></div>
-                    <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary); font-size: 22px;">0.0</b><br><small style="font-weight: 800;">KM</small></div>
-                </div>
             </div>
             
-            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+            <div style="padding: 0 20px 20px 20px;">
+                <!-- 🔥 MINI-DASHBOARD (Hub informacyjny) -->
+                <div style="background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border-color);">
+                    <h4 style="margin: 0 0 15px 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Sytuacja w okolicy</h4>
+                    
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-weight: 700; font-size: 14px;">
+                        <span style="font-size: 20px;">🛡️</span> 
+                        <span style="flex: 1; color: var(--text-color);">Moduł SAFE</span>
+                        <span style="color: #2ecc71; font-size: 11px; font-weight: 900; background: rgba(46, 204, 113, 0.15); padding: 4px 8px; border-radius: 10px;">GOTOWY</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="document.querySelector('[data-view=\'local\']').click()">
+                        <span style="font-size: 20px;">🗺️</span> 
+                        <span style="flex: 1; color: var(--text-color);">Otwórz mapę</span>
+                        <span style="color: var(--primary); font-size: 13px;">➔</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="document.querySelector('[data-view=\'chat\']').click()">
+                        <span style="font-size: 20px;">💬</span> 
+                        <span style="flex: 1; color: var(--text-color);">Wiadomości</span>
+                        <span style="color: var(--secondary); font-size: 13px;">Sprawdź ➔</span>
+                    </div>
+                </div>
+
+                <!-- Karta Medyczna SAFE -->
                 <div class="post-card" style="margin: 0 0 15px 0; border: 2px solid var(--secondary); text-align: left;">
                     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                         <div style="font-size: 38px; filter: drop-shadow(0 4px 6px rgba(52,172,224,0.3));">🏥</div>
@@ -104,6 +120,12 @@
                     </p>
                     
                     <button class="btn-main" id="openSafeSetupBtn" style="background: var(--secondary); font-size: 14px; box-shadow: 0 4px 15px rgba(52,172,224,0.3);">Wypełnij dane ratunkowe</button>
+                </div>
+
+                <!-- Statystyki -->
+                <div class="stats-bar" style="margin: 0; padding: 15px; border-radius: 16px;">
+                    <div style="flex:1;"><b id="statWalks" class="stat-num" style="color: var(--primary); font-size: 22px;">0</b><br><small style="font-weight: 800;">Spacerów</small></div>
+                    <div style="flex:1;"><b id="statDist" class="stat-num" style="color: var(--secondary); font-size: 22px;">0.0</b><br><small style="font-weight: 800;">KM</small></div>
                 </div>
             </div>
         </section>
