@@ -1,5 +1,6 @@
 import { searchUsers, sendMessage, loadInbox, handleChatImageSelect } from '../modules/chat/chatListeners.js';
 import { appState as state } from '../core/state.js';
+import { mapManager } from '../modules/map/mapManager.js'; // 🔥 DODANY IMPORT MAPY
 
 export function initChatUi() {
     // 1. Nasłuchiwacz wpisywania (wyszukiwanie użytkowników)
@@ -24,7 +25,7 @@ export function initChatUi() {
         // OBSŁUGA DODAWANIA ZDJĘĆ DO KOSZYKA
         if (e.target.closest('#chatAddPhotoBtn')) {
             if (window.Waggle && window.Waggle.selectPhotoSource) {
-                // Odpalamy Twój autorski modal Aparat/Galeria
+                // Odpalamy autorski modal Aparat/Galeria
                 window.Waggle.selectPhotoSource((file) => {
                     handleChatImageSelect([file]); 
                 });
@@ -35,7 +36,7 @@ export function initChatUi() {
             }
         }
         
-        // ZAKŁADKA STADO / SZUKAJ (Zachowane dla kompatybilności starych przycisków w UI)
+        // ZAKŁADKA STADO / SZUKAJ
         if (e.target.closest('#chatTabSearch')) {
             const inboxContainer = document.getElementById('inbox-container');
             const searchView = document.getElementById('chat-search-view');
@@ -60,7 +61,7 @@ export function initChatUi() {
             if(window.Waggle.executeSearch) window.Waggle.executeSearch(''); 
         }
         
-        // ZAKŁADKA ROZMOWY (Zachowane dla kompatybilności starych przycisków w UI)
+        // ZAKŁADKA ROZMOWY
         if (e.target.closest('#chatTabInbox')) {
             const inboxContainer = document.getElementById('inbox-container');
             const searchView = document.getElementById('chat-search-view');
@@ -89,30 +90,24 @@ export function initChatUi() {
         if (e.target.closest('#sendMessageBtn') || e.target.closest('#sendMsgBtn')) {
             const input = document.getElementById('chatInput'); 
             const text = input ? input.value.trim() : "";
-            
-            // 🔥 Wywołujemy sendMessage. Funkcja w chatListeners.js sama sprawdzi 
-            // czy są zdjęcia i wyśle je razem z tekstem.
             sendMessage(text); 
         }
-    }); // <-- Zamknięcie głównego listenera click
+    }); 
 }
 
 // ============================================================================
 // 🔥 GLOBALNE FUNKCJE WYWOŁUJĄCE INTERFEJS
 // ============================================================================
 
-// Funkcja przechwytująca kliknięcie "Napisz wiadomość" w nowej wizytówce
+// Funkcja przechwytująca kliknięcie "Napisz wiadomość"
 window.Waggle.startDirectChat = (uid, name, avatar) => {
-    // 1. Ukrywamy kartę profilu, z której kliknięto
     const actionModal = document.getElementById('user-action-modal');
     if (actionModal) actionModal.style.display = 'none';
     
-    // 2. Odpalamy oryginalny silnik czatu
     if (typeof window.Waggle.openChat === 'function') {
         window.Waggle.openChat(uid, name, avatar);
     } else {
         console.warn("Nie znaleziono globalnej funkcji openChat. Próba ręcznego otwarcia...");
-        // Awaryjne otwarcie okna czatu, gdyby silnik był niezainicjowany
         const chatWindow = document.getElementById('chat-window');
         if (chatWindow) {
             const nameField = document.getElementById('chatPartnerName');
@@ -122,7 +117,6 @@ window.Waggle.startDirectChat = (uid, name, avatar) => {
     }
 };
 
-// Globalna funkcja otwierająca okno z konkretnym obrazkiem na pełen ekran (Lightbox)
 window.Waggle.openLightbox = (url) => {
     const modal = document.getElementById('lightbox-modal');
     const img = document.getElementById('lightbox-img');
@@ -132,32 +126,28 @@ window.Waggle.openLightbox = (url) => {
     }
 };
 
-// Jeśli potrzebujesz otworzyć pustą Skrzynkę z zewnątrz np. po kliknięciu ikonki z dzwoneczkiem:
 window.Waggle.openInbox = () => {
-    // Wywołuje kliknięcie na ukrytą lub nową zakładkę czatu w dolnym menu
     const chatTab = document.querySelector('[data-view="chat"]');
     if (chatTab) chatTab.click();
 };
 
-// Otwiera modal z akcjami dla konkretnego użytkownika
+// 🔥 NAPRAWIONA FUNKCJA Z PRAWIDŁOWYM ODLOTEM (flyTo) KAMERY
 window.Waggle.showUserActionModal = (uid, name, avatar, lat = null, lng = null) => {
     const modal = document.getElementById('user-action-modal');
     if (modal) {
         document.getElementById('actionUserName').innerText = name || "Piesek";
         document.getElementById('actionUserAvatar').src = avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
         
-        // 1. Przycisk: Napisz prywatnie
         const msgBtn = document.getElementById('actionMsgBtn');
         msgBtn.onclick = () => window.Waggle.startDirectChat(uid, name, avatar);
         
-        // 2. Przycisk: Pokaż na mapie
         const mapBtn = document.getElementById('actionMapBtn');
         if (lat !== null && lng !== null && lat !== undefined && lng !== undefined) {
             mapBtn.style.display = 'block';
             mapBtn.onclick = () => {
-                modal.style.display = 'none'; // Zamykamy wizytówkę
+                modal.style.display = 'none'; // Ukryj wizytówkę
                 
-                // Przełączamy na zakładkę Mapy
+                // Przejdź na mapę
                 const mapTab = document.querySelector('.bottom-nav [data-view="local"]');
                 if (mapTab) {
                     mapTab.click();
@@ -165,21 +155,16 @@ window.Waggle.showUserActionModal = (uid, name, avatar, lat = null, lng = null) 
                     window.Waggle.navigate('local');
                 }
 
-                // Magia: dajemy mapie ułamek sekundy na wyrenderowanie po zmianie zakładki
+                // Dajemy czas na przełączenie i odpalamy mapManagera
                 setTimeout(() => {
                     const parsedLat = parseFloat(lat);
                     const parsedLng = parseFloat(lng);
                     
-                    // Bezpośrednie wymuszenie na silniku Leaflet ułożenia mapy i odlotu
-                    if (window.map) {
-                        window.map.invalidateSize();
-                        // Natywna funkcja Leaflet - lot nad psa (zoom level 16)
-                        window.map.flyTo([parsedLat, parsedLng], 16, { animate: true, duration: 1.5 });
-                    } else if (typeof window.Waggle.centerOnTarget === 'function') {
-                        // Fallback na starą funkcję, wymuszając poprawny format liczb
-                        window.Waggle.centerOnTarget(parsedLat, parsedLng);
+                    if (mapManager && typeof mapManager.flyTo === 'function') {
+                        // Zoom 17 to ładne zbliżenie na psa
+                        mapManager.flyTo(parsedLat, parsedLng, 17);
                     } else {
-                        console.error("Brak dostępu do silnika mapy, aby wyśrodkować na piesku!");
+                        console.error("Błąd: Moduł mapManager nie został poprawnie zaimportowany.");
                     }
                 }, 400); 
             };
