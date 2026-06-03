@@ -1,3 +1,4 @@
+// src/modules/community/postRenderer.js
 import { appState as state } from '../../core/state.js';
 
 export function renderPostsList(posts, filter) {
@@ -5,13 +6,11 @@ export function renderPostsList(posts, filter) {
     const isAdmin = state.profile?.isAdmin === true;
     
     posts.forEach(p => { 
-        // 🔥 NOWA LOGIKA FILTROWANIA - Sztywne zasady dla Info
+        // Logika filtrowania - Sztywne zasady dla Info
         if (filter === 'events' && !p.isEvent) return;
         if (filter === 'alerts' && !p.isAlert) return;
         // Wpuść tylko te, które są informacją, ale WYKLUCZ takie, które są alertem lub ustawką
         if (filter === 'info' && (!p.isInfo || p.isAlert || p.isEvent)) return;
-
-        // ... reszta kodu bez zmian ...
 
         let timeString = "Przed chwilą";
         if (p.timestamp) {
@@ -21,9 +20,12 @@ export function renderPostsList(posts, filter) {
 
         const avatarSrc = p.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
         let postImgHtml = p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%; height:200px; object-fit:cover; border-radius:16px; margin:15px 0; box-shadow:var(--soft-shadow); cursor:pointer;" onclick="window.Waggle.openLightbox('${p.imageUrl}')">` : "";
-        // Elegancki, minimalistyczny przycisk usuwania zamiast emoji kosza
-        let delBtn = (p.uid === state.user?.uid || isAdmin) ? `<button onclick="window.Waggle.deletePost('${p.id}')" style="position:absolute; top:12px; right:12px; background:rgba(255,255,255,0.2); border:none; color:white; cursor:pointer; font-size:14px; width:28px; height:28px; border-radius:50%; display:flex; justify-content:center; align-items:center; z-index:10; backdrop-filter:blur(2px);">✕</button>` : "";        
-        let userHeader = `<button onclick="window.Waggle.openUserMenu('${p.uid}', '${p.author || 'Piesek'}', '${avatarSrc}')" style="background:none; border:none; padding:0; cursor:pointer; text-align:left; display:flex; align-items:center; gap:12px; width:100%;">
+        
+        // 🔥 POPRAWKA 1: Półprzezroczysty, szary krzyżyk usunięcia. Dobrze widoczny na zwykłej karcie i na banerze
+        let delBtn = (p.uid === state.user?.uid || isAdmin) ? `<button onclick="window.Waggle.deletePost('${p.id}')" style="position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.08); border:none; color:var(--text-color); cursor:pointer; font-size:14px; width:28px; height:28px; border-radius:50%; display:flex; justify-content:center; align-items:center; z-index:10; transition: 0.2s;">✕</button>` : "";        
+        
+        // 🔥 POPRAWKA 2: showUserActionModal zamiast openUserMenu (Naprawia problem z PUSTYM EKRANEM)
+        let userHeader = `<button onclick="window.Waggle.showUserActionModal('${p.uid}', '${p.author || 'Piesek'}', '${avatarSrc}')" style="background:none; border:none; padding:0; cursor:pointer; text-align:left; display:flex; align-items:center; gap:12px; width:100%;">
             <img src="${avatarSrc}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
             <div style="line-height:1.2;">
                 <b style="font-size:16px; color:var(--text-color);">${p.author || 'Piesek'}</b><br>
@@ -38,17 +40,14 @@ export function renderPostsList(posts, filter) {
             cardStyle = "position:relative; border: 2px solid var(--primary);";
             let eventDateStr = p.eventDate ? new Date(p.eventDate).toLocaleString('pl-PL', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : "Nieznana data";
             
-            // --- NOWA LOGIKA OBECNOŚCI ---
             const attendees = p.attendees || [];
             const isAttending = state.user && attendees.includes(state.user.uid);
             
-            // Dynamiczny wygląd przycisku zależny od tego, czy użytkownik dołączył
             const btnBg = isAttending ? 'transparent' : 'white';
             const btnColor = isAttending ? 'white' : 'var(--primary)';
             const btnBorder = isAttending ? '1px solid white' : 'none';
             const btnText = isAttending ? 'Wypisz się ❌' : 'BĘDĘ! 🐾';
             
-            // Licznik chętnych widoczny tylko, gdy ktoś się zapisze
             const attendeesCountHtml = attendees.length > 0 
                 ? `<div style="margin-top: 6px; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.15); padding: 4px 8px; border-radius: 10px; display: inline-block;">👥 Chętnych psów: ${attendees.length}</div>` 
                 : '';
@@ -65,12 +64,11 @@ export function renderPostsList(posts, filter) {
             </div>`;
         } else if (p.isAlert) {
             cardStyle = "position:relative; border: 2px solid var(--danger);";
-            eventBanner = `<div style="background:var(--danger); color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800;">⚠️ ZAGROŻENIE</div>`;
+            // Dodano padding-right: 40px aby napis nie wchodził pod krzyżyk
+            eventBanner = `<div style="background:var(--danger); color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800; padding-right:40px;">⚠️ ZAGROŻENIE</div>`;
         } else if (p.isInfo) {
-            // Zmieniliśmy kolor na taki, który kojarzy się z ofertami/ogłoszeniami (np. fiolet/niebieski), 
-            // ale jeśli wolisz stary pomarańczowy (#f39c12), możesz go zostawić!
             cardStyle = "position:relative; border: 2px solid #8e44ad;";
-            eventBanner = `<div style="background:#8e44ad; color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800; display:flex; justify-content:space-between;">
+            eventBanner = `<div style="background:#8e44ad; color:white; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:800; display:flex; justify-content:space-between; padding-right:40px;">
                 <span>📢 OGŁOSZENIE / OFERTA</span>
             </div>`;
         }
