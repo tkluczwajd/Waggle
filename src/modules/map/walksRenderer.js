@@ -20,7 +20,9 @@ export function renderWalks(walks) {
         const avatarSrc = d.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
 
         // 1. BUDOWANIE KÓŁECZEK "STORIES" NA TABLICY
-        html += `<div class="story-circle" onclick="window.Waggle.centerOnTarget(${d.lat}, ${d.lng})" style="flex-shrink:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; width:65px;">
+        // 1. BUDOWANIE KÓŁECZEK "STORIES" NA TABLICY
+        // Dodano event.stopPropagation(), aby zablokować stare globalne skrypty!
+        html += `<div class="story-circle" onclick="event.stopPropagation(); window.Waggle.showUserActionModal('${d.uid}', '${(d.name || '').replace(/'/g, "\\'")}', '${avatarSrc}', ${d.lat}, ${d.lng})" style="flex-shrink:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; width:65px;">
                     <div style="width:55px; height:55px; border-radius:50%; padding:2px; border:2px solid ${isMe ? 'var(--secondary)' : 'var(--primary)'}; background:white; box-shadow:var(--soft-shadow); overflow:hidden;">
                         <img src="${avatarSrc}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
                     </div>
