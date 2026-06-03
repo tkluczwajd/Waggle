@@ -138,6 +138,7 @@ window.Waggle.openInbox = () => {
     const chatTab = document.querySelector('[data-view="chat"]');
     if (chatTab) chatTab.click();
 };
+
 // Otwiera modal z akcjami dla konkretnego użytkownika
 window.Waggle.showUserActionModal = (uid, name, avatar, lat = null, lng = null) => {
     const modal = document.getElementById('user-action-modal');
@@ -145,26 +146,36 @@ window.Waggle.showUserActionModal = (uid, name, avatar, lat = null, lng = null) 
         document.getElementById('actionUserName').innerText = name || "Piesek";
         document.getElementById('actionUserAvatar').src = avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
         
-        // Podpinamy przycisk prywatnego czatu
+        // 1. Przycisk: Napisz prywatnie
         const msgBtn = document.getElementById('actionMsgBtn');
         msgBtn.onclick = () => window.Waggle.startDirectChat(uid, name, avatar);
         
-        // Podpinamy przycisk "Pokaż na mapie" (tylko jeśli mamy GPS ze spaceru)
+        // 2. Przycisk: Pokaż na mapie
         const mapBtn = document.getElementById('actionMapBtn');
-        if (lat !== null && lng !== null) {
+        if (lat !== null && lng !== null && lat !== undefined && lng !== undefined) {
             mapBtn.style.display = 'block';
             mapBtn.onclick = () => {
-                modal.style.display = 'none'; // Zamykamy wizytówkę
-                // Wymuszamy kliknięcie w zakładkę Mapa na dolnym pasku
-                const mapTab = document.querySelector('[data-view="local"]');
-                if (mapTab) mapTab.click();
+                modal.style.display = 'none'; // 1. Najpierw zamykamy wizytówkę
                 
-                // Centrujemy mapę z minimalnym opóźnieniem
+                // 2. Bezpieczne i brutalne wymuszenie przełączenia na zakładkę Mapy
+                const mapTab = document.querySelector('.bottom-nav [data-view="local"]');
+                if (mapTab) {
+                    mapTab.click();
+                } else if (typeof window.Waggle.navigate === 'function') {
+                    window.Waggle.navigate('local');
+                }
+
+                // 3. Dajemy silnikowi Leaflet i przeglądarce 400ms na renderowanie CSS (Kluczowe!)
                 setTimeout(() => {
-                    if (window.Waggle.centerOnTarget) {
+                    // Wymuszamy na mapie przeliczenie swoich rozmiarów (leczy syndrom szarego/pustego ekranu)
+                    if (window.map) {
+                        window.map.invalidateSize();
+                    }
+                    // Centrujemy na piesku
+                    if (typeof window.Waggle.centerOnTarget === 'function') {
                         window.Waggle.centerOnTarget(lat, lng);
                     }
-                }, 300);
+                }, 400); 
             };
         } else {
             mapBtn.style.display = 'none';
