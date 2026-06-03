@@ -138,3 +138,17 @@ window.Waggle.openInbox = () => {
     const chatTab = document.querySelector('[data-view="chat"]');
     if (chatTab) chatTab.click();
 };
+// Otwiera modal z akcjami dla konkretnego użytkownika (klikniętego na Tablicy lub Mapie)
+window.Waggle.showUserActionModal = (uid, name, avatar) => {
+    const modal = document.getElementById('user-action-modal');
+    if (modal) {
+        document.getElementById('actionUserName').innerText = name || "Piesek";
+        document.getElementById('actionUserAvatar').src = avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+        
+        // Podpinamy przycisk czatu pod tego konkretnego użytkownika
+        const msgBtn = document.getElementById('actionMsgBtn');
+        msgBtn.onclick = () => window.Waggle.startDirectChat(uid, name, avatar);
+        
+        modal.style.display = 'flex';
+    }
+};
