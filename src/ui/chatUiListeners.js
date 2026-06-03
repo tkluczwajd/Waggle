@@ -155,9 +155,9 @@ window.Waggle.showUserActionModal = (uid, name, avatar, lat = null, lng = null) 
         if (lat !== null && lng !== null && lat !== undefined && lng !== undefined) {
             mapBtn.style.display = 'block';
             mapBtn.onclick = () => {
-                modal.style.display = 'none'; // 1. Najpierw zamykamy wizytówkę
+                modal.style.display = 'none'; // Zamykamy wizytówkę
                 
-                // 2. Bezpieczne i brutalne wymuszenie przełączenia na zakładkę Mapy
+                // Przełączamy na zakładkę Mapy
                 const mapTab = document.querySelector('.bottom-nav [data-view="local"]');
                 if (mapTab) {
                     mapTab.click();
@@ -165,15 +165,21 @@ window.Waggle.showUserActionModal = (uid, name, avatar, lat = null, lng = null) 
                     window.Waggle.navigate('local');
                 }
 
-                // 3. Dajemy silnikowi Leaflet i przeglądarce 400ms na renderowanie CSS (Kluczowe!)
+                // Magia: dajemy mapie ułamek sekundy na wyrenderowanie po zmianie zakładki
                 setTimeout(() => {
-                    // Wymuszamy na mapie przeliczenie swoich rozmiarów (leczy syndrom szarego/pustego ekranu)
+                    const parsedLat = parseFloat(lat);
+                    const parsedLng = parseFloat(lng);
+                    
+                    // Bezpośrednie wymuszenie na silniku Leaflet ułożenia mapy i odlotu
                     if (window.map) {
                         window.map.invalidateSize();
-                    }
-                    // Centrujemy na piesku
-                    if (typeof window.Waggle.centerOnTarget === 'function') {
-                        window.Waggle.centerOnTarget(lat, lng);
+                        // Natywna funkcja Leaflet - lot nad psa (zoom level 16)
+                        window.map.flyTo([parsedLat, parsedLng], 16, { animate: true, duration: 1.5 });
+                    } else if (typeof window.Waggle.centerOnTarget === 'function') {
+                        // Fallback na starą funkcję, wymuszając poprawny format liczb
+                        window.Waggle.centerOnTarget(parsedLat, parsedLng);
+                    } else {
+                        console.error("Brak dostępu do silnika mapy, aby wyśrodkować na piesku!");
                     }
                 }, 400); 
             };
