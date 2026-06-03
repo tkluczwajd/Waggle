@@ -138,16 +138,37 @@ window.Waggle.openInbox = () => {
     const chatTab = document.querySelector('[data-view="chat"]');
     if (chatTab) chatTab.click();
 };
-// Otwiera modal z akcjami dla konkretnego użytkownika (klikniętego na Tablicy lub Mapie)
-window.Waggle.showUserActionModal = (uid, name, avatar) => {
+// Otwiera modal z akcjami dla konkretnego użytkownika
+window.Waggle.showUserActionModal = (uid, name, avatar, lat = null, lng = null) => {
     const modal = document.getElementById('user-action-modal');
     if (modal) {
         document.getElementById('actionUserName').innerText = name || "Piesek";
         document.getElementById('actionUserAvatar').src = avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
         
-        // Podpinamy przycisk czatu pod tego konkretnego użytkownika
+        // Podpinamy przycisk prywatnego czatu
         const msgBtn = document.getElementById('actionMsgBtn');
         msgBtn.onclick = () => window.Waggle.startDirectChat(uid, name, avatar);
+        
+        // Podpinamy przycisk "Pokaż na mapie" (tylko jeśli mamy GPS ze spaceru)
+        const mapBtn = document.getElementById('actionMapBtn');
+        if (lat !== null && lng !== null) {
+            mapBtn.style.display = 'block';
+            mapBtn.onclick = () => {
+                modal.style.display = 'none'; // Zamykamy wizytówkę
+                // Wymuszamy kliknięcie w zakładkę Mapa na dolnym pasku
+                const mapTab = document.querySelector('[data-view="local"]');
+                if (mapTab) mapTab.click();
+                
+                // Centrujemy mapę z minimalnym opóźnieniem
+                setTimeout(() => {
+                    if (window.Waggle.centerOnTarget) {
+                        window.Waggle.centerOnTarget(lat, lng);
+                    }
+                }, 300);
+            };
+        } else {
+            mapBtn.style.display = 'none';
+        }
         
         modal.style.display = 'flex';
     }
