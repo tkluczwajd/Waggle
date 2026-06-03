@@ -30,7 +30,6 @@ async function getUniqueSafeId() {
 // Generuje lub aktualizuje publiczny profil SAFE
 export async function createOrUpdateSafeProfile(userUid, profileData) {
     try {
-        // Sprawdzamy, czy użytkownik ma już swój Safe ID
         const userRef = db.collection("users").doc(userUid);
         const userDoc = await userRef.get();
         let safeId = userDoc.data().safeId;
@@ -41,16 +40,17 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
             await userRef.update({ safeId: safeId });
         }
 
-        // Zapisujemy publiczne dane do specjalnej, oddzielnej kolekcji
+        // 🔥 TWORZYMY CZYSTĄ KARTOTEKĘ MEDYCZNĄ (Brak zaśmiecania głównego profilu)
         const safeProfileData = {
             safeId: safeId,
             ownerUid: userUid,
             dogName: profileData.name || "Piesek",
             breed: profileData.breed || "Nie podano",
             imageUrl: profileData.avatar || "",
-            phone: profileData.vet || "", // Na razie bierzemy z weterynarza, potem zrobimy osobne pole dla właściciela
-            allowPhone: true,
-            notes: `Chip: ${profileData.chip || 'Brak'}. Leki: ${profileData.meds || 'Brak'}`,
+            chip: profileData.chip || "",
+            allergies: profileData.allergies || "",
+            meds: profileData.meds || "",
+            vetPhone: profileData.vet || "",
             active: true,
             updatedAt: fb.firestore.FieldValue.serverTimestamp()
         };
@@ -63,13 +63,13 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
         throw error;
     }
 }
-// 🔥 NASŁUCHIWANIE NA SYGNAŁ SOS OD ZNALAZCY
+
+// NASŁUCHIWANIE NA SYGNAŁ SOS OD ZNALAZCY
 export function listenForSafeAlerts(safeId, onAlertReceived) {
     if (!safeId) return;
 
     console.log("🚨 Uruchamiam radar SAFE dla ID:", safeId);
 
-    // Nasłuchujemy tylko na nowe, nieprzeczytane zgłoszenia
     return db.collection("safe_messages")
         .where("safeId", "==", safeId)
         .where("status", "==", "unread")
@@ -77,11 +77,7 @@ export function listenForSafeAlerts(safeId, onAlertReceived) {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const alertData = change.doc.data();
-                    
-                    // Oznaczamy jako przeczytane, żeby alarm nie wył za każdym odświeżeniem aplikacji
                     change.doc.ref.update({ status: 'read' });
-                    
-                    // Przekazujemy dane do mapy
                     onAlertReceived(alertData);
                 }
             });
