@@ -34,13 +34,12 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
         const userDoc = await userRef.get();
         let safeId = userDoc.data().safeId;
 
-        // Jeśli nie ma, generujemy nowy
         if (!safeId) {
             safeId = await getUniqueSafeId();
             await userRef.update({ safeId: safeId });
         }
 
-        // 🔥 TWORZYMY CZYSTĄ KARTOTEKĘ MEDYCZNĄ (Brak zaśmiecania głównego profilu)
+        // 🔥 NOWOŚĆ: Ustrukturyzowane dane medyczne w osobnej kolekcji
         const safeProfileData = {
             safeId: safeId,
             ownerUid: userUid,
@@ -50,7 +49,8 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
             chip: profileData.chip || "",
             allergies: profileData.allergies || "",
             meds: profileData.meds || "",
-            vetPhone: profileData.vet || "",
+            phone: profileData.vet || "",
+            allowPhone: true,
             active: true,
             updatedAt: fb.firestore.FieldValue.serverTimestamp()
         };
@@ -64,7 +64,7 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
     }
 }
 
-// NASŁUCHIWANIE NA SYGNAŁ SOS OD ZNALAZCY
+// Nasłuchiwanie na sygnał SOS OD ZNALAZCY
 export function listenForSafeAlerts(safeId, onAlertReceived) {
     if (!safeId) return;
 
