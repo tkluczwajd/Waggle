@@ -503,5 +503,20 @@
           }
       });
     </script>
+    <script>
+      // 🔥 TWARDY RESET PWA: Wymusza pobranie najnowszych plików
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log("🧹 Usunięto starego Service Workera!");
+          }
+        });
+        caches.keys().then(keys => {
+          keys.forEach(key => caches.delete(key));
+        });
+      }
+    </script>
+</body>
 </body>
 </html>
