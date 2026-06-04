@@ -5,6 +5,27 @@ import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false;
 
+// 🔥 KULOODPORNE WYLOGOWANIE (Omija wszystkie konflikty skryptów)
+window.Waggle = window.Waggle || {};
+window.Waggle.logout = () => {
+    if (window.Waggle && window.Waggle.showToast) {
+        window.Waggle.showToast("Wylogowywanie... ⏳");
+    }
+    
+    auth.signOut().then(() => {
+        // Czyszczenie pamięci telefonu/komputera
+        localStorage.clear();
+        sessionStorage.clear();
+        // Twardy powrót na ekran logowania
+        window.location.replace(window.location.origin + window.location.pathname);
+    }).catch((err) => {
+        console.error("Błąd wylogowania:", err);
+        if (window.Waggle && window.Waggle.showToast) {
+            window.Waggle.showToast("Wystąpił błąd podczas wylogowania.");
+        }
+    });
+};
+
 // Słownik błędów Firebase na język polski
 function translateAuthError(errorCode) {
     switch (errorCode) {
@@ -55,31 +76,9 @@ export function initAuth(onReady) {
         }
     });
 
-    // 2. OBSŁUGA PRZYCISKÓW LOGOWANIA, REJESTRACJI, RESETU I WYLOGOWANIA
+    // 2. OBSŁUGA PRZYCISKÓW LOGOWANIA, REJESTRACJI I RESETU
     document.addEventListener('click', (e) => {
         
-        // 🔥 WYLOGOWANIE (Tego tu brakowało!)
-        if (e.target.closest('#logoutBtn')) {
-            e.preventDefault();
-            
-            if (window.Waggle && window.Waggle.showToast) {
-                window.Waggle.showToast("Wylogowywanie... ⏳");
-            }
-            
-            auth.signOut().then(() => {
-                // Czyszczenie pamięci PWA
-                localStorage.clear();
-                sessionStorage.clear();
-                // Twardy powrót na ekran logowania
-                window.location.replace(window.location.origin + window.location.pathname);
-            }).catch((err) => {
-                console.error("Błąd wylogowania:", err);
-                if (window.Waggle && window.Waggle.showToast) {
-                    window.Waggle.showToast("Wystąpił błąd podczas wylogowania.");
-                }
-            });
-        }
-
         // LOGOWANIE
         if (e.target.id === 'loginBtn') {
             const email = document.getElementById('authEmail').value.trim();
