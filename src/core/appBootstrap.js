@@ -8,7 +8,6 @@ import { setupAuth } from './authInit.js';
 import { setupSubscriptions } from './subscriptionInit.js';
 import { setupLocationTracking } from './locationInit.js';
 import { renderWiki } from '../ui/wikiRenderer.js';
-// 🔥 POPRAWKA: Usunięto nieistniejącą funkcję loadSettings, która zawieszała start
 import { updateStatsUI, updateUserMarker } from '../ui/uiHelpers.js';
 import { initMap } from '../modules/map/mapManager.js';
 import { appState as state } from './state.js';
@@ -37,20 +36,18 @@ export function bootstrapApp() {
         initLiveFeed();
         loadInbox();
 
-        // 🔥 POPRAWKA: Rysujemy profil natychmiast po zalogowaniu
+        // Rysujemy profil natychmiast po zalogowaniu
         updateStatsUI();
 
-        // 🔥 ODPALAMY RADAR SAFE (jeśli pies ma wygenerowany kod)
+        // ODPALAMY RADAR SAFE (jeśli pies ma wygenerowany kod)
         if (state.profile && state.profile.safeId) {
             listenForSafeAlerts(state.profile.safeId, (alertData) => {
                 if (alertData.type === 'sighting' && alertData.location) {
                     const lat = alertData.location.latitude;
                     const lng = alertData.location.longitude;
 
-                    // 1. Wyświetlamy potężny komunikat w aplikacji
                     window.Waggle.showToast("🚨 UWAGA! Ktoś namierzył Twojego psa! Sprawdź mapę!", 8000); 
 
-                    // 2. Dodajemy awaryjny znacznik na mapę
                     if (state.map.instance) { 
                         const L = window.L;
 
@@ -67,7 +64,7 @@ export function bootstrapApp() {
                         });
 
                         const popupHtml = `
-                            <div style="text-align: center; font-family: 'Nunito', sans-serif; min-width: 160px; padding: 4px;">
+                            <div style="text-align: center; font-family: 'Inter', sans-serif; min-width: 160px; padding: 4px;">
                                 <div style="font-size: 11px; color: #ff5252; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px;">OSTATNIA ZNANA POZYCJA</div>
                                 <div style="font-size: 16px; color: #2d3436; font-weight: 800; line-height: 1.2;">Pies namierzony!</div>
                                 <div style="font-size: 12px; color: #636e72; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">Zgłoszono przez znalazcę<br>Waggle SAFE</div>
@@ -82,7 +79,6 @@ export function bootstrapApp() {
                             })
                             .openPopup();
 
-                        // 3. Płynny przelot kamery
                         state.map.instance.flyTo([lat, lng], 17, { animate: true, duration: 1.5 });
                     }
                 }
@@ -136,7 +132,9 @@ export function bootstrapApp() {
                         const distanceStr = place.distance ? place.distance.toFixed(1) : "?";
                         const placeName = place.name || "Teren zielony";
 
-                        // 🔥 POPRAWKA: Prawidłowy link do Google Maps nawigacji
+                        // 🔥 POPRAWKA: Prawidłowy i bezpieczny link do Google Maps nawigacji
+                        const navLink = `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`;
+
                         html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
                                     <div style="display:flex; align-items:center; gap:15px;">
                                         <div style="font-size:30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${emoji}</div>
@@ -145,7 +143,7 @@ export function bootstrapApp() {
                                             <span style="font-size:12px; color:var(--text-muted); font-weight:800;">${label} • ${distanceStr} km</span>
                                         </div>
                                     </div>
-                                    <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">Prowadź</button>
+                                    <button class="btn-outline" style="padding:8px 12px; font-size:12px; border-color:${color}; color:${color}; width:auto;" onclick="window.open('${navLink}', '_blank')">Prowadź</button>
                                 </div>`;
                     });
                     
@@ -188,7 +186,6 @@ export function bootstrapApp() {
             }, 1800000);
         });
 
-        // Ukrycie loaderu po pełnym załadowaniu UI
         const loader = document.getElementById('loader');
         if (loader) {
             loader.style.opacity = '0';
