@@ -111,57 +111,57 @@
                 </div>
 
                 <!-- 🔥 Karta Medyczna SAFE (PREMIUM) -->
-<div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(231, 76, 60, 0.15); margin-bottom: 25px; border: 1px solid rgba(231, 76, 60, 0.3); position: relative;">
-    
-    <!-- Pasek górny (nagłówek) z naprawionym okrągłym przyciskiem -->
-    <div style="background: var(--danger); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🏥</div>
-            <div>
-                <h4 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: 0.5px;">DANE RATUNKOWE</h4>
-                <p style="margin: 0; font-size: 11px; font-weight: 700; opacity: 0.9;">System Identyfikacji S.A.F.E.</p>
-            </div>
-        </div>
-        <button id="openSafeSetupBtn" style="background: rgba(255,255,255,0.2); border: none; width: 36px; height: 36px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; backdrop-filter: blur(5px); flex-shrink: 0;" title="Edytuj dane">✎</button>
-    </div>
+                <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(231, 76, 60, 0.15); margin-bottom: 25px; border: 1px solid rgba(231, 76, 60, 0.3); position: relative;">
+                    
+                    <!-- Pasek górny (nagłówek) -->
+                    <div style="background: var(--danger); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🏥</div>
+                            <div>
+                                <h4 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: 0.5px;">DANE RATUNKOWE</h4>
+                                <p style="margin: 0; font-size: 11px; font-weight: 700; opacity: 0.9;">System Identyfikacji S.A.F.E.</p>
+                            </div>
+                        </div>
+                        <button id="openSafeSetupBtn" style="background: rgba(255,255,255,0.2); border: none; width: 36px; height: 36px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; backdrop-filter: blur(5px);" title="Edytuj dane">✎</button>
+                    </div>
 
-    <!-- Stan pusty (Fallback widoczny gdy brak danych) -->
-    <div id="safe-data-fallback" style="padding: 25px 20px; text-align: center;">
-        <div style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;">🪪</div>
-        <p style="font-size: 14px; font-weight: 900; color: var(--text-color); margin-bottom: 5px;">Brak danych medycznych</p>
-        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; font-weight: 600;">Dodaj numer chipa, alergie i telefon, aby chronić swojego psa w nagłych wypadkach.</p>
-        <button class="btn-main" onclick="document.getElementById('openSafeSetupBtn').click()" style="background: var(--danger); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);">WYPEŁNIJ KARTOTEKĘ</button>
-    </div>
+                    <!-- Stan pusty (Fallback widoczny gdy brak danych) -->
+                    <div id="safe-data-fallback" style="padding: 25px 20px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;">🪪</div>
+                        <p style="font-size: 14px; font-weight: 900; color: var(--text-color); margin-bottom: 5px;">Brak danych medycznych</p>
+                        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; font-weight: 600;">Dodaj numer chipa, alergie i telefon, aby chronić swojego psa w nagłych wypadkach.</p>
+                        <button class="btn-main" onclick="document.getElementById('openSafeSetupBtn').click()" style="background: var(--danger); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);">WYPEŁNIJ KARTOTEKĘ</button>
+                    </div>
 
-    <!-- Wypełnione dane medyczne (Dwukolumnowy układ Premium) -->
-    <div id="safe-data-display" style="display: none; padding: 20px;">
-        <h3 id="displaySafeName" style="margin: 0 0 15px 0; color: var(--text-color); font-size: 22px; font-weight: 900; text-align: center;">-</h3>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
-                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">🪪 Numer Chip</div>
-                <div id="displayChip" style="font-size: 13px; font-weight: 900; color: var(--text-color); word-break: break-all;">-</div>
-            </div>
-            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
-                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">📞 Twój Telefon</div>
-                <div id="displayVet" style="font-size: 13px; font-weight: 900; color: var(--text-color);">-</div>
-            </div>
-            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
-                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">⚠️ Alergie</div>
-                <div id="displayAllergies" style="font-size: 13px; font-weight: 800; color: var(--danger);">-</div>
-            </div>
-            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
-                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">💊 Leki</div>
-                <div id="displayMeds" style="font-size: 13px; font-weight: 800; color: var(--text-color);">-</div>
-            </div>
-        </div>
+                    <!-- Wypełnione dane medyczne (Dwukolumnowy układ Premium) -->
+                    <div id="safe-data-display" style="display: none; padding: 20px;">
+                        <h3 id="displaySafeName" style="margin: 0 0 15px 0; color: var(--text-color); font-size: 22px; font-weight: 900; text-align: center;">-</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+                                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">🪪 Numer Chip</div>
+                                <div id="displayChip" style="font-size: 13px; font-weight: 900; color: var(--text-color); word-break: break-all;">-</div>
+                            </div>
+                            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+                                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">📞 Twój Telefon</div>
+                                <div id="displayVet" style="font-size: 13px; font-weight: 900; color: var(--text-color);">-</div>
+                            </div>
+                            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+                                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">⚠️ Alergie</div>
+                                <div id="displayAllergies" style="font-size: 13px; font-weight: 800; color: var(--danger);">-</div>
+                            </div>
+                            <div style="background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+                                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">💊 Leki</div>
+                                <div id="displayMeds" style="font-size: 13px; font-weight: 800; color: var(--text-color);">-</div>
+                            </div>
+                        </div>
 
-        <!-- Elegancki przycisk -->
-        <button id="copySafeLinkBtn" class="btn-outline" style="width: 100%; border-color: var(--danger); color: var(--danger); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span style="font-size: 16px;">🔗</span> Kopiuj publiczny link SAFE
-        </button>
-    </div>
-</div>
+                        <!-- Elegancki przycisk zamiast surowego linku -->
+                        <button id="copySafeLinkBtn" class="btn-outline" style="width: 100%; border-color: var(--danger); color: var(--danger); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span style="font-size: 16px;">🔗</span> Kopiuj publiczny link SAFE
+                        </button>
+                    </div>
+                </div>
         </section>
 
         <section id="view-local" class="view-section">
