@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Waggle 🐾 Premium UI</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">    
+    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2d3436">
 </head>
@@ -19,7 +20,7 @@
     <div id="auth-screen" class="screen-container">
         <div class="auth-card">
             <h1 class="logo-title">Waggle.</h1>
-            <p style="margin-bottom: 25px; font-size: 16px; font-weight: 700; color: var(--text-muted);">Dołącz do stada! 🐕</p>
+            <p style="margin-bottom: 25px; font-size: 16px; font-weight: 700; color: var(--text-muted);">Dołącz do stada!</p>
             <input type="email" id="authEmail" placeholder="E-mail">
             <input type="password" id="authPass" placeholder="Hasło">
             <div style="margin-top: 10px;">
@@ -37,7 +38,6 @@
 
     <div id="app-interface" class="screen-container">
         
-        <!-- 🔥 NOWY ROOT: HOME / MY DOG (Hub i Centrum dowodzenia) -->
         <section id="view-home" class="view-section active">
             <div class="sticky-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -46,7 +46,7 @@
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <button id="openSettingsBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Ustawienia">⚙️</button>
-                    <button id="logoutBtn" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--danger); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wyloguj się">
+                    <button id="logoutBtn" onclick="window.Waggle.logout()" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--danger); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" title="Wyloguj się">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
@@ -71,7 +71,6 @@
                 </div>
             </div>
 
-            <!-- 🔥 STATYSTYKI PRZENIESIONE NA GÓRĘ -->
             <div style="padding: 0 20px; margin-top: 5px; margin-bottom: 25px;">
                 <div style="background: white; border-radius: 20px; padding: 20px; display: flex; box-shadow: 0 10px 25px rgba(0,0,0,0.04); border: 1px solid var(--border-color);">
                     <div style="flex:1; text-align: center; border-right: 1px dashed var(--border-color);">
@@ -86,7 +85,6 @@
             </div>
             
             <div style="padding: 0 20px 20px 20px;">
-                <!-- MINI-DASHBOARD (Hub informacyjny) -->
                 <div style="background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border-color);">
                     <h4 style="margin: 0 0 15px 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Sytuacja w okolicy</h4>
                     
@@ -109,10 +107,7 @@
                     </div>
                 </div>
 
-                <!-- 🔥 Karta Medyczna SAFE (PREMIUM) -->
                 <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(231, 76, 60, 0.15); margin-bottom: 25px; border: 1px solid rgba(231, 76, 60, 0.3); position: relative;">
-                    
-                    <!-- Pasek górny (nagłówek) -->
                     <div style="background: var(--danger); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🏥</div>
@@ -124,7 +119,6 @@
                         <button id="openSafeSetupBtn" style="background: rgba(255,255,255,0.2); border: none; width: 36px; height: 36px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; backdrop-filter: blur(5px);" title="Edytuj dane">✎</button>
                     </div>
 
-                    <!-- Stan pusty (Fallback widoczny gdy brak danych) -->
                     <div id="safe-data-fallback" style="padding: 25px 20px; text-align: center;">
                         <div style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;">🪪</div>
                         <p style="font-size: 14px; font-weight: 900; color: var(--text-color); margin-bottom: 5px;">Brak danych medycznych</p>
@@ -132,7 +126,6 @@
                         <button class="btn-main" onclick="document.getElementById('openSafeSetupBtn').click()" style="background: var(--danger); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);">WYPEŁNIJ KARTOTEKĘ</button>
                     </div>
 
-                    <!-- Wypełnione dane medyczne (Dwukolumnowy układ Premium) -->
                     <div id="safe-data-display" style="display: none; padding: 20px;">
                         <h3 id="displaySafeName" style="margin: 0 0 15px 0; color: var(--text-color); font-size: 22px; font-weight: 900; text-align: center;">-</h3>
                         
@@ -155,7 +148,6 @@
                             </div>
                         </div>
 
-                        <!-- Elegancki przycisk zamiast surowego linku -->
                         <button id="copySafeLinkBtn" class="btn-outline" style="width: 100%; border-color: var(--danger); color: var(--danger); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <span style="font-size: 16px;">🔗</span> Kopiuj publiczny link SAFE
                         </button>
@@ -180,8 +172,8 @@
                 </div>
                 <div id="walk-setup-panel">
                     <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
-                    <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER 🐾</button>
-                    <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ 🏁</button>
+                    <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER</button>
+                    <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ SPACER</button>
                 </div>
             </div>
             <div id="map"></div>
@@ -217,7 +209,6 @@
             </div>
         </section>
 
-        <!-- 🔥 ZMODERNIZOWANA SEKCJA ROZMÓW -->
         <section id="view-chat" class="view-section">
             <div class="sticky-header" style="padding: 20px; background: rgba(244, 246, 249, 0.95); backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.05);">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -254,7 +245,6 @@
             <div id="places-container"></div>
         </section>
 
-        <!-- 🔥 OSTATECZNY DOLNY PASEK NAWIGACJI -->
         <nav class="bottom-nav">
             <button class="nav-item active" data-view="home">🐶<span>Home</span></button>
             <button class="nav-item" data-view="local">🗺️<span>Mapa</span></button>
@@ -334,7 +324,7 @@
                 <p style="text-align: center; color: var(--text-muted); font-size: 12px; margin: 10px 0;">Ładowanie piesków...</p>
             </div>
             
-            <button class="btn-main" id="confirmCreateGroupBtn" style="background: var(--secondary); border-radius: 100px; padding: 16px; font-size: 15px; font-weight: 900; box-shadow: 0 6px 15px rgba(52, 172, 224, 0.3);" onclick="window.Waggle.createGroupChat()">🐾 UTWÓRZ STADO</button>
+            <button class="btn-main" id="confirmCreateGroupBtn" style="background: var(--secondary); border-radius: 100px; padding: 16px; font-size: 15px; font-weight: 900; box-shadow: 0 6px 15px rgba(52, 172, 224, 0.3);" onclick="window.Waggle.createGroupChat()">UTWÓRZ STADO</button>
         </div>
     </div>
 
@@ -482,7 +472,6 @@
     <script type="module" src="/src/app.js?v=1001"></script>
 
     <script>
-      // 1. REJESTRACJA NOWEGO, INTELIGENTNEGO SERVICE WORKERA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
@@ -495,7 +484,6 @@
         });
       }
 
-      // 2. Skrypt automatycznie powiększający pole tekstowe w czacie
       document.addEventListener('input', function (event) {
           if (event.target.id === 'chatInput') {
               event.target.style.height = 'auto';
