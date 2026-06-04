@@ -1,4 +1,4 @@
-import { auth, db } from './firebase.js';
+import { auth, db, fb } from './firebase.js'; // 🔥 DODANO 'fb' DO IMPORTU
 
 // Słownik błędów Firebase na język polski
 function translateAuthError(errorCode) {
@@ -18,7 +18,7 @@ function translateAuthError(errorCode) {
 export function initAuthListeners() {
     const loginBtn = document.getElementById('loginBtn');
     const registerBtn = document.getElementById('registerBtn');
-    const resetBtn = document.getElementById('resetPasswordBtn'); // Nasz nowy przycisk
+    const resetBtn = document.getElementById('resetPasswordBtn'); 
 
     // LOGOWANIE
     if (loginBtn) {
@@ -55,7 +55,8 @@ export function initAuthListeners() {
                     // Tworzymy pusty profil w Firestore po rejestracji
                     db.collection("users").doc(userCredential.user.uid).set({
                         email: email,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        // 🔥 POPRAWKA: Zmiana z 'firebase' na 'fb'
+                        createdAt: fb.firestore.FieldValue.serverTimestamp()
                     });
                     window.Waggle.showToast("Konto utworzone! Witaj w Stadzie! 🎉");
                 })
@@ -66,7 +67,7 @@ export function initAuthListeners() {
         });
     }
 
-    // 🔥 RESET HASŁA
+    // RESET HASŁA
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
             const email = document.getElementById('authEmail').value.trim();
