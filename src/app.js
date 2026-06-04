@@ -2,10 +2,6 @@
 import { bootstrapApp } from './core/appBootstrap.js';
 
 bootstrapApp();
-// src/app.js - Nowy, minimalistyczny punkt wejścia ekosystemu Waggle 🐾
-import { bootstrapApp } from './core/appBootstrap.js';
-
-bootstrapApp();
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
