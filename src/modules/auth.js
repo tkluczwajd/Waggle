@@ -55,8 +55,31 @@ export function initAuth(onReady) {
         }
     });
 
-    // 2. OBSŁUGA PRZYCISKÓW LOGOWANIA, REJESTRACJI I RESETU
+    // 2. OBSŁUGA PRZYCISKÓW LOGOWANIA, REJESTRACJI, RESETU I WYLOGOWANIA
     document.addEventListener('click', (e) => {
+        
+        // 🔥 WYLOGOWANIE (Tego tu brakowało!)
+        if (e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            
+            if (window.Waggle && window.Waggle.showToast) {
+                window.Waggle.showToast("Wylogowywanie... ⏳");
+            }
+            
+            auth.signOut().then(() => {
+                // Czyszczenie pamięci PWA
+                localStorage.clear();
+                sessionStorage.clear();
+                // Twardy powrót na ekran logowania
+                window.location.replace(window.location.origin + window.location.pathname);
+            }).catch((err) => {
+                console.error("Błąd wylogowania:", err);
+                if (window.Waggle && window.Waggle.showToast) {
+                    window.Waggle.showToast("Wystąpił błąd podczas wylogowania.");
+                }
+            });
+        }
+
         // LOGOWANIE
         if (e.target.id === 'loginBtn') {
             const email = document.getElementById('authEmail').value.trim();
@@ -83,7 +106,7 @@ export function initAuth(onReady) {
             auth.createUserWithEmailAndPassword(email, pass).then((userCredential) => {
                 db.collection("users").doc(userCredential.user.uid).set({
                     email: email,
-                    createdAt: fb.firestore.FieldValue.serverTimestamp() // 🔥 Zmiana na fb.
+                    createdAt: fb.firestore.FieldValue.serverTimestamp()
                 }, {merge: true});
                 window.Waggle.showToast("Konto utworzone! Witaj w Stadzie! 🎉");
             }).catch(err => {
