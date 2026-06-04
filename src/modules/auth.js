@@ -72,9 +72,26 @@ export function initAuth(onReady) {
             auth.createUserWithEmailAndPassword(email, pass).catch(err => alert("Błąd rejestracji: " + err.message));
         }
 
-        // Wylogowanie
+// Wylogowanie
         if (e.target.id === 'logoutBtn') {
-            auth.signOut().then(() => window.location.reload());
+            e.preventDefault();
+            
+            if (window.Waggle && window.Waggle.showToast) {
+                window.Waggle.showToast("Wylogowywanie... ⏳");
+            }
+            
+            auth.signOut().then(() => {
+                // 1. Czyszczenie absolutnie całej pamięci podręcznej przeglądarki
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // 2. Twarde przeładowanie aplikacji z wyczyszczeniem URL-a
+                window.location.replace(window.location.origin + window.location.pathname);
+                
+            }).catch((error) => {
+                console.error("Błąd podczas wylogowywania:", error);
+                if (window.Waggle && window.Waggle.showToast) {
+                    window.Waggle.showToast("Wystąpił błąd podczas wylogowania.");
+                }
+            });
         }
-    });
-}
