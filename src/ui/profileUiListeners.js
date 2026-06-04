@@ -23,6 +23,7 @@ export function initProfileUi() {
                 document.getElementById('profile-setup-modal').style.display = 'none'; window.Waggle.showToast("Profil zaktualizowany! ✨");
             } catch (err) { console.error(err); window.Waggle.showToast("Błąd zapisu!"); }
         }
+        
         // 🔥 OTWIERANIE MODALU DANYCH RATUNKOWYCH
         if (e.target.id === 'openSafeSetupBtn' || e.target.closest('#openSafeSetupBtn')) {
             const modal = document.getElementById('safe-setup-modal');
@@ -35,8 +36,7 @@ export function initProfileUi() {
             }
         }
         
-        // 🔥 ZAPISYWANIE DANYCH RATUNKOWYCH DO FIREBASE
-// 🔥 ZAPISYWANIE DANYCH RATUNKOWYCH DO FIREBASE I GENEROWANIE SAFE ID
+        // 🔥 ZAPISYWANIE DANYCH RATUNKOWYCH DO FIREBASE I GENEROWANIE SAFE ID
         if (e.target.id === 'saveSafeBtn' || e.target.closest('#saveSafeBtn')) {
             const newChip = document.getElementById('setupChip')?.value || "";
             const newAllergies = document.getElementById('setupAllergies')?.value || "";
@@ -56,9 +56,9 @@ export function initProfileUi() {
                 // 2. Aktualizacja lokalnego stanu aplikacji
                 state.profile = { ...state.profile, chip: newChip, allergies: newAllergies, meds: newMeds, vet: newVet };
                 
-                // 3. 🔥 TWORZENIE PUBLICZNEGO PROFILU SAFE I POBRANIE UNIKALNEGO KODU
+                // 3. TWORZENIE PUBLICZNEGO PROFILU SAFE I POBRANIE UNIKALNEGO KODU
                 const safeId = await createOrUpdateSafeProfile(state.user.uid, state.profile);
-                state.profile.safeId = safeId; // Zapisujemy kod w pamięci podręcznej
+                state.profile.safeId = safeId; 
                 
                 window.Waggle.updateStatsUI();
                 document.getElementById('safe-setup-modal').style.display = 'none';
@@ -68,6 +68,22 @@ export function initProfileUi() {
                 window.Waggle.showToast("Błąd zapisu danych medycznych.");
             }
         }
+
+        // 🔥 KOPIOWANIE LINKU S.A.F.E. DO SCHOWKA
+        if (e.target.id === 'copySafeLinkBtn' || e.target.closest('#copySafeLinkBtn')) {
+            if (state.profile && state.profile.safeId) {
+                const safeLink = `${window.location.origin}/safe.html?id=${state.profile.safeId}`;
+                navigator.clipboard.writeText(safeLink).then(() => {
+                    window.Waggle.showToast("Skopiowano link do schowka! 📋");
+                }).catch(err => {
+                    console.error("Błąd kopiowania:", err);
+                    window.Waggle.showToast("Nie udało się skopiować linku.");
+                });
+            } else {
+                window.Waggle.showToast("Najpierw wypełnij i zapisz kartotekę medyczną! 🏥");
+            }
+        }
+
         if (e.target.closest('#changeAvatarBtn') || e.target.closest('#profileAvatar')) {
             window.Waggle.selectPhotoSource(async (file) => {
                 window.Waggle.showToast("Wysyłam nowe zdjęcie profilowe... ⏳");
