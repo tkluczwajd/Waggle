@@ -23,32 +23,32 @@ window.Waggle.closeAllModals = () => {
     return anyModalClosed; // Zwraca true, jeśli faktycznie jakieś okno było otwarte
 };
 
-// 2. Podpinamy nasłuchiwacz do wszystkich przycisków otwierających JAKIEKOLWIEK modale
+// 2. Podpinamy nasłuchiwacz do wszystkich przycisków otwierających modale
 function initPwaHistoryManager() {
-    // Obserwator zmian - wykrywa, gdy pojawia się nowy modal
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'style') {
-                const displayStyle = window.getComputedStyle(mutation.target).display;
-                if (displayStyle === 'flex' || displayStyle === 'block') {
-                    // Kiedy modal się otwiera, dodajemy "pusty" stan do historii telefonu
+                const target = mutation.target;
+                const displayStyle = window.getComputedStyle(target).display;
+                
+                // 🔥 ZABEZPIECZENIE: Dodajemy do historii TYLKO przy pierwszym otwarciu
+                // (Zapobiega to pętli nieskończonej i zwieszaniu się aplikacji)
+                if ((displayStyle === 'flex' || displayStyle === 'block') && target.dataset.isOpen !== 'true') {
+                    target.dataset.isOpen = 'true';
                     window.history.pushState({ modalOpen: true }, "");
+                } else if (displayStyle === 'none') {
+                    target.dataset.isOpen = 'false';
                 }
             }
         });
     });
 
-    // Zaczynamy obserwować wszystkie modale
     document.querySelectorAll('.modal').forEach(modal => {
         observer.observe(modal, { attributes: true });
     });
 
-    // 3. Magia: Przechwytujemy fizyczny przycisk "Wstecz" na telefonie!
     window.addEventListener('popstate', (e) => {
-        // Zamiast cofać stronę internetową, po prostu zamykamy okienka aplikacji
-        const didCloseSomething = window.Waggle.closeAllModals();
-        
-        // Jeśli nie było okienek do zamknięcia, nic nie robimy (apka zminimalizuje się naturalnie)
+        window.Waggle.closeAllModals();
     });
 }
 
