@@ -8,7 +8,8 @@ import { setupAuth } from './authInit.js';
 import { setupSubscriptions } from './subscriptionInit.js';
 import { setupLocationTracking } from './locationInit.js';
 import { renderWiki } from '../ui/wikiRenderer.js';
-import { updateStatsUI, updateUserMarker, loadSettings } from '../ui/uiHelpers.js';
+// 🔥 POPRAWKA: Usunięto nieistniejącą funkcję loadSettings, która zawieszała start
+import { updateStatsUI, updateUserMarker } from '../ui/uiHelpers.js';
 import { initMap } from '../modules/map/mapManager.js';
 import { appState as state } from './state.js';
 import { fetchWeather } from '../services/weatherService.js';
@@ -18,16 +19,15 @@ import { renderParksOnMap } from '../modules/map/parksRenderer.js';
 // Uporządkowane moduły komunikacji i powiadomień okolicy:
 import { initLiveFeed } from '../modules/map/liveFeed.js';
 import { loadInbox } from '../modules/chat/chatListeners.js';
-import '../modules/chat/groupListeners.js'; // Rejestruje Stado w window.Waggle przed startem UI
+import '../modules/chat/groupListeners.js'; 
 import { listenForSafeAlerts } from '../services/safeService.js';
 
 export function bootstrapApp() {
     initGlobalUtils();
-    loadSettings();
     initWaggleApi(updateUserMarker);
     window.Waggle.updateStatsUI = updateStatsUI; 
 
-// Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
+    // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
     setupAuth(() => {
         initRouter();
         initProfileListeners();
@@ -37,10 +37,8 @@ export function bootstrapApp() {
         initLiveFeed();
         loadInbox();
 
-        // 🔥 POPRAWKA: Rysujemy profil natychmiast po zalogowaniu (nie czekamy na GPS!)
+        // 🔥 POPRAWKA: Rysujemy profil natychmiast po zalogowaniu
         updateStatsUI();
-
-        // ... Twoje poprzednie funkcje (loadInbox, updateStatsUI itp.) ...
 
         // 🔥 ODPALAMY RADAR SAFE (jeśli pies ma wygenerowany kod)
         if (state.profile && state.profile.safeId) {
@@ -52,14 +50,10 @@ export function bootstrapApp() {
                     // 1. Wyświetlamy potężny komunikat w aplikacji
                     window.Waggle.showToast("🚨 UWAGA! Ktoś namierzył Twojego psa! Sprawdź mapę!", 8000); 
 
-                    // 2. Dodajemy awaryjny znacznik na mapę (zakładając, że masz obiekt mapy pod window.map lub podobnie)
-                    // Zmień `map` na zmienną, pod którą trzymasz swoją mapę Leaflet (np. window.Waggle.map)
-                    // 2. Dodajemy awaryjny znacznik na mapę, używając Twojego globalnego stanu
-                    // 2. Dodajemy awaryjny znacznik na mapę, używając Twojego globalnego stanu
+                    // 2. Dodajemy awaryjny znacznik na mapę
                     if (state.map.instance) { 
                         const L = window.L;
 
-                        // Tworzymy duży, czytelny znacznik z efektem radaru (cienie i białe tło)
                         const sosIcon = L.divIcon({
                             className: 'sos-marker',
                             html: `
@@ -72,7 +66,6 @@ export function bootstrapApp() {
                             popupAnchor: [0, -30]
                         });
 
-                        // Elegancki, sformatowany dymek (popup) w stylu premium
                         const popupHtml = `
                             <div style="text-align: center; font-family: 'Nunito', sans-serif; min-width: 160px; padding: 4px;">
                                 <div style="font-size: 11px; color: #ff5252; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px;">OSTATNIA ZNANA POZYCJA</div>
@@ -84,15 +77,13 @@ export function bootstrapApp() {
                         L.marker([lat, lng], { icon: sosIcon, zIndexOffset: 9999 })
                             .addTo(state.map.instance)
                             .bindPopup(popupHtml, { 
-                                closeButton: false, // Ukrywamy brzydki, domyślny 'x' do zamykania
+                                closeButton: false, 
                                 offset: L.point(0, -10)
                             })
                             .openPopup();
 
-                        // 3. Płynny przelot kamery (flyTo zamiast setView) dla lepszego UX
+                        // 3. Płynny przelot kamery
                         state.map.instance.flyTo([lat, lng], 17, { animate: true, duration: 1.5 });
-                    } else {
-                        console.error("Radar SAFE odebrał sygnał, ale mapa (state.map.instance) jeszcze się nie załadowała.");
                     }
                 }
             });
@@ -101,10 +92,8 @@ export function bootstrapApp() {
         // Geolokalizacja i dynamiczne ładowanie otoczenia
         setupLocationTracking((lat, lng) => {
             initMap(); 
-            updateStatsUI(); // Zostawiamy to tutaj również, żeby po znalezieniu GPS zaktualizowała się np. pogoda
+            updateStatsUI(); 
 
-            // Czyste, stabilne centrowanie mapy na start
-            
             // Czyste, stabilne centrowanie mapy na start
             if(state.map.instance) {
                 state.map.instance.setView([lat, lng], 15, { animate: false });
@@ -117,7 +106,7 @@ export function bootstrapApp() {
             fetchWeather(lat, lng);
             renderWiki('sytuacje');
 
-            // Ładowanie psich parków, lasów i generowanie listy w panelu
+            // Ładowanie psich parków
             (async () => {
                 try {
                     const container = document.getElementById('places-container'); 
@@ -147,6 +136,7 @@ export function bootstrapApp() {
                         const distanceStr = place.distance ? place.distance.toFixed(1) : "?";
                         const placeName = place.name || "Teren zielony";
 
+                        // 🔥 POPRAWKA: Prawidłowy link do Google Maps nawigacji
                         html += `<div class="post-card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; padding: 15px; border-left: 4px solid ${color};">
                                     <div style="display:flex; align-items:center; gap:15px;">
                                         <div style="font-size:30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${emoji}</div>
@@ -164,11 +154,10 @@ export function bootstrapApp() {
                     }
                     state.placesLoaded = true;
                 } catch (e) { 
-                    console.error("Krytyczny błąd podczas budowania listy parków:", e); 
+                    console.error("Błąd podczas budowania listy parków:", e); 
                 }
             })();
 
-            // Wymuszenie ponownego odświeżenia i skanowania parków po kliknięciu celownika 🎯
             const centerBtn = document.getElementById('centerBtn');
             if (centerBtn) {
                 centerBtn.onclick = async () => {
@@ -194,13 +183,12 @@ export function bootstrapApp() {
                 };
             }
 
-            // Odświeżamy pogodę automatycznie co 30 minut
             setInterval(() => {
                 if (state.location.lat) fetchWeather(state.location.lat, state.location.lng);
             }, 1800000);
         });
 
-        // Ukrycie loaderu startowego po pełnym załadowaniu kontekstu auth
+        // Ukrycie loaderu po pełnym załadowaniu UI
         const loader = document.getElementById('loader');
         if (loader) {
             loader.style.opacity = '0';
@@ -208,7 +196,6 @@ export function bootstrapApp() {
         }
     });
 
-    // Reakcja na zmianę wielkości ekranu (naprawa Leafleta)
     window.addEventListener('resize', () => {
         if (state.map.instance) state.map.instance.invalidateSize();
     });
