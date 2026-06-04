@@ -483,6 +483,7 @@
     <script type="module" src="/src/app.js?v=1001"></script>
 
     <script>
+      // 1. REJESTRACJA NOWEGO, INTELIGENTNEGO SERVICE WORKERA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
@@ -495,7 +496,7 @@
         });
       }
 
-      // Skrypt automatycznie powiększający nowe pole tekstowe w czacie
+      // 2. Skrypt automatycznie powiększający pole tekstowe w czacie
       document.addEventListener('input', function (event) {
           if (event.target.id === 'chatInput') {
               event.target.style.height = 'auto';
@@ -503,20 +504,5 @@
           }
       });
     </script>
-    <script>
-      // 🔥 TWARDY RESET PWA: Wymusza pobranie najnowszych plików
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
-            console.log("🧹 Usunięto starego Service Workera!");
-          }
-        });
-        caches.keys().then(keys => {
-          keys.forEach(key => caches.delete(key));
-        });
-      }
-    </script>
-</body>
 </body>
 </html>
