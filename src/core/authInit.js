@@ -1,25 +1,87 @@
-// src/core/authInit.js
-import { initAuth } from '../modules/auth.js';
-import { db, auth } from './firebase.js'; // 🔥 TUTAJ BRAKOWAŁO SŁOWA 'auth'
-import { appState as state } from './state.js';
+import { auth, db } from './firebase.js';
 
-export function setupAuth(callback) {
-    initAuth(() => {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                db.collection("walks").doc(user.uid).get().then(doc => {
-                    if (doc.exists) {
-                        const diff = (Date.now() - (doc.data().timestamp || 0)) / 1000 / 60;
-                        if (diff > 30) { db.collection("walks").doc(user.uid).delete(); state.isWalking = false; }  
-                        else {
-                            state.isWalking = true;
-                            if(document.getElementById('startWalkBtn')) document.getElementById('startWalkBtn').style.display = 'none';
-                            if(document.getElementById('stopWalkBtn')) document.getElementById('stopWalkBtn').style.display = 'inline-block';
-                        }
-                    }
+// Słownik błędów Firebase na język polski
+function translateAuthError(errorCode) {
+    switch (errorCode) {
+        case 'auth/invalid-email': return "Niepoprawny format adresu e-mail.";
+        case 'auth/user-disabled': return "Konto zostało zablokowane.";
+        case 'auth/user-not-found': return "Nie znaleziono użytkownika z tym adresem.";
+        case 'auth/wrong-password': return "Błędne hasło.";
+        case 'auth/invalid-credential': return "Błędny e-mail lub hasło.";
+        case 'auth/email-already-in-use': return "Ten adres e-mail jest już zajęty.";
+        case 'auth/weak-password': return "Hasło jest za słabe (min. 6 znaków).";
+        case 'auth/missing-password': return "Wpisz hasło.";
+        default: return "Wystąpił błąd autoryzacji. Spróbuj ponownie.";
+    }
+}
+
+export function initAuthListeners() {
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const resetBtn = document.getElementById('resetPasswordBtn'); // Nasz nowy przycisk
+
+    // LOGOWANIE
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            const email = document.getElementById('authEmail').value.trim();
+            const pass = document.getElementById('authPass').value.trim();
+            
+            if (!email || !pass) return window.Waggle.showToast("Wpisz e-mail i hasło! 🐾");
+            window.Waggle.showToast("Logowanie... ⏳");
+            
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(() => { window.Waggle.showToast("Zalogowano pomyślnie! 🐕"); })
+                .catch((error) => {
+                    const errorMsg = translateAuthError(error.code);
+                    window.Waggle.showToast(`Błąd: ${errorMsg}`);
                 });
-            }
         });
-        callback(); // To wywołanie było zablokowane przez błąd!
-    });
+    }
+
+    // REJESTRACJA
+    if (registerBtn) {
+        registerBtn.addEventListener('click', () => {
+            const email = document.getElementById('authEmail').value.trim();
+            const pass = document.getElementById('authPass').value.trim();
+            const termsChecked = document.getElementById('legalTerms')?.checked;
+
+            if (!termsChecked) return window.Waggle.showToast("Musisz zaakceptować regulamin! 📜");
+            if (!email || !pass) return window.Waggle.showToast("Wpisz e-mail i hasło! 🐾");
+            
+            window.Waggle.showToast("Tworzenie konta... ⏳");
+            
+            auth.createUserWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    // Tworzymy pusty profil w Firestore po rejestracji
+                    db.collection("users").doc(userCredential.user.uid).set({
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    window.Waggle.showToast("Konto utworzone! Witaj w Stadzie! 🎉");
+                })
+                .catch((error) => {
+                    const errorMsg = translateAuthError(error.code);
+                    window.Waggle.showToast(`Błąd: ${errorMsg}`);
+                });
+        });
+    }
+
+    // 🔥 RESET HASŁA
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            const email = document.getElementById('authEmail').value.trim();
+            if (!email) {
+                return window.Waggle.showToast("Wpisz swój e-mail wyżej, aby zresetować hasło! 📧");
+            }
+            
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    window.Waggle.showToast("Link do resetu hasła wysłany na e-mail! 📬");
+                })
+                .catch((error) => {
+                    const errorMsg = translateAuthError(error.code);
+                    window.Waggle.showToast(`Błąd: ${errorMsg}`);
+                });
+        });
+    }
 }
