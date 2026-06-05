@@ -227,6 +227,34 @@ body {
     border-radius: 100px;
     margin-top: 10px;
 }
+/* =========================================================
+   🔥 LIGHTBOX (POWIĘKSZANIE ZDJĘĆ Z TABLICY)
+   ========================================================= */
+#lightbox-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+    backdrop-filter: blur(8px) !important;
+    z-index: 30000 !important; /* Musi być na absolutnym wierzchu */
+    display: none; /* Domyślnie ukryte */
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+
+#lightbox-img {
+    max-width: 95%;
+    max-height: 85%;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    animation: zoomIn 0.2s ease-out; /* Płynne powiększenie */
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
 
 .wiki-tab-btn {
     flex: 1;
