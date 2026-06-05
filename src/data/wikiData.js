@@ -52,38 +52,50 @@ export const WIKI = {
             id: "sit_tick_remove", 
             title: "Jak bezpiecznie wyjąć kleszcza?", 
             keywords: ["kleszcz", "pasożyt", "kleszczołapki", "pęseta", "owad", "skóra", "wbity"], 
-            desc: "Użyj specjalistycznych kleszczołapek, pętli lub dobrej pęsety. Rozsuń sierść, chwyć kleszcza tuż przy samej skórze psa, jak najbliżej jego aparatu gębowego. Zdecydowanym, płynnym ruchem pociągnij go pionowo w górę. NIE wykręcaj (możesz ukręcić odwłok), NIE smaruj kleszcza masłem, olejem, alkoholem ani lakierem do paznokci! (Kleszcz zacznie się dusić i wstrzyknie do krwiobiegu psa toksyny oraz patogeny boreliozy czy babeszjozy). Po wszystkim zdezynfekuj ranę i obserwuj psa przez 2 tygodnie pod kątem apatii czy ciemnego moczu." 
+            desc: `Użyj specjalistycznych kleszczołapek, pętli lub dobrej pęsety. Rozsuń sierść, chwyć kleszcza tuż przy samej skórze psa. Zdecydowanym, płynnym ruchem pociągnij go pionowo w górę.
+                <div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIE wykręcaj (możesz ukręcić odwłok).</div>
+                <div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIE smaruj kleszcza masłem, olejem, alkoholem ani lakierem do paznokci!</div>
+                <div class="wiki-tip wiki-tip-success"><span>✅</span> Po wszystkim zdezynfekuj ranę i obserwuj psa przez 2 tygodnie.</div>`
         },
         { 
             id: "sit_burdock", 
             title: "Rzepy i Osty w sierści – Szybkie usuwanie", 
             keywords: ["rzep", "osty", "kołtun", "sierść", "krzaki", "czesanie", "filc"], 
-            desc: "Wyciąganie suchych rzepów na sucho sprawia psu ogromny ból i powoduje wyrywanie zdrowych włosów. Aby zrobić to bezstresowo, nałóż na splątany kołtun z rzepem odrobinę psiej odżywki bez spłukiwania, oliwki dla dzieci lub zwykłej oliwy z oliwek. Wmasuj tłuszcz w strukturę rzepu i odczekaj minutę. Powstały poślizg pozwoli Ci bez problemu rozplątać kołtun i wysunąć rzepy samymi palcami lub rzadkim grzebieniem." 
+            desc: "Wyciąganie suchych rzepów na sucho sprawia psu ogromny ból. Aby zrobić to bezstresowo, nałóż na splątany kołtun odrobinę psiej odżywki lub oliwki. Wmasuj tłuszcz w strukturę rzepu i odczekaj minutę. Powstały poślizg pozwoli Ci bez problemu rozplątać kołtun." 
         },
         { 
             id: "sit_poison", 
-            title: "⚠️ Podejrzenie Zatrucia (Trutka na szczury/Padlina)", 
-            keywords: ["trucizna", "trutka", "padlina", "wymioty", "zjedzenie", "vet", "śmierć", "kości"], 
-            desc: "Jeśli Twój pies zjadł trutkę, padlinę lub kiełbasę z gwoździami wrzuconą przez wandali, liczy się każda minuta. Masz maksymalnie 1 do 2 godzin na bezpieczne wywołanie wymiotów u lekarza weterynarii, zanim toksyny przenikną do krwiobiegu. NIE podawaj psu mleka (tłuszcz przyspiesza wchłanianie wielu trucizn!), NIE podawaj oleju. Pakuj psa do auta i jedź prosto do najbliższej całodobowej kliniki weterynaryjnej. Jeśli to możliwe, zabierz próbkę zjedzonej substancji lub jej opakowanie." 
+            title: "⚠️ Podejrzenie Zatrucia", 
+            keywords: ["trucizna", "trutka", "padlina", "wymioty", "zjedzenie", "vet"], 
+            desc: `Masz maksymalnie 1-2 godziny na reakcję.
+                <div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIE podawaj psu mleka (przyspiesza wchłanianie trucizn)!</div>
+                <div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIE podawaj oleju.</div>
+                <div class="wiki-tip wiki-tip-success"><span>✅</span> Jedź prosto do najbliższej całodobowej kliniki weterynaryjnej!</div>`
         },
         { 
             id: "sit_wasp", 
             title: "Użądlenie przez osę lub pszczołę", 
-            keywords: ["osa", "pszczoła", "użądlenie", "opuchlizna", "pysk", "język", "puchnie"], 
-            desc: "Jeśli pies zostanie użądlony w łapę lub grzbiet, usuń żądło (jeśli to pszczoła) i przyłóż zimny kompres z wody i octu, by zmniejszyć pieczenie. Jeśli jednak użądlenie nastąpiło w okolicę pyska, gardła lub wewnątrz jamy ustnej (np. pies kłapał pyszczkiem za owadem) – natychmiast podaj psu lód do lizania i pędź do weterynarza. Opuchlina dróg oddechowych może doprowadzić do nagłego uduszenia psa. Monitoruj czy nie występuje wstrząs anafilaktyczny (blade dziąsła, wymioty, osłabienie)." 
+            keywords: ["osa", "pszczoła", "użądlenie", "opuchlizna", "pysk"], 
+            desc: `
+                <div class="wiki-tip wiki-tip-success"><span>✅</span> Jeśli użądlenie jest w łapę lub grzbiet, przyłóż zimny kompres z wodą i octem.</div>
+                <div class="wiki-tip wiki-tip-warning"><span>⚠️</span> Jeśli użądlenie nastąpiło w okolicę pyska lub gardła – natychmiast pędź do weterynarza! Opuchlizna grozi uduszeniem.</div>`
         },
         { 
             id: "sit_heat", 
-            title: "🥵 Udar Cieplny i Przegrzanie Organizmu", 
-            keywords: ["udar", "ciepło", "lato", "słońce", "dyszenie", "mdleje", "gorączka", "woda"], 
-            desc: "Objawy udaru to: potężne, niekontrolowane dyszenie, bardzo ciemnoczerwone lub sine dziąsła, gęsta ślina, wymioty i utrata stabilności na łapach. NIGDY nie wrzucaj przegrzanego psa do lodowatej wody i nie polewaj go lodem – wywołasz szok termiczny i zatrzymanie akcji serca! Przenieś psa w cień, owiń jego brzuch i pachwiny ręcznikami nasączonymi chłodną (ale nie lodowatą!) wodą. Zapewnij nawiew i natychmiast skonsultuj się z lekarzem." 
+            title: "🥵 Udar Cieplny", 
+            keywords: ["udar", "ciepło", "lato", "słońce", "dyszenie", "mdleje"], 
+            desc: `
+                <div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIGDY nie wrzucaj przegrzanego psa do lodowatej wody i nie polewaj lodem! Wywołasz szok termiczny.</div>
+                <div class="wiki-tip wiki-tip-success"><span>✅</span> Przenieś psa w cień, owiń brzuch i pachwiny ręcznikami nasączonymi chłodną (nie lodowatą!) wodą. Zapewnij nawiew.</div>`
         },
         { 
             id: "sit_dog_fight", 
-            title: "Atak i Walka dwóch psów – Jak rozdzielić?", 
-            keywords: ["walka", "pogryzienie", "atak", "agresja", "rozdzielanie", "krew"], 
-            desc: "NIGDY nie wkładaj rąk w okolice pyskasz gryzących się psów, nie łap za obroże – zostaniesz dotkliwie pogryziony przez tzw. agresję przekierowaną. Najbezpieczniejsza metoda to 'Taczka': dwie osoby podchodzą jednocześnie od tyłu psów, łapią je mocno za tylne nogi na wysokości pachwin i unoszą do góry, cofając się w tył po łuku. Pies traci równowagę i puszcza uścisk. Jeśli jesteś sam, spróbuj narzucić na głowy psów dużą kurtkę, koc lub wylej na nie potężną ilość wody, aby wywołać dezorientację." 
+            title: "Atak i Walka psów", 
+            keywords: ["walka", "pogryzienie", "atak", "agresja", "rozdzielanie"], 
+            desc: `
+                <div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIGDY nie wkładaj rąk w okolice pysków – zostaniesz pogryziony.</div>
+                <div class="wiki-tip wiki-tip-success"><span>✅</span> Metoda 'Taczka': łap psy za tylne nogi w pachwinach i unoś do góry, cofając się po łuku.</div>`
         }
-    ], // 🔥 TU DODALIŚMY BRAKUJĄCY PRZECINEK!
-rasy: [...BREEDS_A_L, ...BREEDS_M_Z]
+    ],
+    rasy: [...BREEDS_A_L, ...BREEDS_M_Z]
 };
