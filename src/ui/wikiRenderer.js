@@ -1,6 +1,21 @@
 // src/ui/wikiRenderer.js
 import { WIKI } from '../data/wikiData.js';
 
+// Inicjalizacja globalnej funkcji do rozwijania kart
+window.Waggle = window.Waggle || {};
+window.Waggle.toggleWikiAccordion = (el) => {
+    const content = el.nextElementSibling;
+    const chevron = el.querySelector('.chevron');
+
+    if (content.style.display === 'none' || content.style.display === '') {
+        content.style.display = 'block';
+        chevron.style.transform = 'rotate(90deg)';
+    } else {
+        content.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+    }
+};
+
 export function renderWiki(tab, searchQuery = "") {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -30,102 +45,90 @@ export function renderWiki(tab, searchQuery = "") {
     const stableFallback = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH6gYVFA4XMS0UoQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkY2STAAAAlElEQVR42u3XwQkCQRBEQe08InM1YwsmY6vGg90ggh4M9KXuqqp76wEAAAAAAAAAAAAAAAAAALjGlfba077bK+v967v6ba+st0b767P6666st067Ndpfn9Vfd2W9ddqt0f76rP66K+ut026N9tdn9dddWW+ddmu0vz6rv+7Keuu0W6PdGu2vz+qvu7LeOu3WaH99Vn/dlfXW6X8BqNsTAQDgZgAAAAAElFTkSuQmCC";
 
     filteredItems.forEach(item => {
-        let tagsHtml = "";
+        // Skrócone tagi do nagłówka
+        let shortTagsHtml = "";
         if (item.tags && Array.isArray(item.tags)) {
-            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top: 6px;">`;
+            shortTagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top: 6px;">`;
             item.tags.slice(0, 2).forEach(tag => {
-                // 🔥 ZMIANA: Eleganckie tagi w kształcie pigułek (Pill-shape)
-                tagsHtml += `<span style="font-size:10px; font-weight:800; background:var(--bg-color); color:var(--text-color); padding:4px 10px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
+                shortTagsHtml += `<span style="font-size:10px; font-weight:800; background:var(--bg-color); color:var(--text-color); padding:4px 10px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
             });
-            tagsHtml += `</div>`;
+            shortTagsHtml += `</div>`;
+        }
+
+        // Pełne tagi po rozwinięciu karty
+        let fullTagsHtml = "";
+        if (item.tags && Array.isArray(item.tags)) {
+            fullTagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top: 15px;">`;
+            item.tags.forEach(tag => {
+                fullTagsHtml += `<span style="font-size:12px; font-weight:800; background:var(--bg-color); color:var(--text-color); padding:6px 14px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
+            });
+            fullTagsHtml += `</div>`;
         }
 
         if (tab === 'rasy') {
-            // 🐕 KARTA RASY: Płynne okręgi i czysty luksus
+            let statsHtml = "";
+            if (item.filters) {
+                statsHtml += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:var(--bg-color); padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid var(--border-color);">`;
+                const labels = { kidsFriendly: "👶 Dzieci", easyToTrain: "🧠 Szkolenie", energyLevel: "⚡ Energia", apartmentLive: "🛋️ Blok" };
+                for (const [key, value] of Object.entries(item.filters)) {
+                    let stars = "⭐".repeat(value);
+                    statsHtml += `<div style="font-size:12px; font-weight:800; color:var(--text-color);">${labels[key] || key}:<br><span style="letter-spacing:1px; font-size:14px;">${stars}</span></div>`;
+                }
+                statsHtml += `</div>`;
+            }
+
             html += `
-                <div onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
-                     style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; margin-bottom: 10px; background: var(--panel-bg); cursor: pointer; border-radius: 20px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02); box-sizing: border-box; width: 100%; transition: transform 0.2s;">
-                    
-                    <div style="width: 60px; height: 60px; min-width: 60px; overflow:hidden; border-radius: 50%; border:2px solid var(--bg-color); background: var(--bg-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                        <img src="${item.img || stableFallback}" onerror="this.onerror=null; this.src='${stableFallback}';" style="width:100%; height:100%; object-fit:cover; display:block;">
+                <div style="margin-bottom: 12px; background: var(--panel-bg); border-radius: 20px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02); overflow: hidden;">
+                    <div onclick="window.Waggle.toggleWikiAccordion(this)" 
+                         style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; cursor: pointer; box-sizing: border-box; width: 100%;">
+                        
+                        <div style="width: 60px; height: 60px; min-width: 60px; overflow:hidden; border-radius: 50%; border:2px solid var(--bg-color); background: var(--bg-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <img src="${item.img || stableFallback}" onerror="this.onerror=null; this.src='${stableFallback}';" style="width:100%; height:100%; object-fit:cover; display:block;">
+                        </div>
+                        
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                            <b style="font-size: 16px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; font-weight: 900; letter-spacing: -0.3px;">${item.title}</b>
+                            <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">
+                                Kliknij, aby poznać szczegóły
+                            </p>
+                            ${shortTagsHtml}
+                        </div>
+                        <div class="chevron" style="color: var(--text-muted); font-size: 22px; padding-left: 5px; font-weight: 900; flex-shrink: 0; transition: transform 0.3s;">›</div>
                     </div>
                     
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <b style="font-size: 16px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; font-weight: 900; letter-spacing: -0.3px;">${item.title}</b>
-                        <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">
-                            ${item.desc}
-                        </p>
-                        ${tagsHtml}
+                    <div class="wiki-expanded-content" style="display: none; padding: 0 20px 20px 20px; border-top: 1px solid var(--border-color); margin-top: 5px; padding-top: 20px;">
+                        <div style="width: 100%; height: 200px; border-radius: 16px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <img src="${item.img || stableFallback}" style="width: 100%; height: 100%; object-fit: cover; object-position: center center;">
+                        </div>
+                        ${statsHtml}
+                        <h4 style="margin:0 0 10px 0; font-size:18px; font-weight:900; color:var(--text-color);">O rasie</h4>
+                        <p style="font-size: 15px; color: var(--text-color); line-height: 1.7; font-weight: 600; margin: 0;">${item.desc}</p>
+                        ${fullTagsHtml}
                     </div>
-                    <div style="color: var(--text-muted); font-size: 18px; padding-left: 5px; font-weight: 900; flex-shrink: 0;">›</div>
                 </div>
             `;
         } else {
-            // 📘 SZKOLENIA I SYTUACJE: Czysta linia (iOS style)
+            // 📘 SZKOLENIA I SYTUACJE (Czysty Accordion bez dużych zdjęć)
             html += `
-                <div onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
-                     style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; margin-bottom: 10px; background: var(--panel-bg); cursor: pointer; border-radius: 20px; border: 1px solid var(--border-color); border-left: 5px solid var(--secondary); box-shadow: 0 4px 15px rgba(0,0,0,0.02); box-sizing: border-box; width: 100%; transition: transform 0.2s;">
+                <div style="margin-bottom: 12px; background: var(--panel-bg); border-radius: 20px; border: 1px solid var(--border-color); border-left: 5px solid var(--secondary); box-shadow: 0 4px 15px rgba(0,0,0,0.02); overflow: hidden;">
+                    <div onclick="window.Waggle.toggleWikiAccordion(this)" 
+                         style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; cursor: pointer; box-sizing: border-box; width: 100%;">
+                        
+                        <b style="font-size: 15px; color:var(--text-color); font-weight: 800; flex: 1;">${item.title}</b>
+                        <div class="chevron" style="color: var(--text-muted); font-size: 22px; padding-left: 10px; font-weight: 900; flex-shrink: 0; transition: transform 0.3s;">›</div>
+                    </div>
                     
-                    <b style="font-size: 15px; color:var(--text-color); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${item.title}</b>
-                    
-                    <div style="color: var(--text-muted); font-size: 18px; padding-left: 10px; font-weight: 900; flex-shrink: 0;">›</div>
+                    <div class="wiki-expanded-content" style="display: none; padding: 0 20px 20px 20px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                        <p style="font-size: 15px; color: var(--text-color); line-height: 1.7; font-weight: 600; margin: 0;">${item.desc}</p>
+                        ${fullTagsHtml}
+                    </div>
                 </div>
             `;
         }
     });
     
-    container.innerHTML = html || '<p style="text-align:center; padding:30px; color:var(--text-muted); font-weight:700;">Nie znaleziono pasujących porad ani ras. 🐾</p>';
+    container.innerHTML = html || '<p style="text-align:center; padding:30px; color:var(--text-muted); font-weight:700;">Nie znaleziono pasujących porad. 🐾</p>';
 }
 
-export function openWikiDetails(id, tab) {
-    const modal = document.getElementById('wiki-details-modal');
-    const items = WIKI[tab] || [];
-    const item = items.find(i => i.id === id);
-    if (!modal || !item) return;
-
-    document.getElementById('wikiDetailsTitle').innerText = item.title;
-    document.getElementById('wikiDetailsDesc').innerText = item.desc;
-    
-    const imgEl = document.getElementById('wikiDetailsImg');
-    if (imgEl) {
-        if (item.img && tab === 'rasy') {
-            imgEl.src = item.img;
-            // 🔥 Wracamy do "cover" - w połączeniu z naszym nowym zaokrągleniem w HTML da to luksusowy efekt zdjęcia jak w apkach Apple
-            imgEl.style.objectFit = "cover"; 
-            imgEl.parentElement.style.display = "block";
-            imgEl.onerror = function() {
-                this.onerror = null;
-                this.parentElement.style.display = "none";
-            };
-        } else {
-            imgEl.parentElement.style.display = "none";
-        }
-    }
-
-    const tagsContainer = document.getElementById('wikiDetailsTags');
-    tagsContainer.innerHTML = "";
-    if (item.tags) {
-        item.tags.forEach(tag => {
-            tagsContainer.innerHTML += `<span style="font-size:12px; font-weight:800; background:var(--panel-bg); color:var(--text-color); padding:6px 14px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
-        });
-    }
-
-    const statsContainer = document.getElementById('wikiDetailsStats');
-    if (item.filters && tab === 'rasy') {
-        statsContainer.style.display = "grid";
-        statsContainer.style.gridTemplateColumns = "1fr 1fr";
-        statsContainer.style.gap = "10px";
-        
-        const labels = { kidsFriendly: "👶 Przyjazny dzieciom", easyToTrain: "🧠 Łatwość szkolenia", energyLevel: "⚡ Poziom energii", apartmentLive: "🛋️ Życie w bloku" };
-        let statsHtml = "";
-        for (const [key, value] of Object.entries(item.filters)) {
-            let stars = "⭐".repeat(value);
-            statsHtml += `<div style="font-size:13px; font-weight:800; color:var(--text-color);">${labels[key] || key}: <span style="letter-spacing:1px;">${stars}</span></div>`;
-        }
-        statsContainer.innerHTML = statsHtml;
-    } else {
-        statsContainer.style.display = "none";
-    }
-
-    modal.style.display = "flex";
-}
+// Funkcja pozostawiona pusta, by nie wywoływać błędów (zastąpiliśmy ją rozwijaniem)
+export function openWikiDetails(id, tab) {}
