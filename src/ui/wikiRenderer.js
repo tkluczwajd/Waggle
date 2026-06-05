@@ -26,54 +26,49 @@ export function renderWiki(tab, searchQuery = "") {
 
     let html = "";
     
-    // Transparentny, bezpieczny mini-placeholder Base64 (neutralne, czyste tło z łapką), który nigdy nie rzuci błędu
+    // Transparentny, bezpieczny mini-placeholder Base64
     const stableFallback = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH6gYVFA4XMS0UoQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkY2STAAAAlElEQVR42u3XwQkCQRBEQe08InM1YwsmY6vGg90ggh4M9KXuqqp76wEAAAAAAAAAAAAAAAAAALjGlfba077bK+v967v6ba+st0b767P6666st067Ndpfn9Vfd2W9ddqt0f76rP66K+ut026N9tdn9dddWW+ddmu0vz6rv+7Keuu0W6PdGu2vz+qvu7LeOu3WaH99Vn/dlfXW6X8BqNsTAQDgZgAAAAAElFTkSuQmCC";
 
     filteredItems.forEach(item => {
         let tagsHtml = "";
         if (item.tags && Array.isArray(item.tags)) {
-            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top: 5px;">`;
+            tagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top: 6px;">`;
             item.tags.slice(0, 2).forEach(tag => {
-                tagsHtml += `<span style="font-size:9px; font-weight:800; background:var(--panel-bg); color:var(--text-muted); padding:2px 6px; border-radius:8px; border:1px solid var(--border-color);">${tag}</span>`;
+                // 🔥 ZMIANA: Eleganckie tagi w kształcie pigułek (Pill-shape)
+                tagsHtml += `<span style="font-size:10px; font-weight:800; background:var(--bg-color); color:var(--text-color); padding:4px 10px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
             });
             tagsHtml += `</div>`;
         }
 
         if (tab === 'rasy') {
-            // 🐕 KARTA RASY: Widok poziomy z kompaktową fotką z lewej
+            // 🐕 KARTA RASY: Płynne okręgi i czysty luksus
             html += `
-                <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
-                     style="display: flex; align-items: center; gap: 14px; padding: 12px; margin-bottom: 8px; text-align: left; background: var(--card-bg); cursor: pointer; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.01); box-sizing: border-box; width: 100%;">
+                <div onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
+                     style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; margin-bottom: 10px; background: var(--panel-bg); cursor: pointer; border-radius: 20px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02); box-sizing: border-box; width: 100%; transition: transform 0.2s;">
                     
-                    <div style="width: 65px; height: 65px; min-width: 65px; overflow:hidden; border-radius: 12px; border:1px solid var(--border-color); background: var(--panel-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 60px; height: 60px; min-width: 60px; overflow:hidden; border-radius: 50%; border:2px solid var(--bg-color); background: var(--bg-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                         <img src="${item.img || stableFallback}" onerror="this.onerror=null; this.src='${stableFallback}';" style="width:100%; height:100%; object-fit:cover; display:block;">
                     </div>
                     
                     <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <div style="display:flex; align-items:center; gap:5px; width:100%;">
-                            <span style="font-size:12px; flex-shrink:0;">⚡</span>
-                            <b style="font-size: 15px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-weight: 800;">${item.title}</b>
-                        </div>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">
+                        <b style="font-size: 16px; color:var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; font-weight: 900; letter-spacing: -0.3px;">${item.title}</b>
+                        <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">
                             ${item.desc}
                         </p>
                         ${tagsHtml}
                     </div>
-                    <div style="color: var(--text-muted); font-size: 11px; padding-left: 2px; font-weight: bold; flex-shrink: 0;">➔</div>
+                    <div style="color: var(--text-muted); font-size: 18px; padding-left: 5px; font-weight: 900; flex-shrink: 0;">›</div>
                 </div>
             `;
         } else {
-            // 📘 SZKOLENIA I SYTUACJE: Powrót do upragnionego, ultra-czystego widoku jednoliniowego!
+            // 📘 SZKOLENIA I SYTUACJE: Czysta linia (iOS style)
             html += `
-                <div class="post-card" onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
-                     style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; margin-bottom: 8px; text-align: left; background: var(--card-bg); cursor: pointer; border-radius: 16px; border: 1px solid var(--border-color); border-left: 4px solid var(--secondary); box-shadow: 0 2px 6px rgba(0,0,0,0.01); box-sizing: border-box; width: 100%;">
+                <div onclick="window.Waggle.openWikiDetails('${item.id}', '${tab}')" 
+                     style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; margin-bottom: 10px; background: var(--panel-bg); cursor: pointer; border-radius: 20px; border: 1px solid var(--border-color); border-left: 5px solid var(--secondary); box-shadow: 0 4px 15px rgba(0,0,0,0.02); box-sizing: border-box; width: 100%; transition: transform 0.2s;">
                     
-                    <div style="display:flex; align-items:center; gap:10px; flex: 1; min-width: 0;">
-                        <span style="font-size:14px; flex-shrink:0;">⚡</span>
-                        <b style="font-size: 15px; color:var(--text-color); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${item.title}</b>
-                    </div>
+                    <b style="font-size: 15px; color:var(--text-color); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${item.title}</b>
                     
-                    <div style="color: var(--text-muted); font-size: 11px; padding-left: 10px; font-weight: bold; flex-shrink: 0;">➔</div>
+                    <div style="color: var(--text-muted); font-size: 18px; padding-left: 10px; font-weight: 900; flex-shrink: 0;">›</div>
                 </div>
             `;
         }
@@ -91,15 +86,12 @@ export function openWikiDetails(id, tab) {
     document.getElementById('wikiDetailsTitle').innerText = item.title;
     document.getElementById('wikiDetailsDesc').innerText = item.desc;
     
-// Znajdź w src/ui/wikiRenderer.js funkcję openWikiDetails i zmień styl imgEl:
-
     const imgEl = document.getElementById('wikiDetailsImg');
     if (imgEl) {
         if (item.img && tab === 'rasy') {
             imgEl.src = item.img;
-            // 🔥 ZMIANA: object-fit: contain sprawi, że zdjęcie nie będzie "ucięte"
             imgEl.style.objectFit = "contain"; 
-            imgEl.style.backgroundColor = "transparent"; // Opcjonalnie: tło za zdjęciem
+            imgEl.style.backgroundColor = "transparent"; 
             imgEl.parentElement.style.display = "block";
             imgEl.onerror = function() {
                 this.onerror = null;
@@ -114,7 +106,8 @@ export function openWikiDetails(id, tab) {
     tagsContainer.innerHTML = "";
     if (item.tags) {
         item.tags.forEach(tag => {
-            tagsContainer.innerHTML += `<span style="font-size:12px; font-weight:800; background:var(--panel-bg); color:var(--text-color); padding:6px 12px; border-radius:12px; border:1px solid var(--border-color);">${tag}</span>`;
+            // 🔥 ZMIANA: Tagi wewnątrz opisu rasy też są teraz w stylu Premium (Pigułka)
+            tagsContainer.innerHTML += `<span style="font-size:12px; font-weight:800; background:var(--bg-color); color:var(--text-color); padding:6px 14px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
         });
     }
 
