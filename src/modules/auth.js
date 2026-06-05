@@ -5,19 +5,35 @@ import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false;
 
-// 🔥 KULOODPORNE WYLOGOWANIE (Omija wszystkie konflikty skryptów)
+// 🔥 KULOODPORNE WYLOGOWANIE I CZYSZCZENIE CACHE PWA
 window.Waggle = window.Waggle || {};
 window.Waggle.logout = () => {
     if (window.Waggle && window.Waggle.showToast) {
-        window.Waggle.showToast("Wylogowywanie... ⏳");
+        window.Waggle.showToast("Wylogowywanie i czyszczenie pamięci... ⏳");
     }
     
     auth.signOut().then(() => {
-        // Czyszczenie pamięci telefonu/komputera
+        // 1. Czyszczenie pamięci lokalnej (sesja użytkownika)
         localStorage.clear();
         sessionStorage.clear();
-        // Twardy powrót na ekran logowania
-        window.location.replace(window.location.origin + window.location.pathname);
+
+        // 2. Brutalne usunięcie Service Workera i Cache (Twardy reset PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+            caches.keys().then(keys => {
+                keys.forEach(key => caches.delete(key));
+            });
+        }
+
+        // 3. Powrót na ekran logowania z ominięciem cache przeglądarki (losowy parametr)
+        setTimeout(() => {
+            window.location.replace(window.location.origin + window.location.pathname + '?v=' + new Date().getTime());
+        }, 500);
+
     }).catch((err) => {
         console.error("Błąd wylogowania:", err);
         if (window.Waggle && window.Waggle.showToast) {
