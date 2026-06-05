@@ -469,12 +469,16 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <script type="module" src="/src/app.js?v=1001"></script>
 
-    <script>
+ <script>
+      // 1. REJESTRACJA NOWEGO, INTELIGENTNEGO SERVICE WORKERA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
               console.log('✅ Service Worker zarejestrowany!', registration.scope);
+              
+              // 🔥 WYMUSZENIE: Każde wejście do apki sprawdza, czy na serwerze jest nowszy kod
+              registration.update();
             })
             .catch(err => {
               console.error('❌ Błąd rejestracji Service Workera:', err);
@@ -482,6 +486,7 @@
         });
       }
 
+      // 2. Skrypt automatycznie powiększający pole tekstowe w czacie
       document.addEventListener('input', function (event) {
           if (event.target.id === 'chatInput') {
               event.target.style.height = 'auto';
