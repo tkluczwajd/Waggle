@@ -7,19 +7,17 @@ class MapManager {
         this.layers = {};
     }
 
-init(containerId) {
+    init(containerId) {
         if (state.map.instance) {
             console.warn("🗺️ Mapa już istnieje, przerywam inicjalizację.");
             return;
         }
 
-        // Defensive check: Czy Leaflet załadowany?
         if (!window.L) {
             console.error("Leaflet nie został wczytany!");
             return;
         }
 
-        // 🔥 Fix: Defensywne przypisanie lokalnej zmiennej L
         const L = window.L;
 
         this.map = L.map(containerId, { zoomControl: false });
@@ -39,21 +37,34 @@ init(containerId) {
         console.log("🗺️ Map ready", this.map);
     }
 
+    // 🔥 NOWOŚĆ: Funkcja aktualizująca puls na żywo
+    updatePulse() {
+        const pulseWidget = document.getElementById('mapPulsCount');
+        if (pulseWidget && this.layers.walks) {
+            // Zlicza ile znaczników spacerów jest obecnie w warstwie
+            const activeDogs = this.layers.walks.getLayers().length;
+            pulseWidget.innerText = activeDogs;
+        }
+    }
+
     addMarkerToLayer(layerName, marker) {
         if (this.layers[layerName]) {
             marker.addTo(this.layers[layerName]);
+            if (layerName === 'walks') this.updatePulse(); // Aktualizuj po dodaniu
         }
     }
 
     removeMarkerFromLayer(layerName, marker) {
         if (this.layers[layerName]) {
             this.layers[layerName].removeLayer(marker);
+            if (layerName === 'walks') this.updatePulse(); // Aktualizuj po usunięciu
         }
     }
 
     clearLayer(layerName) {
         if (this.layers[layerName]) {
             this.layers[layerName].clearLayers();
+            if (layerName === 'walks') this.updatePulse();
         }
     }
 
@@ -68,16 +79,13 @@ init(containerId) {
     invalidateSize() {
         if (this.map) {
             this.map.invalidateSize(true);
-            // 🔥 Map health log
             console.log("🗺️ Map resized");
         }
     }
 }
 
-// Eksportujemy jedną, wspólną instancję (Singleton)
 export const mapManager = new MapManager();
 
-// Eksportujemy funkcję inicjującą, którą wołasz w appBootstrap
 export function initMap() {
     mapManager.init('map');
     console.log("📍 Mapa gotowa.");
