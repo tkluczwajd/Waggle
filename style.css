@@ -275,3 +275,20 @@ body {
     color: white !important;
     box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3) !important;
 }
+
+/* 🔥 Optymalizacja listy w "Nowe Stado" dla łatwiejszego klikania */
+#groupUsersList label {
+    padding: 15px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    cursor: pointer;
+}
+
+/* Zwiększenie samego checkboxa dla lepszej obsługi palcem */
+#groupUsersList label input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    cursor: pointer;
+}
