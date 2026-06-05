@@ -119,3 +119,15 @@ export function renderCommentsList(comments) {
         list.scrollTop = list.scrollHeight; 
     }
 }
+
+// 🔥 LOGIKA LIGHTBOXA DO POWIĘKSZANIA ZDJĘĆ
+window.Waggle = window.Waggle || {};
+window.Waggle.openLightbox = (imgUrl) => {
+    const lightboxModal = document.getElementById('lightbox-modal');
+    const lightboxImg = document.getElementById('lightbox-img');
+    
+    if (lightboxModal && lightboxImg && imgUrl) {
+        lightboxImg.src = imgUrl;
+        lightboxModal.style.display = 'flex';
+    }
+};
