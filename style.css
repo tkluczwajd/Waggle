@@ -292,3 +292,25 @@ body {
     height: 20px !important;
     cursor: pointer;
 }
+
+/* 🔥 Wyróżnienia w artykułach (Wiedza) */
+.wiki-tip { 
+    padding: 15px; 
+    border-radius: 12px; 
+    margin: 12px 0; 
+    font-weight: 700; 
+    font-size: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.wiki-tip-warning { 
+    background: #fff1f0; 
+    border-left: 4px solid var(--danger); 
+    color: #c62828; 
+}
+.wiki-tip-success { 
+    background: #e8f5e9; 
+    border-left: 4px solid var(--primary-btn); 
+    color: #2e7d32; 
+}
