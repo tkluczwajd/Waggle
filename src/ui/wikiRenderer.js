@@ -90,8 +90,8 @@ export function openWikiDetails(id, tab) {
     if (imgEl) {
         if (item.img && tab === 'rasy') {
             imgEl.src = item.img;
-            imgEl.style.objectFit = "contain"; 
-            imgEl.style.backgroundColor = "transparent"; 
+            // 🔥 Wracamy do "cover" - w połączeniu z naszym nowym zaokrągleniem w HTML da to luksusowy efekt zdjęcia jak w apkach Apple
+            imgEl.style.objectFit = "cover"; 
             imgEl.parentElement.style.display = "block";
             imgEl.onerror = function() {
                 this.onerror = null;
@@ -106,8 +106,7 @@ export function openWikiDetails(id, tab) {
     tagsContainer.innerHTML = "";
     if (item.tags) {
         item.tags.forEach(tag => {
-            // 🔥 ZMIANA: Tagi wewnątrz opisu rasy też są teraz w stylu Premium (Pigułka)
-            tagsContainer.innerHTML += `<span style="font-size:12px; font-weight:800; background:var(--bg-color); color:var(--text-color); padding:6px 14px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
+            tagsContainer.innerHTML += `<span style="font-size:12px; font-weight:800; background:var(--panel-bg); color:var(--text-color); padding:6px 14px; border-radius:100px; border:1px solid var(--border-color);">${tag}</span>`;
         });
     }
 
