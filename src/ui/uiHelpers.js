@@ -5,52 +5,33 @@ import { updateNotificationBtnUI } from '../services/notificationService.js';
 
 export function updateStatsUI() {
     if (!state.profile) return; const p = state.profile;
+    
     // 🔥 AKTUALIZACJA KARTOTEKI MEDYCZNEJ (Ekran SAFE)
-// 🔥 AKTUALIZACJA KARTOTEKI MEDYCZNEJ (Ekran SAFE)
     const chipDisplay = document.getElementById('displayChip');
     if (chipDisplay) {
         const hasSafeData = p.chip || p.allergies || p.meds || p.vet;
         const displayBlock = document.getElementById('safe-data-display');
         const fallbackText = document.getElementById('safe-data-fallback');
-        const openBtn = document.getElementById('openSafeSetupBtn');
 
         if (hasSafeData) {
             if (displayBlock) displayBlock.style.display = 'block';
             if (fallbackText) fallbackText.style.display = 'none';
-            if (openBtn) openBtn.innerText = "✏️ EDYTUJ DANE RATUNKOWE";
             
-            // 👇 NOWOŚĆ: Przekazanie imienia psa z głównego profilu
             if (document.getElementById('displaySafeName')) document.getElementById('displaySafeName').innerText = p.name || "Nieznane";
-            
             if (document.getElementById('displayChip')) document.getElementById('displayChip').innerText = p.chip || "Brak danych";
             if (document.getElementById('displayAllergies')) document.getElementById('displayAllergies').innerText = p.allergies || "Brak";
             if (document.getElementById('displayMeds')) document.getElementById('displayMeds').innerText = p.meds || "Brak";
             if (document.getElementById('displayVet')) document.getElementById('displayVet').innerText = p.vet || "Brak kontaktu";
             
-            // 👇 NOWY FRAGMENT WKLEJONY TUTAJ (PRZED ELSE) 👇
-            if (p.safeId) {
-                let safeLinkEl = document.getElementById('displaySafeLink');
-                if (!safeLinkEl) {
-                    safeLinkEl = document.createElement('div');
-                    safeLinkEl.id = 'displaySafeLink';
-                    safeLinkEl.style.marginTop = '10px';
-                    safeLinkEl.style.paddingTop = '10px';
-                    safeLinkEl.style.borderTop = '1px dashed var(--border-color)';
-                    displayBlock.appendChild(safeLinkEl);
-                }
-                safeLinkEl.innerHTML = `<b>🔗 Mój publiczny link SAFE:</b> <br><span style="color: var(--primary); font-weight: 800; font-size: 14px;">joinwaggle.com/safe.html?id=${p.safeId}</span>`;
-            }
-
         } else {
-            // 👆 TUTAJ JEST ELSE
             if (displayBlock) displayBlock.style.display = 'none';
             if (fallbackText) fallbackText.style.display = 'block';
-            if (openBtn) openBtn.innerText = "Wypełnij dane ratunkowe";
         }
     }
+    
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
     
-    // 👇 NOWOŚĆ: Rysowanie Miasta i Rasy na nowym ekranie HOME
+    // 👇 Rysowanie Miasta i Rasy na ekranie HOME
     const cityDisplay = document.getElementById('profileCityDisplay'); if(cityDisplay) cityDisplay.innerText = p.city || "Nie podano";
     const breedDisplay = document.getElementById('profileBreedDisplay'); if(breedDisplay) breedDisplay.innerText = p.breed || "Nie podano";
     
@@ -63,7 +44,6 @@ export function updateStatsUI() {
     const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
     
-    // 🔥 TUTAJ DODAJEMY AKTUALIZACJĘ PRZYCISKU POWIADOMIEŃ
     updateNotificationBtnUI(p.pushEnabled === true);
 
     const tempEl = document.getElementById('weather-temp');
@@ -107,9 +87,7 @@ export function loadSettings() {
     if(document.getElementById('settingTheme')) document.getElementById('settingTheme').value = theme;
 }
 
-// 🔥 NOWY MODUŁ KONTEKSTOWY: Karta Użytkownika i Start Czatu
 window.Waggle.openUserMenu = (uid, name, avatar) => {
-    // Sprawdzamy, czy użytkownik nie klika we własny profil
     const isMe = state.user && state.user.uid === uid;
     
     let modal = document.getElementById('user-action-modal');
@@ -118,14 +96,12 @@ window.Waggle.openUserMenu = (uid, name, avatar) => {
         modal.id = 'user-action-modal';
         modal.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
         
-        // Zamykanie po kliknięciu w ciemne tło
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.style.display = 'none';
         });
         document.body.appendChild(modal);
     }
 
-    // Zabezpieczenie na wypadek braku zdjęcia
     const safeAvatar = avatar && avatar.trim() !== "" && avatar !== "undefined" 
         ? avatar 
         : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150';
@@ -153,12 +129,9 @@ window.Waggle.openUserMenu = (uid, name, avatar) => {
     modal.style.display = 'flex';
 };
 
-// Funkcja przechwytująca kliknięcie w przycisk czatu
 window.Waggle.startDirectChat = (uid, name, avatar) => {
-    // 1. Zamykamy wizytówkę
     document.getElementById('user-action-modal').style.display = 'none';
     
-    // 2. Tymczasowy alert testowy (zaraz go podmienimy na właściwe otwarcie okna czatu)
     if (typeof window.Waggle.openChat === 'function') {
         window.Waggle.openChat(uid, name, avatar);
     } else {
