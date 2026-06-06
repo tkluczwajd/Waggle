@@ -43,3 +43,4 @@ export const WIKI = {
             desc: "Podstawa pracy z psem reaktywnym. Weź smakołyk do dłoni, zamknij ją w pięść i wyciągnij w bok. Pies będzie lizał i drapał rękę. Stój nieruchomo. W momencie, gdy pies sfrustrowany brakiem dostępu do jedzenia odwróci wzrok od dłoni i spojrzy Ci prosto w oczy – powiedz 'TAK' i daj mu nagrodę. Uczy to psa, że kluczem do wszystkiego jest kontakt wzrokowy z przewodnikiem, a nie fiksacja na bodźcu." 
         }
     ],
+}
