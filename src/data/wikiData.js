@@ -3,7 +3,7 @@ import { EMERGENCY_ARTICLES } from './wikiEmergencyData.js';
 import { BREED_ARTICLES } from './wikiBreedData.js';
 
 export const WIKI = {
-    training: TRAINING_ARTICLES,
-    emergency: EMERGENCY_ARTICLES,
-    breeds: BREED_ARTICLES
+    trening: TRAINING_ARTICLES,
+    sytuacje: EMERGENCY_ARTICLES,
+    rasy: BREED_ARTICLES
 };
