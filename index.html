@@ -31,7 +31,9 @@
             
             <div class="legal-checkbox-container" style="justify-content: center; margin-top: 25px;">
                 <input type="checkbox" id="legalTerms">
-                <label for="legalTerms" style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Akceptuję Regulamin Waggle.</label>
+                <label for="legalTerms" style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
+    Akceptuję <span style="color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="document.getElementById('legal-modal').style.display='flex'">Regulamin i Politykę Prywatności</span>.
+</label>
             </div>
         </div>
     </div>
@@ -455,6 +457,35 @@
         <div class="card"><button class="close-modal-btn">✕</button><div id="weather-forecast-content"></div></div>
     </div>
 
+    <!-- 🔥 MODAL: REGULAMIN I POLITYKA PRYWATNOŚCI (BETA) -->
+    <div id="legal-modal" class="modal" style="z-index: 20005;">
+        <div class="card" style="text-align: left; padding: 25px; max-height: 80vh; display: flex; flex-direction: column;">
+            <button class="close-modal-btn" onclick="document.getElementById('legal-modal').style.display='none'">✕</button>
+            <div style="font-size: 32px; margin-bottom: 10px; text-align: center;">📜</div>
+            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 20px; color: var(--text-color); text-align: center;">Regulamin Waggle (Beta)</h3>
+            
+            <div style="flex: 1; overflow-y: auto; font-size: 13px; color: var(--text-muted); line-height: 1.6; padding-right: 10px; margin-bottom: 15px;">
+                <p><strong style="color: var(--text-color);">1. Faza Testowa (Beta)</strong><br>
+                Aplikacja Waggle znajduje się obecnie w fazie wczesnych testów. Funkcjonalności mogą ulegać zmianie, a przerwy w działaniu są możliwe.</p>
+                
+                <p><strong style="color: var(--text-color);">2. Twoje Dane</strong><br>
+                Zbieramy podstawowe dane (adres e-mail, imię psa, lokalizacja w tle podczas spaceru), wyłącznie w celu zapewnienia działania aplikacji. Nie sprzedajemy Twoich danych podmiotom trzecim.</p>
+                
+                <p><strong style="color: var(--text-color);">3. Prawo do resetu bazy (Ważne!)</strong><br>
+                Zastrzegamy sobie prawo do całkowitego usunięcia bazy danych (w tym profili, spacerów, wiadomości i zdjęć) bez uprzedzenia, w ramach przygotowań do oficjalnego startu aplikacji.</p>
+                
+                <p><strong style="color: var(--text-color);">4. Bezpieczeństwo i odpowiedzialność</strong><br>
+                Korzystasz z aplikacji na własną odpowiedzialność. Zgłaszanie alertów i korzystanie z Bazy Wiedzy ma charakter wyłącznie informacyjny i nie zastępuje porady weterynaryjnej.</p>
+                
+                <p><strong style="color: var(--text-color);">5. Usunięcie konta</strong><br>
+                W każdej chwili możesz trwale usunąć swoje konto, wchodząc w "Ustawienia -> Usuń moje konto".</p>
+            </div>
+            
+            <button class="btn-main" onclick="document.getElementById('legalTerms').checked = true; document.getElementById('legal-modal').style.display='none';" style="background: var(--primary); font-size: 14px; padding: 14px; box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);">
+                ROZUMIEM I AKCEPTUJĘ
+            </button>
+        </div>
+    </div>
     <div id="comments-modal" class="modal" style="z-index: 9999;">
         <div class="card" style="height: 85vh; display: flex; flex-direction: column; padding: 0;">
             <div style="background: var(--panel-bg); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0;">
