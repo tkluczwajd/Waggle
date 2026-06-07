@@ -1,6 +1,5 @@
 import { mapManager } from './mapManager.js';
 
-// Helper: zamienia dystans na czytelny format
 function formatDistance(distKm) {
     if (distKm < 1) return Math.round(distKm * 1000) + ' m';
     return distKm.toFixed(1).replace('.', ',') + ' km';
@@ -13,7 +12,8 @@ const typeConfig = {
     'walk': { icon: '🚶', label: 'Teren spacerowy' }
 };
 
-export function renderParksOnMap(places) {
+// Dodaliśmy parametr favIds (tablica z numerami ID ulubionych miejsc z bazy)
+export function renderParksOnMap(places, favIds = []) {
     mapManager.clearLayer('parks');
     const L = window.L;
     if (!L) return;
@@ -21,8 +21,10 @@ export function renderParksOnMap(places) {
     places.forEach(place => {
         const config = typeConfig[place.type] || typeConfig['walk'];
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+        
+        // Sprawdzamy, czy to konkretne miejsce jest w ulubionych
+        const isFav = favIds.includes(place.id);
 
-        // 🔥 Dodany przycisk Ulubione (na razie wywołuje tylko wizualny efekt/toast)
         const popupContent = `
             <div style="font-family: 'Inter', sans-serif; padding: 5px; min-width: 170px; text-align: left;">
                 <b style="font-size: 15px; color: var(--text-color); display: block; margin-bottom: 2px;">${place.name}</b>
@@ -34,8 +36,8 @@ export function renderParksOnMap(places) {
                             onclick="window.open('${mapsLink}', '_blank')">
                         🧭 Nawiguj
                     </button>
-                    <button class="btn-outline" style="padding: 8px; font-size: 16px; border-radius: 8px; flex-shrink: 0; border-color: var(--gold); color: var(--gold);" 
-                            onclick="window.Waggle.showToast('Zapisano w Ulubionych! ⭐')" title="Dodaj do ulubionych">
+                    <button class="btn-outline" style="padding: 8px; font-size: 16px; border-radius: 8px; flex-shrink: 0; border-color: ${isFav ? 'var(--gold)' : 'var(--text-muted)'}; color: ${isFav ? 'var(--gold)' : 'var(--text-muted)'}; background: ${isFav ? 'rgba(255,177,66,0.1)' : 'transparent'};" 
+                            onclick="window.Waggle.toggleFavoritePlace('${place.id}')" title="Ulubione">
                         ⭐
                     </button>
                 </div>
@@ -58,12 +60,12 @@ export function renderParksOnMap(places) {
     });
 }
 
-export function renderPlacesList(places, containerId = 'places-container') {
+export function renderPlacesList(places, favIds = [], containerId = 'places-container') {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     if (places.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 30px; font-weight: 700;">Brak miejsc w wybranej kategorii 😔</p>';
+        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 30px; font-weight: 700;">Brak miejsc do wyświetlenia 😔</p>';
         return;
     }
 
@@ -72,11 +74,12 @@ export function renderPlacesList(places, containerId = 'places-container') {
     places.forEach(place => {
         const config = typeConfig[place.type] || typeConfig['walk'];
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+        const isFav = favIds.includes(place.id);
         
-        // 🔥 Dodana gwiazdka do widoku listy
+        // Pętla budująca karty miejsc z uwzględnieniem gwiazdek
         html += `
             <div class="place-card" style="background: white; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color);">
-                <div style="font-size: 32px; flex-shrink: 0; background: var(--bg-color); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
+                <div style="font-size: 32px; flex-shrink: 0; background: var(--bg-color); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
                     ${config.icon}
                 </div>
                 <div style="flex: 1; text-align: left; cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
@@ -87,8 +90,8 @@ export function renderPlacesList(places, containerId = 'places-container') {
                         <span style="color: var(--primary); font-weight: 800;">📍 ${formatDistance(place.distance)}</span>
                     </div>
                 </div>
-                <button style="background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer; padding: 5px; transition: 0.2s;" 
-                        onclick="window.Waggle.showToast('Zapisano w Ulubionych! ⭐'); this.style.color='var(--gold)';">
+                <button style="background: ${isFav ? 'rgba(255,177,66,0.1)' : 'var(--bg-color)'}; border: 1px solid ${isFav ? 'var(--gold)' : 'var(--border-color)'}; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; color: ${isFav ? 'var(--gold)' : 'var(--text-muted)'}; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" 
+                        onclick="window.Waggle.toggleFavoritePlace('${place.id}')">
                     ⭐
                 </button>
             </div>
