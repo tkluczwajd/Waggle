@@ -6,6 +6,7 @@ import { initSettingsUi } from './settingsUiListeners.js';
 import { initWalkUi } from './walkUiListeners.js';
 import { initAlertsUi } from './alertsUiListeners.js';
 import { initProfileUi } from './profileUiListeners.js';
+import { initPlacesUi } from './placesUiListeners.js';
 
 export function initUiListeners() {
     initPostUi();
@@ -15,6 +16,7 @@ export function initUiListeners() {
     initWalkUi();
     initAlertsUi();
     initProfileUi();
+    initPlacesUi(); // 🔥 Tutaj jest właściwe miejsce na inicjalizację nowej zakładki
 
     // =========================================================================
     // 🔥 KULOODPORNY SYSTEM HISTORII (SPRZĘTOWY PRZYCISK WSTECZ DLA MODALI)
