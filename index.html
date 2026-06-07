@@ -291,11 +291,11 @@
 
     <div id="chat-window" class="modal" style="z-index: 9999;">
         <div class="card" style="height: 85vh; padding: 0; display: flex; flex-direction: column;">
-            <div style="background: var(--panel-bg); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; flex-shrink: 0;">
-                <b id="chatPartnerName">...</b>
-                <div style="display: flex; gap: 15px; align-items: center;">
-                    <button id="groupSettingsBtn" style="display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--secondary); padding: 0;">⚙️</button>
-                    <button id="closeChatBtn" class="close-modal-btn" style="position:static; background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-color); width: auto; height: auto;">✕</button>
+            <div style="background: var(--panel-bg); padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; flex-shrink: 0;">
+                <b id="chatPartnerName" style="font-size: 18px; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%;">...</b>
+                <div style="display: flex; gap: 18px; align-items: center;">
+                    <button id="groupSettingsBtn" style="display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--secondary); padding: 0; margin: 0; line-height: 1; transition: transform 0.2s;">⚙️</button>
+                    <button id="closeChatBtn" class="close-modal-btn" style="position: static; margin: 0;">✕</button>
                 </div>
             </div>
             
