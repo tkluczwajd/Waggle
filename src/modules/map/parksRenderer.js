@@ -1,12 +1,11 @@
 import { mapManager } from './mapManager.js';
 
-// Helper: zamienia dystans na czytelny format (metry / kilometry)
+// Helper: zamienia dystans na czytelny format
 function formatDistance(distKm) {
     if (distKm < 1) return Math.round(distKm * 1000) + ' m';
     return distKm.toFixed(1).replace('.', ',') + ' km';
 }
 
-// Globalna konfiguracja typów
 const typeConfig = {
     'dogpark': { icon: '🐕', label: 'Wybieg dla psów' },
     'forest': { icon: '🌲', label: 'Las' },
@@ -23,19 +22,26 @@ export function renderParksOnMap(places) {
         const config = typeConfig[place.type] || typeConfig['walk'];
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
 
+        // 🔥 Dodany przycisk Ulubione (na razie wywołuje tylko wizualny efekt/toast)
         const popupContent = `
-            <div style="font-family: 'Inter', sans-serif; padding: 5px; min-width: 160px; text-align: left;">
+            <div style="font-family: 'Inter', sans-serif; padding: 5px; min-width: 170px; text-align: left;">
                 <b style="font-size: 15px; color: var(--text-color); display: block; margin-bottom: 2px;">${place.name}</b>
                 <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;">${config.icon} ${config.label}</span>
                 <div style="margin-top: 5px; font-size: 13px; font-weight: 900; color: var(--primary);">📍 ${formatDistance(place.distance)}</div>
-                <button class="btn-main" style="padding: 8px; font-size: 12px; margin-top: 10px; width: 100%; border-radius: 8px;" 
-                        onclick="window.open('${mapsLink}', '_blank')">
-                    🧭 Nawiguj
-                </button>
+                
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <button class="btn-main" style="padding: 8px; font-size: 12px; border-radius: 8px; flex: 1;" 
+                            onclick="window.open('${mapsLink}', '_blank')">
+                        🧭 Nawiguj
+                    </button>
+                    <button class="btn-outline" style="padding: 8px; font-size: 16px; border-radius: 8px; flex-shrink: 0; border-color: var(--gold); color: var(--gold);" 
+                            onclick="window.Waggle.showToast('Zapisano w Ulubionych! ⭐')" title="Dodaj do ulubionych">
+                        ⭐
+                    </button>
+                </div>
             </div>
         `;
 
-        // Wybiegi mają większą ikonę (32px), reszta 26px
         const iconHtml = `<div style="font-size: ${place.type === 'dogpark' ? '32px' : '26px'}; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3)); text-align: center;">${config.icon}</div>`;
         
         const icon = L.divIcon({
@@ -50,8 +56,6 @@ export function renderParksOnMap(places) {
         marker.bindPopup(popupContent);
         mapManager.addMarkerToLayer('parks', marker);
     });
-
-    console.log(`🌲 Map 2.0: Wyrenderowano ${places.length} miejsc na mapie.`);
 }
 
 export function renderPlacesList(places, containerId = 'places-container') {
@@ -69,12 +73,13 @@ export function renderPlacesList(places, containerId = 'places-container') {
         const config = typeConfig[place.type] || typeConfig['walk'];
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
         
+        // 🔥 Dodana gwiazdka do widoku listy
         html += `
-            <div class="place-card" style="background: white; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color); cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
+            <div class="place-card" style="background: white; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color);">
                 <div style="font-size: 32px; flex-shrink: 0; background: var(--bg-color); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
                     ${config.icon}
                 </div>
-                <div style="flex: 1; text-align: left;">
+                <div style="flex: 1; text-align: left; cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
                     <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: var(--text-color);">${place.name}</h4>
                     <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); font-weight: 600;">
                         <span>${config.label}</span>
@@ -82,7 +87,10 @@ export function renderPlacesList(places, containerId = 'places-container') {
                         <span style="color: var(--primary); font-weight: 800;">📍 ${formatDistance(place.distance)}</span>
                     </div>
                 </div>
-                <div style="color: var(--secondary); font-size: 20px;">🧭</div>
+                <button style="background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer; padding: 5px; transition: 0.2s;" 
+                        onclick="window.Waggle.showToast('Zapisano w Ulubionych! ⭐'); this.style.color='var(--gold)';">
+                    ⭐
+                </button>
             </div>
         `;
     });
