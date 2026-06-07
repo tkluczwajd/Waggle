@@ -12,7 +12,6 @@ const typeConfig = {
     'walk': { icon: '🚶', label: 'Teren spacerowy' }
 };
 
-// Dodaliśmy parametr favIds (tablica z numerami ID ulubionych miejsc z bazy)
 export function renderParksOnMap(places, favIds = []) {
     mapManager.clearLayer('parks');
     const L = window.L;
@@ -22,8 +21,17 @@ export function renderParksOnMap(places, favIds = []) {
         const config = typeConfig[place.type] || typeConfig['walk'];
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
         
-        // Sprawdzamy, czy to konkretne miejsce jest w ulubionych
         const isFav = favIds.includes(place.id);
+
+        // 🔥 Dynamiczna ikona SVG (Gwiazdka) dla Popupu
+        const starSvg = `
+            <svg width="18" height="18" viewBox="0 0 24 24" 
+                 fill="${isFav ? 'var(--gold)' : 'none'}" 
+                 stroke="${isFav ? 'var(--gold)' : 'var(--text-muted)'}" 
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: 0.2s;">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+        `;
 
         const popupContent = `
             <div style="font-family: 'Inter', sans-serif; padding: 5px; min-width: 170px; text-align: left;">
@@ -36,9 +44,9 @@ export function renderParksOnMap(places, favIds = []) {
                             onclick="window.open('${mapsLink}', '_blank')">
                         🧭 Nawiguj
                     </button>
-                    <button class="btn-outline" style="padding: 8px; font-size: 16px; border-radius: 8px; flex-shrink: 0; border-color: ${isFav ? 'var(--gold)' : 'var(--text-muted)'}; color: ${isFav ? 'var(--gold)' : 'var(--text-muted)'}; background: ${isFav ? 'rgba(255,177,66,0.1)' : 'transparent'};" 
+                    <button class="btn-outline" style="padding: 8px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-color: ${isFav ? 'var(--gold)' : 'var(--text-muted)'}; background: ${isFav ? 'rgba(255,177,66,0.1)' : 'transparent'};" 
                             onclick="window.Waggle.toggleFavoritePlace('${place.id}')" title="Ulubione">
-                        ⭐
+                        ${starSvg}
                     </button>
                 </div>
             </div>
@@ -76,7 +84,16 @@ export function renderPlacesList(places, favIds = [], containerId = 'places-cont
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
         const isFav = favIds.includes(place.id);
         
-        // Pętla budująca karty miejsc z uwzględnieniem gwiazdek
+        // 🔥 Dynamiczna ikona SVG (Gwiazdka) dla Listy
+        const starSvg = `
+            <svg width="22" height="22" viewBox="0 0 24 24" 
+                 fill="${isFav ? 'var(--gold)' : 'none'}" 
+                 stroke="${isFav ? 'var(--gold)' : 'var(--text-muted)'}" 
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: 0.2s;">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+        `;
+        
         html += `
             <div class="place-card" style="background: white; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color);">
                 <div style="font-size: 32px; flex-shrink: 0; background: var(--bg-color); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
@@ -90,9 +107,9 @@ export function renderPlacesList(places, favIds = [], containerId = 'places-cont
                         <span style="color: var(--primary); font-weight: 800;">📍 ${formatDistance(place.distance)}</span>
                     </div>
                 </div>
-                <button style="background: ${isFav ? 'rgba(255,177,66,0.1)' : 'var(--bg-color)'}; border: 1px solid ${isFav ? 'var(--gold)' : 'var(--border-color)'}; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; color: ${isFav ? 'var(--gold)' : 'var(--text-muted)'}; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" 
+                <button style="background: ${isFav ? 'rgba(255,177,66,0.1)' : 'var(--bg-color)'}; border: 1px solid ${isFav ? 'var(--gold)' : 'var(--border-color)'}; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;" 
                         onclick="window.Waggle.toggleFavoritePlace('${place.id}')">
-                    ⭐
+                    ${starSvg}
                 </button>
             </div>
         `;
