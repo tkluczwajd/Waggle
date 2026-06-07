@@ -68,9 +68,16 @@ export function initAuth(onReady) {
             state.user = user; 
             
             const unsub = db.collection("users").doc(user.uid).onSnapshot(doc => {
-                let data = doc.exists ? doc.data() : { name: "Piesek", walkCount: 0, isSearchable: true, city: "", breed: "" };
+                let data = doc.exists ? doc.data() : { 
+                    name: "Piesek", 
+                    walkCount: 0, 
+                    isSearchable: true, 
+                    city: "", 
+                    breed: "",
+                    createdAt: fb.firestore.FieldValue.serverTimestamp() // 🔥 TO DODAJE DATĘ!
+                };
                 data = { ...data, isPremium: data.isPremium || false };
-
+                
                 if (!doc.exists) db.collection("users").doc(user.uid).set(data, {merge: true});
 
                 setState('profile', data);
