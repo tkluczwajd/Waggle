@@ -19,8 +19,11 @@ export function renderChatMessages(messages, currentUid, isGroupChat = false) {
             const senderName = msg.senderName || "Piesek";
             const senderAvatar = msg.senderAvatar && msg.senderAvatar.trim() !== "" ? msg.senderAvatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
             
+            // 🔥 POPRAWKA: Dodane zdarzenie onclick, które otwiera kartę profilu psa ze stada
             senderIdentityHtml = `
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; margin-left:4px;">
+            <div onclick="window.Waggle.showUserActionModal('${msg.sender}', '${senderName.replace(/'/g, "\\'")}', '${senderAvatar}')" 
+                 style="display:flex; align-items:center; gap:6px; margin-bottom:4px; margin-left:4px; cursor:pointer; transition: opacity 0.2s;"
+                 onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
                 <img src="${senderAvatar}" style="width:18px; height:18px; border-radius:50%; object-fit:cover; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <span style="font-size:11px; font-weight:800; color:var(--text-muted);">${senderName}</span>
             </div>`;
@@ -53,7 +56,6 @@ export function renderChatImagePreviewsUI(images, container) {
     container.style.gap = '12px';
     container.style.flexWrap = 'wrap';
     container.style.paddingTop = '10px';
-    
     let html = '';
     images.forEach((file, index) => {
         const url = URL.createObjectURL(file);
