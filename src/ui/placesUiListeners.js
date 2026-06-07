@@ -1,11 +1,10 @@
-// src/ui/placesUiListeners.js
 import { renderPlacesList, renderParksOnMap } from '../modules/map/parksRenderer.js';
 
 let currentPlaces = [];
 
 export function setPlacesData(places) {
     currentPlaces = places;
-    applyPlacesFilter('all'); // Inicjalne ładowanie pełnej listy
+    applyPlacesFilter('all'); // Inicjalnie ładujemy filtrowaną listę główną
 }
 
 export function initPlacesUi() {
@@ -13,7 +12,6 @@ export function initPlacesUi() {
     
     filterBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Zarządzanie stanem wizualnym przycisków
             filterBtns.forEach(b => {
                 b.classList.remove('active');
                 b.style.background = 'transparent';
@@ -24,7 +22,6 @@ export function initPlacesUi() {
             btn.style.background = 'var(--text-color)';
             btn.style.color = 'white';
             
-            // Aplikacja filtru
             applyPlacesFilter(btn.dataset.type);
         });
     });
@@ -33,11 +30,16 @@ export function initPlacesUi() {
 function applyPlacesFilter(type) {
     let filtered = currentPlaces;
     
-    if (type !== 'all') {
+    // 🔥 Zmiana logiki: 'all' pokazuje tylko konkretne destynacje, ukrywa zwykłe 'walk'
+    if (type === 'all') {
+        filtered = currentPlaces.filter(p => p.type === 'dogpark' || p.type === 'forest' || p.type === 'park');
+    } else if (type === 'favorites') {
+        // Przygotowane pod kolejny etap
+        filtered = []; 
+    } else {
         filtered = currentPlaces.filter(p => p.type === type);
     }
     
-    // Prawdziwa magia wspólnego źródła danych (Single Source of Truth)
     renderPlacesList(filtered);
     renderParksOnMap(filtered);
 }
