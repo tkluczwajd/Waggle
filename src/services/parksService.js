@@ -1,9 +1,10 @@
 import { getDistance } from './geolocationService.js';
+import { setPlacesData } from '../ui/placesUiListeners.js'; // 🔥 Spinamy filtry!
 
 export async function fetchNearbyParks(lat, lng) {
-    console.log("🌍 OSM START (Mapa 2.0 z filtrem pow.)", lat, lng);
+    console.log("🌍 OSM START (Mapa 2.0 - Tarcza Anty-Choinkowa)", lat, lng);
 
-    // 🔥 Zoptymalizowane zapytanie, ale ZACHOWUJEMY 'out bb center;' do obliczania pola
+    // 🔥 Usunięto grassland i recreation_ground - koniec ze spamem ludzików!
     const query = `
 [out:json][timeout:20];
 (
@@ -18,9 +19,6 @@ export async function fetchNearbyParks(lat, lng) {
     way["landuse"="forest"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
     relation["natural"="wood"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
     relation["landuse"="forest"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
-
-    way["leisure"="recreation_ground"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
-    way["natural"="grassland"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
 );
 out bb center;
 `;
@@ -33,24 +31,25 @@ out bb center;
         if (!data || !data.elements) return [];
 
         const places = [];
-        const seen = new Set();
+        const seenCoordinates = new Set();
+        const seenNames = new Set(); // 🔥 Nowość: Blokada klonów z tą samą nazwą
         
         data.elements.forEach(el => {
             let eLat = el.lat || el.center?.lat;
             let eLng = el.lon || el.center?.lon;
             if (!eLat || !eLng || !el.tags) return; 
 
-            // ZWRÓCONY KOD: Obliczamy przybliżoną powierzchnię w metrach kwadratowych
+            // 1. Blokada mikroskopijnych różnic w koordynatach
+            const coordKey = Math.round(eLat * 100) + "_" + Math.round(eLng * 100);
+            if (seenCoordinates.has(coordKey)) return;
+            seenCoordinates.add(coordKey);
+
             let areaSqM = 10000; 
             if (el.bounds) {
                 const widthM = (el.bounds.maxlon - el.bounds.minlon) * 71300; 
                 const heightM = (el.bounds.maxlat - el.bounds.minlat) * 111000; 
                 areaSqM = widthM * heightM;
             }
-
-            const key = Math.round(eLat * 1000) + "_" + Math.round(eLng * 1000);
-            if (seen.has(key)) return;
-            seen.add(key);
 
             const tags = el.tags;
             const isDogPark = tags.leisure === 'dog_park';
@@ -61,11 +60,16 @@ out bb center;
 
             if (nameLower.includes("zieleń izolacyjna") || nameLower.includes("pas zieleni")) return;
             
-            // 🔥 TWÓJ KLUCZOWY FILTR: Odrzucamy mikroskwerki i prywatne zagajniki
+            // 2. 🔥 KLUCZOWY FILTR NAZWY: Jeśli mamy już np. "Las Murckowski", nie dodawaj kolejnego!
+            if (hasName) {
+                const nameKey = nameLower + "_" + (isDogPark ? "dog" : isForest ? "forest" : "park");
+                if (seenNames.has(nameKey)) return; // Blokujemy klona!
+                seenNames.add(nameKey);
+            }
+
             if (isForest && !hasName && areaSqM < 4000) return;
             if (!isDogPark && !isForest && !hasName && areaSqM < 200) return; 
 
-            // Mapowanie dla nowych filtrów UI (Odkrywaj)
             let type = 'walk';
             let name = tags.name || "Teren spacerowy";
             
@@ -80,15 +84,19 @@ out bb center;
             });
         });
 
-        // Twoja sprawdzona logika sortowania i ucinania dystansu
         const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
-        const finalPlaces = [
+        const finalList = [
             ...dogParks.filter(p => p.distance <= 8), 
             ...allGreenery.filter(p => p.distance <= 8)
-        ];
-        return finalPlaces.slice(0, 150);
+        ].slice(0, 150);
+
+        // 🔥 AUTOMATYCZNA SYNCHRONIZACJA Z FILTRAMI UI
+        // To rozwiązuje problem znikających punktów po przejściu do zakładki!
+        setPlacesData(finalList);
+
+        return finalList;
 
     } catch (error) {
         console.error("❌ OSM ERROR:", error);
