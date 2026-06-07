@@ -1,8 +1,9 @@
 import { getDistance } from './geolocationService.js';
 
 export async function fetchNearbyParks(lat, lng) {
-    console.log("🌍 OSM START", lat, lng);
+    console.log("🌍 OSM START (Mapa 2.0 z filtrem pow.)", lat, lng);
 
+    // 🔥 Zoptymalizowane zapytanie, ale ZACHOWUJEMY 'out bb center;' do obliczania pola
     const query = `
 [out:json][timeout:20];
 (
@@ -10,7 +11,6 @@ export async function fetchNearbyParks(lat, lng) {
     way["leisure"="dog_park"](around:8000,${lat},${lng});
     relation["leisure"="dog_park"](around:8000,${lat},${lng});
 
-    node["leisure"="park"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
     way["leisure"="park"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
     relation["leisure"="park"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
 
@@ -18,6 +18,9 @@ export async function fetchNearbyParks(lat, lng) {
     way["landuse"="forest"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
     relation["natural"="wood"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
     relation["landuse"="forest"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
+
+    way["leisure"="recreation_ground"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
+    way["natural"="grassland"]["access"!="private"]["access"!="no"](around:8000,${lat},${lng});
 );
 out bb center;
 `;
@@ -37,7 +40,7 @@ out bb center;
             let eLng = el.lon || el.center?.lon;
             if (!eLat || !eLng || !el.tags) return; 
 
-            // Obliczamy przybliżoną powierzchnię w metrach kwadratowych
+            // ZWRÓCONY KOD: Obliczamy przybliżoną powierzchnię w metrach kwadratowych
             let areaSqM = 10000; 
             if (el.bounds) {
                 const widthM = (el.bounds.maxlon - el.bounds.minlon) * 71300; 
@@ -49,38 +52,44 @@ out bb center;
             if (seen.has(key)) return;
             seen.add(key);
 
-            const isDogPark = el.tags.leisure === 'dog_park';
-            const isForest = el.tags.natural === 'wood' || el.tags.landuse === 'forest';
-            const hasName = !!el.tags.name;
-            const nameLower = (el.tags.name || "").toLowerCase();
+            const tags = el.tags;
+            const isDogPark = tags.leisure === 'dog_park';
+            const isForest = tags.natural === 'wood' || tags.landuse === 'forest';
+            const isPark = tags.leisure === 'park';
+            const hasName = !!tags.name;
+            const nameLower = (tags.name || "").toLowerCase();
 
             if (nameLower.includes("zieleń izolacyjna") || nameLower.includes("pas zieleni")) return;
             
-            // 🔥 KLUCZOWY FILTR: Odrzucamy lasy bez nazwy, KTÓRE SĄ MNIEJSZE NIŻ 4000 m2 (prywatne zagajniki)
+            // 🔥 TWÓJ KLUCZOWY FILTR: Odrzucamy mikroskwerki i prywatne zagajniki
             if (isForest && !hasName && areaSqM < 4000) return;
-            // Odrzucamy nienazwane mikroskwerki poniżej 200 m2
             if (!isDogPark && !isForest && !hasName && areaSqM < 200) return; 
 
-            const name = el.tags.name || (isDogPark ? "Wybieg dla psów" : isForest ? "Lokalny las" : "Teren spacerowy");
+            // Mapowanie dla nowych filtrów UI (Odkrywaj)
+            let type = 'walk';
+            let name = tags.name || "Teren spacerowy";
+            
+            if (isDogPark) { type = 'dogpark'; name = tags.name || "Wybieg dla psów"; }
+            else if (isForest) { type = 'forest'; name = tags.name || "Las"; }
+            else if (isPark) { type = 'park'; name = tags.name || "Park"; }
+
             const dist = getDistance(lat, lng, eLat, eLng);
             
             places.push({
-                name, distance: dist, lat: eLat, lng: eLng, isDogPark,
-                type: isDogPark ? 'dogpark' : isForest ? 'forest' : 'park'
+                id: el.id, name, distance: dist, lat: eLat, lng: eLng, type, isDogPark
             });
         });
 
+        // Twoja sprawdzona logika sortowania i ucinania dystansu
         const dogParks = places.filter(p => p.type === 'dogpark').sort((a,b) => a.distance - b.distance);
         const allGreenery = places.filter(p => p.type !== 'dogpark').sort((a,b) => a.distance - b.distance);
 
-        // Ucinamy wszystko sztywno na 8 km, żeby nie pokazywało sąsiednich miast
         const finalPlaces = [
             ...dogParks.filter(p => p.distance <= 8), 
             ...allGreenery.filter(p => p.distance <= 8)
         ];
         return finalPlaces.slice(0, 150);
 
-    // 🔥 PONIŻSZEGO BLOKU BRAKOWAŁO!
     } catch (error) {
         console.error("❌ OSM ERROR:", error);
         return [];
