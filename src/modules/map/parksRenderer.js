@@ -1,44 +1,49 @@
 import { mapManager } from './mapManager.js';
 
+// Helper: zamienia dystans na czytelny format (metry / kilometry)
+function formatDistance(distKm) {
+    if (distKm < 1) return Math.round(distKm * 1000) + ' m';
+    return distKm.toFixed(1).replace('.', ',') + ' km';
+}
+
+// Globalna konfiguracja typów
+const typeConfig = {
+    'dogpark': { icon: '🐕', label: 'Wybieg dla psów' },
+    'forest': { icon: '🌲', label: 'Las' },
+    'park': { icon: '🌳', label: 'Park' },
+    'walk': { icon: '🚶', label: 'Teren spacerowy' }
+};
+
 export function renderParksOnMap(places) {
     mapManager.clearLayer('parks');
-
     const L = window.L;
     if (!L) return;
 
     places.forEach(place => {
-        const nameLower = (place.name || "").toLowerCase();
-        
-        let typeLabel = 'Park / Teren zielony';
-        
-        if (place.isDogPark) {
-            typeLabel = 'Wybieg dla psów 🐕';
-        } else if (nameLower.includes('las') || nameLower.includes('lasek') || place.type === 'forest') {
-            typeLabel = 'Las / Kompleks leśny 🌲';
-        }
+        const config = typeConfig[place.type] || typeConfig['walk'];
+        const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
 
         const popupContent = `
-            <div style="font-family: 'Nunito', sans-serif; padding: 5px; min-width: 150px;">
-                <b style="font-size: 14px; color: var(--text-color); display: block; margin-bottom: 4px;">${place.name}</b>
-                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${typeLabel}</span>
-                <br>
-                <button class="btn-outline" style="padding: 4px 8px; font-size: 11px; margin-top: 8px; width: 100%; height: auto;" 
-                        onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}', '_blank')">
-                    Nawiguj 🧭
+            <div style="font-family: 'Inter', sans-serif; padding: 5px; min-width: 160px; text-align: left;">
+                <b style="font-size: 15px; color: var(--text-color); display: block; margin-bottom: 2px;">${place.name}</b>
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;">${config.icon} ${config.label}</span>
+                <div style="margin-top: 5px; font-size: 13px; font-weight: 900; color: var(--primary);">📍 ${formatDistance(place.distance)}</div>
+                <button class="btn-main" style="padding: 8px; font-size: 12px; margin-top: 10px; width: 100%; border-radius: 8px;" 
+                        onclick="window.open('${mapsLink}', '_blank')">
+                    🧭 Nawiguj
                 </button>
             </div>
         `;
 
-        // 🔥 Czysta pinezka - zero błędów, najwyższa wydajność
-        const emoji = place.isDogPark ? '🏞️' : (place.type === 'forest' ? '🌲' : '🌳');
+        // Wybiegi mają większą ikonę (32px), reszta 26px
+        const iconHtml = `<div style="font-size: ${place.type === 'dogpark' ? '32px' : '26px'}; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3)); text-align: center;">${config.icon}</div>`;
         
-        const iconHtml = `<div style="font-size: 26px; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3)); text-align: center;">${emoji}</div>`;
         const icon = L.divIcon({
             className: 'waggle-park-marker',
             html: iconHtml,
             iconSize: [32, 32],
             iconAnchor: [16, 16],
-            popupAnchor: [0, -10]
+            popupAnchor: [0, -15]
         });
 
         const marker = L.marker([place.lat, place.lng], { icon });
@@ -46,5 +51,42 @@ export function renderParksOnMap(places) {
         mapManager.addMarkerToLayer('parks', marker);
     });
 
-    console.log(`🌲 Map Health: Wyrenderowano znaczniki na mapie.`);
+    console.log(`🌲 Map 2.0: Wyrenderowano ${places.length} miejsc na mapie.`);
+}
+
+export function renderPlacesList(places, containerId = 'places-container') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (places.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 30px; font-weight: 700;">Brak miejsc w wybranej kategorii 😔</p>';
+        return;
+    }
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+    
+    places.forEach(place => {
+        const config = typeConfig[place.type] || typeConfig['walk'];
+        const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+        
+        html += `
+            <div class="place-card" style="background: white; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color); cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
+                <div style="font-size: 32px; flex-shrink: 0; background: var(--bg-color); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
+                    ${config.icon}
+                </div>
+                <div style="flex: 1; text-align: left;">
+                    <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: var(--text-color);">${place.name}</h4>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); font-weight: 600;">
+                        <span>${config.label}</span>
+                        <span>•</span>
+                        <span style="color: var(--primary); font-weight: 800;">📍 ${formatDistance(place.distance)}</span>
+                    </div>
+                </div>
+                <div style="color: var(--secondary); font-size: 20px;">🧭</div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
 }
