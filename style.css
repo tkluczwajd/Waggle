@@ -195,10 +195,10 @@ body {
 
 /* 3. Ujednolicony, pływający przycisk zamykania (Krzyżyk) */
 .close-modal-btn {
-    position: absolute !important;
-    top: 15px !important;
-    right: 15px !important;
-    background: var(--bg-color) !important; /* Jasnoszare, estetyczne tło */
+    position: absolute; /* Usunięto !important */
+    top: 15px;          /* Usunięto !important */
+    right: 15px;        /* Usunięto !important */
+    background: var(--bg-color) !important; 
     border: none !important;
     color: var(--text-color) !important;
     width: 36px !important;
