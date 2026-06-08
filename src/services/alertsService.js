@@ -1,15 +1,16 @@
 import { db, fb } from '../core/firebase.js';
 
 export function subscribeToAlerts(callback) {
-    return db.collection("alerts").onSnapshot(snap => {
-        const alerts = [];
-        snap.forEach(doc => {
-            const data = { id: doc.id, ...doc.data() };
-            if (Date.now() - data.createdAt <= 86400000) { // Tylko z ostatnich 24h
-                alerts.push(data);
-            }
+    // 🔥 POPRAWKA (AUDYT): Filtrowanie po stronie SERWERA (mniej odczytów = mniejsze koszty)
+    const yesterday = Date.now() - 86400000; // 24 godziny temu
+    
+    return db.collection("alerts")
+        .where("createdAt", ">=", yesterday) // Serwer odda nam TYLKO te z dzisiaj
+        .onSnapshot(snap => {
+            const alerts = [];
+            snap.forEach(doc => {
+                alerts.push({ id: doc.id, ...doc.data() });
+            });
+            callback(alerts);
         });
-        callback(alerts);
-    });
 }
- 
