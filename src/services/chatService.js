@@ -27,12 +27,15 @@ export function searchUsersInDb(query, callback) {
 }
 
 export function subscribeToMessages(chatId, callback) {
+    // 🔥 POPRAWKA (AUDYT): Limitujemy pobieranie tylko do 50 najnowszych wiadomości!
     return db.collection("chats").doc(chatId).collection("messages")
-        .orderBy("time", "asc")
+        .orderBy("time", "desc") // Sortujemy od najnowszych
+        .limit(50)               // Sztywny szlaban Firebase
         .onSnapshot(snap => {
             let messages = [];
             snap.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
-            callback(messages);
+            // Odwracamy tablicę, żeby w UI najstarsze z tych 50 były na górze
+            callback(messages.reverse());
         });
 }
 
