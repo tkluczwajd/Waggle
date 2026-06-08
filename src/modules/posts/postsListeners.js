@@ -25,7 +25,8 @@ let currentCommentsUnsub = null;
 
 // Eksportujemy do użycia w app.js
 export function loadPosts() {
-    const unsub = subscribeToPosts(50, (posts) => {
+    // 🔥 POPRAWKA (AUDYT): Zmniejszenie limitu pobieranych postów z 50 do 20
+    const unsub = subscribeToPosts(20, (posts) => {
         currentPosts = posts;
         renderPostsList(currentPosts, currentFilter);
     })
