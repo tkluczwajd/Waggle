@@ -98,8 +98,14 @@ out bb center;
 
         return finalList;
 
-    } catch (error) {
+} catch (error) {
         console.error("❌ OSM ERROR:", error);
+        
+        // 🔥 NOWOŚĆ: Informujemy użytkownika, że to wina serwera map, a nie brak miejsc
+        if (window.Waggle && window.Waggle.showToast) {
+            window.Waggle.showToast("Chwilowy problem z serwerem map. Spróbuj ponownie za chwilę! 📡");
+        }
+        
         return [];
     }
 }
