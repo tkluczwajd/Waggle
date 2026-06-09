@@ -14,7 +14,7 @@ function getDifficultyConfig(diff) {
 function getCategoryIcon(cat) {
     if (!cat) return '📌';
     const c = cat.toLowerCase();
-    if (c.includes('zdrowie') || c.includes('pomoc') || c.includes('zagrożen')) return '🏥';
+    if (c.includes('zdrowie') || c.includes('pomoc') || c.includes('zagrożen') || c.includes('sos')) return '🏥';
     if (c.includes('trening') || c.includes('behawior')) return '🧠';
     if (c.includes('rasa')) return '🐕';
     return '📌';
@@ -23,7 +23,6 @@ function getCategoryIcon(cat) {
 const stableFallback = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH6gYVFA4XMS0UoQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkY2STAAAAlElEQVR42u3XwQkCQRBEQe08InM1YwsmY6vGg90ggh4M9KXuqqp76wEAAAAAAAAAAAAAAAAAALjGlfba077bK+v967v6ba+st0b767P6666st067Ndpfn9Vfd2W9ddqt0f76rP66K+ut026N9tdn9dddWW+ddmu0vz6rv+7Keuu0W6PdGu2vz+qvu7LeOu3WaH99Vn/dlfXW6X8BqNsTAQDgZgAAAAAElFTkSuQmCC";
 
 // --- RENDEROWANIE GŁÓWNEJ LISTY ---
-// ZACHOWUJEMY TWOJĄ FUNKCJĘ I WYSZUKIWARKĘ!
 export function renderWiki(tab, searchQuery = "") {
     const container = document.getElementById('wiki-content');
     if (!container) return;
@@ -31,7 +30,6 @@ export function renderWiki(tab, searchQuery = "") {
     const items = WIKI[tab] || [];
     let query = searchQuery.toLowerCase().trim();
     
-    // Twój kuloodporny system filtracji
     const filteredItems = items.filter(item => {
         if (!query) return true;
         const matchText = (item.title || "").toLowerCase().includes(query) || (item.desc || "").toLowerCase().includes(query);
@@ -61,7 +59,6 @@ export function renderWiki(tab, searchQuery = "") {
         const catIcon = getCategoryIcon(item.category);
         const category = item.category || (tab === 'rasy' ? 'Rasa psa' : 'Porada');
 
-        // Nowy, czysty kafelek, który po kliknięciu otwiera Modal PRO
         html += `
             <div style="background: white; border-radius: 16px; padding: 16px; cursor: pointer; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02); text-align: left; transition: transform 0.2s;" 
                  onclick="window.Waggle.openWikiArticle('${item.id}')">
@@ -89,7 +86,6 @@ export function renderWiki(tab, searchQuery = "") {
 // --- OTWIERANIE POJEDYNCZEGO ARTYKUŁU (MODAL PRO) ---
 window.Waggle = window.Waggle || {};
 window.Waggle.openWikiArticle = (articleId) => {
-    // Łączymy wszystkie zbiory wiedzy, by łatwo znaleźć artykuł
     const allArticles = [...(WIKI.sytuacje || []), ...(WIKI.trening || []), ...(WIKI.rasy || [])];
     const article = allArticles.find(a => a.id === articleId);
 
@@ -104,7 +100,6 @@ window.Waggle.openWikiArticle = (articleId) => {
     const catIcon = getCategoryIcon(article.category);
     const category = article.category || 'Ogólne';
 
-    // 1. Zabezpieczenie starszych funkcji: Obrazek dla Ras
     let imageHtml = "";
     if (article.img) {
         imageHtml = `
@@ -114,7 +109,6 @@ window.Waggle.openWikiArticle = (articleId) => {
         `;
     }
 
-    // 2. Zabezpieczenie starszych funkcji: Gwiazdki i tagi dla ras
     let statsHtml = "";
     if (article.filters && typeof article.filters === 'object') {
         statsHtml += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:var(--bg-color); padding:15px; border-radius:16px; margin-bottom:20px; border: 1px solid var(--border-color);">`;
@@ -130,6 +124,46 @@ window.Waggle.openWikiArticle = (articleId) => {
         statsHtml += `</div>`;
     }
 
+    // 🔥 GENEROWANIE FLAG WAGGLE SOS (Triaż)
+    let flagsHtml = "";
+    if (article.flags) {
+        flagsHtml += `<div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">`;
+        
+        if (article.flags.green && article.flags.green.length > 0) {
+            const listItems = article.flags.green.map(f => `<li style="margin-bottom: 4px;">${f}</li>`).join('');
+            flagsHtml += `
+                <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid #2ed573; border-radius: 12px; padding: 15px;">
+                    <h4 style="color: #27ae60; font-size: 14px; margin: 0 0 10px 0; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">🟢 Obserwuj w domu:</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #2ecc71; font-size: 13px; font-weight: 700; line-height: 1.5;">
+                        ${listItems}
+                    </ul>
+                </div>`;
+        }
+        
+        if (article.flags.yellow && article.flags.yellow.length > 0) {
+            const listItems = article.flags.yellow.map(f => `<li style="margin-bottom: 4px;">${f}</li>`).join('');
+            flagsHtml += `
+                <div style="background: rgba(255, 165, 2, 0.1); border: 1px solid #ffa502; border-radius: 12px; padding: 15px;">
+                    <h4 style="color: #d35400; font-size: 14px; margin: 0 0 10px 0; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">🟡 Skonsultuj z weterynarzem (24h):</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #e67e22; font-size: 13px; font-weight: 700; line-height: 1.5;">
+                        ${listItems}
+                    </ul>
+                </div>`;
+        }
+        
+        if (article.flags.red && article.flags.red.length > 0) {
+            const listItems = article.flags.red.map(f => `<li style="margin-bottom: 4px;">${f}</li>`).join('');
+            flagsHtml += `
+                <div style="background: rgba(255, 71, 87, 0.1); border: 1px solid #ff4757; border-radius: 12px; padding: 15px;">
+                    <h4 style="color: #c0392b; font-size: 14px; margin: 0 0 10px 0; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">🔴 Jedź natychmiast:</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #e74c3c; font-size: 13px; font-weight: 700; line-height: 1.5;">
+                        ${listItems}
+                    </ul>
+                </div>`;
+        }
+        flagsHtml += `</div>`;
+    }
+
     let fullTagsHtml = "";
     if (article.tags && Array.isArray(article.tags)) {
         fullTagsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top: 25px;">`;
@@ -139,12 +173,11 @@ window.Waggle.openWikiArticle = (articleId) => {
         fullTagsHtml += `</div>`;
     }
 
-    // 3. SKŁADANIE GŁÓWNEGO WIDOKU MODALA PRO
     let html = `
         ${imageHtml}
         <h2 style="margin: 0 0 15px 0; font-size: 24px; font-weight: 900; color: var(--text-color); line-height: 1.25;">${article.title}</h2>
         
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; font-weight: 800; margin-bottom: 25px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; font-weight: 800; margin-bottom: 20px;">
             <span style="background: white; color: var(--text-muted); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
                 ${readTime}
             </span>
@@ -157,6 +190,8 @@ window.Waggle.openWikiArticle = (articleId) => {
         </div>
 
         ${statsHtml}
+        
+        ${flagsHtml}
 
         <div class="wiki-text-content" style="font-size: 15px; line-height: 1.6; color: var(--text-color); background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
             ${article.desc}
@@ -165,7 +200,6 @@ window.Waggle.openWikiArticle = (articleId) => {
         ${fullTagsHtml}
     `;
 
-    // 4. MAGIA: POWIĄZANE ARTYKUŁY NA DOLE WIDOKU
     if (article.related && Array.isArray(article.related) && article.related.length > 0) {
         const relatedArticles = allArticles.filter(a => article.related.includes(a.id) && a.id !== article.id);
         
@@ -195,12 +229,8 @@ window.Waggle.openWikiArticle = (articleId) => {
     }
 
     bodyContainer.innerHTML = html;
-    
-    // Przewijamy modal na samą górę, w przypadku "skakania" po powiązanych artykułach
     bodyContainer.scrollTop = 0; 
-    
     modal.style.display = 'flex';
 };
 
-// Pusta funkcja dla kompatybilności starych importów
 export function openWikiDetails(id, tab) {}
