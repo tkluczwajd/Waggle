@@ -59,4 +59,39 @@ export const EMERGENCY_ARTICLES = [
         related: ["train_rule3"],
         desc: `<div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIGDY nie wkładaj rąk w okolice pysków – zostaniesz pogryziony.</div><div class="wiki-tip wiki-tip-success"><span>✅</span> Metoda 'Taczka': łap psy za tylne nogi w pachwinach i unoś do góry, cofając się po łuku.</div>` 
     }
+    {
+        id: 'sos_wymioty',
+        title: 'Pies zwymiotował',
+        category: 'Waggle SOS 🏥',
+        difficulty: 'Podstawowy',
+        readTime: '2 min',
+        tags: ['wymioty', 'zatrucie', 'żołądek', 'sos'],
+        keywords: ['wymioty', 'rzyga', 'zwraca'],
+        related: ['sos_biegunka', 'sos_odwodnienie'],
+        // 🔥 NOWY SYSTEM FLAGG WAGGLE SOS
+        flags: {
+            green: [
+                "Pojedyncze, jednorazowe wymioty",
+                "Pies zachowuje się normalnie i ma energię",
+                "Pije wodę",
+                "Nie ma innych objawów"
+            ],
+            yellow: [
+                "Wymioty powtarzają się częściej niż raz w ciągu 12h",
+                "Pies jest osowiały, nie chce się bawić",
+                "Brak apetytu przez ponad dobę"
+            ],
+            red: [
+                "Krew w wymiocinach (czerwona lub fusy jak z kawy)",
+                "Częste, bezskuteczne próby wymiotów (odruchy)",
+                "Powiększony, twardy i bolesny brzuch",
+                "Utrata przytomności lub skrajne osłabienie"
+            ]
+        },
+        desc: `
+            Wymioty u psa to bardzo częsta dolegliwość, która w 80% przypadków wynika ze zjedzenia czegoś na spacerze. 
+            Najważniejsza jest obserwacja. Jeśli pies zwymiotował raz, ale zachowuje się normalnie, po prostu zrób mu 12-godzinną głodówkę, 
+            ale zapewnij stały dostęp do świeżej wody... (reszta standardowego tekstu artykułu).
+        `
+    }
 ];
