@@ -119,7 +119,7 @@
                 <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.04); margin-bottom: 25px; border: 1px solid var(--border-color);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h4 style="margin: 0; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-color);">📋 Codzienna Opieka</h4>
-        <span onclick="alert('Pełna historia wkrótce!')" style="font-size: 11px; font-weight: 900; color: var(--primary); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">Pełna historia ➔</span>
+        <span onclick="window.openJournalHistory()" style="font-size: 11px; font-weight: 900; color: var(--primary); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">Pełna historia ➔</span>    
     </div>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
@@ -580,7 +580,21 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <script type="module" src="/src/app.js?v=1004"></script>
+    <!-- 🔥 WAGGLE FAMILY: PEŁNA HISTORIA MODAL -->
+    <div id="journal-history-modal" class="modal" style="z-index: 10003;">
+        <div class="card" style="height: 85vh; padding: 0; display: flex; flex-direction: column; background: var(--bg-color);">
+            
+            <div style="background: var(--panel-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; border-bottom: 1px solid var(--border-color); flex-shrink: 0; position: sticky; top: 0; z-index: 10;">
+                <b style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 900;">Pełna historia opieki</b>
+                <button class="close-modal-btn" style="position: static; margin: 0; width: 32px; height: 32px; background: var(--bg-color);">✕</button>
+            </div>
 
+            <div id="journal-history-content" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column;">
+                <p style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700; margin-top: 20px;">Ładowanie historii...</p>
+            </div>
+
+        </div>
+    </div>
  <script>
       // 1. REJESTRACJA NOWEGO, INTELIGENTNEGO SERVICE WORKERA
       if ('serviceWorker' in navigator) {
