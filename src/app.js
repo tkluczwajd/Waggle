@@ -62,8 +62,8 @@ document.addEventListener('DOMContentLoaded', initPwaHistoryManager);
 
 // 1. Funkcja podpięta pod przyciski (uruchamia się po kliknięciu)
 window.logDogActivity = async (type) => {
-    // Tymczasowo, dopóki nie ma wielu psów, ID psa to po prostu UID zalogowanego użytkownika
-    const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+   // Sprawdzamy najpierw czy mamy współdzielonego psa, jak nie to bierzemy własnego
+    const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     const userName = localStorage.getItem('userName') || "Opiekun";
 
     if (!currentUid) {
@@ -85,8 +85,8 @@ window.logDogActivity = async (type) => {
 
 // 2. Kuloodporne nasłuchiwanie na zmiany w Dzienniku
 function initJournalListener() {
-    // Pobieramy UID z pamięci lokalnej lub z Firebase (to, co zadziała pierwsze)
-    const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+  // Sprawdzamy najpierw czy mamy współdzielonego psa, jak nie to bierzemy własnego
+  const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     
     if (!currentUid) {
         // Jeśli apka jeszcze się nie załadowała, próbujemy za sekundę
@@ -152,8 +152,8 @@ window.openJournalHistory = async () => {
     modal.style.display = 'flex';
     content.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700; margin-top: 20px;">Ładowanie historii...</p>';
 
-    const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
-    if (!currentUid) return;
+    // Sprawdzamy najpierw czy mamy współdzielonego psa, jak nie to bierzemy własnego
+    const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);    if (!currentUid) return;
 
     // Pobierz z bazy
     const entries = await getJournalHistory(currentUid);
@@ -226,27 +226,90 @@ window.openJournalHistory = async () => {
 window.openInviteModal = () => {
     const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'demo-id');
     
-    // Generujemy unikalny link (Później podepniemy pod niego logikę przyjmowania zaproszeń)
-    const inviteLink = `https://joinwaggle.com/family/${currentUid}`;
+    // Zmiana formatu na bezpieczny parametr ?invite=
+    const inviteLink = `https://joinwaggle.com/?invite=${currentUid}`;
     
-    // Wstrzykujemy link do widoku i do obrazka QR
     document.getElementById('invite-link-display').innerText = inviteLink;
     document.getElementById('invite-qr-code').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}`;
     
-    // Otwieramy modal
     document.getElementById('invite-caretaker-modal').style.display = 'flex';
 };
 
 window.copyInviteLink = () => {
     const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'demo-id');
-    const inviteLink = `https://joinwaggle.com/family/${currentUid}`;
+    const inviteLink = `https://joinwaggle.com/?invite=${currentUid}`;
     
     navigator.clipboard.writeText(inviteLink).then(() => {
         if (window.Waggle && window.Waggle.showToast) {
             window.Waggle.showToast("🔗 Link skopiowany do schowka!");
         }
         document.getElementById('invite-caretaker-modal').style.display = 'none';
-    }).catch(err => {
-        console.error('Błąd kopiowania:', err);
-    });
+    }).catch(err => console.error('Błąd kopiowania:', err));
 };
+// ============================================================================
+// 🔥 WAGGLE FAMILY: ODBIERANIE ZAPROSZEŃ (DOŁĄCZANIE DO STADA)
+// ============================================================================
+
+function checkInvitesOnLoad() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteUid = urlParams.get('invite');
+    
+    if (inviteUid) {
+        // Mamy zaproszenie w linku! Sprawdzamy czy użytkownik jest zalogowany
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                // Nie pozwalamy zaprosić samego siebie
+                if (user.uid === inviteUid) {
+                    window.history.replaceState({}, document.title, "/");
+                    return;
+                }
+
+                const userName = localStorage.getItem('userName') || "Domownik";
+                
+                // Pokazujemy okienko z pytaniem (korzystamy z Twojego pięknego designu)
+                document.getElementById('custom-confirm-msg').innerText = "Zostałeś zaproszony do współdzielenia profilu i opieki nad psem! Chcesz dołączyć?";
+                document.getElementById('custom-confirm-modal').style.display = 'flex';
+                
+                // Jeśli kliknie TAK
+                document.getElementById('custom-confirm-ok').onclick = async () => {
+                    try {
+                        // 1. Zapisujemy w Firebase, że ten domownik ma uprawnienia (do rekordu właściciela psa)
+                        await firebase.firestore().collection('dogs').doc(inviteUid).set({
+                            caretakers: {
+                                [user.uid]: { name: userName, role: 'caretaker' }
+                            }
+                        }, { merge: true });
+                        
+                        // 2. Trik Waggle Family: Przełączamy aplikację domownika, żeby "patrzyła" na psa zapraszającego!
+                        localStorage.setItem('activeDogId', inviteUid);
+                        
+                        if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("✅ Dołączyłeś do rodziny!");
+                        document.getElementById('custom-confirm-modal').style.display = 'none';
+                        
+                        // Czyścimy link i resetujemy widok
+                        window.history.replaceState({}, document.title, "/");
+                        setTimeout(() => window.location.reload(), 1500);
+                    } catch(e) {
+                        console.error("Błąd dołączania:", e);
+                    }
+                };
+                
+                // Jeśli kliknie ANULUJ
+                document.getElementById('custom-confirm-cancel').onclick = () => {
+                     document.getElementById('custom-confirm-modal').style.display = 'none';
+                     window.history.replaceState({}, document.title, "/");
+                };
+            } else {
+                // Jeśli ktoś kliknął link, ale nie ma konta
+                if (window.Waggle && window.Waggle.showToast) {
+                    window.Waggle.showToast("🐕 Zaloguj się lub załóż konto, aby przyjąć zaproszenie!");
+                }
+            }
+        });
+    }
+}
+
+// Uruchamiamy sprawdzanie zaproszeń sekundę po starcie apki
+window.addEventListener('load', () => {
+    setTimeout(checkInvitesOnLoad, 1000);
+});
