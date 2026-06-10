@@ -1,5 +1,15 @@
 export const EMERGENCY_ARTICLES = [
     { 
+        id: "train_asphalt", 
+        title: "Reguła 5 Sekund (Ochrona łap w lato)", 
+        category: "Zagrożenia życia",
+        difficulty: "Łatwe 🟢",
+        readTime: "1 min",
+        keywords: ["asfalt", "lato", "łapy", "oparzenie", "temperatura"], 
+        related: ["sit_heat", "sos_skaleczenie_lapy"],
+        desc: `<h3>Zanim wyjdziesz z psem w upał...</h3><p>Przyłóż wierzch dłoni do asfaltu lub chodnika. Jeśli nie jesteś w stanie utrzymać jej w tym miejscu przez pełne 5 sekund – nawierzchnia jest za gorąca dla łap Twojego psa! Grozi to dotkliwym poparzeniem opuszek.</p><div style="color: var(--danger); font-weight: bold; margin-top: 10px;">⚠️ Spacery w upalne dni planuj wcześnie rano lub późnym wieczorem, a w ciągu dnia staraj się chodzić wyłącznie po trawie i cieniu.</div>`
+    },
+    { 
         id: "sit_tick_remove", 
         title: "Jak bezpiecznie wyjąć kleszcza?", 
         category: "Pasożyty i Owady",
@@ -7,7 +17,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["kleszcz", "pasożyt", "kleszczołapki", "pęseta", "owad", "skóra", "wbity"], 
         related: [],
-        content: `Użyj specjalistycznych kleszczołapek, pętli lub dobrej pęsety. Rozsuń sierść, chwyć kleszcza tuż przy samej skórze psa. Zdecydowanym, płynnym ruchem pociągnij go pionowo w górę.<br><br><div style="color: var(--danger); font-weight: bold;">⚠️ NIE wykręcaj (możesz ukręcić odwłok).</div><div style="color: var(--danger); font-weight: bold;">⚠️ NIE smaruj kleszcza masłem, olejem, alkoholem ani lakierem do paznokci!</div><br><b>✅ Po wszystkim zdezynfekuj ranę i obserwuj psa przez 2 tygodnie.</b>` 
+        desc: `Użyj specjalistycznych kleszczołapek, pętli lub dobrej pęsety. Rozsuń sierść, chwyć kleszcza tuż przy samej skórze psa. Zdecydowanym, płynnym ruchem pociągnij go pionowo w górę.<br><br><div style="color: var(--danger); font-weight: bold;">⚠️ NIE wykręcaj (możesz ukręcić odwłok).</div><div style="color: var(--danger); font-weight: bold;">⚠️ NIE smaruj kleszcza masłem, olejem, alkoholem ani lakierem do paznokci!</div><br><b>✅ Po wszystkim zdezynfekuj ranę i obserwuj psa przez 2 tygodnie.</b>` 
     },
     { 
         id: "sit_burdock", 
@@ -17,7 +27,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "1 min",
         keywords: ["rzep", "osty", "kołtun", "sierść", "krzaki", "czesanie", "filc"], 
         related: [],
-        content: "Wyciąganie suchych rzepów na sucho sprawia psu ogromny ból. Aby zrobić to bezstresowo, nałóż na splątany kołtun odrobinę psiej odżywki lub oliwki. Wmasuj tłuszcz w strukturę rzepu i odczekaj minutę. Powstały poślizg pozwoli Ci bez problemu rozplątać kołtun." 
+        desc: "Wyciąganie suchych rzepów na sucho sprawia psu ogromny ból. Aby zrobić to bezstresowo, nałóż na splątany kołtun odrobinę psiej odżywki lub oliwki. Wmasuj tłuszcz w strukturę rzepu i odczekaj minutę. Powstały poślizg pozwoli Ci bez problemu rozplątać kołtun." 
     },
     { 
         id: "sit_poison", 
@@ -27,7 +37,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["trucizna", "trutka", "padlina", "wymioty", "zjedzenie", "vet"], 
         related: ["sos_wymioty", "sos_czekolada", "sos_ksylitol"],
-        content: `<h3>Masz maksymalnie 1-2 godziny na reakcję.</h3><br><div style="color: var(--danger); font-weight: bold;">⚠️ NIE podawaj psu mleka (przyspiesza wchłanianie trucizn)!</div><div style="color: var(--danger); font-weight: bold;">⚠️ NIE podawaj oleju.</div><br><b>✅ Jedź prosto do najbliższej całodobowej kliniki weterynaryjnej! Zabezpiecz to, co zjadł pies.</b>` 
+        desc: `<h3>Masz maksymalnie 1-2 godziny na reakcję.</h3><br><div style="color: var(--danger); font-weight: bold;">⚠️ NIE podawaj psu mleka (przyspiesza wchłanianie trucizn)!</div><div style="color: var(--danger); font-weight: bold;">⚠️ NIE podawaj oleju.</div><br><b>✅ Jedź prosto do najbliższej całodobowej kliniki weterynaryjnej! Zabezpiecz to, co zjadł pies.</b>` 
     },
     { 
         id: "sit_wasp", 
@@ -37,17 +47,17 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["osa", "pszczoła", "użądlenie", "opuchlizna", "pysk"], 
         related: [],
-        content: `<b>✅</b> Jeśli użądlenie jest w łapę lub grzbiet, przyłóż zimny kompres z wodą i octem.<br><br><div style="color: var(--danger); font-weight: bold;">⚠️ Jeśli użądlenie nastąpiło w okolicę pyska lub gardła – natychmiast pędź do weterynarza! Opuchlizna grozi uduszeniem.</div>` 
+        desc: `<b>✅</b> Jeśli użądlenie jest w łapę lub grzbiet, przyłóż zimny kompres z wodą i octem.<br><br><div style="color: var(--danger); font-weight: bold;">⚠️ Jeśli użądlenie nastąpiło w okolicę pyska lub gardła – natychmiast pędź do weterynarza! Opuchlizna grozi uduszeniem.</div>` 
     },
     { 
-        id: "sit_heat", 
+        id: "sos_udar", 
         title: "🥵 Przegrzanie i Udar Cieplny", 
         category: "Zagrożenia życia",
         difficulty: "Krytyczne 🔴",
         readTime: "3 min",
         keywords: ["udar", "ciepło", "lato", "słońce", "dyszenie", "mdleje"], 
-        related: [],
-        content: `
+        related: ["train_asphalt"],
+        desc: `
             <h3>Jak rozpoznać udar?</h3>
             <p>Psy chłodzą się głównie przez ziajanie. W gorące dni, w rozgrzanym aucie (nawet przy uchylonym oknie!) temperatura ciała psa może błyskawicznie wzrosnąć do śmiertelnego poziomu.</p>
             <h3>Objawy:</h3>
@@ -71,7 +81,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "3 min",
         keywords: ["walka", "pogryzienie", "atak", "agresja", "rozdzielanie"], 
         related: [],
-        content: `<div style="color: var(--danger); font-weight: bold;">⚠️ NIGDY nie wkładaj rąk w okolice pysków – zostaniesz pogryziony.</div><br><b>✅ Metoda 'Taczka':</b> łap psy za tylne nogi w pachwinach i unoś do góry, cofając się po łuku.` 
+        desc: `<div style="color: var(--danger); font-weight: bold;">⚠️ NIGDY nie wkładaj rąk w okolice pysków – zostaniesz pogryziony.</div><br><b>✅ Metoda 'Taczka':</b> łap psy za tylne nogi w pachwinach i unoś do góry, cofając się po łuku.` 
     },
     {
         id: 'sos_diarrhea',
@@ -87,7 +97,7 @@ export const EMERGENCY_ARTICLES = [
             yellow: ["Biegunka trwa dłużej niż 24-48 godzin", "Pies jest lekko osowiały"],
             red: ["W stolcu widoczna jest krew (jasnoczerwona lub ciemna)", "Biegunce towarzyszą wymioty", "Podejrzenie zjedzenia trutki"]
         },
-        content: `
+        desc: `
             <p>Biegunka to najczęściej efekt zjedzenia "śmieci" na spacerze, nagłej zmiany karmy, stresu lub infekcji pasożytniczej.</p>
             <h3>Co robić w łagodnych przypadkach?</h3>
             <p><b>1. Głodówka:</b> Wstrzymaj podawanie jedzenia na 12-24 godziny (szczeniaki max 6 godzin). Przewód pokarmowy musi się oczyścić.</p>
@@ -110,7 +120,7 @@ export const EMERGENCY_ARTICLES = [
             yellow: ["Wymioty powtarzają się częściej niż raz w ciągu 12h", "Brak apetytu przez dobę"],
             red: ["Krew w wymiocinach", "Częste, bezskuteczne próby wymiotów (ryzyko skrętu żołądka!)", "Utrata przytomności"]
         },
-        content: `
+        desc: `
             <h3>Kiedy to norma, a kiedy zagrożenie?</h3>
             <p>Pies, który zwymiotuje raz zjedzoną trawą lub z powodu zbyt łapczywego jedzenia i czuje się dobrze, zazwyczaj nie wymaga interwencji. Problem pojawia się, gdy wymioty są uporczywe.</p>
             <h3>Co robić w łagodnych przypadkach?</h3>
@@ -127,7 +137,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["czekolada", "kakao", "zatrucie"],
         related: ["sos_wymioty", "sos_ksylitol", "sit_poison"],
-        content: `
+        desc: `
             <h3>Dlaczego to niebezpieczne?</h3>
             <p>Czekolada zawiera teobrominę, której psy nie potrafią metabolizować. Im ciemniejsza czekolada, tym bardziej toksyczna.</p>
             <h3>Objawy (pojawiają się po 2-12 godzinach):</h3>
@@ -150,7 +160,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["ksylitol", "cukier", "guma", "zatrucie"],
         related: ["sos_czekolada", "sit_poison"],
-        content: `
+        desc: `
             <h3>Dlaczego to niebezpieczne?</h3>
             <p>Ksylitol powoduje u psów gwałtowny wyrzut insuliny, drastyczny spadek cukru (hipoglikemię) i niewydolność wątroby.</p>
             <h3>Objawy (nawet po 15-30 minutach):</h3>
@@ -172,7 +182,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["łapa", "opuszka", "skaleczenie", "szkło", "krew"],
         related: ["sos_skrecenie"],
-        content: `
+        desc: `
             <h3>Co się stało?</h3>
             <p>Pies nadepnął na szkło lub ostry kamień. Opuszki są mocno ukrwione, krwawienie może być obfite.</p>
             <h3>Co robić?</h3>
@@ -190,7 +200,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["skręcenie", "zwichnięcie", "kulawizna", "łapa"],
         related: ["sos_skaleczenie_lapy"],
-        content: `
+        desc: `
             <h3>Objawy:</h3>
             <p>Nagła kulawizna. Pies unika stawiania ciężaru na łapie, może popiskiwać, a staw może być opuchnięty.</p>
             <h3>Co robić?</h3>
@@ -208,7 +218,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["żmija", "wąż", "ukąszenie", "jad"],
         related: ["sit_poison"],
-        content: `
+        desc: `
             <h3>Objawy:</h3>
             <ul>
                 <li>Nagły pisk lub skowyt w trawie</li>
@@ -230,7 +240,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["prąd", "kabel", "porażenie"],
         related: [],
-        content: `
+        desc: `
             <h3>Objawy:</h3>
             <p>Oparzenia wokół pyska, duszności, ślinotok, drgawki, utrata przytomności.</p>
             <h3>Co robić?</h3>
@@ -248,7 +258,7 @@ export const EMERGENCY_ARTICLES = [
         readTime: "2 min",
         keywords: ["kaszel", "przeziębienie", "gardło", "krztuszenie"],
         related: ["sos_wymioty"],
-        content: `
+        desc: `
             <h3>Czym to jest?</h3>
             <p>Zakaźna choroba dróg oddechowych (psie przeziębienie). Objawia się suchym, "gęsim" kaszlem i odkrztuszaniem białej piany.</p>
             <h3>Co robić?</h3>
