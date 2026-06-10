@@ -58,7 +58,7 @@ export const EMERGENCY_ARTICLES = [
         keywords: ["walka", "pogryzienie", "atak", "agresja", "rozdzielanie"], 
         related: ["train_rule3"],
         desc: `<div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIGDY nie wkładaj rąk w okolice pysków – zostaniesz pogryziony.</div><div class="wiki-tip wiki-tip-success"><span>✅</span> Metoda 'Taczka': łap psy za tylne nogi w pachwinach i unoś do góry, cofając się po łuku.</div>` 
-    }
+    },
     {
         id: 'sos_wymioty',
         title: 'Pies zwymiotował',
