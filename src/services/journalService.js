@@ -49,3 +49,28 @@ export function subscribeToJournal(dogId, callback) {
             console.error("❌ Błąd subskrypcji dziennika:", error);
         });
 }
+
+ //Pobiera pełną historię (np. ostatnie 50 wpisów) do osobnego widoku
+ //@param {string} dogId - ID psa
+export async function getJournalHistory(dogId) {
+    if (!dogId) return [];
+    
+    try {
+        const snapshot = await db.collection("dogs").doc(dogId).collection("journal")
+            .orderBy("timestamp", "desc")
+            .limit(50) // limitujemy, żeby nie zabić transferu
+            .get();
+
+        let entries = [];
+        snapshot.forEach(doc => {
+            entries.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        return entries;
+    } catch (error) {
+        console.error("❌ Błąd pobierania historii dziennika:", error);
+        return [];
+    }
+}
