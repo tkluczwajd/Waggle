@@ -1,5 +1,5 @@
 // src/services/journalService.js
-import { db } from './firebaseInit.js'; // Upewnij się, że tak nazywa się Twój plik inicjalizacyjny Firebase
+import { db, fb } from '../core/firebase.js'; // Upewnij się, że tak nazywa się Twój plik inicjalizacyjny Firebase
 
 /**
  * Dodaje nowy wpis do codziennego dziennika aktywności psa
