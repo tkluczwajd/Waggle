@@ -2,6 +2,7 @@
 import { bootstrapApp } from './core/appBootstrap.js';
 // 🔥 IMPORTUJEMY NASZ NOWY SILNIK DZIENNIKA
 import { addJournalEntry, subscribeToJournal } from './services/journalService.js';
+import { addJournalEntry, subscribeToJournal, getJournalHistory } from './services/journalService.js';
 
 bootstrapApp();
 
@@ -141,3 +142,82 @@ function initJournalListener() {
 window.addEventListener('load', () => {
     setTimeout(initJournalListener, 500);
 });
+// ============================================================================
+// 🔥 WAGGLE FAMILY: PEŁNA HISTORIA (GRUPOWANIE PO DACIE)
+// ============================================================================
+
+window.openJournalHistory = async () => {
+    const modal = document.getElementById('journal-history-modal');
+    const content = document.getElementById('journal-history-content');
+    
+    // Pokaż okienko i loader
+    modal.style.display = 'flex';
+    content.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700; margin-top: 20px;">Ładowanie historii...</p>';
+
+    const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (!currentUid) return;
+
+    // Pobierz z bazy
+    const entries = await getJournalHistory(currentUid);
+    
+    if (entries.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-weight: 700; margin-top: 20px;">Brak wpisów w historii.</p>';
+        return;
+    }
+
+    const icons = { feed: '🍖', walk: '🚶', med: '💊', water: '💧', vet: '🏥' };
+    const labels = { feed: 'Karmienie', walk: 'Spacer', med: 'Lek', water: 'Woda', vet: 'Weterynarz' };
+
+    // Logika grupowania dat
+    const grouped = {};
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    entries.forEach(entry => {
+        let dateGroup = "Starsze wpisy";
+        let timeStr = "--:--";
+
+        if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+            const d = entry.timestamp.toDate();
+            timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            if (d.toDateString() === today.toDateString()) {
+                dateGroup = "Dzisiaj";
+            } else if (d.toDateString() === yesterday.toDateString()) {
+                dateGroup = "Wczoraj";
+            } else {
+                dateGroup = d.toLocaleDateString(); // Np. 15.08.2025
+            }
+        }
+
+        if (!grouped[dateGroup]) grouped[dateGroup] = [];
+        grouped[dateGroup].push({ ...entry, timeStr });
+    });
+
+    // Renderowanie wygenerowanej listy
+    let html = '';
+    for (const [dateTitle, items] of Object.entries(grouped)) {
+        // Nagłówek grupy (np. "DZISIAJ")
+        html += `<h5 style="margin: 20px 0 10px 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">${dateTitle}</h5>`;
+
+        // Wpisy dla danej grupy
+        items.forEach(item => {
+            html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: white; border: 1px solid var(--border-color); border-radius: 14px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <span style="font-size: 22px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">${icons[item.type] || '🐾'}</span>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-weight: 900; color: var(--text-color); font-size: 14px;">${labels[item.type] || 'Aktywność'}</span>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 700;">Przez: <span style="color: var(--primary);">${item.doneByUserName}</span></span>
+                    </div>
+                </div>
+                <div style="font-weight: 900; color: var(--text-color); font-size: 13px; background: var(--bg-color); padding: 6px 12px; border-radius: 8px;">
+                    ${item.timeStr}
+                </div>
+            </div>`;
+        });
+    }
+
+    content.innerHTML = html;
+};
