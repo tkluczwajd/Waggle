@@ -219,3 +219,34 @@ window.openJournalHistory = async () => {
 
     content.innerHTML = html;
 };
+// ============================================================================
+// 🔥 WAGGLE FAMILY: GENERATOR ZAPROSZEŃ
+// ============================================================================
+
+window.openInviteModal = () => {
+    const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'demo-id');
+    
+    // Generujemy unikalny link (Później podepniemy pod niego logikę przyjmowania zaproszeń)
+    const inviteLink = `https://joinwaggle.com/family/${currentUid}`;
+    
+    // Wstrzykujemy link do widoku i do obrazka QR
+    document.getElementById('invite-link-display').innerText = inviteLink;
+    document.getElementById('invite-qr-code').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}`;
+    
+    // Otwieramy modal
+    document.getElementById('invite-caretaker-modal').style.display = 'flex';
+};
+
+window.copyInviteLink = () => {
+    const currentUid = localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'demo-id');
+    const inviteLink = `https://joinwaggle.com/family/${currentUid}`;
+    
+    navigator.clipboard.writeText(inviteLink).then(() => {
+        if (window.Waggle && window.Waggle.showToast) {
+            window.Waggle.showToast("🔗 Link skopiowany do schowka!");
+        }
+        document.getElementById('invite-caretaker-modal').style.display = 'none';
+    }).catch(err => {
+        console.error('Błąd kopiowania:', err);
+    });
+};
