@@ -1,7 +1,5 @@
 // src/app.js - Nowy, minimalistyczny punkt wejścia ekosystemu Waggle 🐾
 import { bootstrapApp } from './core/appBootstrap.js';
-// 🔥 IMPORTUJEMY NASZ NOWY SILNIK DZIENNIKA
-import { addJournalEntry, subscribeToJournal } from './services/journalService.js';
 import { addJournalEntry, subscribeToJournal, getJournalHistory } from './services/journalService.js';
 
 bootstrapApp();
