@@ -60,6 +60,47 @@ export const EMERGENCY_ARTICLES = [
         desc: `<div class="wiki-tip wiki-tip-warning"><span>⚠️</span> NIGDY nie wkładaj rąk w okolice pysków – zostaniesz pogryziony.</div><div class="wiki-tip wiki-tip-success"><span>✅</span> Metoda 'Taczka': łap psy za tylne nogi w pachwinach i unoś do góry, cofając się po łuku.</div>` 
     },
     {
+        id: 'sos_diarrhea',
+        title: 'Biegunka u psa – pierwsza pomoc',
+        category: 'Waggle SOS 🏥',
+        difficulty: 'Podstawowy',
+        readTime: '2 min',
+        tags: ['biegunka', 'żołądek', 'niestrawność', 'sos', 'zatrucie'],
+        keywords: ['biegunka', 'sraczka', 'luźny stolec', 'rozwolnienie'],
+        related: ['sos_wymioty', 'sos_odwodnienie'],
+        flags: {
+            green: [
+                "Jednorazowy lub dwukrotny luźny stolec",
+                "Pies jest radosny, ma energię i chętnie pije wodę",
+                "Brak innych objawów (brak wymiotów, gorączki)"
+            ],
+            yellow: [
+                "Biegunka trwa dłużej niż 24-48 godzin",
+                "Pies jest lekko osowiały lub odmawia jedzenia",
+                "Objawy nawracają regularnie co kilka dni"
+            ],
+            red: [
+                "W stolcu widoczna jest krew (jasnoczerwona lub bardzo ciemna, smolista)",
+                "Biegunce towarzyszą jednoczesne wymioty (skrajne ryzyko odwodnienia!)",
+                "Pies jest całkowicie apatyczny, słania się na nogach",
+                "Podejrzenie zjedzenia trutki, chemii lub śmieci na spacerze"
+            ]
+        },
+        desc: `
+            <p>Luźny stolec u psa najczęściej wynika z nagłej zmiany karmy, zjedzenia czegoś nieświeżego na spacerze lub lekkiego stresu. Jeśli pies jest w <b>zielonej strefie</b>, możesz pomóc mu w domu.</p>
+            
+            <h3>Co możesz zrobić samemu?</h3>
+            <ul>
+                <li><b>Głodówka (opcjonalnie):</b> U dorosłego, silnego psa można zastosować 12-24 h głodówki, aby dać jelitom odpocząć. <i>Uwaga: Nigdy nie głodź szczeniąt ani psów miniaturowych bez konsultacji z weterynarzem!</i></li>
+                <li><b>Lekkostrawna dieta:</b> Po przerwie w jedzeniu wprowadź dietę lekkostrawną: rozgotowany ryż, gotowana marchewka oraz gotowana pierś z kurczaka/indyka (bez soli i przypraw!). Podawaj małe porcje 4-5 razy dziennie.</li>
+                <li><b>Stały dostęp do wody:</b> Biegunka drastycznie odwadnia organizm. Pilnuj, by miska z wodą była zawsze pełna. Możesz podać psu psie elektrolity.</li>
+            </ul>
+            
+            <h3>Bezpieczne leki z domowej apteczki</h3>
+            <p>Po konsultacji telefonicznej z lekarzem weterynarii, przy lekkich stanach można podać psu <b>węgiel aktywny</b> (wiąże toksyny) lub <b>Smectę</b>. Zawsze pytaj o dawkowanie dopasowane do wagi Twojego psa!</p>
+        `
+    },
+    {
         id: 'sos_wymioty',
         title: 'Pies zwymiotował',
         category: 'Waggle SOS 🏥',
