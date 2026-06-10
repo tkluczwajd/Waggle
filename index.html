@@ -115,6 +115,27 @@
         <span style="color: var(--secondary); font-size: 13px;" id="home-messages-status">Sprawdź ➔</span>
     </div>
 </div>
+                ```
+
+### Krok 2: Wklej kod Dziennika
+
+Zrób sobie enter nad tą linijką i **dokładnie w to miejsce** wklej poniższy kod. Dopasowałem już marginesy, kolory i cienie tak, żeby idealnie wtopiły się w Twój aktualny, świetny design:
+
+```html
+                <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.04); margin-bottom: 25px; border: 1px solid var(--border-color);">
+                    <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-color);">📋 Dziennik aktywności</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <button onclick="window.logDogActivity('feed')" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; font-weight: 800; font-size: 13px; color: var(--text-color); cursor: pointer; transition: transform 0.1s;">🍖 Nakarmiony</button>
+                        <button onclick="window.logDogActivity('walk')" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; font-weight: 800; font-size: 13px; color: var(--text-color); cursor: pointer; transition: transform 0.1s;">🚶 Spacer</button>
+                        <button onclick="window.logDogActivity('med')" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; font-weight: 800; font-size: 13px; color: var(--text-color); cursor: pointer; transition: transform 0.1s;">💊 Lek</button>
+                        <button onclick="window.logDogActivity('water')" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; font-weight: 800; font-size: 13px; color: var(--text-color); cursor: pointer; transition: transform 0.1s;">💧 Woda</button>
+                    </div>
+
+                    <div id="journal-live-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>
+                    </div>
+                </div>
 
                 <!-- 🔥 Karta Medyczna SAFE (PREMIUM) -->
                 <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(231, 76, 60, 0.15); margin-bottom: 25px; border: 1px solid rgba(231, 76, 60, 0.3); position: relative;">
