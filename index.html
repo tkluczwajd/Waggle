@@ -117,63 +117,78 @@
 </div>
 
                <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.04); margin-bottom: 25px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h4 style="margin: 0; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-color);">📋 Codzienna Opieka</h4>
-                        <span onclick="window.openJournalHistory()" style="font-size: 11px; font-weight: 900; color: var(--primary); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">Pełna historia ➔</span>    
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
-                        
-                        <!-- 🍖 KARMIENIE -->
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                            <!-- Pasek postępu w tle -->
-                            <div id="progress-bg-feed" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">🍖 Karmienie</div>
-                                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-feed" style="color: var(--text-color);">0</span> / <span id="goal-feed">2</span> dzisiaj</div>
-                                </div>
-                                <button onclick="window.logDogActivity('feed')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
-                            </div>
-                        </div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <h4 style="margin: 0; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-color);">📋 Codzienna Opieka</h4>
+            <!-- Zębatka do przyszłych ustawień celów -->
+            <button id="openCareSettingsBtn" style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 0; transition: transform 0.2s;" onmouseover="this.style.transform='rotate(45deg)'" onmouseout="this.style.transform='rotate(0deg)'" title="Ustawienia celów">⚙️</button>
+        </div>
+        <span onclick="window.openJournalHistory()" style="font-size: 11px; font-weight: 900; color: var(--primary); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">Pełna historia ➔</span>    
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
+        <!-- 🍖 KARMIENIE -->
+        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div id="progress-bg-feed" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">🍖 Karmienie</div>
+                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-feed" style="color: var(--text-color);">0</span> / <span id="goal-feed">2</span> dzisiaj</div>
+                </div>
+                <button onclick="window.logDogActivity('feed')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
+            </div>
+        </div>
 
-                        <!-- 🚶 SPACER -->
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                            <div id="progress-bg-walk" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">🚶 Spacer</div>
-                                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-walk" style="color: var(--text-color);">0</span> / <span id="goal-walk">3</span> dzisiaj</div>
-                                </div>
-                                <button onclick="window.logDogActivity('walk')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
-                            </div>
-                        </div>
+        <!-- 🚶 SPACER -->
+        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div id="progress-bg-walk" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">🚶 Spacer</div>
+                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-walk" style="color: var(--text-color);">0</span> / <span id="goal-walk">3</span> dzisiaj</div>
+                </div>
+                <button onclick="window.logDogActivity('walk')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
+            </div>
+        </div>
 
-                        <!-- 💊 LEK -->
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                            <div id="progress-bg-med" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">💊 Lek</div>
-                                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-med" style="color: var(--text-color);">0</span> / <span id="goal-med">1</span> dzisiaj</div>
-                                </div>
-                                <button onclick="window.logDogActivity('med')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
-                            </div>
-                        </div>
+        <!-- 💊 LEK -->
+        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div id="progress-bg-med" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">💊 Lek</div>
+                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-med" style="color: var(--text-color);">0</span> / <span id="goal-med">1</span> dzisiaj</div>
+                </div>
+                <button onclick="window.logDogActivity('med')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
+            </div>
+        </div>
 
-                        <!-- 💧 WODA -->
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                            <div id="progress-bg-water" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">💧 Woda</div>
-                                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-water" style="color: var(--text-color);">0</span> / <span id="goal-water">3</span> dzisiaj</div>
-                                </div>
-                                <button onclick="window.logDogActivity('water')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
-                            </div>
-                        </div>
+        <!-- 💧 WODA -->
+        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div id="progress-bg-water" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900; font-size: 14px; color: var(--text-color); margin-bottom: 3px;">💧 Woda</div>
+                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-water" style="color: var(--text-color);">0</span> / <span id="goal-water">3</span> dzisiaj</div>
+                </div>
+                <button onclick="window.logDogActivity('water')" style="background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; color: var(--text-muted); transition: transform 0.1s;">+</button>
+            </div>
+        </div>
+    </div>
 
-                    </div>
+    <h5 style="margin: 0 0 10px 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Ostatnio (Dziś)</h5>
+    <div id="journal-live-list" style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności...</div>
+    </div>
+
+    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+        <h5 style="margin: 0 0 10px 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">👨‍👩‍👦 Opiekunowie psa (Stado)</h5>
+        <div id="caretakers-list-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">Ładowanie Stada...</div>
+        </div>
+    </div>
+</div>
 
             
                 <!-- 🔥 Karta Medyczna SAFE (PREMIUM) -->
