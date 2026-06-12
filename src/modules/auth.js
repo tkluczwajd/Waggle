@@ -5,7 +5,7 @@ import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false;
 
-// 🔥 BEZPIECZNE POWIADOMIENIA (Fallback do alertu, jeśli UI jeszcze nie wstało)
+// 🔥 BEZPIECZNE POWIADOMIENIA (Fallback do alertu systemowego)
 function notifyUser(msg) {
     if (window.Waggle && typeof window.Waggle.showToast === 'function') {
         window.Waggle.showToast(msg);
@@ -20,23 +20,16 @@ window.Waggle.logout = () => {
     notifyUser("Wylogowywanie i czyszczenie pamięci... ⏳");
     
     auth.signOut().then(() => {
-        // 1. Czyszczenie pamięci lokalnej (sesja użytkownika)
         localStorage.clear();
         sessionStorage.clear();
 
-        // 2. Brutalne usunięcie Service Workera i Cache (Twardy reset PWA)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister();
-                }
+                for(let registration of registrations) registration.unregister();
             });
-            caches.keys().then(keys => {
-                keys.forEach(key => caches.delete(key));
-            });
+            caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
         }
 
-        // 3. Powrót na ekran logowania z ominięciem cache przeglądarki
         setTimeout(() => {
             window.location.replace(window.location.origin + window.location.pathname + '?v=' + new Date().getTime());
         }, 500);
@@ -47,7 +40,6 @@ window.Waggle.logout = () => {
     });
 };
 
-// Słownik błędów Firebase na język polski
 function translateAuthError(errorCode) {
     switch (errorCode) {
         case 'auth/invalid-email': return "Niepoprawny format adresu e-mail.";
@@ -62,6 +54,30 @@ function translateAuthError(errorCode) {
     }
 }
 
+// 🔥 WAGGLE FAMILY: Generator awatarów opiekunów
+function renderCaretakers(profileData) {
+    const container = document.getElementById('caretakers-list-container');
+    if (!container) return;
+    
+    let html = '';
+    
+    // 1. Główny właściciel (Gospodarz)
+    html += `<div style="width: 36px; height: 36px; background: var(--secondary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; box-shadow: 0 2px 8px rgba(52, 172, 224, 0.3);" title="Główny Opiekun">Gł</div>`;
+    
+    // 2. Dodatkowi domownicy pobrani z bazy Firebase
+    if (profileData && profileData.caretakers) {
+        for (const [uid, caretaker] of Object.entries(profileData.caretakers)) {
+            const initial = caretaker.name ? caretaker.name.charAt(0).toUpperCase() : 'O';
+            html += `<div style="width: 36px; height: 36px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);" title="${caretaker.name}">${initial}</div>`;
+        }
+    }
+    
+    // 3. Przycisk zapraszania
+    html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Zaproś domownika">+</button>`;
+    
+    container.innerHTML = html;
+}
+
 export function initAuth(onReady) {
     // 1. MONITOROWANIE STANU ZALOGOWANIA
     auth.onAuthStateChanged(user => {
@@ -72,13 +88,12 @@ export function initAuth(onReady) {
             setState('auth.user', user);
             state.user = user; 
             
-            // 🔥 WAGGLE FAMILY: MAGIA! Wybieramy, czyj profil psa ładujemy!
+            // WAGGLE FAMILY: Pobieramy dane wybranego psa (Swojego lub ze Stada)
             const targetUid = localStorage.getItem('activeDogId') || user.uid;
             
             const unsub = db.collection("users").doc(targetUid).onSnapshot(doc => {
                 let data = doc.exists ? doc.data() : null;
                 
-                // Tworzymy domyślny profil TYLKO jeśli to nasze własne nowe konto i jest puste
                 if (!data) {
                     data = { 
                         name: "Piesek", 
@@ -88,7 +103,6 @@ export function initAuth(onReady) {
                         breed: "",
                         createdAt: fb.firestore.FieldValue.serverTimestamp()
                     };
-                    // Zapisujemy w bazie tylko u właściciela
                     if (targetUid === user.uid) {
                         db.collection("users").doc(user.uid).set(data, {merge: true});
                     }
@@ -99,6 +113,9 @@ export function initAuth(onReady) {
                 setState('profile', data);
                 state.profile = data;
                 eventBus.emit('profileUpdated', data);
+
+                // Rysujemy dynamiczne awatary przy każdej zmianie profilu
+                renderCaretakers(data);
                 
                 document.getElementById("auth-screen").style.display = "none";
                 document.getElementById("app-interface").style.display = "flex";
@@ -115,54 +132,54 @@ export function initAuth(onReady) {
         }
     });
 
-    // 2. OBSŁUGA PRZYCISKÓW LOGOWANIA, REJESTRACJI I RESETU
-    document.addEventListener('click', (e) => {
-        
-        // LOGOWANIE
-        if (e.target.id === 'loginBtn') {
+    // 2. KULOODPORNA OBSŁUGA PRZYCISKÓW LOGOWANIA (Twarde podpięcie pod elementy)
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.onclick = () => {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
-            if(!email || !pass) return notifyUser("Wpisz e-mail i hasło! 🐾");
-            notifyUser("Logowanie... ⏳");
+            if(!email || !pass) return notifyUser("⚠️ Wpisz e-mail i hasło!");
             
+            notifyUser("Logowanie... ⏳");
             auth.signInWithEmailAndPassword(email, pass).catch(err => {
-                notifyUser(`Błąd: ${translateAuthError(err.code)}`);
+                notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`);
             });
-        }
+        };
+    }
 
-        // REJESTRACJA
-        if (e.target.id === 'registerBtn') {
+    const registerBtn = document.getElementById('registerBtn');
+    if (registerBtn) {
+        registerBtn.onclick = () => {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
             const termsChecked = document.getElementById('legalTerms')?.checked;
 
-            if (!termsChecked) return notifyUser("Musisz zaakceptować regulamin! 📜");
-            if(!email || !pass) return notifyUser("Wpisz e-mail i hasło! 🐾");
+            if (!termsChecked) return notifyUser("⚠️ Musisz zaakceptować regulamin!");
+            if(!email || !pass) return notifyUser("⚠️ Wpisz e-mail i hasło!");
+            if(pass.length < 6) return notifyUser("⚠️ Hasło musi mieć min. 6 znaków!");
             
             notifyUser("Tworzenie konta... ⏳");
-            
             auth.createUserWithEmailAndPassword(email, pass).then((userCredential) => {
-                // Zapisujemy e-mail w tle w prywatnym dokumencie nowego użytkownika
                 db.collection("users").doc(userCredential.user.uid).set({
                     email: email,
                     createdAt: fb.firestore.FieldValue.serverTimestamp()
                 }, {merge: true});
-                notifyUser("Konto utworzone! Witaj w Stadzie! 🎉");
+                notifyUser("✅ Konto utworzone! Witaj w Stadzie!");
             }).catch(err => {
-                notifyUser(`Błąd: ${translateAuthError(err.code)}`);
+                notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`);
             });
-        }
-        
-        // RESET HASŁA
-        if (e.target.id === 'resetPasswordBtn') {
+        };
+    }
+    
+    const resetBtn = document.getElementById('resetPasswordBtn');
+    if (resetBtn) {
+        resetBtn.onclick = () => {
             const email = document.getElementById('authEmail').value.trim();
-            if (!email) return notifyUser("Wpisz swój e-mail wyżej, aby zresetować hasło! 📧");
+            if (!email) return notifyUser("📧 Wpisz swój e-mail wyżej, aby zresetować hasło!");
             
             auth.sendPasswordResetEmail(email).then(() => {
-                notifyUser("Link do resetu hasła wysłany na e-mail! 📬");
-            }).catch(err => {
-                notifyUser(`Błąd: ${translateAuthError(err.code)}`);
-            });
-        }
-    });
+                notifyUser("📬 Link do resetu hasła wysłany!");
+            }).catch(err => notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`));
+        };
+    }
 }
