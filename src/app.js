@@ -83,23 +83,58 @@ window.logDogActivity = async (type) => {
     }
 };
 
-// 2. Kuloodporne nasłuchiwanie na zmiany w Dzienniku
+// 2. Kuloodporne nasłuchiwanie na zmiany w Dzienniku + TRACKER CELÓW
 function initJournalListener() {
-  // Sprawdzamy najpierw czy mamy współdzielonego psa, jak nie to bierzemy własnego
-  const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     
     if (!currentUid) {
-        // Jeśli apka jeszcze się nie załadowała, próbujemy za sekundę
         setTimeout(initJournalListener, 1000);
         return;
     }
 
-    console.log("🐾 Podpinam nasłuchiwacz Dziennika dla ID:", currentUid);
+    console.log("🐾 Podpinam nasłuchiwacz Dziennika i Celów dla ID:", currentUid);
 
     subscribeToJournal(currentUid, (entries) => {
         const listElement = document.getElementById('journal-live-list');
         if (!listElement) return;
 
+        // 🔥 LOGIKA TRACKERA CELÓW (PRIORYTET 1)
+        const todayStr = new Date().toDateString();
+        const dailyCounts = { feed: 0, walk: 0, med: 0, water: 0 };
+        // Domyślne cele (później przeniesiemy je do ustawień psa)
+        const dailyGoals = { feed: 2, walk: 3, med: 1, water: 3 };
+
+        if (entries && entries.length > 0) {
+            entries.forEach(entry => {
+                if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+                    if (entry.timestamp.toDate().toDateString() === todayStr) {
+                        if (dailyCounts[entry.type] !== undefined) dailyCounts[entry.type]++;
+                    }
+                }
+            });
+        }
+
+        // Rysowanie pasków postępu
+        ['feed', 'walk', 'med', 'water'].forEach(type => {
+            const countEl = document.getElementById(`count-${type}`);
+            const bgEl = document.getElementById(`progress-bg-${type}`);
+            if (countEl && bgEl) {
+                countEl.innerText = dailyCounts[type];
+                let percentage = Math.min((dailyCounts[type] / dailyGoals[type]) * 100, 100);
+                bgEl.style.width = `${percentage}%`;
+
+                // Sukces! Jeśli cel osiągnięty, zmieniamy kolor na zielony
+                if (dailyCounts[type] >= dailyGoals[type]) {
+                    bgEl.style.background = 'rgba(46, 213, 115, 0.2)'; // Zielony Waggle
+                    countEl.style.color = '#2ed573';
+                } else {
+                    bgEl.style.background = 'rgba(52, 172, 224, 0.1)'; // Niebieski
+                    countEl.style.color = 'var(--text-color)';
+                }
+            }
+        });
+
+        // 🔥 RYSOWANIE LISTY OSTATNICH AKTYWNOŚCI
         if (!entries || entries.length === 0) {
             listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
             return;
@@ -108,12 +143,11 @@ function initJournalListener() {
         const icons = { feed: '🍖', walk: '🚶', med: '💊', water: '💧', vet: '🏥' };
         const labels = { feed: 'Nakarmiony', walk: 'Spacer', med: 'Lek', water: 'Woda', vet: 'Weterynarz' };
 
-        // Wyświetlamy tylko 3 ostatnie
+        // Wyświetlamy tylko 3 ostatnie wpisy na liście "Ostatnio (Dziś)"
         const recentEntries = entries.slice(0, 3);
 
         listElement.innerHTML = recentEntries.map((entry, index) => {
             let timeString = "Teraz";
-            // Bezpieczne konwertowanie czasu z Firebase
             if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
                 timeString = entry.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             }
