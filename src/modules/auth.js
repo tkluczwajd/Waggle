@@ -5,14 +5,13 @@ import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false;
 
-// 🔥 NOWY SYSTEM BŁĘDÓW: Okienko modalne z przyciskiem "OK"
+// 🔥 SYSTEM BŁĘDÓW: Okienko modalne z przyciskiem "OK"
 function showAuthAlert(msg, isError = true) {
     let modal = document.getElementById('auth-alert-modal');
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'auth-alert-modal';
         modal.className = 'modal';
-        // 2147483647 to absolutnie maksymalna wartość z-index w CSS. Nic tego nie przykryje!
         modal.style.zIndex = '2147483647'; 
         modal.innerHTML = `
             <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
@@ -23,18 +22,13 @@ function showAuthAlert(msg, isError = true) {
             </div>
         `;
         document.body.appendChild(modal);
-
-        document.getElementById('auth-alert-btn').onclick = () => {
-            modal.style.display = 'none';
-        };
+        document.getElementById('auth-alert-btn').onclick = () => { modal.style.display = 'none'; };
     }
-
     document.getElementById('auth-alert-icon').innerText = isError ? '🛑' : '✅';
     document.getElementById('auth-alert-title').innerText = isError ? 'Błąd' : 'Sukces';
     document.getElementById('auth-alert-title').style.color = isError ? 'var(--danger)' : 'var(--secondary)';
     document.getElementById('auth-alert-btn').style.background = isError ? 'var(--danger)' : 'var(--secondary)';
     document.getElementById('auth-alert-msg').innerText = msg;
-    
     modal.style.display = 'flex';
 }
 
@@ -49,25 +43,21 @@ function notifyUser(msg) {
 // 🔥 KULOODPORNE WYLOGOWANIE I CZYSZCZENIE CACHE PWA
 window.Waggle = window.Waggle || {};
 window.Waggle.logout = () => {
-    notifyUser("Wylogowywanie i czyszczenie pamięci... ⏳");
-    
+    notifyUser("Wylogowywanie... ⏳");
     auth.signOut().then(() => {
         localStorage.clear();
         sessionStorage.clear();
-
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) registration.unregister();
             });
             caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
         }
-
         setTimeout(() => {
             window.location.replace(window.location.origin + window.location.pathname + '?v=' + new Date().getTime());
         }, 500);
-
     }).catch((err) => {
-        console.error("Błąd wylogowania:", err);
+        console.error(err);
         showAuthAlert("Wystąpił błąd podczas wylogowania.");
     });
 };
@@ -86,37 +76,155 @@ function translateAuthError(errorCode) {
     }
 }
 
-// 🔥 WAGGLE FAMILY: Generator awatarów opiekunów (Z kolorami i czatem!)
-function renderCaretakers(profileData) {
+// 🔥 WAGGLE FAMILY: PANEL ZARZĄDZANIA CZŁONKIEM STADA (Dla Właściciela)
+window.Waggle.openMemberManagement = (uid, name, currentRole) => {
+    let modal = document.getElementById('member-mgmt-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'member-mgmt-modal';
+        modal.className = 'modal';
+        modal.style.zIndex = '2147483646';
+        modal.innerHTML = `
+            <div class="card" style="padding: 25px 20px; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                <button class="close-modal-btn" onclick="document.getElementById('member-mgmt-modal').style.display='none'">✕</button>
+                <h3 style="margin-top: 0; font-size: 20px; font-weight:900;">Zarządzaj członkiem</h3>
+                <p id="mgmt-user-name" style="font-weight: 900; color: var(--secondary); margin-bottom: 20px; font-size: 16px;"></p>
+                
+                <div style="text-align: left; margin-bottom: 25px;">
+                    <label style="font-size: 11px; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 8px; letter-spacing: 0.5px;">ROLA W STADZIE:</label>
+                    <select id="mgmt-role-select" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 700; background: var(--bg-color); color: var(--text-color); font-family:inherit; outline:none;">
+                        <option value="caretaker">📋 Opiekun (Edycja Dziennika)</option>
+                        <option value="domownik">🏠 Domownik (Tylko odznaczanie)</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; width:100%;">
+                    <button id="mgmt-save-btn" class="btn-main" style="background: var(--secondary); font-weight:900;">ZAPISZ ZMIANY</button>
+                    <button id="mgmt-kick-btn" class="btn-outline" style="border-color: var(--danger); color: var(--danger); font-weight: 900; margin-top: 5px;">Usuń ze Stada ❌</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    document.getElementById('mgmt-user-name').innerText = name;
+    document.getElementById('mgmt-role-select').value = currentRole;
+    
+    const dogOwnerUid = firebase.auth().currentUser.uid;
+
+    document.getElementById('mgmt-save-btn').onclick = async () => {
+        const selectedRole = document.getElementById('mgmt-role-select').value;
+        try {
+            document.getElementById('mgmt-save-btn').innerText = "ZAPISYWANIE...";
+            await db.collection('users').doc(dogOwnerUid).set({
+                caretakers: {
+                    [uid]: { role: selectedRole }
+                }
+            }, { merge: true });
+            modal.style.display = 'none';
+            document.getElementById('mgmt-save-btn').innerText = "ZAPISZ ZMIANY";
+            notifyUser("✅ Rola członka stada zaktualizowana!");
+        } catch (e) {
+            showAuthAlert("Błąd podczas zapisu uprawnień.");
+        }
+    };
+
+    document.getElementById('mgmt-kick-btn').onclick = async () => {
+        modal.style.display = 'none';
+        // Korzystamy z Twojego autorskiego, pięknego okienka potwierdzeń!
+        const confirmModal = document.getElementById('custom-confirm-modal');
+        if (confirmModal) {
+            document.getElementById('custom-confirm-msg').innerText = `Czy na pewno chcesz trwale usunąć opiekuna ${name} ze swojego Stada?`;
+            confirmModal.style.display = 'flex';
+            
+            document.getElementById('custom-confirm-ok').onclick = async () => {
+                try {
+                    await db.collection('users').doc(dogOwnerUid).update({
+                        [`caretakers.${uid}`]: fb.firestore.FieldValue.delete()
+                    });
+                    confirmModal.style.display = 'none';
+                    notifyUser("❌ Usunięto członka ze Stada.");
+                } catch(err) {
+                    showAuthAlert("Nie udało się usunąć użytkownika.");
+                }
+            };
+            document.getElementById('custom-confirm-cancel').onclick = () => { confirmModal.style.display = 'none'; };
+        }
+    };
+
+    modal.style.display = 'flex';
+};
+
+// 🔥 WAGGLE FAMILY: Dynamiczny Generator awatarów opiekunów z oznaczeniem ról i uprawnieniami
+function renderCaretakers(profileData, loggedInUid) {
     const container = document.getElementById('caretakers-list-container');
     if (!container) return;
     
+    const dogOwnerUid = localStorage.getItem('activeDogId') || loggedInUid;
+    const isOwnerOfDog = dogOwnerUid === loggedInUid;
+    
     let html = '';
     
-    // 1. Główny właściciel (Gospodarz) - nie otwiera czatu sam ze sobą ;)
-    html += `<div style="width: 36px; height: 36px; background: var(--secondary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; box-shadow: 0 2px 8px rgba(52, 172, 224, 0.3);" title="Główny Opiekun">Gł</div>`;
+    // 1. Główny właściciel (Zawsze pierwszy na liście)
+    html += `<div style="width: 36px; height: 36px; background: #2c3e50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); position: relative;" title="Główny Właściciel psa">
+                WŁ
+                <span style="position: absolute; bottom: -3px; right: -3px; background: #2d3436; color: #fff; font-size: 6px; padding: 1px 3px; border-radius: 4px; font-weight: 900; scale: 0.85; border: 1px solid white;">WŁ</span>
+             </div>`;
     
     // 2. Dodatkowi domownicy pobrani z bazy Firebase
+    let currentRole = isOwnerOfDog ? 'owner' : 'domownik';
+
     if (profileData && profileData.caretakers) {
-        // Paleta ładnych kolorów dla odróżnienia domowników
         const colors = ['#ff5252', '#33d9b2', '#ffb142', '#706fd3', '#ff793f'];
         let colorIndex = 0;
 
         for (const [uid, caretaker] of Object.entries(profileData.caretakers)) {
+            if (uid === loggedInUid) currentRole = caretaker.role || 'caretaker';
+
             const name = caretaker.name || "Opiekun";
-            const initial = name.charAt(0).toUpperCase();
+            const role = caretaker.role || "caretaker";
             const bgColor = colors[colorIndex % colors.length];
             colorIndex++;
 
-            // Dodajemy akcję onclick, która otworzy czat po kliknięciu!
-            html += `<div onclick="if(window.Waggle && window.Waggle.openChatWithUser) { window.Waggle.openChatWithUser('${uid}', '${name}'); } else { alert('Wkrótce otworzy się tu czat z: ${name}'); }" style="width: 36px; height: 36px; background: ${bgColor}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); cursor: pointer; transition: transform 0.2s;" title="Napisz do: ${name}" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">${initial}</div>`;
+            const roleBadge = role === 'domownik' ? 'DO' : 'OP';
+            
+            // INTELIGENTNY KLIK: Właściciel zarządza rolą, pozostali otwierają czat!
+            let clickAction = "";
+            if (isOwnerOfDog) {
+                clickAction = `window.Waggle.openMemberManagement('${uid}', '${name}', '${role}')`;
+            } else {
+                clickAction = `if(window.Waggle && window.Waggle.openChatWithUser) { window.Waggle.openChatWithUser('${uid}', '${name}'); } else { alert('Wkrótce otworzy się tu czat z: ${name}'); }`;
+            }
+
+            html += `<div onclick="${clickAction}" style="width: 36px; height: 36px; background: ${bgColor}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); cursor: pointer; position: relative; transition: transform 0.2s;" title="${name} (${role === 'domownik' ? 'Domownik' : 'Opiekun'})" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                ${name.charAt(0).toUpperCase()}
+                <span style="position: absolute; bottom: -3px; right: -3px; background: #2d3436; color: white; font-size: 6px; padding: 1px 3px; border-radius: 4px; font-weight: 900; scale: 0.85; border: 1px solid white;">${roleBadge}</span>
+            </div>`;
         }
     }
     
-    // 3. Przycisk zapraszania
-    html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Zaproś domownika">+</button>`;
+    // 3. Przycisk zapraszania (Tylko Właściciel i Opiekun mogą zapraszać, Domownik ma blokadę)
+    if (currentRole !== 'domownik') {
+        html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Zaproś nowego opiekuna">+</button>`;
+    }
     
     container.innerHTML = html;
+
+    // 🔥 BLOKADA UPRAWNIEŃ W UI (Ukrywanie elementów na bazie przyznanej roli)
+    const careSettingsBtn = document.getElementById('openCareSettingsBtn'); // Trybik celów opieki
+    const safeSetupBtn = document.getElementById('openSafeSetupBtn'); // Ołówek danych medycznych S.A.F.E
+    const deleteAccountBtn = document.getElementById('deleteAccountBtn'); // Czerwony przycisk usuwania konta
+
+    if (currentRole === 'owner') {
+        if (careSettingsBtn) careSettingsBtn.style.display = 'inline-block';
+        if (safeSetupBtn) safeSetupBtn.style.display = 'flex';
+        if (deleteAccountBtn) deleteAccountBtn.parentElement ? deleteAccountBtn.parentElement.style.display = 'block' : deleteAccountBtn.style.display = 'block';
+    } else {
+        // Blokada dla Opiekuna oraz Domownika
+        if (careSettingsBtn) careSettingsBtn.style.display = 'none';
+        if (safeSetupBtn) safeSetupBtn.style.display = 'none';
+        if (deleteAccountBtn) deleteAccountBtn.parentElement ? deleteAccountBtn.parentElement.style.display = 'none' : deleteAccountBtn.style.display = 'none';
+    }
 }
 
 export function initAuth(onReady) {
@@ -129,7 +237,6 @@ export function initAuth(onReady) {
             setState('auth.user', user);
             state.user = user; 
             
-            // WAGGLE FAMILY: Pobieramy dane wybranego psa (Swojego lub ze Stada)
             const targetUid = localStorage.getItem('activeDogId') || user.uid;
             
             const unsub = db.collection("users").doc(targetUid).onSnapshot(doc => {
@@ -155,8 +262,8 @@ export function initAuth(onReady) {
                 state.profile = data;
                 eventBus.emit('profileUpdated', data);
 
-                // Rysujemy dynamiczne awatary przy każdej zmianie profilu
-                renderCaretakers(data);
+                // Rysujemy dynamiczne awatary z przypisanymi uprawnieniami ról
+                renderCaretakers(data, user.uid);
                 
                 document.getElementById("auth-screen").style.display = "none";
                 document.getElementById("app-interface").style.display = "flex";
@@ -173,14 +280,13 @@ export function initAuth(onReady) {
         }
     });
 
-    // 2. KULOODPORNA OBSŁUGA PRZYCISKÓW (Globalny nasłuchiwacz)
+    // 2. OBSŁUGA PRZYCISKÓW (Globalny nasłuchiwacz)
     document.addEventListener('click', (e) => {
         
         // LOGOWANIE
         if (e.target.id === 'loginBtn') {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
-            
             if(!email || !pass) return showAuthAlert("Wpisz e-mail i hasło!");
             
             const btn = document.getElementById('loginBtn');
