@@ -264,7 +264,7 @@ function checkInvitesOnLoad() {
                     return;
                 }
 
-                const userName = localStorage.getItem('userName') || "Domownik";
+                const userName = localStorage.getItem('userName') || (user.email ? user.email.split('@')[0] : "Domownik");
                 
                 // Pokazujemy okienko z pytaniem (korzystamy z Twojego pięknego designu)
                 document.getElementById('custom-confirm-msg').innerText = "Zostałeś zaproszony do współdzielenia profilu i opieki nad psem! Chcesz dołączyć?";
