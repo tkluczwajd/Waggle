@@ -412,3 +412,122 @@ window.addEventListener('load', () => {
         });
     }
 });
+// ============================================================================
+// 🔥 WAGGLE FAMILY: CHAT (Wiadomości 1-na-1 oraz Grupowe Stada)
+// ============================================================================
+let currentChatUnsubscribe = null;
+let currentChatId = null;
+
+window.Waggle.openChatWithUser = (partnerUid, partnerName) => {
+    const myUid = auth.currentUser.uid;
+    // Unikalne ID pokoju dla dwóch osób: sortujemy UID alfabetycznie, żeby zawsze było takie samo niezależnie kto do kogo pisze
+    const chatId = [myUid, partnerUid].sort().join('_');
+    openChatWindow(chatId, partnerName);
+};
+
+window.Waggle.openGroupChat = (ownerUid, groupName) => {
+    // Wspólny pokój czatu dla całego stada
+    const chatId = `family_${ownerUid}`;
+    openChatWindow(chatId, groupName);
+};
+
+function openChatWindow(chatId, title) {
+    currentChatId = chatId;
+    document.getElementById('chatPartnerName').innerText = title;
+    document.getElementById('chat-window').style.display = 'flex';
+    
+    const messagesContainer = document.getElementById('chatMessages');
+    messagesContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">Ładowanie wiadomości... ⏳</p>';
+
+    // Usuwamy stary nasłuchiwacz, jeśli użytkownik przełącza się między czatami
+    if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+    }
+
+    // Pobieranie wiadomości w czasie rzeczywistym z Firestore
+    currentChatUnsubscribe = db.collection('chats').doc(chatId).collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot(snapshot => {
+            messagesContainer.innerHTML = '';
+            if(snapshot.empty) {
+                messagesContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">Brak wiadomości. Napisz jako pierwszy! 👋</p>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                const isMe = msg.senderId === auth.currentUser.uid;
+                const time = msg.timestamp ? msg.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Teraz';
+                
+                const align = isMe ? 'flex-end' : 'flex-start';
+                const bg = isMe ? 'var(--primary)' : 'var(--bg-color)';
+                const color = isMe ? 'white' : 'var(--text-color)';
+                const border = isMe ? 'none' : '1px solid var(--border-color)';
+                const borderRadius = isMe ? '15px 15px 0 15px' : '15px 15px 15px 0';
+
+                // Podpisujemy imieniem tylko jeśli to nie jesteśmy my (w czacie grupowym to ważne, żeby wiedzieć kto pisze!)
+                const senderNameHtml = !isMe ? `<div style="font-size: 10px; color: var(--text-muted); margin-bottom: 3px; margin-left: 5px; font-weight:700;">${msg.senderName}</div>` : '';
+
+                messagesContainer.innerHTML += `
+                    <div style="display: flex; flex-direction: column; align-items: ${align}; margin-bottom: 12px;">
+                        ${senderNameHtml}
+                        <div style="background: ${bg}; color: ${color}; padding: 10px 15px; border-radius: ${borderRadius}; max-width: 75%; border: ${border}; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); word-wrap: break-word;">
+                            ${msg.text}
+                        </div>
+                        <div style="font-size: 9px; color: var(--text-muted); margin-top: 4px; margin-right: ${isMe ? '5px' : '0'}; margin-left: ${isMe ? '0' : '5px'};">${time}</div>
+                    </div>
+                `;
+            });
+            
+            // Automatyczne zjeżdżanie na sam dół do najnowszej wiadomości
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+}
+
+// Obsługa zamykania okna czatu
+const closeChatBtn = document.getElementById('closeChatBtn');
+if(closeChatBtn) {
+    closeChatBtn.addEventListener('click', () => {
+        document.getElementById('chat-window').style.display = 'none';
+    });
+}
+
+// Obsługa wysyłania wiadomości (przycisk oraz Enter)
+const sendMsgBtn = document.getElementById('sendMsgBtn');
+const chatInput = document.getElementById('chatInput');
+
+if(sendMsgBtn && chatInput) {
+    sendMsgBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+}
+
+async function sendMessage() {
+    if (!currentChatId) return;
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    const myUid = auth.currentUser.uid;
+    // Pobieramy imię zalogowanej osoby z localStorage lub pierwszej części e-maila
+    const myName = localStorage.getItem('userName') || auth.currentUser.email.split('@')[0];
+
+    // Czyszczenie pola natychmiast po wysłaniu dla lepszego UX
+    chatInput.value = '';
+    chatInput.style.height = 'auto'; 
+
+    try {
+        await db.collection('chats').doc(currentChatId).collection('messages').add({
+            text: text,
+            senderId: myUid,
+            senderName: myName,
+            timestamp: fb.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) {
+        console.error("Błąd wysyłania:", e);
+        if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("❌ Błąd wysyłania wiadomości");
+    }
+}
