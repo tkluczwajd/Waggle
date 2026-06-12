@@ -5,12 +5,44 @@ import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false;
 
-// 🔥 BEZPIECZNE POWIADOMIENIA (Fallback do alertu systemowego)
+// 🔥 NOWY SYSTEM BŁĘDÓW: Okienko modalne z przyciskiem "OK"
+function showAuthAlert(msg, isError = true) {
+    let modal = document.getElementById('auth-alert-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'auth-alert-modal';
+        modal.className = 'modal';
+        // 2147483647 to absolutnie maksymalna wartość z-index w CSS. Nic tego nie przykryje!
+        modal.style.zIndex = '2147483647'; 
+        modal.innerHTML = `
+            <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <div id="auth-alert-icon" style="font-size: 45px; margin-bottom: 15px;">🛑</div>
+                <h3 id="auth-alert-title" style="margin-top: 0; font-size: 22px;">Uwaga</h3>
+                <p id="auth-alert-msg" style="font-weight: 700; color: var(--text-color); margin-bottom: 25px; font-size: 15px; line-height: 1.4;"></p>
+                <button id="auth-alert-btn" class="btn-main" style="width: 100%; padding: 14px; font-size: 14px; font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">OK, rozumiem</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('auth-alert-btn').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+
+    document.getElementById('auth-alert-icon').innerText = isError ? '🛑' : '✅';
+    document.getElementById('auth-alert-title').innerText = isError ? 'Błąd' : 'Sukces';
+    document.getElementById('auth-alert-title').style.color = isError ? 'var(--danger)' : 'var(--secondary)';
+    document.getElementById('auth-alert-btn').style.background = isError ? 'var(--danger)' : 'var(--secondary)';
+    document.getElementById('auth-alert-msg').innerText = msg;
+    
+    modal.style.display = 'flex';
+}
+
 function notifyUser(msg) {
     if (window.Waggle && typeof window.Waggle.showToast === 'function') {
         window.Waggle.showToast(msg);
     } else {
-        alert(msg); // Niezawodny systemowy fallback!
+        console.log(msg);
     }
 }
 
@@ -36,7 +68,7 @@ window.Waggle.logout = () => {
 
     }).catch((err) => {
         console.error("Błąd wylogowania:", err);
-        notifyUser("Wystąpił błąd podczas wylogowania.");
+        showAuthAlert("Wystąpił błąd podczas wylogowania.");
     });
 };
 
@@ -139,11 +171,16 @@ export function initAuth(onReady) {
         if (e.target.id === 'loginBtn') {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
-            if(!email || !pass) return notifyUser("⚠️ Wpisz e-mail i hasło!");
             
-            notifyUser("Logowanie... ⏳");
+            if(!email || !pass) return showAuthAlert("Wpisz e-mail i hasło!");
+            
+            const btn = document.getElementById('loginBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "Logowanie...";
+            
             auth.signInWithEmailAndPassword(email, pass).catch(err => {
-                notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`);
+                btn.innerText = originalText;
+                showAuthAlert(translateAuthError(err.code));
             });
         }
 
@@ -153,30 +190,34 @@ export function initAuth(onReady) {
             const pass = document.getElementById('authPass').value.trim();
             const termsChecked = document.getElementById('legalTerms')?.checked;
 
-            if (!termsChecked) return notifyUser("⚠️ Musisz zaakceptować regulamin!");
-            if(!email || !pass) return notifyUser("⚠️ Wpisz e-mail i hasło!");
-            if(pass.length < 6) return notifyUser("⚠️ Hasło musi mieć min. 6 znaków!");
+            if (!termsChecked) return showAuthAlert("Musisz zaakceptować regulamin!");
+            if(!email || !pass) return showAuthAlert("Wpisz e-mail i hasło!");
+            if(pass.length < 6) return showAuthAlert("Hasło musi mieć min. 6 znaków!");
             
-            notifyUser("Tworzenie konta... ⏳");
+            const btn = document.getElementById('registerBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "Tworzenie...";
+
             auth.createUserWithEmailAndPassword(email, pass).then((userCredential) => {
                 db.collection("users").doc(userCredential.user.uid).set({
                     email: email,
                     createdAt: fb.firestore.FieldValue.serverTimestamp()
                 }, {merge: true});
-                notifyUser("✅ Konto utworzone! Witaj w Stadzie!");
+                showAuthAlert("Konto utworzone pomyślnie! Witaj w Stadzie!", false);
             }).catch(err => {
-                notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`);
+                btn.innerText = originalText;
+                showAuthAlert(translateAuthError(err.code));
             });
         }
         
         // RESET HASŁA
         if (e.target.id === 'resetPasswordBtn') {
             const email = document.getElementById('authEmail').value.trim();
-            if (!email) return notifyUser("📧 Wpisz swój e-mail wyżej, aby zresetować hasło!");
+            if (!email) return showAuthAlert("Wpisz swój e-mail wyżej, aby zresetować hasło!");
             
             auth.sendPasswordResetEmail(email).then(() => {
-                notifyUser("📬 Link do resetu hasła wysłany!");
-            }).catch(err => notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`));
+                showAuthAlert("Link do resetu hasła został wysłany na Twój adres e-mail.", false);
+            }).catch(err => showAuthAlert(translateAuthError(err.code)));
         }
     });
 }
