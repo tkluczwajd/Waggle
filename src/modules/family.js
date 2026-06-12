@@ -35,6 +35,9 @@ window.Waggle.openMemberManagement = (uid, name, currentRole) => {
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 10px; width:100%;">
+                    <!-- 🔥 NOWOŚĆ: Szybka wiadomość do członka stada -->
+                    <button id="mgmt-msg-btn" class="btn-outline" style="border-color: var(--primary); color: var(--primary); font-weight: 900; margin-bottom: 5px;">Napisz wiadomość 💬</button>
+                    
                     <button id="mgmt-save-btn" class="btn-main" style="background: var(--secondary); font-weight:900;">ZAPISZ ZMIANY</button>
                     <button id="mgmt-kick-btn" class="btn-outline" style="border-color: var(--danger); color: var(--danger); font-weight: 900; margin-top: 5px;">Usuń ze Stada ❌</button>
                 </div>
@@ -47,6 +50,16 @@ window.Waggle.openMemberManagement = (uid, name, currentRole) => {
     document.getElementById('mgmt-role-select').value = currentRole;
     
     const dogOwnerUid = auth.currentUser.uid;
+
+    // Obsługa wiadomości prywatnej
+    document.getElementById('mgmt-msg-btn').onclick = () => {
+        modal.style.display = 'none';
+        if (window.Waggle && window.Waggle.openChatWithUser) {
+            window.Waggle.openChatWithUser(uid, name);
+        } else {
+            notifyUser(`Wkrótce otworzy się czat z: ${name}`);
+        }
+    };
 
     document.getElementById('mgmt-save-btn').onclick = async () => {
         const selectedRole = document.getElementById('mgmt-role-select').value;
@@ -88,7 +101,7 @@ window.Waggle.openMemberManagement = (uid, name, currentRole) => {
     modal.style.display = 'flex';
 };
 
-// 🔥 WAGGLE FAMILY: Rysowanie awatarów i blokada UI
+// 🔥 WAGGLE FAMILY: Rysowanie awatarów, czatu i blokada UI
 export function renderCaretakers(profileData, loggedInUid) {
     const container = document.getElementById('caretakers-list-container');
     if (!container) return;
@@ -99,7 +112,7 @@ export function renderCaretakers(profileData, loggedInUid) {
     let html = '';
     
     // Główny właściciel
-    html += `<div style="width: 36px; height: 36px; background: #2c3e50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); position: relative;" title="Główny Właściciel psa">
+    html += `<div style="width: 36px; height: 36px; background: #2c3e50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); position: relative; flex-shrink: 0;" title="Główny Właściciel psa">
                 WŁ
                 <span style="position: absolute; bottom: -3px; right: -3px; background: #2d3436; color: #fff; font-size: 6px; padding: 1px 3px; border-radius: 4px; font-weight: 900; scale: 0.85; border: 1px solid white;">WŁ</span>
              </div>`;
@@ -124,7 +137,7 @@ export function renderCaretakers(profileData, loggedInUid) {
                 ? `window.Waggle.openMemberManagement('${uid}', '${name}', '${role}')` 
                 : `if(window.Waggle && window.Waggle.openChatWithUser) { window.Waggle.openChatWithUser('${uid}', '${name}'); } else { alert('Wkrótce otworzy się tu czat z: ${name}'); }`;
 
-            html += `<div onclick="${clickAction}" style="width: 36px; height: 36px; background: ${bgColor}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); cursor: pointer; position: relative; transition: transform 0.2s;" title="${name} (${role === 'domownik' ? 'Domownik' : 'Opiekun'})" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            html += `<div onclick="${clickAction}" style="width: 36px; height: 36px; background: ${bgColor}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); cursor: pointer; position: relative; transition: transform 0.2s; flex-shrink: 0;" title="${name} (${role === 'domownik' ? 'Domownik' : 'Opiekun'})" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                 ${name.charAt(0).toUpperCase()}
                 <span style="position: absolute; bottom: -3px; right: -3px; background: #2d3436; color: white; font-size: 6px; padding: 1px 3px; border-radius: 4px; font-weight: 900; scale: 0.85; border: 1px solid white;">${roleBadge}</span>
             </div>`;
@@ -132,8 +145,11 @@ export function renderCaretakers(profileData, loggedInUid) {
     }
     
     if (currentRole !== 'domownik') {
-        html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Zaproś nowego opiekuna">+</button>`;
+        html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; flex-shrink: 0;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Zaproś nowego opiekuna">+</button>`;
     }
+
+    // 🔥 NOWOŚĆ: CZAT GRUPOWY STADA
+    html += `<button onclick="if(window.Waggle && window.Waggle.openGroupChat) { window.Waggle.openGroupChat('${dogOwnerUid}', 'Stado: ${profileData.name || 'Piesek'}'); } else { alert('Czat grupowy Stada wkrótce!'); }" style="background: var(--primary); border: none; color: white; height: 36px; border-radius: 18px; padding: 0 15px; font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3); transition: transform 0.2s; margin-left: auto; flex-shrink: 0;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">💬 Czat Stada</button>`;
     
     container.innerHTML = html;
 
