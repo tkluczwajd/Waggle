@@ -684,5 +684,31 @@
           }
       });
     </script>
+    <div id="care-settings-modal" class="modal" style="z-index: 10005;">
+        <div class="card" style="max-width: 350px;">
+            <button class="close-modal-btn" onclick="document.getElementById('care-settings-modal').style.display='none'">✕</button>
+            <h3 style="margin-top: 0; color: var(--text-color); font-size: 20px;">Cele dzienne</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px; font-weight: 600;">Dostosuj aplikację do potrzeb Twojego psa. Ile razy dziennie planujesz:</p>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--bg-color); padding: 10px 15px; border-radius: 12px;">
+                <div style="font-weight: 800; font-size: 14px;">🍖 Karmienie</div>
+                <input type="number" id="goalInputFeed" min="0" max="10" style="width: 60px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; font-weight: 900; color: var(--text-color);">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--bg-color); padding: 10px 15px; border-radius: 12px;">
+                <div style="font-weight: 800; font-size: 14px;">🚶 Spacery</div>
+                <input type="number" id="goalInputWalk" min="0" max="15" style="width: 60px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; font-weight: 900; color: var(--text-color);">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--bg-color); padding: 10px 15px; border-radius: 12px;">
+                <div style="font-weight: 800; font-size: 14px;">💊 Leki</div>
+                <input type="number" id="goalInputMed" min="0" max="10" style="width: 60px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; font-weight: 900; color: var(--text-color);">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--bg-color); padding: 10px 15px; border-radius: 12px;">
+                <div style="font-weight: 800; font-size: 14px;">💧 Wymiana wody</div>
+                <input type="number" id="goalInputWater" min="0" max="10" style="width: 60px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; font-weight: 900; color: var(--text-color);">
+            </div>
+
+            <button class="btn-main" id="saveCareGoalsBtn" style="background: var(--secondary); box-shadow: 0 4px 15px rgba(52,172,224,0.3); font-weight: 900;">ZAPISZ CELE 🎯</button>
+        </div>
+    </div>
 </body>
 </html>
