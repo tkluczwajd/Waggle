@@ -355,12 +355,16 @@
 
     <div style="padding: 0 20px 100px 20px;">
         <!-- Przyciski Filtrów (Kategorie) -->
+        <!-- Przyciski Filtrów (Kategorie) -->
         <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none;">
             <button onclick="window.Waggle.filterPlaces('all', this)" class="place-filter-btn" style="background: var(--secondary); color: white; border: none; padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer; box-shadow: 0 4px 10px rgba(52,172,224,0.3);">🌟 Wszystkie</button>
-            <button onclick="window.Waggle.filterPlaces('park', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🐕 Wybiegi</button>
+            <button onclick="window.Waggle.filterPlaces('favorites', this)" class="place-filter-btn" style="background: white; color: var(--gold, #f1c40f); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">⭐ Ulubione</button>
+            <button onclick="window.Waggle.filterPlaces('dogpark', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🐕 Wybiegi</button>
+            <button onclick="window.Waggle.filterPlaces('park', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🌳 Parki</button>
+            <button onclick="window.Waggle.filterPlaces('forest', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🌲 Lasy</button>
             <button onclick="window.Waggle.filterPlaces('vet', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🏥 Weterynarz</button>
             <button onclick="window.Waggle.filterPlaces('cafe', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">☕ Dog-Friendly</button>
-            <button onclick="window.Waggle.filterPlaces('forest', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🌲 Lasy</button>
+            <button onclick="window.Waggle.filterPlaces('other', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🚶 Inne</button>
         </div>
 
         <!-- Lista Miejscówek -->
