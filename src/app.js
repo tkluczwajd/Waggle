@@ -83,7 +83,7 @@ window.logDogActivity = async (type) => {
     }
 };
 
-// 2. Kuloodporne nasłuchiwanie na zmiany w Dzienniku + TRACKER CELÓW
+// 2. Kuloodporne nasłuchiwanie na zmiany w Dzienniku + CELOWANIE
 function initJournalListener() {
     const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     
@@ -92,81 +92,88 @@ function initJournalListener() {
         return;
     }
 
-    console.log("🐾 Podpinam nasłuchiwacz Dziennika i Celów dla ID:", currentUid);
+    console.log("🐾 Podpinam nasłuchiwacz Dziennika dla ID:", currentUid);
 
-    subscribeToJournal(currentUid, (entries) => {
-        const listElement = document.getElementById('journal-live-list');
-        if (!listElement) return;
+    // 🔥 NOWOŚĆ: Najpierw pobieramy zapisane cele z profilu (z bazy users)
+    firebase.firestore().collection('users').doc(currentUid).get().then(doc => {
+        // Jeśli nie ma ustawionych celów, bierzemy domyślne
+        const dailyGoals = doc.exists && doc.data().dailyGoals ? doc.data().dailyGoals : { feed: 2, walk: 3, med: 1, water: 3 };
 
-        // 🔥 LOGIKA TRACKERA CELÓW (PRIORYTET 1)
-        const todayStr = new Date().toDateString();
-        const dailyCounts = { feed: 0, walk: 0, med: 0, water: 0 };
-        // Domyślne cele (później przeniesiemy je do ustawień psa)
-        const dailyGoals = { feed: 2, walk: 3, med: 1, water: 3 };
+        // Dopiero teraz podpinamy nasłuch historii
+        subscribeToJournal(currentUid, (entries) => {
+            const listElement = document.getElementById('journal-live-list');
+            if (!listElement) return;
 
-        if (entries && entries.length > 0) {
-            entries.forEach(entry => {
-                if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
-                    if (entry.timestamp.toDate().toDateString() === todayStr) {
-                        if (dailyCounts[entry.type] !== undefined) dailyCounts[entry.type]++;
+            const todayStr = new Date().toDateString();
+            const dailyCounts = { feed: 0, walk: 0, med: 0, water: 0 };
+
+            if (entries && entries.length > 0) {
+                entries.forEach(entry => {
+                    if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+                        if (entry.timestamp.toDate().toDateString() === todayStr) {
+                            if (dailyCounts[entry.type] !== undefined) dailyCounts[entry.type]++;
+                        }
+                    }
+                });
+            }
+
+            // Rysowanie pasków postępu na bazie TWOICH WŁASNYCH celów
+            ['feed', 'walk', 'med', 'water'].forEach(type => {
+                const countEl = document.getElementById(`count-${type}`);
+                const goalEl = document.getElementById(`goal-${type}`);
+                const bgEl = document.getElementById(`progress-bg-${type}`);
+                
+                if (countEl && bgEl && goalEl) {
+                    countEl.innerText = dailyCounts[type];
+                    goalEl.innerText = dailyGoals[type]; // Wyświetlamy cel z bazy!
+
+                    // Obliczamy % wypełnienia (zabezpieczenie przed dzieleniem przez zero)
+                    let percentage = dailyGoals[type] > 0 ? Math.min((dailyCounts[type] / dailyGoals[type]) * 100, 100) : 100;
+                    bgEl.style.width = `${percentage}%`;
+
+                    // Jeśli osiągnięto cel
+                    if (dailyGoals[type] > 0 && dailyCounts[type] >= dailyGoals[type]) {
+                        bgEl.style.background = 'rgba(46, 213, 115, 0.2)'; 
+                        countEl.style.color = '#2ed573';
+                    } else {
+                        bgEl.style.background = 'rgba(52, 172, 224, 0.1)'; 
+                        countEl.style.color = 'var(--text-color)';
                     }
                 }
             });
-        }
 
-        // Rysowanie pasków postępu
-        ['feed', 'walk', 'med', 'water'].forEach(type => {
-            const countEl = document.getElementById(`count-${type}`);
-            const bgEl = document.getElementById(`progress-bg-${type}`);
-            if (countEl && bgEl) {
-                countEl.innerText = dailyCounts[type];
-                let percentage = Math.min((dailyCounts[type] / dailyGoals[type]) * 100, 100);
-                bgEl.style.width = `${percentage}%`;
+            // Rysowanie 3 ostatnich aktywności
+            if (!entries || entries.length === 0) {
+                listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
+                return;
+            }
 
-                // Sukces! Jeśli cel osiągnięty, zmieniamy kolor na zielony
-                if (dailyCounts[type] >= dailyGoals[type]) {
-                    bgEl.style.background = 'rgba(46, 213, 115, 0.2)'; // Zielony Waggle
-                    countEl.style.color = '#2ed573';
-                } else {
-                    bgEl.style.background = 'rgba(52, 172, 224, 0.1)'; // Niebieski
-                    countEl.style.color = 'var(--text-color)';
+            const icons = { feed: '🍖', walk: '🚶', med: '💊', water: '💧', vet: '🏥' };
+            const labels = { feed: 'Nakarmiony', walk: 'Spacer', med: 'Lek', water: 'Woda', vet: 'Weterynarz' };
+
+            const recentEntries = entries.slice(0, 3);
+            listElement.innerHTML = recentEntries.map((entry, index) => {
+                let timeString = "Teraz";
+                if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+                    timeString = entry.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 }
-            }
-        });
 
-        // 🔥 RYSOWANIE LISTY OSTATNICH AKTYWNOŚCI
-        if (!entries || entries.length === 0) {
-            listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
-            return;
-        }
-
-        const icons = { feed: '🍖', walk: '🚶', med: '💊', water: '💧', vet: '🏥' };
-        const labels = { feed: 'Nakarmiony', walk: 'Spacer', med: 'Lek', water: 'Woda', vet: 'Weterynarz' };
-
-        // Wyświetlamy tylko 3 ostatnie wpisy na liście "Ostatnio (Dziś)"
-        const recentEntries = entries.slice(0, 3);
-
-        listElement.innerHTML = recentEntries.map((entry, index) => {
-            let timeString = "Teraz";
-            if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
-                timeString = entry.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            }
-
-            return `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border: 1px solid ${index === 0 ? 'rgba(46, 213, 115, 0.2)' : 'transparent'}; border-radius: 10px; font-size: 13px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">${icons[entry.type] || '🐾'}</span>
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-weight: 900; color: var(--text-color);">${labels[entry.type] || 'Aktywność'}</span>
-                        <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">Przez: ${entry.doneByUserName}</span>
+                return `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border: 1px solid ${index === 0 ? 'rgba(46, 213, 115, 0.2)' : 'transparent'}; border-radius: 10px; font-size: 13px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">${icons[entry.type] || '🐾'}</span>
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: 900; color: var(--text-color);">${labels[entry.type] || 'Aktywność'}</span>
+                            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">Przez: <span style="color: var(--primary);">${entry.doneByUserName}</span></span>
+                        </div>
                     </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-weight: 900; color: var(--text-color); font-size: 12px;">${timeString}</span>
-                    <span style="color: #2ed573; font-size: 14px;">✅</span>
-                </div>
-            </div>`;
-        }).join('');
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 900; color: var(--text-color); font-size: 12px;">${timeString}</span>
+                        <span style="color: #2ed573; font-size: 14px;">✅</span>
+                    </div>
+                </div>`;
+            }).join('');
+        });
     });
 }
 
