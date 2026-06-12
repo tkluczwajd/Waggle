@@ -345,26 +345,33 @@
             <div id="wiki-content" style="padding:0 10px; margin-top: 10px;"></div>
         </section>
 
-        <section id="view-places" class="view-section">
-            <div class="sticky-header" style="padding: 10px 0 0 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <div style="padding: 0 15px;">
-                    <h3 style="margin:0; font-size: 18px;">Odkrywaj</h3>
-                    <p style="margin: 5px 0 10px 0; font-size: 12px; color: var(--text-muted);">Najlepsze miejsca na spacer z psem</p>
-                </div>
-                <!-- 🔥 Nowe Filtry miejsc -->
-                <div style="display:flex; gap:8px; overflow-x:auto; padding: 0 15px 10px 15px; scrollbar-width:none;">
-                    <button class="top-pill filter-place active" data-type="all" style="background:var(--text-color); color:white; border:none; margin:0; padding: 6px 12px; font-size: 12px;">Główne</button>
-                    <button class="top-pill filter-place" data-type="favorites" style="border:none; margin:0; padding: 6px 12px; font-size: 12px; color: var(--gold); background: rgba(255, 177, 66, 0.1);">⭐ Ulubione</button>
-                    <button class="top-pill filter-place" data-type="dogpark" style="border:none; margin:0; padding: 6px 12px; font-size: 12px;">🐕 Wybiegi</button>
-                    <button class="top-pill filter-place" data-type="forest" style="border:none; margin:0; padding: 6px 12px; font-size: 12px;">🌲 Lasy</button>
-                    <button class="top-pill filter-place" data-type="park" style="border:none; margin:0; padding: 6px 12px; font-size: 12px;">🌳 Parki</button>
-                    <button class="top-pill filter-place" data-type="walk" style="border:none; margin:0; padding: 6px 12px; font-size: 12px;">🚶 Inne</button>
-                </div>
-            </div>
-            <div id="places-container" style="padding: 15px 15px 120px 15px; overflow-y: auto;">
-                <p style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 20px;">Wyszukiwanie najlepszych miejscówek...</p>
-            </div>
-        </section>
+       <section id="view-places" class="view-section" style="display: none; height: 100%; background: #f8f9fa; overflow-y: auto;">
+    
+    <!-- Nagłówek ze statyczną "mini-mapą" jako tło -->
+    <div style="background: linear-gradient(rgba(44, 62, 80, 0.8), rgba(44, 62, 80, 0.8)), url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80') center/cover; padding: 40px 20px 20px 20px; color: white; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <h2 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px;">Odkrywaj <span style="color: var(--secondary);">Miejsca</span></h2>
+        <p style="margin: 5px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.9;">Najlepsze psie miejscówki w Twojej okolicy.</p>
+    </div>
+
+    <div style="padding: 0 20px 100px 20px;">
+        <!-- Przyciski Filtrów (Kategorie) -->
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none;">
+            <button onclick="window.Waggle.filterPlaces('all', this)" class="place-filter-btn" style="background: var(--secondary); color: white; border: none; padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer; box-shadow: 0 4px 10px rgba(52,172,224,0.3);">🌟 Wszystkie</button>
+            <button onclick="window.Waggle.filterPlaces('park', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🐕 Wybiegi</button>
+            <button onclick="window.Waggle.filterPlaces('vet', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🏥 Weterynarz</button>
+            <button onclick="window.Waggle.filterPlaces('cafe', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">☕ Dog-Friendly</button>
+            <button onclick="window.Waggle.filterPlaces('forest', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🌲 Lasy</button>
+        </div>
+
+        <!-- Lista Miejscówek -->
+        <div id="places-list-container" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 40px; font-weight: 700;">Ładowanie miejscówek... ⏳</div>
+        </div>
+    </div>
+
+    <!-- Pływający Przycisk Dodawania Miejsca (FAB) -->
+    <button onclick="alert('Wkrótce: Formularz dodawania nowej miejscówki!')" style="position: fixed; bottom: 85px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border: none; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4); cursor: pointer; z-index: 1000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
+</section>
 
         <nav class="bottom-nav">
             <button class="nav-item active" data-view="home">🐶<span>Home</span></button>
