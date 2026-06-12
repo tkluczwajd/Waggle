@@ -86,26 +86,35 @@ function translateAuthError(errorCode) {
     }
 }
 
-// 🔥 WAGGLE FAMILY: Generator awatarów opiekunów
+// 🔥 WAGGLE FAMILY: Generator awatarów opiekunów (Z kolorami i czatem!)
 function renderCaretakers(profileData) {
     const container = document.getElementById('caretakers-list-container');
     if (!container) return;
     
     let html = '';
     
-    // 1. Główny właściciel (Gospodarz)
+    // 1. Główny właściciel (Gospodarz) - nie otwiera czatu sam ze sobą ;)
     html += `<div style="width: 36px; height: 36px; background: var(--secondary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; box-shadow: 0 2px 8px rgba(52, 172, 224, 0.3);" title="Główny Opiekun">Gł</div>`;
     
     // 2. Dodatkowi domownicy pobrani z bazy Firebase
     if (profileData && profileData.caretakers) {
+        // Paleta ładnych kolorów dla odróżnienia domowników
+        const colors = ['#ff5252', '#33d9b2', '#ffb142', '#706fd3', '#ff793f'];
+        let colorIndex = 0;
+
         for (const [uid, caretaker] of Object.entries(profileData.caretakers)) {
-            const initial = caretaker.name ? caretaker.name.charAt(0).toUpperCase() : 'O';
-            html += `<div style="width: 36px; height: 36px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);" title="${caretaker.name}">${initial}</div>`;
+            const name = caretaker.name || "Opiekun";
+            const initial = name.charAt(0).toUpperCase();
+            const bgColor = colors[colorIndex % colors.length];
+            colorIndex++;
+
+            // Dodajemy akcję onclick, która otworzy czat po kliknięciu!
+            html += `<div onclick="if(window.Waggle && window.Waggle.openChatWithUser) { window.Waggle.openChatWithUser('${uid}', '${name}'); } else { alert('Wkrótce otworzy się tu czat z: ${name}'); }" style="width: 36px; height: 36px; background: ${bgColor}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); cursor: pointer; transition: transform 0.2s;" title="Napisz do: ${name}" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">${initial}</div>`;
         }
     }
     
     // 3. Przycisk zapraszania
-    html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Zaproś domownika">+</button>`;
+    html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Zaproś domownika">+</button>`;
     
     container.innerHTML = html;
 }
