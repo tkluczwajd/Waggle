@@ -132,10 +132,11 @@ export function initAuth(onReady) {
         }
     });
 
-    // 2. KULOODPORNA OBSŁUGA PRZYCISKÓW LOGOWANIA (Twarde podpięcie pod elementy)
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-        loginBtn.onclick = () => {
+    // 2. KULOODPORNA OBSŁUGA PRZYCISKÓW (Globalny nasłuchiwacz)
+    document.addEventListener('click', (e) => {
+        
+        // LOGOWANIE
+        if (e.target.id === 'loginBtn') {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
             if(!email || !pass) return notifyUser("⚠️ Wpisz e-mail i hasło!");
@@ -144,12 +145,10 @@ export function initAuth(onReady) {
             auth.signInWithEmailAndPassword(email, pass).catch(err => {
                 notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`);
             });
-        };
-    }
+        }
 
-    const registerBtn = document.getElementById('registerBtn');
-    if (registerBtn) {
-        registerBtn.onclick = () => {
+        // REJESTRACJA
+        if (e.target.id === 'registerBtn') {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
             const termsChecked = document.getElementById('legalTerms')?.checked;
@@ -168,18 +167,16 @@ export function initAuth(onReady) {
             }).catch(err => {
                 notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`);
             });
-        };
-    }
-    
-    const resetBtn = document.getElementById('resetPasswordBtn');
-    if (resetBtn) {
-        resetBtn.onclick = () => {
+        }
+        
+        // RESET HASŁA
+        if (e.target.id === 'resetPasswordBtn') {
             const email = document.getElementById('authEmail').value.trim();
             if (!email) return notifyUser("📧 Wpisz swój e-mail wyżej, aby zresetować hasło!");
             
             auth.sendPasswordResetEmail(email).then(() => {
                 notifyUser("📬 Link do resetu hasła wysłany!");
             }).catch(err => notifyUser(`❌ Błąd: ${translateAuthError(err.code)}`));
-        };
-    }
+        }
+    });
 }
