@@ -274,7 +274,7 @@ function checkInvitesOnLoad() {
                 document.getElementById('custom-confirm-ok').onclick = async () => {
                     try {
                         // 1. Zapisujemy w Firebase, że ten domownik ma uprawnienia (do rekordu właściciela psa)
-                        await firebase.firestore().collection('dogs').doc(inviteUid).set({
+                        await firebase.firestore().collection('users').doc(inviteUid).set({
                             caretakers: {
                                 [user.uid]: { name: userName, role: 'caretaker' }
                             }
