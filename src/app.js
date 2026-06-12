@@ -393,14 +393,17 @@ window.addEventListener('load', () => {
 
             try {
                 saveGoalsBtn.innerText = "ZAPISYWANIE...";
-                // Zapisujemy nową pod-kategorię w profilu psa!
                 await firebase.firestore().collection('users').doc(currentUid).set({ dailyGoals: newGoals }, { merge: true });
                 document.getElementById('care-settings-modal').style.display = 'none';
+                saveGoalsBtn.innerText = "ZAPISZ CELE 🎯";
                 
                 if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("✅ Cele zaktualizowane!");
                 
-                // Szybki reset widoku żeby załadować nowe wartości pasków
-                setTimeout(() => window.location.reload(), 1000);
+                // PŁYNNA ZMIANA (Bez przeładowania strony!)
+                // Zmuszamy nasłuchiwacz, by odpalił się jeszcze raz i sam przeliczył paski
+                if (typeof initJournalListener === 'function') {
+                    initJournalListener();
+                }
             } catch(e) {
                 console.error(e);
                 alert("Błąd zapisu celów.");
