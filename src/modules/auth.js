@@ -5,12 +5,19 @@ import { eventBus } from "../core/eventBus.js";
 
 let appInitialized = false;
 
+// 🔥 BEZPIECZNE POWIADOMIENIA (Fallback do alertu, jeśli UI jeszcze nie wstało)
+function notifyUser(msg) {
+    if (window.Waggle && typeof window.Waggle.showToast === 'function') {
+        window.Waggle.showToast(msg);
+    } else {
+        alert(msg); // Niezawodny systemowy fallback!
+    }
+}
+
 // 🔥 KULOODPORNE WYLOGOWANIE I CZYSZCZENIE CACHE PWA
 window.Waggle = window.Waggle || {};
 window.Waggle.logout = () => {
-    if (window.Waggle && window.Waggle.showToast) {
-        window.Waggle.showToast("Wylogowywanie i czyszczenie pamięci... ⏳");
-    }
+    notifyUser("Wylogowywanie i czyszczenie pamięci... ⏳");
     
     auth.signOut().then(() => {
         // 1. Czyszczenie pamięci lokalnej (sesja użytkownika)
@@ -29,16 +36,14 @@ window.Waggle.logout = () => {
             });
         }
 
-        // 3. Powrót na ekran logowania z ominięciem cache przeglądarki (losowy parametr)
+        // 3. Powrót na ekran logowania z ominięciem cache przeglądarki
         setTimeout(() => {
             window.location.replace(window.location.origin + window.location.pathname + '?v=' + new Date().getTime());
         }, 500);
 
     }).catch((err) => {
         console.error("Błąd wylogowania:", err);
-        if (window.Waggle && window.Waggle.showToast) {
-            window.Waggle.showToast("Wystąpił błąd podczas wylogowania.");
-        }
+        notifyUser("Wystąpił błąd podczas wylogowania.");
     });
 };
 
@@ -47,7 +52,7 @@ function translateAuthError(errorCode) {
     switch (errorCode) {
         case 'auth/invalid-email': return "Niepoprawny format adresu e-mail.";
         case 'auth/user-disabled': return "Konto zostało zablokowane.";
-        case 'auth/user-not-found': return "Nie znaleziono użytkownika z tym adresem.";
+        case 'auth/user-not-found': return "Nie znaleziono konta z tym adresem.";
         case 'auth/wrong-password': return "Błędne hasło.";
         case 'auth/invalid-credential': return "Błędny e-mail lub hasło.";
         case 'auth/email-already-in-use': return "Ten adres e-mail jest już zajęty.";
@@ -67,19 +72,30 @@ export function initAuth(onReady) {
             setState('auth.user', user);
             state.user = user; 
             
-            const unsub = db.collection("users").doc(user.uid).onSnapshot(doc => {
-                let data = doc.exists ? doc.data() : { 
-                    name: "Piesek", 
-                    walkCount: 0, 
-                    isSearchable: true, 
-                    city: "", 
-                    breed: "",
-                    createdAt: fb.firestore.FieldValue.serverTimestamp() // 🔥 TO DODAJE DATĘ!
-                };
+            // 🔥 WAGGLE FAMILY: MAGIA! Wybieramy, czyj profil psa ładujemy!
+            const targetUid = localStorage.getItem('activeDogId') || user.uid;
+            
+            const unsub = db.collection("users").doc(targetUid).onSnapshot(doc => {
+                let data = doc.exists ? doc.data() : null;
+                
+                // Tworzymy domyślny profil TYLKO jeśli to nasze własne nowe konto i jest puste
+                if (!data) {
+                    data = { 
+                        name: "Piesek", 
+                        walkCount: 0, 
+                        isSearchable: true, 
+                        city: "", 
+                        breed: "",
+                        createdAt: fb.firestore.FieldValue.serverTimestamp()
+                    };
+                    // Zapisujemy w bazie tylko u właściciela
+                    if (targetUid === user.uid) {
+                        db.collection("users").doc(user.uid).set(data, {merge: true});
+                    }
+                }
+                
                 data = { ...data, isPremium: data.isPremium || false };
                 
-                if (!doc.exists) db.collection("users").doc(user.uid).set(data, {merge: true});
-
                 setState('profile', data);
                 state.profile = data;
                 eventBus.emit('profileUpdated', data);
@@ -106,11 +122,11 @@ export function initAuth(onReady) {
         if (e.target.id === 'loginBtn') {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
-            if(!email || !pass) return window.Waggle.showToast("Wpisz e-mail i hasło! 🐾");
-            window.Waggle.showToast("Logowanie... ⏳");
+            if(!email || !pass) return notifyUser("Wpisz e-mail i hasło! 🐾");
+            notifyUser("Logowanie... ⏳");
             
             auth.signInWithEmailAndPassword(email, pass).catch(err => {
-                window.Waggle.showToast(`Błąd: ${translateAuthError(err.code)}`);
+                notifyUser(`Błąd: ${translateAuthError(err.code)}`);
             });
         }
 
@@ -120,31 +136,32 @@ export function initAuth(onReady) {
             const pass = document.getElementById('authPass').value.trim();
             const termsChecked = document.getElementById('legalTerms')?.checked;
 
-            if (!termsChecked) return window.Waggle.showToast("Musisz zaakceptować regulamin! 📜");
-            if(!email || !pass) return window.Waggle.showToast("Wpisz e-mail i hasło! 🐾");
+            if (!termsChecked) return notifyUser("Musisz zaakceptować regulamin! 📜");
+            if(!email || !pass) return notifyUser("Wpisz e-mail i hasło! 🐾");
             
-            window.Waggle.showToast("Tworzenie konta... ⏳");
+            notifyUser("Tworzenie konta... ⏳");
             
             auth.createUserWithEmailAndPassword(email, pass).then((userCredential) => {
+                // Zapisujemy e-mail w tle w prywatnym dokumencie nowego użytkownika
                 db.collection("users").doc(userCredential.user.uid).set({
                     email: email,
                     createdAt: fb.firestore.FieldValue.serverTimestamp()
                 }, {merge: true});
-                window.Waggle.showToast("Konto utworzone! Witaj w Stadzie! 🎉");
+                notifyUser("Konto utworzone! Witaj w Stadzie! 🎉");
             }).catch(err => {
-                window.Waggle.showToast(`Błąd: ${translateAuthError(err.code)}`);
+                notifyUser(`Błąd: ${translateAuthError(err.code)}`);
             });
         }
         
         // RESET HASŁA
         if (e.target.id === 'resetPasswordBtn') {
             const email = document.getElementById('authEmail').value.trim();
-            if (!email) return window.Waggle.showToast("Wpisz swój e-mail wyżej, aby zresetować hasło! 📧");
+            if (!email) return notifyUser("Wpisz swój e-mail wyżej, aby zresetować hasło! 📧");
             
             auth.sendPasswordResetEmail(email).then(() => {
-                window.Waggle.showToast("Link do resetu hasła wysłany na e-mail! 📬");
+                notifyUser("Link do resetu hasła wysłany na e-mail! 📬");
             }).catch(err => {
-                window.Waggle.showToast(`Błąd: ${translateAuthError(err.code)}`);
+                notifyUser(`Błąd: ${translateAuthError(err.code)}`);
             });
         }
     });
