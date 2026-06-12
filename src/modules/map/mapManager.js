@@ -31,7 +31,8 @@ class MapManager {
             user: L.layerGroup().addTo(this.map),
             walks: L.layerGroup().addTo(this.map),
             alerts: L.layerGroup().addTo(this.map),
-            parks: L.layerGroup().addTo(this.map)
+            // 🔥 TRIK: Usuwamy .addTo(this.map) z warstwy parks. Choinki znikną!
+            parks: L.layerGroup() 
         };
 
         console.log("🗺️ Map ready", this.map);
