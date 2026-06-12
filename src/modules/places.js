@@ -71,46 +71,77 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
 }
 
 async function fetchPlacesFromOSM(lat, lon) {
-    // Zapytanie o: wybiegi, parki, lasy, wodę i ścieżki!
+    // 🔥 ULEPSZENIE: Używamy 'nwr' (node, way, relation) zamiast samego 'node'
+    // Dodajemy 'out center;', aby OSM policzyło środek dla dużych parków i jezior
     const query = `
-    [out:json];
+    [out:json][timeout:15];
     (
-      node["leisure"="dog_park"](around:5000,${lat},${lon});
-      node["leisure"="park"](around:5000,${lat},${lon});
-      node["natural"="wood"](around:5000,${lat},${lon});
-      node["natural"="water"](around:5000,${lat},${lon});
-      node["highway"="path"](around:5000,${lat},${lon});
+      nwr["leisure"="dog_park"](around:5000,${lat},${lon});
+      nwr["leisure"="park"](around:5000,${lat},${lon});
+      nwr["natural"="wood"](around:5000,${lat},${lon});
+      nwr["natural"="water"](around:5000,${lat},${lon});
     );
-    out;`;
+    out center;`;
 
     try {
         const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
         const data = await response.json();
         
         allPlaces = data.elements.map(el => {
-            const dist = getDistanceFromLatLonInKm(lat, lon, el.lat, el.lon);
+            // Dla obszarów OSM podaje współrzędne w obiekcie 'center'
+            const placeLat = el.lat || (el.center && el.center.lat);
+            const placeLon = el.lon || (el.center && el.center.lon);
+            if (!placeLat || !placeLon) return null;
+
+            const dist = getDistanceFromLatLonInKm(lat, lon, placeLat, placeLon);
+            
             let cat = 'park';
             if (el.tags.leisure === 'dog_park') cat = 'dogpark';
             else if (el.tags.natural === 'wood') cat = 'forest';
             else if (el.tags.natural === 'water') cat = 'water';
-            else if (el.tags.highway === 'path') cat = 'path';
+
+            let name = el.tags.name;
+            if (!name) {
+                if (cat === 'water') name = 'Staw / Jezioro';
+                else if (cat === 'forest') name = 'Las / Teren zalesiony';
+                else if (cat === 'dogpark') name = 'Wybieg dla psów';
+                else name = 'Teren zielony';
+            }
 
             return {
                 id: el.id,
-                name: el.tags.name || (cat === 'water' ? 'Staw / Rzeka' : (cat === 'path' ? 'Trasa spacerowa' : 'Teren zielony')),
+                name: name,
                 category: cat,
                 address: "Odkryte przez OpenStreetMap",
                 distance: parseFloat(dist),
-                lat: el.lat,
-                lon: el.lon,
+                lat: placeLat,
+                lon: placeLon,
                 isFavorite: false
             };
-        });
+        }).filter(Boolean); // Usuwa puste wyniki
 
+        // 🔥 ULEPSZENIE: Usuwanie duplikatów (OSM czasem dzieli jeden park na 3 kawałki)
+        const uniquePlaces = [];
+        const seenNames = new Set();
+        for (const place of allPlaces) {
+            // Jeśli nie ma nazwy, zawsze dodajemy (żeby pokazać bezimienne lasy), w przeciwnym razie sprawdzamy unikalność
+            if (!place.name.includes("Teren") && !place.name.includes("Las") && !place.name.includes("Staw")) {
+                if (!seenNames.has(place.name)) {
+                    seenNames.add(place.name);
+                    uniquePlaces.push(place);
+                }
+            } else {
+                uniquePlaces.push(place);
+            }
+        }
+
+        allPlaces = uniquePlaces;
         allPlaces.sort((a, b) => a.distance - b.distance);
         renderPlacesList(allPlaces);
     } catch (e) {
         console.error("Błąd OSM:", e);
+        const container = document.getElementById('places-list-container');
+        if(container) container.innerHTML = '<div style="text-align: center; color: var(--danger); font-size: 13px; margin-top: 40px; font-weight: 700;">Błąd pobierania danych. Spróbuj ponownie.</div>';
     }
 }
 
