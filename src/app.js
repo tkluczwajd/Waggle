@@ -354,3 +354,58 @@ function checkInvitesOnLoad() {
 window.addEventListener('load', () => {
     setTimeout(checkInvitesOnLoad, 1000);
 });
+// ============================================================================
+// 🔥 WAGGLE FAMILY: USTAWIENIA CELÓW (OPIEKA+)
+// ============================================================================
+window.addEventListener('load', () => {
+    const careSettingsBtn = document.getElementById('openCareSettingsBtn');
+    if (careSettingsBtn) {
+        careSettingsBtn.addEventListener('click', async () => {
+            const currentUid = localStorage.getItem('activeDogId') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+            if (!currentUid) return;
+
+            // Pobieramy aktualne z bazy żeby wyświetlić w formularzu
+            const doc = await firebase.firestore().collection('users').doc(currentUid).get();
+            const goals = doc.exists && doc.data().dailyGoals ? doc.data().dailyGoals : { feed: 2, walk: 3, med: 1, water: 3 };
+
+            document.getElementById('goalInputFeed').value = goals.feed;
+            document.getElementById('goalInputWalk').value = goals.walk;
+            document.getElementById('goalInputMed').value = goals.med;
+            document.getElementById('goalInputWater').value = goals.water;
+
+            document.getElementById('care-settings-modal').style.display = 'flex';
+        });
+    }
+
+    const saveGoalsBtn = document.getElementById('saveCareGoalsBtn');
+    if (saveGoalsBtn) {
+        saveGoalsBtn.addEventListener('click', async () => {
+            const currentUid = localStorage.getItem('activeDogId') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+            if (!currentUid) return;
+
+            // Zbieramy wpisane liczby
+            const newGoals = {
+                feed: parseInt(document.getElementById('goalInputFeed').value) || 0,
+                walk: parseInt(document.getElementById('goalInputWalk').value) || 0,
+                med: parseInt(document.getElementById('goalInputMed').value) || 0,
+                water: parseInt(document.getElementById('goalInputWater').value) || 0
+            };
+
+            try {
+                saveGoalsBtn.innerText = "ZAPISYWANIE...";
+                // Zapisujemy nową pod-kategorię w profilu psa!
+                await firebase.firestore().collection('users').doc(currentUid).set({ dailyGoals: newGoals }, { merge: true });
+                document.getElementById('care-settings-modal').style.display = 'none';
+                
+                if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("✅ Cele zaktualizowane!");
+                
+                // Szybki reset widoku żeby załadować nowe wartości pasków
+                setTimeout(() => window.location.reload(), 1000);
+            } catch(e) {
+                console.error(e);
+                alert("Błąd zapisu celów.");
+                saveGoalsBtn.innerText = "ZAPISZ CELE 🎯";
+            }
+        });
+    }
+});
