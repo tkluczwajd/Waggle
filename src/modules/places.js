@@ -14,7 +14,7 @@ const localMockPlaces = [
 ];
 
 export function initPlacesEngine() {
-    // Od razu ładujemy lokalne dane, żeby ominąć blokady bazy na etapie testów
+    // Od razu ładujemy lokalne dane!
     allPlaces = localMockPlaces;
     renderPlacesList(allPlaces);
 
