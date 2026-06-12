@@ -190,7 +190,17 @@
     </div>
 </div>
 
-            
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.04); margin-bottom: 25px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-color);">📅 Terminarz Psa</h4>
+                        <button id="openAddCalendarBtn" style="background: var(--secondary); border: none; color: white; font-size: 11px; font-weight: 900; padding: 6px 12px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 5px rgba(52, 172, 224, 0.2);">DODAJ +</button>
+                    </div>
+
+                    <div id="calendar-live-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak nadchodzących wydarzeń...</div>
+                    </div>
+                </div>
+                
                 <!-- 🔥 Karta Medyczna SAFE (PREMIUM) -->
                 <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(231, 76, 60, 0.15); margin-bottom: 25px; border: 1px solid rgba(231, 76, 60, 0.3); position: relative;">
                     
@@ -708,6 +718,36 @@
             </div>
 
             <button class="btn-main" id="saveCareGoalsBtn" style="background: var(--secondary); box-shadow: 0 4px 15px rgba(52,172,224,0.3); font-weight: 900;">ZAPISZ CELE 🎯</button>
+        </div>
+    </div>
+    <div id="calendar-add-modal" class="modal" style="z-index: 10006;">
+        <div class="card" style="max-width: 350px;">
+            <button class="close-modal-btn" onclick="document.getElementById('calendar-add-modal').style.display='none'">✕</button>
+            <h3 style="margin-top: 0; color: var(--text-color); font-size: 20px; font-weight: 900;">Nowe przypomnienie</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px; font-weight: 600;">Wybierz rodzaj wydarzenia i ustaw datę.</p>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 11px; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 6px;">TYP WYDARZENIA:</label>
+                <select id="calTypeSelect" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 700; background: var(--bg-color); color: var(--text-color); font-family:inherit; outline:none;">
+                    <option value="vaccine">💉 Szczepienie</option>
+                    <option value="deworm">💊 Odrobaczanie / Kleszcze</option>
+                    <option value="vet">🏥 Wizyta u weterynarza</option>
+                    <option value="groomer">✂️ Groomer / Fryzjer</option>
+                    <option value="other">🗓️ Inne wydarzenie</option>
+                </select>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 11px; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 6px;">DATA:</label>
+                <input type="date" id="calDateInput" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 700; background: var(--bg-color); color: var(--text-color); font-family:inherit; outline:none; box-sizing: border-box;">
+            </div>
+
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 11px; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 6px;">NOTATKA / OPIS (OPCJONALNIE):</label>
+                <input type="text" id="calNoteInput" placeholder="np. Szczepienie na wściekliznę, lecznica Max" style="margin-bottom:0;">
+            </div>
+
+            <button class="btn-main" id="saveCalendarEventBtn" style="background: var(--primary); font-weight: 900;">DODAJ DO TERMINARZA 🗓️</button>
         </div>
     </div>
 </body>
