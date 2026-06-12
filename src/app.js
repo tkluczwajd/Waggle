@@ -2,10 +2,12 @@
 import { bootstrapApp } from './core/appBootstrap.js';
 import { addJournalEntry, subscribeToJournal, getJournalHistory } from './services/journalService.js';
 import { initChatEngine } from './modules/chat/chatEngine.js'; // 🔥 NASZ NOWY MODUŁ!
+import { initCalendarEngine } from './modules/calendar.js';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
 initChatEngine();
+initCalendarEngine();
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
