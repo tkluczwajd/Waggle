@@ -49,48 +49,57 @@ export function initBoardEngine() {
         });
     }
 
-    // 🔥 LOGIKA DODAWANIA ZDJĘĆ Z KOMPRESJĄ
+    // 🔥 LOGIKA DODAWANIA ZDJĘĆ Z KOMPRESJĄ I OPÓŹNIENIEM (HACK MOBILNY)
     const addPhotoBtn = document.getElementById('addPhotoBtn');
     const imageInput = document.getElementById('postImageInput');
 
     if (addPhotoBtn && imageInput) {
-        addPhotoBtn.onclick = () => imageInput.click();
+        addPhotoBtn.onclick = (e) => {
+            e.preventDefault(); // Zapobiega dziwnym zachowaniom na ekranach dotykowych
+            imageInput.value = ''; // Resetuje input, żeby wybór pliku zawsze reagował
+            imageInput.click();
+        };
+
         imageInput.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
-                    const MAX_HEIGHT = 800;
-                    let width = img.width;
-                    let height = img.height;
+            // Dajemy systemowi operacyjnemu 150ms na płynne zamknięcie paska "Aparat / Galeria" 
+            // zanim zablokujemy procesor kompresją zdjęcia.
+            setTimeout(() => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
+                        let width = img.width;
+                        let height = img.height;
 
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
+                        if (width > height) {
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        } else {
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        }
 
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
 
-                    selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                    
-                    const previewImg = document.getElementById('post-image-preview');
-                    const previewContainer = document.getElementById('post-image-preview-container');
-                    
-                    if (previewImg) previewImg.src = selectedImageBase64;
-                    if (previewContainer) previewContainer.style.display = 'block';
+                        selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                        
+                        const previewImg = document.getElementById('post-image-preview');
+                        const previewContainer = document.getElementById('post-image-preview-container');
+                        
+                        if (previewImg) previewImg.src = selectedImageBase64;
+                        if (previewContainer) previewContainer.style.display = 'block';
+                    };
+                    img.src = event.target.result;
                 };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            }, 150); 
         };
     }
 
