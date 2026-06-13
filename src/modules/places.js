@@ -7,7 +7,6 @@ let userLat = 0;
 let userLon = 0;
 let currentFilter = 'all';
 
-// Ładujemy ulubione z pamięci telefonu
 let favoritePlacesIds = JSON.parse(localStorage.getItem('waggle_fav_places') || '[]');
 
 export function initPlacesEngine() {
@@ -29,9 +28,21 @@ export function initPlacesEngine() {
         );
     }
 
+    // Automatyczne usuwanie tymczasowego znacznika po wyjściu z mapy!
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const view = btn.getAttribute('data-view');
+            // Jeśli wychodzimy z mapy, usuwamy tymczasowy marker z miejsca
+            if (view !== 'local' && window.Waggle.tempPlaceMarker && mapManager.map) {
+                mapManager.map.removeLayer(window.Waggle.tempPlaceMarker);
+                window.Waggle.tempPlaceMarker = null;
+            }
+        });
+    });
+
     // Filtrowanie
     window.Waggle.filterPlaces = (category, btnElement) => {
-        currentFilter = category; // Zapisujemy obecny filtr
+        currentFilter = category; 
         
         if (btnElement) {
             document.querySelectorAll('.place-filter-btn').forEach(btn => {
@@ -45,13 +56,12 @@ export function initPlacesEngine() {
             btnElement.style.border = 'none';
             btnElement.style.boxShadow = '0 4px 10px rgba(52,172,224,0.3)';
         }
-
         applyCurrentFilter();
     };
 
-    // Dodawanie/Usuwanie z Ulubionych
+    // Ulubione
     window.Waggle.toggleFavoritePlace = (placeId, event) => {
-        if (event) event.stopPropagation(); // Zapobiega kliknięciu w tło
+        if (event) event.stopPropagation(); 
         
         if (favoritePlacesIds.includes(placeId)) {
             favoritePlacesIds = favoritePlacesIds.filter(id => id !== placeId);
@@ -61,49 +71,52 @@ export function initPlacesEngine() {
         
         localStorage.setItem('waggle_fav_places', JSON.stringify(favoritePlacesIds));
         
-        // Aktualizujemy status w głównej tablicy
         const place = allPlaces.find(p => p.id === placeId);
         if(place) place.isFavorite = favoritePlacesIds.includes(placeId);
         
-        // Odświeżamy widok
         applyCurrentFilter();
     };
 
-    // Nawigacja Google Maps
+    // Google Maps
     window.Waggle.openGoogleMaps = (lat, lon, event) => {
         if (event) event.stopPropagation();
         window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`, '_blank');
     };
 
-    // Pokazywanie na naszej Mapie Waggle
+    // Wyświetlanie pojedynczego punktu na mapie (bez ukrytych warstw!)
     window.Waggle.showPlaceOnMap = (lat, lon, name, category, event) => {
         if (event) event.stopPropagation();
         if (!mapManager.map) return;
         
-        mapManager.clearLayer('parks'); 
+        // 1. Usuwamy stary znacznik, jeśli był
+        if (window.Waggle.tempPlaceMarker) {
+            mapManager.map.removeLayer(window.Waggle.tempPlaceMarker);
+        }
         
+        // 2. Tworzymy piękny, podświetlony znacznik
         const icons = { park: '🌳', dogpark: '🐕', forest: '🌲', water: '💧', path: '🚶' };
-        const markerHtml = `<div style="font-size: 24px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3));">${icons[category] || '📍'}</div>`;
-        const customIcon = window.L.divIcon({ html: markerHtml, className: 'custom-map-icon', iconSize: [30, 30], iconAnchor: [15, 30] });
+        const markerHtml = `<div style="font-size: 32px; filter: drop-shadow(0 4px 8px rgba(52, 172, 224, 0.6)); transform: scale(1.1);">${icons[category] || '📍'}</div>`;
+        const customIcon = window.L.divIcon({ html: markerHtml, className: 'custom-map-icon', iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -35] });
         
-        const marker = window.L.marker([lat, lon], { icon: customIcon }).bindPopup(`<b>${name}</b>`);
-        mapManager.addMarkerToLayer('parks', marker);
+        // 3. Dodajemy BEZPOŚREDNIO do mapy (a nie do zablokowanej warstwy parks)
+        window.Waggle.tempPlaceMarker = window.L.marker([lat, lon], { icon: customIcon })
+            .addTo(mapManager.map)
+            .bindPopup(`<div style="text-align:center;"><b style="font-size:14px; color:var(--primary);">${name}</b><br><span style="font-size:10px; color:var(--text-muted);">Tymczasowy podgląd miejsca</span></div>`);
+        
+        // Lecimy na miejsce i otwieramy "dymek" z nazwą
         mapManager.flyTo(lat, lon, 16); 
+        setTimeout(() => window.Waggle.tempPlaceMarker.openPopup(), 600);
         
-        // 🔥 AUTOMATYCZNE PRZEŁĄCZENIE ZAKŁADKI NA MAPĘ
+        // 4. Przełączamy zakładkę!
         const mapTabBtn = document.querySelector('.bottom-nav [data-view="local"]');
         if (mapTabBtn) mapTabBtn.click();
     };
 }
 
 function applyCurrentFilter() {
-    if (currentFilter === 'all') {
-        renderPlacesList(allPlaces);
-    } else if (currentFilter === 'favorites') {
-        renderPlacesList(allPlaces.filter(p => p.isFavorite));
-    } else {
-        renderPlacesList(allPlaces.filter(p => p.category === currentFilter));
-    }
+    if (currentFilter === 'all') renderPlacesList(allPlaces);
+    else if (currentFilter === 'favorites') renderPlacesList(allPlaces.filter(p => p.isFavorite));
+    else renderPlacesList(allPlaces.filter(p => p.category === currentFilter));
 }
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -153,7 +166,6 @@ async function fetchPlacesFromOSM(lat, lon) {
                 id: el.id.toString(),
                 name: name,
                 category: cat,
-                address: "Odkryte przez OpenStreetMap",
                 distance: parseFloat(dist),
                 lat: placeLat,
                 lon: placeLon,
@@ -161,7 +173,6 @@ async function fetchPlacesFromOSM(lat, lon) {
             };
         }).filter(Boolean);
 
-        // Usuwanie duplikatów dla anonimowych lasów/terenów
         const uniquePlaces = [];
         const seenNames = new Set();
         for (const place of allPlaces) {
@@ -183,6 +194,7 @@ async function fetchPlacesFromOSM(lat, lon) {
     }
 }
 
+// CAŁKOWICIE NOWY, KOMPAKTOWY DESIGN DLA TELEFONÓW (MOBILE-FIRST)
 function renderPlacesList(places) {
     const container = document.getElementById('places-list-container');
     if (!container) return;
@@ -201,30 +213,27 @@ function renderPlacesList(places) {
     const icons = { park: '🌳', dogpark: '🐕', forest: '🌲', water: '💧', path: '🚶' };
 
     container.innerHTML = places.map(place => {
-        const starColor = place.isFavorite ? 'var(--gold, #f1c40f)' : '#dfe6e9';
+        const starColor = place.isFavorite ? 'var(--gold, #f1c40f)' : 'var(--text-muted)';
         
         return `
-        <div style="background: white; border-radius: 20px; padding: 15px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px;">
+        <div style="background: white; border-radius: 16px; padding: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; gap: 12px; align-items: center;">
             
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <div style="width: 50px; height: 50px; border-radius: 14px; background: var(--bg-color); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
-                    ${icons[place.category] || '📍'}
-                </div>
-
-                <div style="flex-grow: 1; overflow: hidden;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <h3 style="margin: 0; font-size: 15px; font-weight: 900; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${place.name}</h3>
-                        <button onclick="window.Waggle.toggleFavoritePlace('${place.id}', event)" style="background: none; border: none; font-size: 20px; padding: 0; cursor: pointer; color: ${starColor}; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">★</button>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 3px;">
-                        <span style="font-size: 11px; font-weight: 900; color: var(--primary); background: rgba(52, 172, 224, 0.1); padding: 3px 8px; border-radius: 8px;">${place.distance} km stąd</span>
-                    </div>
-                </div>
+            <!-- Ikonka z lewej -->
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--bg-color); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);">
+                ${icons[place.category] || '📍'}
             </div>
 
-            <div style="display: flex; gap: 8px; border-top: 1px dashed var(--border-color); padding-top: 10px; margin-top: 2px;">
-                <button onclick="window.Waggle.openGoogleMaps(${place.lat}, ${place.lon}, event)" style="flex: 1; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">🗺️ Nawiguj</button>
-                <button onclick="window.Waggle.showPlaceOnMap(${place.lat}, ${place.lon}, '${place.name.replace(/'/g, "\\'")}', '${place.category}', event)" style="flex: 1; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">🧭 Pokaż na mapie</button>
+            <!-- Tekst w środku (Tytuł i Odległość) -->
+            <div style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
+                <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 900; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${place.name}</h3>
+                <div style="font-size: 11px; font-weight: 800; color: var(--primary);">${place.distance} km stąd</div>
+            </div>
+
+            <!-- 3 Małe Guziki Akcji z Prawej -->
+            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <button onclick="window.Waggle.openGoogleMaps(${place.lat}, ${place.lon}, event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Nawiguj Google Maps">🗺️</button>
+                <button onclick="window.Waggle.showPlaceOnMap(${place.lat}, ${place.lon}, '${place.name.replace(/'/g, "\\'")}', '${place.category}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Pokaż na mapie">🧭</button>
+                <button onclick="window.Waggle.toggleFavoritePlace('${place.id}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: ${starColor}; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Ulubione">★</button>
             </div>
             
         </div>
