@@ -306,15 +306,14 @@
                     </div>
                 </div>
                 
-                <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:5px; scrollbar-width:none;">
-                    <button onclick="window.Waggle.filterBoard('all', this)" class="board-filter-btn" style="background:var(--text-color); color:white; border:none; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">📢 Wszystko</button>
-                    <button onclick="window.Waggle.filterBoard('photo', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">📷 Zdjęcia</button>
-                    <button onclick="window.Waggle.filterBoard('question', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">❓ Pytania</button>
-                    <button onclick="window.Waggle.filterBoard('walk', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">🚶 Spacery</button>
-                    <button onclick="window.Waggle.filterBoard('alert', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">⚠️ Alerty</button>
-                    <button onclick="window.Waggle.filterBoard('notice', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">🏠 Ogłoszenia</button>
+                <<div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:5px; scrollbar-width:none; -webkit-overflow-scrolling: touch;">
+                    <button onclick="window.Waggle.filterBoard('all', this)" class="board-filter-btn" style="background:var(--text-color); color:white; border:none; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-shrink: 0;">📢 Wszystko</button>
+                    <button onclick="window.Waggle.filterBoard('photo', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">📷 Zdjęcia</button>
+                    <button onclick="window.Waggle.filterBoard('question', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">❓ Pytania</button>
+                    <button onclick="window.Waggle.filterBoard('walk', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">🚶 Spacery</button>
+                    <button onclick="window.Waggle.filterBoard('alert', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">⚠️ Alerty</button>
+                    <button onclick="window.Waggle.filterBoard('notice', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">🏠 Ogłoszenia</button>
                 </div>
-            </div>
 
             <div id="board-feed-container" style="padding: 15px 20px 100px 20px; display: flex; flex-direction: column; gap: 15px;">
                 <div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700; margin-top: 20px;">Ładowanie tablicy... ⏳</div>
