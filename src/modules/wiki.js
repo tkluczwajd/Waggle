@@ -123,7 +123,6 @@ function renderWikiList(searchQuery = '') {
 }
 
 window.Waggle.openWikiArticle = (articleId) => {
-    // Szukamy klikniętego artykułu w obecnie aktywnej zakładce
     const article = WIKI[currentWikiFilter].find(a => a.id === articleId);
     if (!article) return;
 
@@ -137,19 +136,38 @@ window.Waggle.openWikiArticle = (articleId) => {
     if (currentWikiFilter === 'trening') icon = '🦮';
     if (currentWikiFilter === 'rasy') icon = '🐕';
 
+    // Duże zdjęcie z cieniem, lub wielka ikona
     const visualHtml = article.img 
-        ? `<img src="${article.img}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 4px solid white; box-shadow: var(--soft-shadow);">`
-        : `<div style="font-size: 50px; margin-bottom: 10px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));">${icon}</div>`;
+        ? `<img src="${article.img}" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px auto; border: 4px solid white; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: block;">`
+        : `<div style="font-size: 60px; margin-bottom: 15px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1)); text-align: center;">${icon}</div>`;
+
+    // 🔥 PRZYWRACAMY KOLOROWE TAGI W MODALU!
+    let badgesHtml = '';
+    if (article.difficulty) {
+        const isCritical = article.difficulty.toLowerCase().includes('krytyczne') || article.difficulty.toLowerCase().includes('trudny');
+        const bg = isCritical ? 'rgba(231, 76, 60, 0.1)' : 'var(--bg-color)';
+        const color = isCritical ? 'var(--danger)' : 'var(--text-color)';
+        badgesHtml += `<span style="background: ${bg}; color: ${color}; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 12px; border: 1px solid ${isCritical ? 'rgba(231,76,60,0.2)' : 'var(--border-color)'};">${article.difficulty}</span>`;
+    }
+    if (article.readTime) {
+        badgesHtml += `<span style="background: var(--bg-color); color: var(--text-muted); font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 12px; border: 1px solid var(--border-color);">⏱️ ${article.readTime}</span>`;
+    }
+    if (article.tags && article.tags.length > 0) {
+        article.tags.forEach(tag => {
+            badgesHtml += `<span style="background: rgba(52, 172, 224, 0.1); color: var(--primary); font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(52,172,224,0.2);">${tag}</span>`;
+        });
+    }
 
     modalBody.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
+        <div style="text-align: center; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px dashed var(--border-color);">
             ${visualHtml}
-            <h2 style="margin: 0 0 5px 0; color: var(--text-color); font-weight: 900; font-size: 24px; line-height: 1.2;">${article.title}</h2>
-            <div style="font-size: 12px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
-                ${article.category || 'Wiedza Waggle'}
+            <h2 style="margin: 0 0 15px 0; color: var(--text-color); font-weight: 900; font-size: 26px; line-height: 1.2;">${article.title}</h2>
+            
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 5px;">
+                ${badgesHtml}
             </div>
         </div>
-        <div style="font-size: 14px; line-height: 1.6; color: var(--text-color);">
+        <div style="font-size: 14px; line-height: 1.7; color: var(--text-color); padding: 0 5px;">
             ${article.desc}
         </div>
     `;
