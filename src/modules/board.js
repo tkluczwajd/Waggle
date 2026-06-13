@@ -3,16 +3,16 @@ import { db, auth, fb } from "../core/firebase.js";
 
 window.Waggle = window.Waggle || {};
 let allPosts = [];
+let currentPostId = null;
+let currentCommentsUnsubscribe = null;
 
 export function initBoardEngine() {
-    console.log("🗣️ Inicjalizacja Nowej Tablicy...");
+    console.log("🗣️ Inicjalizacja Nowej Tablicy z Komentarzami...");
 
     window.Waggle.togglePostTypeOptions = () => {
         const type = document.getElementById('post-type-select').value;
         const walkOptions = document.getElementById('post-walk-options');
-        if (walkOptions) {
-            walkOptions.style.display = (type === 'walk') ? 'block' : 'none';
-        }
+        if (walkOptions) walkOptions.style.display = (type === 'walk') ? 'block' : 'none';
     };
 
     window.Waggle.filterBoard = (type, btnElement) => {
@@ -32,6 +32,96 @@ export function initBoardEngine() {
         else renderPosts(allPosts.filter(p => p.type === type));
     };
 
+    // 🔥 LOGIKA POLUBIEŃ
+    window.Waggle.likePost = async (postId) => {
+        try {
+            await db.collection('posts').doc(postId).update({
+                likes: fb.firestore.FieldValue.increment(1)
+            });
+        } catch(e) { console.error("Błąd lajkowania", e); }
+    };
+
+    // 🔥 LOGIKA KOMENTARZY (Z SYSTEMEM FIREBASE)
+    window.Waggle.openComments = (postId, postText) => {
+        currentPostId = postId;
+        document.getElementById('modal-question-text').innerText = postText;
+        document.getElementById('qa-answers-modal').style.display = 'flex';
+        
+        const list = document.getElementById('answers-list');
+        list.innerHTML = '<div style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:20px; font-weight:700;">Ładowanie komentarzy... ⏳</div>';
+
+        if (currentCommentsUnsubscribe) currentCommentsUnsubscribe();
+
+        currentCommentsUnsubscribe = db.collection('posts').doc(postId).collection('comments')
+            .orderBy('timestamp', 'asc')
+            .onSnapshot(snapshot => {
+                if (snapshot.empty) {
+                    list.innerHTML = '<div style="text-align:center; margin-top: 40px;"><div style="font-size: 40px; margin-bottom: 10px;">🤫</div><div style="font-size:13px; color:var(--text-muted); font-weight:700;">Brak komentarzy. Bądź pierwszy!</div></div>';
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const ans = doc.data();
+                    const isMe = auth.currentUser && ans.authorId === auth.currentUser.uid;
+                    const timeStr = ans.timestamp ? ans.timestamp.toDate().toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) : 'Teraz';
+                    const align = isMe ? 'flex-end' : 'flex-start';
+                    const bg = isMe ? 'var(--secondary)' : 'white';
+                    const color = isMe ? 'white' : 'var(--text-color)';
+                    const border = isMe ? 'none' : '1px solid var(--border-color)';
+                    const radius = isMe ? '18px 18px 0 18px' : '18px 18px 18px 0';
+
+                    html += `
+                    <div style="display: flex; flex-direction: column; align-items: ${align}; margin-bottom: 15px;">
+                        ${!isMe ? `<div style="font-size: 10px; color: var(--text-muted); font-weight: 800; margin-bottom: 4px; margin-left: 5px;">${ans.authorName}</div>` : ''}
+                        <div style="background: ${bg}; color: ${color}; padding: 12px 16px; border-radius: ${radius}; border: ${border}; max-width: 85%; font-size: 13px; font-weight: 600; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                            ${ans.text}
+                        </div>
+                        <div style="font-size: 9px; color: var(--text-muted); font-weight: 700; margin-top: 5px; ${isMe ? 'margin-right: 5px;' : 'margin-left: 5px;'}">${timeStr}</div>
+                    </div>`;
+                });
+                list.innerHTML = html;
+                setTimeout(() => { list.scrollTop = list.scrollHeight; }, 100);
+            });
+    };
+
+    // Wysłanie komentarza
+    const postAnswerBtn = document.getElementById('post-answer-btn');
+    const answerInput = document.getElementById('new-answer-input');
+    
+    if(postAnswerBtn && answerInput) {
+        const sendComment = async () => {
+            if (!currentPostId) return;
+            const text = answerInput.value.trim();
+            if (!text) return;
+
+            const userName = localStorage.getItem('userName') || (auth.currentUser ? auth.currentUser.email.split('@')[0] : "Opiekun");
+            const uid = auth.currentUser ? auth.currentUser.uid : 'unknown';
+
+            answerInput.value = '';
+
+            try {
+                const postRef = db.collection('posts').doc(currentPostId);
+                await postRef.collection('comments').add({
+                    text: text,
+                    authorId: uid,
+                    authorName: userName,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+                // Podbijamy licznik w głównym poście
+                await postRef.update({
+                    commentsCount: fb.firestore.FieldValue.increment(1)
+                });
+            } catch(e) {
+                console.error(e);
+                alert("Błąd wysyłania komentarza.");
+            }
+        };
+        postAnswerBtn.onclick = sendComment;
+        answerInput.onkeypress = (e) => { if(e.key === 'Enter') sendComment(); };
+    }
+
+    // Publikacja Głównego Posta
     const publishBtn = document.getElementById('publish-post-btn');
     if (publishBtn) {
         publishBtn.addEventListener('click', async () => {
@@ -73,7 +163,6 @@ export function initBoardEngine() {
         });
     }
 
-    // Odpalamy nasłuchiwanie
     listenToPosts();
 }
 
@@ -173,12 +262,13 @@ function renderPosts(posts) {
                 ${contentHtml}
             </div>
             
+            <!-- 🔥 PODŁĄCZAMY LAJKI I KOMENTARZE -->
             <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--bg-color); padding-top: 12px;">
-                <button onclick="alert('Polubiono!')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
+                <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
                     <span style="font-size: 16px; color: var(--danger);">❤️</span>
                     <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.likes || 0}</span>
                 </button>
-                <button onclick="alert('Wkrótce otworzy się widok komentarzy!')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
+                <button onclick="window.Waggle.openComments('${post.id}', '${post.text.replace(/'/g, "\\'")}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
                     <span style="font-size: 16px;">💬</span>
                     <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.commentsCount || 0}</span>
                 </button>
