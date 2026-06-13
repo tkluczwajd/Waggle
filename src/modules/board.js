@@ -6,18 +6,17 @@ let allPosts = [];
 let currentPostId = null;
 let currentCommentsUnsubscribe = null;
 let selectedImageBase64 = null;
+let boardUnsubscribe = null; // 🔥 Referencja do nasłuchiwacza na poziomie modułu
 
 export function initBoardEngine() {
-    console.log("🗣️ Inicjalizacja Ostatecznej Tablicy...");
+    console.log("🗣️ Inicjalizacja Pancernej Tablicy ze strażnikiem Auth...");
 
-    // Pokazywanie daty przy "Ustawce"
     window.Waggle.togglePostTypeOptions = () => {
         const type = document.getElementById('post-type-select').value;
         const walkOptions = document.getElementById('post-walk-options');
         if (walkOptions) walkOptions.style.display = (type === 'walk') ? 'block' : 'none';
     };
 
-    // Filtry (Górne Menu)
     window.Waggle.filterBoard = (type, btnElement) => {
         document.querySelectorAll('.board-filter-btn').forEach(btn => {
             btn.style.background = 'white';
@@ -35,7 +34,6 @@ export function initBoardEngine() {
         else renderPosts(allPosts.filter(p => p.type === type));
     };
 
-    // Zastępowanie starego przycisku z Mapy
     const mapAlertBtn = document.getElementById('triggerAlertBtn');
     if (mapAlertBtn) {
         const newMapAlertBtn = mapAlertBtn.cloneNode(true);
@@ -49,7 +47,6 @@ export function initBoardEngine() {
         });
     }
 
-    // 🔥 LOGIKA ZDJĘĆ Z MOBILNYM KOMPRESOREM
     const addPhotoBtn = document.getElementById('addPhotoBtn');
     const imageInput = document.getElementById('postImageInput');
     const previewContainer = document.getElementById('post-image-preview-container');
@@ -66,7 +63,6 @@ export function initBoardEngine() {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Opóźnienie dla Androida/iOS, by zdążył zamknąć galerię
             setTimeout(() => {
                 const reader = new FileReader();
                 reader.onload = (event) => {
@@ -108,10 +104,8 @@ export function initBoardEngine() {
         if (imageInput) imageInput.value = '';
     };
 
-    // 🔥 PUBLIKOWANIE WPISÓW
     const publishBtn = document.getElementById('publish-post-btn');
     if (publishBtn) {
-        // Klonujemy przycisk na wszelki wypadek, żeby ubić zduplikowane listener'y
         const newPublishBtn = publishBtn.cloneNode(true);
         publishBtn.parentNode.replaceChild(newPublishBtn, publishBtn);
 
@@ -119,17 +113,12 @@ export function initBoardEngine() {
             const textEl = document.getElementById('post-content-input');
             const typeEl = document.getElementById('post-type-select');
             
-            if (!textEl || !typeEl) {
-                console.error("Nie znaleziono inputów od posta.");
-                return;
-            }
-
+            if (!textEl || !typeEl) return;
             const text = textEl.value.trim();
             const type = typeEl.value;
             
             if (!text && !selectedImageBase64) return alert("Musisz wpisać treść lub dodać zdjęcie!");
 
-            // Bezpieczne pobieranie nazwy użytkownika
             let safeUserName = "Psiarz";
             const localName = localStorage.getItem('userName');
             if (localName) {
@@ -157,7 +146,6 @@ export function initBoardEngine() {
             }
 
             newPublishBtn.innerText = "WYSYŁANIE...";
-            
             try {
                 await db.collection('posts').add(postData);
                 document.getElementById('post-creator-modal').style.display = 'none';
@@ -166,13 +154,12 @@ export function initBoardEngine() {
                 if(window.Waggle.showToast) window.Waggle.showToast("✅ Opublikowano!");
             } catch(e) {
                 console.error("Błąd zapisu:", e);
-                alert("Błąd publikacji. Sprawdź połączenie z internetem.");
+                alert("Błąd publikacji.");
             }
             newPublishBtn.innerText = "OPUBLIKUJ";
         });
     }
 
-    // Funkcje akcji pod postami
     window.Waggle.joinWalk = async (postId) => {
         const uid = auth.currentUser ? auth.currentUser.uid : 'anon';
         try {
@@ -234,7 +221,6 @@ export function initBoardEngine() {
     const answerInput = document.getElementById('new-answer-input');
     
     if(postAnswerBtn && answerInput) {
-        // Trik z klonowaniem guzika komentarzy na wypadek zduplikowanych zdarzeń
         const newPostAnswerBtn = postAnswerBtn.cloneNode(true);
         postAnswerBtn.parentNode.replaceChild(newPostAnswerBtn, postAnswerBtn);
 
@@ -266,24 +252,43 @@ export function initBoardEngine() {
         answerInput.onkeypress = (e) => { if(e.key === 'Enter') sendComment(); };
     }
 
-    // Uruchomienie strumienia postów
+    // Odpalamy inteligentny strumień postów
     listenToPosts();
 }
 
+// 🔥 POPRAWIONA, INTELIGENTNA FUNKCJA NASŁUCHIWANIA Z SECURE AUTH WATCHER
 function listenToPosts() {
     const container = document.getElementById('board-feed-container');
     
-    db.collection('posts')
-        .orderBy('timestamp', 'desc')
-        .limit(50)
-        .onSnapshot(snapshot => {
-            allPosts = [];
-            snapshot.forEach(doc => { allPosts.push({ id: doc.id, ...doc.data() }); });
-            renderPosts(allPosts);
-        }, (error) => {
-            console.error("Błąd ładowania tablicy:", error);
-            if (container) container.innerHTML = `<div style="text-align: center; color: var(--danger); font-size: 13px; font-weight: 700; margin-top: 20px;">Błąd połączenia z bazą.</div>`;
-        });
+    // Czekamy bezpiecznie na załadowanie profilu użytkownika przez Firebase
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            if (container) container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700; margin-top: 20px;">Weryfikacja sesji w toku... 🔐</div>`;
+            if (boardUnsubscribe) { boardUnsubscribe(); boardUnsubscribe = null; }
+            return;
+        }
+
+        // Zapobiegamy wielokrotnym połączeniom (duplikatom)
+        if (boardUnsubscribe) return;
+
+        if (container && allPosts.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700; margin-top: 20px;">Ładowanie tablicy... ⏳</div>`;
+        }
+
+        boardUnsubscribe = db.collection('posts')
+            .orderBy('timestamp', 'desc')
+            .limit(50)
+            .onSnapshot(snapshot => {
+                allPosts = [];
+                snapshot.forEach(doc => { allPosts.push({ id: doc.id, ...doc.data() }); });
+                renderPosts(allPosts);
+            }, (error) => {
+                console.error("🔥 Stały błąd bazy danych posts:", error);
+                if (container && allPosts.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; color: var(--danger); font-size: 13px; font-weight: 700; margin-top: 20px;">🚨 Brak uprawnień do bazy. Skontaktuj się z administratorem.</div>`;
+                }
+            });
+    });
 }
 
 function renderPosts(posts) {
@@ -329,7 +334,7 @@ function renderPosts(posts) {
                 const hasJoined = post.attendees && post.attendees.includes(currentUid);
                 const buttonHtml = hasJoined 
                     ? `<button style="background: var(--bg-color); color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: default;">Dołączyłeś ✅</button>`
-                    : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s;">Będę! 👍</button>`;
+                    : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer;">Będę! 👍</button>`;
                 contentHtml = `
                     <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text}</p>${imageHtml}
                     <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); margin-top: 10px;">
@@ -360,7 +365,7 @@ function renderPosts(posts) {
                 </div>
                 <div style="margin-bottom: 15px;">${contentHtml}</div>
                 <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--bg-color); padding-top: 12px;">
-                    <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(1.2)'" onmouseup="this.style.transform='scale(1)'">
+                    <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
                         <span style="font-size: 16px; color: var(--danger);">❤️</span>
                         <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.likes || 0}</span>
                     </button>
@@ -374,7 +379,7 @@ function renderPosts(posts) {
         container.innerHTML = html;
     }
 
-    // Synchronizacja z widgetem Alerty na mapie
+    // Synchronizacja z mapą
     const activeAlertPill = document.getElementById('active-alert-pill');
     if (activeAlertPill) {
         const hasRecentAlert = posts.some(p => {
