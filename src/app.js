@@ -1,18 +1,21 @@
 // src/app.js - Nowy, minimalistyczny punkt wejścia ekosystemu Waggle 🐾
 import { bootstrapApp } from './core/appBootstrap.js';
 import { addJournalEntry, subscribeToJournal, getJournalHistory } from './services/journalService.js';
-import { initChatEngine } from './modules/chat/chatEngine.js'; // 🔥 NASZ NOWY MODUŁ!
+import { initChatEngine } from './modules/chat/chatEngine.js'; 
 import { initCalendarEngine } from './modules/calendar.js';
 import { initPlacesEngine } from './modules/places.js';
+import { initBoardEngine } from './modules/board.js'; // 🔥 1. IMPORTUJEMY TABLICĘ
 
 // Uruchomienie głównych systemów
 bootstrapApp();
 initChatEngine();
 initCalendarEngine();
 initPlacesEngine();
+initBoardEngine(); // 🔥 2. URUCHAMIAMY TABLICĘ
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
+// reszta Twojego kodu w app.js pozostaje bez zmian...
 // ============================================================================
 window.Waggle = window.Waggle || {};
 window.Waggle.closeAllModals = () => {
