@@ -800,5 +800,33 @@
 
         </div>
     </div>
+    <!-- 🔥 WAGGLE MIEJSCA: MODAL OPINII O MIEJSCU -->
+    <div id="place-details-modal" class="modal" style="z-index: 10008;">
+        <div class="card" style="max-width: 450px; width: 95%; height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 25px;">
+            
+            <!-- Nagłówek Modala -->
+            <div style="padding: 20px; border-bottom: 1px solid var(--border-color); background: white; display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0;">
+                <div style="flex-grow: 1;">
+                    <h3 style="margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 900;">Opinie psiarzy o miejscu</h3>
+                    <p id="place-details-name" style="margin: 0; font-size: 18px; color: var(--text-color); font-weight: 900;"></p>
+                </div>
+                <button class="close-modal-btn" onclick="document.getElementById('place-details-modal').style.display='none'" style="position: static; margin-left: 15px;">✕</button>
+            </div>
+            
+            <!-- Lista Komentarzy -->
+            <div id="place-comments-list" style="flex-grow: 1; overflow-y: auto; padding: 20px; background: var(--bg-color);">
+                <!-- Opinie -->
+            </div>
+
+            <!-- Pole dodawania opinii na dole -->
+            <div style="padding: 15px 20px; border-top: 1px solid var(--border-color); background: white; flex-shrink: 0;">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="place-comment-input" placeholder="Byłeś tu? Ostrzeż lub poleć..." style="flex-grow: 1; border: 1px solid var(--border-color); background: var(--bg-color); border-radius: 20px; padding: 12px 18px; font-size: 13px; font-weight: 600; outline: none; color: var(--text-color);">
+                    <button id="post-place-comment-btn" style="background: var(--primary); color: white; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; cursor: pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(255,82,82,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">➤</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
