@@ -61,6 +61,57 @@ function initPwaHistoryManager() {
 document.addEventListener('DOMContentLoaded', initPwaHistoryManager);
 
 // ============================================================================
+// 🔥 WAGGLE: WERSJONOWANIE I AKTUALIZACJE PWA
+// ============================================================================
+export const APP_VERSION = "1.0.1";
+
+// Detektor nowej wersji aplikacji
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').then(reg => {
+            reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                installingWorker.onstatechange = () => {
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // ROZWIĄZANIE 4: Profesjonalny komunikat i twardy restart
+                        if (window.Waggle && window.Waggle.showToast) {
+                            window.Waggle.showToast("🐾 Dostępna nowa wersja Waggle! Odświeżam...");
+                        }
+                        setTimeout(() => window.location.reload(true), 2000);
+                    }
+                };
+            };
+        }).catch(err => console.error('[SW] Błąd rejestracji:', err));
+    });
+}
+
+// ROZWIĄZANIE 5: Funkcja dla przycisku "Wymuś aktualizację"
+window.Waggle.forceAppUpdate = async () => {
+    if (window.Waggle && window.Waggle.showToast) {
+        window.Waggle.showToast("🔄 Pobieranie najnowszej wersji...");
+    }
+    
+    // 1. Czyszczenie całej pamięci podręcznej (Cache)
+    if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+    }
+    
+    // 2. Wyrejestrowanie Service Workera
+    if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let reg of registrations) {
+            await reg.unregister();
+        }
+    }
+    
+    // 3. Twardy reload ze zignorowaniem cache przeglądarki
+    setTimeout(() => {
+        window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
+    }, 1000);
+};
+
+// ============================================================================
 // 🔥 WAGGLE FAMILY: LOGIKA DZIENNIKA PSA
 // ============================================================================
 window.logDogActivity = async (type) => {
