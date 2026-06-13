@@ -1,4 +1,5 @@
 // src/modules/places.js
+import { db, auth, fb } from "../core/firebase.js"; // 🔥 Dopisaliśmy bazę danych
 import { mapManager } from './map/mapManager.js'; 
 
 window.Waggle = window.Waggle || {};
@@ -8,6 +9,9 @@ let userLon = 0;
 let currentFilter = 'all';
 
 let favoritePlacesIds = JSON.parse(localStorage.getItem('waggle_fav_places') || '[]');
+
+let currentPlaceCommentsUnsubscribe = null;
+let currentPlaceId = null;
 
 export function initPlacesEngine() {
     const container = document.getElementById('places-list-container');
@@ -28,11 +32,9 @@ export function initPlacesEngine() {
         );
     }
 
-    // Automatyczne usuwanie tymczasowego znacznika po wyjściu z mapy!
     document.querySelectorAll('.nav-item').forEach(btn => {
         btn.addEventListener('click', () => {
             const view = btn.getAttribute('data-view');
-            // Jeśli wychodzimy z mapy, usuwamy tymczasowy marker z miejsca
             if (view !== 'local' && window.Waggle.tempPlaceMarker && mapManager.map) {
                 mapManager.map.removeLayer(window.Waggle.tempPlaceMarker);
                 window.Waggle.tempPlaceMarker = null;
@@ -40,7 +42,6 @@ export function initPlacesEngine() {
         });
     });
 
-    // Filtrowanie
     window.Waggle.filterPlaces = (category, btnElement) => {
         currentFilter = category; 
         
@@ -59,58 +60,120 @@ export function initPlacesEngine() {
         applyCurrentFilter();
     };
 
-    // Ulubione
     window.Waggle.toggleFavoritePlace = (placeId, event) => {
         if (event) event.stopPropagation(); 
-        
-        if (favoritePlacesIds.includes(placeId)) {
-            favoritePlacesIds = favoritePlacesIds.filter(id => id !== placeId);
-        } else {
-            favoritePlacesIds.push(placeId);
-        }
+        if (favoritePlacesIds.includes(placeId)) favoritePlacesIds = favoritePlacesIds.filter(id => id !== placeId);
+        else favoritePlacesIds.push(placeId);
         
         localStorage.setItem('waggle_fav_places', JSON.stringify(favoritePlacesIds));
-        
         const place = allPlaces.find(p => p.id === placeId);
         if(place) place.isFavorite = favoritePlacesIds.includes(placeId);
-        
         applyCurrentFilter();
     };
 
-    // Google Maps
     window.Waggle.openGoogleMaps = (lat, lon, event) => {
         if (event) event.stopPropagation();
         window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`, '_blank');
     };
 
-    // Wyświetlanie pojedynczego punktu na mapie (bez ukrytych warstw!)
     window.Waggle.showPlaceOnMap = (lat, lon, name, category, event) => {
         if (event) event.stopPropagation();
         if (!mapManager.map) return;
         
-        // 1. Usuwamy stary znacznik, jeśli był
-        if (window.Waggle.tempPlaceMarker) {
-            mapManager.map.removeLayer(window.Waggle.tempPlaceMarker);
-        }
+        if (window.Waggle.tempPlaceMarker) mapManager.map.removeLayer(window.Waggle.tempPlaceMarker);
         
-        // 2. Tworzymy piękny, podświetlony znacznik
         const icons = { park: '🌳', dogpark: '🐕', forest: '🌲', water: '💧', path: '🚶' };
         const markerHtml = `<div style="font-size: 32px; filter: drop-shadow(0 4px 8px rgba(52, 172, 224, 0.6)); transform: scale(1.1);">${icons[category] || '📍'}</div>`;
         const customIcon = window.L.divIcon({ html: markerHtml, className: 'custom-map-icon', iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -35] });
         
-        // 3. Dodajemy BEZPOŚREDNIO do mapy (a nie do zablokowanej warstwy parks)
         window.Waggle.tempPlaceMarker = window.L.marker([lat, lon], { icon: customIcon })
             .addTo(mapManager.map)
             .bindPopup(`<div style="text-align:center;"><b style="font-size:14px; color:var(--primary);">${name}</b><br><span style="font-size:10px; color:var(--text-muted);">Tymczasowy podgląd miejsca</span></div>`);
         
-        // Lecimy na miejsce i otwieramy "dymek" z nazwą
         mapManager.flyTo(lat, lon, 16); 
         setTimeout(() => window.Waggle.tempPlaceMarker.openPopup(), 600);
         
-        // 4. Przełączamy zakładkę!
         const mapTabBtn = document.querySelector('.bottom-nav [data-view="local"]');
         if (mapTabBtn) mapTabBtn.click();
     };
+
+    // 🔥 LOGIKA OTWIERANIA KOMENTARZY (Z SYSTEMEM FIREBASE)
+    window.Waggle.openPlaceDetails = (placeId, placeName, event) => {
+        if (event) event.stopPropagation();
+        currentPlaceId = placeId;
+        document.getElementById('place-details-name').innerText = placeName;
+        document.getElementById('place-details-modal').style.display = 'flex';
+
+        const commentsList = document.getElementById('place-comments-list');
+        commentsList.innerHTML = '<div style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:20px; font-weight: 700;">Ładowanie opinii... ⏳</div>';
+
+        if (currentPlaceCommentsUnsubscribe) currentPlaceCommentsUnsubscribe();
+
+        // Podpinamy się pod konkretne ID miejsca z OpenStreetMap
+        currentPlaceCommentsUnsubscribe = db.collection('place_reviews').doc(placeId).collection('messages')
+            .orderBy('timestamp', 'asc')
+            .onSnapshot(snapshot => {
+                if (snapshot.empty) {
+                    commentsList.innerHTML = `
+                        <div style="text-align:center; margin-top: 40px;">
+                            <div style="font-size: 40px; margin-bottom: 10px;">🏕️</div>
+                            <div style="font-size:13px; color:var(--text-color); font-weight: 800; margin-bottom: 5px;">Brak opinii o tym miejscu.</div>
+                            <div style="font-size:11px; color:var(--text-muted); font-weight: 600;">Bądź pierwszy! Naciąłeś się na krzaki? Ostrzeż innych!</div>
+                        </div>`;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const isMe = auth.currentUser && msg.authorId === auth.currentUser.uid;
+                    const timeStr = msg.timestamp ? msg.timestamp.toDate().toLocaleDateString('pl-PL', {day:'numeric', month:'short'}) : 'Teraz';
+                    
+                    html += `
+                    <div style="background: white; padding: 12px 15px; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                        <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom:8px;">
+                            <b style="font-size:12px; color:${isMe ? 'var(--primary)' : 'var(--text-color)'};">${msg.authorName}</b>
+                            <span style="font-size:10px; color:var(--text-muted); font-weight: 700;">${timeStr}</span>
+                        </div>
+                        <div style="font-size:13px; color:var(--text-color); font-weight: 600; line-height:1.5;">${msg.text}</div>
+                    </div>`;
+                });
+                commentsList.innerHTML = html;
+                setTimeout(() => { commentsList.scrollTop = commentsList.scrollHeight; }, 100);
+            });
+    };
+
+    // Publikacja komentarza
+    const postBtn = document.getElementById('post-place-comment-btn');
+    const inputField = document.getElementById('place-comment-input');
+    
+    if(postBtn && inputField) {
+        const postAction = async () => {
+            if (!currentPlaceId) return;
+            const text = inputField.value.trim();
+            if (!text) return;
+
+            const userName = localStorage.getItem('userName') || (auth.currentUser ? auth.currentUser.email.split('@')[0] : "Opiekun");
+            const uid = auth.currentUser ? auth.currentUser.uid : 'anonim';
+
+            inputField.value = '';
+
+            try {
+                await db.collection('place_reviews').doc(currentPlaceId).collection('messages').add({
+                    text: text,
+                    authorId: uid,
+                    authorName: userName,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {
+                console.error("Błąd dodawania komentarza:", e);
+                alert("Wystąpił błąd podczas dodawania opinii.");
+            }
+        };
+
+        postBtn.onclick = postAction;
+        inputField.onkeypress = (e) => { if(e.key === 'Enter') postAction(); };
+    }
 }
 
 function applyCurrentFilter() {
@@ -194,7 +257,6 @@ async function fetchPlacesFromOSM(lat, lon) {
     }
 }
 
-// CAŁKOWICIE NOWY, KOMPAKTOWY DESIGN DLA TELEFONÓW (MOBILE-FIRST)
 function renderPlacesList(places) {
     const container = document.getElementById('places-list-container');
     if (!container) return;
@@ -218,19 +280,18 @@ function renderPlacesList(places) {
         return `
         <div style="background: white; border-radius: 16px; padding: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; gap: 12px; align-items: center;">
             
-            <!-- Ikonka z lewej -->
             <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--bg-color); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);">
                 ${icons[place.category] || '📍'}
             </div>
 
-            <!-- Tekst w środku (Tytuł i Odległość) -->
             <div style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
                 <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 900; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${place.name}</h3>
                 <div style="font-size: 11px; font-weight: 800; color: var(--primary);">${place.distance} km stąd</div>
             </div>
 
-            <!-- 3 Małe Guziki Akcji z Prawej -->
+            <!-- 🔥 DODANY PRZYCISK OPINII 💬 -->
             <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <button onclick="window.Waggle.openPlaceDetails('${place.id}', '${place.name.replace(/'/g, "\\'")}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Sprawdź opinie">💬</button>
                 <button onclick="window.Waggle.openGoogleMaps(${place.lat}, ${place.lon}, event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Nawiguj Google Maps">🗺️</button>
                 <button onclick="window.Waggle.showPlaceOnMap(${place.lat}, ${place.lon}, '${place.name.replace(/'/g, "\\'")}', '${place.category}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Pokaż na mapie">🧭</button>
                 <button onclick="window.Waggle.toggleFavoritePlace('${place.id}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: ${starColor}; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Ulubione">★</button>
