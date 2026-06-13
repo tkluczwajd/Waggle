@@ -5,6 +5,7 @@ import { initChatEngine } from './modules/chat/chatEngine.js';
 import { initCalendarEngine } from './modules/calendar.js';
 import { initPlacesEngine } from './modules/places.js';
 import { initBoardEngine } from './modules/board.js'; // 🔥 1. IMPORTUJEMY TABLICĘ
+import { initWikiEngine } from './modules/wiki.js';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -12,6 +13,7 @@ initChatEngine();
 initCalendarEngine();
 initPlacesEngine();
 initBoardEngine(); // 🔥 2. URUCHAMIAMY TABLICĘ
+initWikiEngine();
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
