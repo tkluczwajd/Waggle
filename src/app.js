@@ -79,6 +79,78 @@ window.logDogActivity = async (type) => {
     }
 };
 
+// 🧠 BAZA WIEDZY DNIA (Ciekawostki na ekran Home)
+const WIEDZA_DNIA_BAZA = [
+    "🐕 Czy wiesz, że nos psa ma aż 300 milionów receptorów węchowych? Twój ma tylko 6 milionów!",
+    "🥵 Pies może dostać udaru cieplnego już przy 24°C, jeśli biega na pełnym słońcu. Zawsze miej przy sobie wodę!",
+    "🍫 Złota zasada 2 godzin: Jeśli pies zjadł czekoladę, masz 2 godziny na wywołanie wymiotów u weta.",
+    "🐾 Reguła 5 sekund: Jeśli nie możesz utrzymać dłoni na asfalcie przez 5 sekund, łapy psa ulegną poparzeniu.",
+    "🦷 Sucha karma NIE czyści psich zębów! To tak, jakbyś mył zęby jedząc krakersy. Używaj gryzaków."
+];
+
+function renderWiedzaDnia() {
+    // Losujemy ciekawostkę przypisaną do dnia miesiąca (żeby codziennie była nowa)
+    const dzisiaj = new Date().getDate();
+    const ciekawostka = WIEDZA_DNIA_BAZA[dzisiaj % WIEDZA_DNIA_BAZA.length];
+
+    let wiedzaContainer = document.getElementById('wiedza-dnia-container');
+    const alertsDiv = document.getElementById('smart-care-alerts');
+    
+    // Tworzymy kontener nad alertami, jeśli go jeszcze nie ma
+    if (!wiedzaContainer && alertsDiv) {
+        wiedzaContainer = document.createElement('div');
+        wiedzaContainer.id = 'wiedza-dnia-container';
+        alertsDiv.parentNode.insertBefore(wiedzaContainer, alertsDiv);
+    }
+
+    if (wiedzaContainer) {
+        wiedzaContainer.innerHTML = `
+            <div onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="background: linear-gradient(135deg, var(--secondary), #0abde3); border-radius: 16px; padding: 15px; margin-bottom: 15px; color: white; box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3); display: flex; gap: 15px; align-items: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="font-size: 35px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🧠</div>
+                <div>
+                    <div style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; opacity: 0.9;">Wiedza Dnia</div>
+                    <div style="font-size: 13px; font-weight: 600; line-height: 1.4; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">${ciekawostka}</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// 🔥 FUNKCJA OBLICZAJĄCA CIĄGI (STREAKS)
+function calculateStreak(entries, type) {
+    if (!entries || entries.length === 0) return 0;
+    
+    // Zbieramy unikalne daty, w których wykonano daną czynność
+    let daysWithActivity = new Set();
+    entries.forEach(e => {
+        if (e.type === type && e.timestamp && typeof e.timestamp.toDate === 'function') {
+            daysWithActivity.add(e.timestamp.toDate().toDateString());
+        }
+    });
+
+    let streak = 0;
+    let checkDate = new Date();
+    
+    // Sprawdzamy czy zrobiono to dzisiaj
+    if (daysWithActivity.has(checkDate.toDateString())) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1); // Cofamy o dzień
+    } else {
+        // Jeśli nie dzisiaj, to może ciąg wciąż trwa z wczoraj?
+        checkDate.setDate(checkDate.getDate() - 1);
+        if (!daysWithActivity.has(checkDate.toDateString())) {
+            return 0; // Ciąg przerwany
+        }
+    }
+
+    // Liczymy do tyłu tak długo, jak długo są wpisy
+    while (daysWithActivity.has(checkDate.toDateString())) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+    return streak;
+}
+
 function initJournalListener() {
     const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     if (!currentUid) {
@@ -91,9 +163,12 @@ function initJournalListener() {
 
         subscribeToJournal(currentUid, (entries) => {
             const listElement = document.getElementById('journal-live-list');
-            const alertsContainer = document.getElementById('smart-care-alerts'); // 🚨 Nasz nowy kontener na alerty
+            const alertsContainer = document.getElementById('smart-care-alerts'); 
             
             if (!listElement) return;
+
+            // Rysujemy sekcję "Wiedza Dnia"
+            renderWiedzaDnia();
 
             const todayStr = new Date().toDateString();
             const dailyCounts = { feed: 0, walk: 0, med: 0, water: 0 };
@@ -102,7 +177,6 @@ function initJournalListener() {
             let lastFeedTime = null;
 
             if (entries && entries.length > 0) {
-                // Szukamy ostatniego spaceru i karmienia w CAŁEJ historii
                 const sortedEntries = [...entries].sort((a, b) => {
                     const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
                     const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
@@ -115,7 +189,6 @@ function initJournalListener() {
                 if (lastWalk && lastWalk.timestamp) lastWalkTime = lastWalk.timestamp.toDate();
                 if (lastFeed && lastFeed.timestamp) lastFeedTime = lastFeed.timestamp.toDate();
 
-                // Liczymy dzisiejsze statystyki
                 entries.forEach(entry => {
                     if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
                         if (entry.timestamp.toDate().toDateString() === todayStr) {
@@ -147,43 +220,80 @@ function initJournalListener() {
                 }
             });
 
-            // 🚨 INTELIGENTNE ALERTY OPIEKI
+            // 🚨 INTELIGENTNE ALERTY OPIEKI I GAMIFIKACJA
             let alertsHtml = '';
             const now = new Date();
+            const currentHour = now.getHours();
 
-            // Reguła 1: Brak śniadania (jeśli jest po 10:00 rano i licznik dzisiejszego jedzenia to 0)
-            if (dailyCounts.feed === 0 && now.getHours() >= 10) {
+            // 1. GAMIFIKACJA (Ciągi)
+            const walkStreak = calculateStreak(entries, 'walk');
+            const medStreak = calculateStreak(entries, 'med');
+
+            if (walkStreak >= 3) {
                 alertsHtml += `
-                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px;">
+                <div style="background: rgba(255, 82, 82, 0.08); border: 1px solid rgba(255, 82, 82, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                    <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🔥</div>
+                    <div>
+                        <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Imponująca Seria!</div>
+                        <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Stado wychodzi na spacery już <b>${walkStreak} dni</b> z rzędu!</div>
+                    </div>
+                </div>`;
+            }
+
+            if (medStreak >= 5) {
+                alertsHtml += `
+                <div style="background: rgba(46, 213, 115, 0.08); border: 1px solid #2ed573; border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                    <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">💊</div>
+                    <div>
+                        <div style="font-size: 13px; font-weight: 900; color: #2ed573;">Zdrowie pod kontrolą!</div>
+                        <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Leki podawane na czas przez <b>${medStreak} dni</b> z rzędu.</div>
+                    </div>
+                </div>`;
+            }
+
+            // 2. MONITY OPIEKI
+            // Brak śniadania (po 09:00)
+            if (dailyCounts.feed === 0 && currentHour >= 9) {
+                alertsHtml += `
+                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
                         <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🍖</div>
                         <div>
                             <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Głodny Pies!</div>
-                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Pies nie dostał dzisiaj jeszcze żadnego posiłku.</div>
+                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Pies nie dostał dzisiaj jeszcze śniadania. Kto ze Stada karmi?</div>
+                        </div>
+                    </div>`;
+            }
+            // Brak kolacji (między 19:00 a 23:00, podano mniej niż 2 posiłki)
+            else if (dailyCounts.feed < 2 && currentHour >= 19 && currentHour <= 23) {
+                alertsHtml += `
+                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🥩</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Pora kolacji!</div>
+                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Zadbaj o wieczorny posiłek dla pupila.</div>
                         </div>
                     </div>`;
             }
 
-            // Reguła 2: Brak spaceru ponad 8 godzin
-            if (lastWalkTime) {
-                const hoursSinceWalk = (now - lastWalkTime) / (1000 * 60 * 60);
-                if (hoursSinceWalk >= 8) {
-                    alertsHtml += `
-                    <div style="background: rgba(255, 177, 66, 0.08); border: 1px solid rgba(255, 177, 66, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px;">
-                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🐕</div>
+            // Brak spaceru rano (po 08:30)
+            if (dailyCounts.walk === 0 && currentHour >= 8 && currentHour < 12) {
+                alertsHtml += `
+                    <div style="background: rgba(255, 177, 66, 0.08); border: 1px solid rgba(255, 177, 66, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🦮</div>
                         <div>
-                            <div style="font-size: 13px; font-weight: 900; color: #e1b12c;">Czas na spacer!</div>
-                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Minęło ponad ${Math.floor(hoursSinceWalk)} godzin od ostatniego spaceru.</div>
+                            <div style="font-size: 13px; font-weight: 900; color: #e1b12c;">Poranny Spacer</div>
+                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Pies rano nie był jeszcze na dworze. Kto chwyta za smycz?</div>
                         </div>
                     </div>`;
-                }
-            } else if (dailyCounts.walk === 0 && now.getHours() >= 11) {
-                // Jeśli w ogóle nie ma historii spacerów, ale jest już późno
+            }
+            // Krytyczny alert spacerowy (ponad 8 godzin bez wyjścia w ciągu dnia)
+            else if (lastWalkTime && (now - lastWalkTime) / (1000 * 60 * 60) >= 8 && currentHour >= 8 && currentHour <= 22) {
                 alertsHtml += `
-                    <div style="background: rgba(255, 177, 66, 0.08); border: 1px solid rgba(255, 177, 66, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px;">
-                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🐕</div>
+                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">⚠️</div>
                         <div>
-                            <div style="font-size: 13px; font-weight: 900; color: #e1b12c;">Pierwszy spacer?</div>
-                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Nikt dzisiaj nie odnotował jeszcze spaceru.</div>
+                            <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Wymagany Spacer!</div>
+                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Minęło ponad 8 godzin od ostatniego wyjścia na dwór.</div>
                         </div>
                     </div>`;
             }
@@ -199,7 +309,6 @@ function initJournalListener() {
             const icons = { feed: '🍖', walk: '🚶', med: '💊', water: '💧', vet: '🏥' };
             const labels = { feed: 'Nakarmiony', walk: 'Spacer', med: 'Lek', water: 'Woda', vet: 'Weterynarz' };
             
-            // Filtrujemy tylko wpisy z dzisiaj do małego podglądu
             const todaysEntries = entries.filter(e => e.timestamp && e.timestamp.toDate().toDateString() === todayStr);
             const recentEntries = todaysEntries.slice(0, 3);
             
@@ -214,7 +323,7 @@ function initJournalListener() {
                     timeString = entry.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 }
                 return `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border: 1px solid ${index === 0 ? 'rgba(46, 213, 115, 0.2)' : 'transparent'}; border-radius: 10px; font-size: 13px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border: 1px solid ${index === 0 ? 'rgba(46, 213, 115, 0.2)' : 'transparent'}; border-radius: 10px; font-size: 13px; margin-bottom: 8px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">${icons[entry.type] || '🐾'}</span>
                         <div style="display: flex; flex-direction: column;">
