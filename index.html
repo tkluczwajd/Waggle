@@ -287,25 +287,36 @@
             <div id="map"></div>
         </section>
 
-       <section id="view-community" class="view-section" style="height: 100%; background: #f8f9fa; overflow-y: auto;">           
-            <div style="background: var(--primary); padding: 40px 20px 20px 20px; color: white; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; box-shadow: 0 4px 15px rgba(255,82,82,0.2); margin-bottom: 20px;">
-                <h2 style="margin: 0; font-size: 26px; font-weight: 900;">Psie <span style="color: #ffeaa7;">Sprawy</span></h2>
-                <p style="margin: 5px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.9;">Zapytaj społeczność Waggle. Pomagamy sobie nawzajem!</p>
+       <!-- WIDOK: TABLICA (LOKALNA SPOŁECZNOŚĆ) -->
+<section id="view-community" class="view-section" style="display: none; height: 100%; background: #f8f9fa; overflow-y: auto;">
+    
+    <div class="sticky-header" style="background: white; padding: 20px 20px 10px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 10; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <div>
+                <h2 style="margin:0; font-size: 26px; font-weight: 900; color: var(--text-color);">Nasza <span style="color: var(--primary);">Tablica</span></h2>
+                <p style="margin: 2px 0 0 0; font-size: 12px; font-weight: 600; color: var(--text-muted);">Co słychać u psiarzy w okolicy?</p>
             </div>
+        </div>
+        
+        <!-- Filtry Społecznościowe -->
+        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:5px; scrollbar-width:none;">
+            <button onclick="window.Waggle.filterBoard('all', this)" class="board-filter-btn" style="background:var(--text-color); color:white; border:none; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">📢 Wszystko</button>
+            <button onclick="window.Waggle.filterBoard('photo', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">📷 Zdjęcia</button>
+            <button onclick="window.Waggle.filterBoard('question', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">❓ Pytania</button>
+            <button onclick="window.Waggle.filterBoard('walk', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">🚶 Spacery</button>
+            <button onclick="window.Waggle.filterBoard('alert', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">⚠️ Alerty</button>
+            <button onclick="window.Waggle.filterBoard('notice', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">🏠 Ogłoszenia</button>
+        </div>
+    </div>
 
-            <div style="padding: 0 20px 100px 20px;">
-                <div style="background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; border: 1px solid var(--border-color);">
-                    <textarea id="new-question-text" placeholder="Masz problem z psem? Zapytaj tutaj..." style="width: 100%; border: none; background: var(--bg-color); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 13px; resize: none; box-sizing: border-box; margin-bottom: 10px; font-weight: 600;" rows="3"></textarea>
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button id="post-question-btn" style="background: var(--secondary); color: white; border: none; padding: 8px 20px; border-radius: 15px; font-weight: 900; font-size: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(52,172,224,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">ZAPYTAJ 🐾</button>
-                    </div>
-                </div>
+    <!-- Kontener na wszystkie posty -->
+    <div id="board-feed-container" style="padding: 15px 20px 100px 20px; display: flex; flex-direction: column; gap: 15px;">
+        <div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700; margin-top: 20px;">Ładowanie tablicy... ⏳</div>
+    </div>
 
-                <div id="qa-list-container" style="display: flex; flex-direction: column; gap: 15px;">
-                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700;">Ładowanie pytań... ⏳</div>
-                </div>
-            </div>
-        </section>
+    <!-- Potężny Przycisk Dodawania Posta (FAB) -->
+    <button onclick="document.getElementById('post-creator-modal').style.display='flex'" style="position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border: none; border-radius: 50%; font-size: 32px; font-weight: 300; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4); cursor: pointer; z-index: 1000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
+</section>>
 
         <section id="view-chat" class="view-section">
             <div class="sticky-header" style="padding: 20px; background: rgba(244, 246, 249, 0.95); backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.05);">
@@ -415,23 +426,40 @@
         </div>
     </div>
 
-    <div id="post-creator-modal" class="modal">
-        <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <textarea id="postContent" placeholder="Co u Was?" style="height:80px;"></textarea>
-            <div style="text-align:left; margin-bottom:15px; display:flex; gap:15px; align-items:center;">
-                <label><input type="checkbox" id="isEventCheckbox"> 📅 Ustawka</label>
-                <label><input type="checkbox" id="isInfoCheckbox"> 📢 Ogłoszenie</label>
-            </div>
-            <div id="eventDetailsInput" style="display:none; margin-top:10px;"><input type="datetime-local" id="eventDate"></div>
-            <div id="post-image-preview-container" style="display:none;"><img id="post-image-preview" src="" style="width:100%; border-radius:8px;"></div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-outline" id="addPhotoBtn">📷</button>
-                <button class="btn-main" id="publishPostBtn">OPUBLIKUJ</button>
-            </div>
-            <input type="file" id="postImageInput" accept="image/*" style="display:none;">
+    <!-- 🔥 MODAL: DODAWANIE NOWEGO POSTA DO SPOŁECZNOŚCI -->
+<div id="post-creator-modal" class="modal" style="z-index: 10006;">
+    <div class="card" style="max-width: 400px; padding: 25px 20px;">
+        <button class="close-modal-btn" onclick="document.getElementById('post-creator-modal').style.display='none'">✕</button>
+        <h3 style="margin: 0 0 15px 0; font-size: 20px; color: var(--text-color); font-weight: 900;">Dodaj wpis</h3>
+        
+        <!-- Wybór Typu Posta -->
+        <div style="margin-bottom: 15px;">
+            <label style="font-size: 11px; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 8px;">KATEGORIA WPISU:</label>
+            <select id="post-type-select" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; background: var(--bg-color); color: var(--text-color); font-family:inherit; outline:none;" onchange="window.Waggle.togglePostTypeOptions()">
+                <option value="photo">📷 Zdjęcie / Zwykły post</option>
+                <option value="question">❓ Pytanie do społeczności</option>
+                <option value="walk">🚶 Ustawka na spacer</option>
+                <option value="alert">⚠️ Alert / Ostrzeżenie</option>
+                <option value="notice">🏠 Ogłoszenie / Zgubiono</option>
+            </select>
+        </div>
+
+        <!-- Dodatkowe opcje (pojawiają się tylko dla Spaceru) -->
+        <div id="post-walk-options" style="display: none; margin-bottom: 15px;">
+            <label style="font-size: 11px; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 8px;">KIEDY I GDZIE?</label>
+            <input type="text" id="post-walk-location" placeholder="np. Park Śląski (przy żyrafie)" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 700; background: var(--bg-color); margin-bottom: 8px; box-sizing: border-box;">
+            <input type="datetime-local" id="post-walk-date" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 700; background: var(--bg-color); color: var(--text-color); font-family:inherit; box-sizing: border-box;">
+        </div>
+
+        <!-- Treść wpisu -->
+        <textarea id="post-content-input" placeholder="O czym chcesz napisać?" style="width: 100%; height: 100px; border: 1px solid var(--border-color); background: var(--bg-color); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 14px; font-weight: 600; resize: none; box-sizing: border-box; margin-bottom: 15px; outline: none;"></textarea>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button class="btn-outline" style="border: none; font-size: 26px; padding: 0; cursor: pointer; color: var(--primary);" onclick="alert('Moduł zdjęć wkrótce!')" title="Dodaj zdjęcie">📷</button>
+            <button id="publish-post-btn" class="btn-main" style="background: var(--primary); padding: 12px 25px; font-weight: 900; box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);">OPUBLIKUJ</button>
         </div>
     </div>
+</div>
 
     <div id="group-creator-modal" class="modal" style="z-index: 10000;">
         <div class="card" style="display: flex; flex-direction: column; max-height: 80vh; background: var(--bg-color);">
