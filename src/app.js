@@ -86,12 +86,31 @@ function initJournalListener() {
 
         subscribeToJournal(currentUid, (entries) => {
             const listElement = document.getElementById('journal-live-list');
+            const alertsContainer = document.getElementById('smart-care-alerts'); // 🚨 Nasz nowy kontener na alerty
+            
             if (!listElement) return;
 
             const todayStr = new Date().toDateString();
             const dailyCounts = { feed: 0, walk: 0, med: 0, water: 0 };
+            
+            let lastWalkTime = null;
+            let lastFeedTime = null;
 
             if (entries && entries.length > 0) {
+                // Szukamy ostatniego spaceru i karmienia w CAŁEJ historii
+                const sortedEntries = [...entries].sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+                    const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
+                const lastWalk = sortedEntries.find(e => e.type === 'walk');
+                const lastFeed = sortedEntries.find(e => e.type === 'feed');
+
+                if (lastWalk && lastWalk.timestamp) lastWalkTime = lastWalk.timestamp.toDate();
+                if (lastFeed && lastFeed.timestamp) lastFeedTime = lastFeed.timestamp.toDate();
+
+                // Liczymy dzisiejsze statystyki
                 entries.forEach(entry => {
                     if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
                         if (entry.timestamp.toDate().toDateString() === todayStr) {
@@ -101,6 +120,7 @@ function initJournalListener() {
                 });
             }
 
+            // 🎯 RYSOWANIE PASKÓW POSTĘPU
             ['feed', 'walk', 'med', 'water'].forEach(type => {
                 const countEl = document.getElementById(`count-${type}`);
                 const goalEl = document.getElementById(`goal-${type}`);
@@ -122,6 +142,50 @@ function initJournalListener() {
                 }
             });
 
+            // 🚨 INTELIGENTNE ALERTY OPIEKI
+            let alertsHtml = '';
+            const now = new Date();
+
+            // Reguła 1: Brak śniadania (jeśli jest po 10:00 rano i licznik dzisiejszego jedzenia to 0)
+            if (dailyCounts.feed === 0 && now.getHours() >= 10) {
+                alertsHtml += `
+                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🍖</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Głodny Pies!</div>
+                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Pies nie dostał dzisiaj jeszcze żadnego posiłku.</div>
+                        </div>
+                    </div>`;
+            }
+
+            // Reguła 2: Brak spaceru ponad 8 godzin
+            if (lastWalkTime) {
+                const hoursSinceWalk = (now - lastWalkTime) / (1000 * 60 * 60);
+                if (hoursSinceWalk >= 8) {
+                    alertsHtml += `
+                    <div style="background: rgba(255, 177, 66, 0.08); border: 1px solid rgba(255, 177, 66, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🐕</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 900; color: #e1b12c;">Czas na spacer!</div>
+                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Minęło ponad ${Math.floor(hoursSinceWalk)} godzin od ostatniego spaceru.</div>
+                        </div>
+                    </div>`;
+                }
+            } else if (dailyCounts.walk === 0 && now.getHours() >= 11) {
+                // Jeśli w ogóle nie ma historii spacerów, ale jest już późno
+                alertsHtml += `
+                    <div style="background: rgba(255, 177, 66, 0.08); border: 1px solid rgba(255, 177, 66, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🐕</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 900; color: #e1b12c;">Pierwszy spacer?</div>
+                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Nikt dzisiaj nie odnotował jeszcze spaceru.</div>
+                        </div>
+                    </div>`;
+            }
+
+            if (alertsContainer) alertsContainer.innerHTML = alertsHtml;
+
+            // 📝 RYSOWANIE OSTATNICH WPISÓW (LIVE FEED)
             if (!entries || entries.length === 0) {
                 listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
                 return;
@@ -129,8 +193,16 @@ function initJournalListener() {
 
             const icons = { feed: '🍖', walk: '🚶', med: '💊', water: '💧', vet: '🏥' };
             const labels = { feed: 'Nakarmiony', walk: 'Spacer', med: 'Lek', water: 'Woda', vet: 'Weterynarz' };
-            const recentEntries = entries.slice(0, 3);
             
+            // Filtrujemy tylko wpisy z dzisiaj do małego podglądu
+            const todaysEntries = entries.filter(e => e.timestamp && e.timestamp.toDate().toDateString() === todayStr);
+            const recentEntries = todaysEntries.slice(0, 3);
+            
+            if (recentEntries.length === 0) {
+                 listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
+                 return;
+            }
+
             listElement.innerHTML = recentEntries.map((entry, index) => {
                 let timeString = "Teraz";
                 if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
