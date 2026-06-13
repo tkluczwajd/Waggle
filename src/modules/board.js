@@ -5,9 +5,10 @@ window.Waggle = window.Waggle || {};
 let allPosts = [];
 let currentPostId = null;
 let currentCommentsUnsubscribe = null;
+let selectedImageBase64 = null; // Przechowuje aktualnie wybrane zdjęcie
 
 export function initBoardEngine() {
-    console.log("🗣️ Inicjalizacja Nowej Tablicy z Komentarzami...");
+    console.log("🗣️ Inicjalizacja Tablicy z pełnymi funkcjami...");
 
     window.Waggle.togglePostTypeOptions = () => {
         const type = document.getElementById('post-type-select').value;
@@ -32,6 +33,46 @@ export function initBoardEngine() {
         else renderPosts(allPosts.filter(p => p.type === type));
     };
 
+    // 🔥 LOGIKA DODAWANIA ZDJĘĆ
+    const addPhotoBtn = document.getElementById('addPhotoBtn');
+    const imageInput = document.getElementById('postImageInput');
+    const previewContainer = document.getElementById('post-image-preview-container');
+    const previewImg = document.getElementById('post-image-preview');
+
+    if (addPhotoBtn && imageInput) {
+        addPhotoBtn.onclick = () => imageInput.click();
+        imageInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    selectedImageBase64 = event.target.result;
+                    if (previewImg) previewImg.src = selectedImageBase64;
+                    if (previewContainer) previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+
+    window.Waggle.removePostPhoto = () => {
+        selectedImageBase64 = null;
+        if (previewImg) previewImg.src = '';
+        if (previewContainer) previewContainer.style.display = 'none';
+        if (imageInput) imageInput.value = '';
+    };
+
+    // 🔥 LOGIKA DOŁĄCZANIA DO SPACERU
+    window.Waggle.joinWalk = async (postId) => {
+        const uid = auth.currentUser ? auth.currentUser.uid : 'anon';
+        try {
+            await db.collection('posts').doc(postId).update({
+                attendees: fb.firestore.FieldValue.arrayUnion(uid)
+            });
+            if(window.Waggle.showToast) window.Waggle.showToast("✅ Dołączyłeś do spaceru!");
+        } catch(e) { console.error("Błąd dołączania do spaceru", e); }
+    };
+
     // 🔥 LOGIKA POLUBIEŃ
     window.Waggle.likePost = async (postId) => {
         try {
@@ -41,7 +82,7 @@ export function initBoardEngine() {
         } catch(e) { console.error("Błąd lajkowania", e); }
     };
 
-    // 🔥 LOGIKA KOMENTARZY (Z SYSTEMEM FIREBASE)
+    // 🔥 LOGIKA KOMENTARZY
     window.Waggle.openComments = (postId, postText) => {
         currentPostId = postId;
         document.getElementById('modal-question-text').innerText = postText;
@@ -85,7 +126,6 @@ export function initBoardEngine() {
             });
     };
 
-    // Wysłanie komentarza
     const postAnswerBtn = document.getElementById('post-answer-btn');
     const answerInput = document.getElementById('new-answer-input');
     
@@ -108,7 +148,6 @@ export function initBoardEngine() {
                     authorName: userName,
                     timestamp: fb.firestore.FieldValue.serverTimestamp()
                 });
-                // Podbijamy licznik w głównym poście
                 await postRef.update({
                     commentsCount: fb.firestore.FieldValue.increment(1)
                 });
@@ -121,7 +160,7 @@ export function initBoardEngine() {
         answerInput.onkeypress = (e) => { if(e.key === 'Enter') sendComment(); };
     }
 
-    // Publikacja Głównego Posta
+    // 🔥 PUBLIKACJA GŁÓWNEGO POSTA Z OBSŁUGĄ ZDJĘCIA
     const publishBtn = document.getElementById('publish-post-btn');
     if (publishBtn) {
         publishBtn.addEventListener('click', async () => {
@@ -132,7 +171,7 @@ export function initBoardEngine() {
             const text = textEl.value.trim();
             const type = typeEl.value;
             
-            if (!text) return alert("Wpisz treść posta!");
+            if (!text && !selectedImageBase64) return alert("Wpisz treść lub dodaj zdjęcie!");
 
             const postData = {
                 type: type,
@@ -141,8 +180,14 @@ export function initBoardEngine() {
                 authorName: localStorage.getItem('userName') || (auth.currentUser ? auth.currentUser.email.split('@')[0] : "Opiekun"),
                 timestamp: fb.firestore.FieldValue.serverTimestamp(),
                 likes: 0,
-                commentsCount: 0
+                commentsCount: 0,
+                attendees: [] // Pusta tablica dla osób dołączających do spaceru
             };
+
+            // Dodajemy obrazek, jeśli został wybrany
+            if (selectedImageBase64) {
+                postData.imageUrl = selectedImageBase64;
+            }
 
             if (type === 'walk') {
                 postData.walkDate = document.getElementById('post-walk-date').value;
@@ -154,10 +199,11 @@ export function initBoardEngine() {
                 await db.collection('posts').add(postData);
                 document.getElementById('post-creator-modal').style.display = 'none';
                 textEl.value = '';
+                window.Waggle.removePostPhoto(); // Czyścimy formularz i zdjęcie po wysłaniu
                 if(window.Waggle.showToast) window.Waggle.showToast("✅ Opublikowano!");
             } catch(e) {
                 console.error(e);
-                alert("Błąd publikacji. Sprawdź konsole.");
+                alert("Błąd publikacji. Zbyt duży plik lub błąd sieci.");
             }
             publishBtn.innerText = "OPUBLIKUJ";
         });
@@ -200,7 +246,9 @@ function renderPosts(posts) {
         return;
     }
 
+    const currentUid = auth.currentUser ? auth.currentUser.uid : 'anon';
     let html = '';
+
     posts.forEach(post => {
         let timeStr = 'Przed chwilą';
         if (post.timestamp && typeof post.timestamp.toDate === 'function') {
@@ -217,10 +265,13 @@ function renderPosts(posts) {
         let badgeHtml = '';
         let borderStyle = '1px solid var(--border-color)';
         
+        // Renderujemy zdjęcie, jeśli post je posiada
+        const imageHtml = post.imageUrl ? `<img src="${post.imageUrl}" style="width: 100%; border-radius: 12px; margin-top: 10px; max-height: 350px; object-fit: cover;">` : '';
+
         if (post.type === 'alert') {
             borderStyle = '2px solid rgba(231, 76, 60, 0.4)';
             badgeHtml = `<div style="background: rgba(231, 76, 60, 0.1); color: var(--danger); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">⚠️ OSTRZEŻENIE</div>`;
-            contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--danger); font-weight: 800; line-height: 1.5;">${post.text}</p>`;
+            contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--danger); font-weight: 800; line-height: 1.5;">${post.text}</p>${imageHtml}`;
         
         } else if (post.type === 'walk') {
             badgeHtml = `<div style="background: rgba(52, 172, 224, 0.1); color: var(--secondary); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🚶 USTAWKA</div>`;
@@ -229,22 +280,32 @@ function renderPosts(posts) {
                 const wd = new Date(post.walkDate);
                 walkTime = `${wd.toLocaleDateString('pl-PL', {day:'numeric', month:'short'})} o ${wd.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}`;
             }
+
+            // Sprawdzamy czy ja (użytkownik) już dołączyłem
+            const attendeesCount = post.attendees ? post.attendees.length : 0;
+            const hasJoined = post.attendees && post.attendees.includes(currentUid);
+            const buttonHtml = hasJoined 
+                ? `<button style="background: var(--bg-color); color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: default;">Dołączyłeś ✅</button>`
+                : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s;">Będę! 👍</button>`;
+
             contentHtml = `
                 <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text}</p>
-                <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color);">
+                ${imageHtml}
+                <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); margin-top: 10px;">
                     <div>
                         <div style="font-size: 11px; color: var(--text-muted); font-weight: 800;">📍 ${post.walkLocation || 'W okolicy'}</div>
                         <div style="font-size: 13px; color: var(--text-color); font-weight: 900;">📅 ${walkTime}</div>
+                        ${attendeesCount > 0 ? `<div style="font-size: 10px; color: var(--secondary); font-weight: 800; margin-top: 4px;">🐕 ${attendeesCount} psów dołączy!</div>` : ''}
                     </div>
-                    <button onclick="alert('Dołączyłeś do spaceru!')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer;">Będę! 👍</button>
+                    ${buttonHtml}
                 </div>
             `;
         } else if (post.type === 'question') {
             badgeHtml = `<div style="background: rgba(255, 177, 66, 0.1); color: #e1b12c; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">❓ PYTANIE</div>`;
-            contentHtml = `<p style="margin: 0; font-size: 15px; color: var(--text-color); font-weight: 800; line-height: 1.5;">${post.text}</p>`;
+            contentHtml = `<p style="margin: 0; font-size: 15px; color: var(--text-color); font-weight: 800; line-height: 1.5;">${post.text}</p>${imageHtml}`;
         } else {
             if (post.type === 'notice') badgeHtml = `<div style="background: rgba(46, 213, 115, 0.1); color: #2ed573; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🏠 OGŁOSZENIE</div>`;
-            contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text}</p>`;
+            contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text}</p>${imageHtml}`;
         }
 
         html += `
@@ -262,9 +323,8 @@ function renderPosts(posts) {
                 ${contentHtml}
             </div>
             
-            <!-- 🔥 PODŁĄCZAMY LAJKI I KOMENTARZE -->
             <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--bg-color); padding-top: 12px;">
-                <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
+                <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(1.2)'" onmouseup="this.style.transform='scale(1)'">
                     <span style="font-size: 16px; color: var(--danger);">❤️</span>
                     <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.likes || 0}</span>
                 </button>
