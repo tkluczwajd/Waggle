@@ -7,10 +7,10 @@ let currentPostId = null;
 let currentCommentsUnsubscribe = null;
 let selectedImageBase64 = null;
 let boardUnsubscribe = null; 
-let currentBoardFilter = 'all'; // 🔥 Pamięć obecnego filtra!
+let currentBoardFilter = 'all';
 
 export function initBoardEngine() {
-    console.log("🗣️ Inicjalizacja Naprawionej Tablicy...");
+    console.log("🗣️ Inicjalizacja Kuloodpornej Tablicy...");
 
     window.Waggle.togglePostTypeOptions = () => {
         const type = document.getElementById('post-type-select').value;
@@ -19,7 +19,7 @@ export function initBoardEngine() {
     };
 
     window.Waggle.filterBoard = (type, btnElement) => {
-        currentBoardFilter = type; // Zapisujemy filtr w pamięci
+        currentBoardFilter = type; 
         
         document.querySelectorAll('.board-filter-btn').forEach(btn => {
             btn.style.background = 'white';
@@ -33,7 +33,7 @@ export function initBoardEngine() {
             btnElement.style.boxShadow = '0 4px 10px rgba(0,0,0,0.1)';
         }
 
-        applyCurrentBoardFilter(); // Renderujemy to, co zapisane w pamięci
+        applyCurrentBoardFilter();
     };
 
     const mapAlertBtn = document.getElementById('triggerAlertBtn');
@@ -134,9 +134,9 @@ export function initBoardEngine() {
                 text: text,
                 authorId: auth.currentUser ? auth.currentUser.uid : 'anonim',
                 authorName: safeUserName,
-                timestamp: window.firebase.firestore.FieldValue.serverTimestamp(), // 🔥 NAPRAWA FIREBASE
+                timestamp: window.firebase.firestore.FieldValue.serverTimestamp(),
                 likes: 0,
-                likedBy: [], // Dodano tablicę dla lajków
+                likedBy: [],
                 commentsCount: 0,
                 attendees: []
             };
@@ -163,7 +163,6 @@ export function initBoardEngine() {
         });
     }
 
-    // 🔥 NAPRAWA PRZYCISKÓW (Użycie window.firebase)
     window.Waggle.joinWalk = async (postId) => {
         const uid = auth.currentUser ? auth.currentUser.uid : 'anon';
         try {
@@ -186,7 +185,7 @@ export function initBoardEngine() {
 
     window.Waggle.openComments = (postId, postText) => {
         currentPostId = postId;
-        document.getElementById('modal-question-text').innerText = postText;
+        document.getElementById('modal-question-text').innerText = postText || "Wątek";
         document.getElementById('qa-answers-modal').style.display = 'flex';
         
         const list = document.getElementById('answers-list');
@@ -215,9 +214,9 @@ export function initBoardEngine() {
 
                     html += `
                     <div style="display: flex; flex-direction: column; align-items: ${align}; margin-bottom: 15px;">
-                        ${!isMe ? `<div style="font-size: 10px; color: var(--text-muted); font-weight: 800; margin-bottom: 4px; margin-left: 5px;">${ans.authorName}</div>` : ''}
+                        ${!isMe ? `<div style="font-size: 10px; color: var(--text-muted); font-weight: 800; margin-bottom: 4px; margin-left: 5px;">${ans.authorName || 'Użytkownik'}</div>` : ''}
                         <div style="background: ${bg}; color: ${color}; padding: 12px 16px; border-radius: ${radius}; border: ${border}; max-width: 85%; font-size: 13px; font-weight: 600; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                            ${ans.text}
+                            ${ans.text || ''}
                         </div>
                         <div style="font-size: 9px; color: var(--text-muted); font-weight: 700; margin-top: 5px; ${isMe ? 'margin-right: 5px;' : 'margin-left: 5px;'}">${timeStr}</div>
                     </div>`;
@@ -292,8 +291,6 @@ function listenToPosts() {
             .onSnapshot(snapshot => {
                 allPosts = [];
                 snapshot.forEach(doc => { allPosts.push({ id: doc.id, ...doc.data() }); });
-                
-                // 🔥 Niezależnie co się ładuje z bazy, aplikujemy filtr, który wybrał użytkownik
                 applyCurrentBoardFilter();
             }, (error) => {
                 console.error("🔥 Błąd bazy danych:", error);
@@ -310,92 +307,101 @@ function renderPosts(posts) {
             <div style="text-align: center; margin-top: 40px;">
                 <div style="font-size: 40px; margin-bottom: 10px;">🍃</div>
                 <div style="color: var(--text-color); font-weight: 800; font-size: 16px;">Tutaj jeszcze nic nie ma!</div>
-                <div style="color: var(--text-muted); font-size: 12px; margin-top: 5px;">Bądź pierwszy i wrzuć fotkę psa lub zadaj pytanie.</div>
+                <div style="color: var(--text-muted); font-size: 12px; margin-top: 5px;">Zmień filtry lub bądź pierwszy i dodaj wpis.</div>
             </div>`;
     } else {
         const currentUid = auth.currentUser ? auth.currentUser.uid : 'anonim';
         let html = '';
 
         posts.forEach(post => {
-            let timeStr = 'Przed chwilą';
-            if (post.timestamp && typeof post.timestamp.toDate === 'function') {
-                const d = post.timestamp.toDate();
-                if(d.toDateString() === new Date().toDateString()) timeStr = `Dziś, ${d.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'})}`;
-                else timeStr = d.toLocaleDateString('pl-PL', {day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit'});
-            }
-
-            let contentHtml = '';
-            let badgeHtml = '';
-            let borderStyle = '1px solid var(--border-color)';
-            const imageHtml = post.imageUrl ? `<img src="${post.imageUrl}" style="width: 100%; border-radius: 12px; margin-top: 10px; max-height: 350px; object-fit: cover;">` : '';
-
-            if (post.type === 'alert') {
-                borderStyle = '2px solid rgba(231, 76, 60, 0.4)';
-                badgeHtml = `<div style="background: rgba(231, 76, 60, 0.1); color: var(--danger); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">⚠️ OSTRZEŻENIE</div>`;
-                contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--danger); font-weight: 800; line-height: 1.5;">${post.text}</p>${imageHtml}`;
-            } else if (post.type === 'walk') {
-                badgeHtml = `<div style="background: rgba(52, 172, 224, 0.1); color: var(--secondary); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🚶 USTAWKA</div>`;
-                let walkTime = "Wkrótce";
-                if (post.walkDate) {
-                    const wd = new Date(post.walkDate);
-                    walkTime = `${wd.toLocaleDateString('pl-PL', {day:'numeric', month:'short'})} o ${wd.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}`;
+            // 🔥 TARCZA OCHRONNA: Ignorujemy zepsute posty, żeby reszta działała!
+            try {
+                let timeStr = 'Przed chwilą';
+                if (post.timestamp && typeof post.timestamp.toDate === 'function') {
+                    const d = post.timestamp.toDate();
+                    if(d.toDateString() === new Date().toDateString()) timeStr = `Dziś, ${d.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'})}`;
+                    else timeStr = d.toLocaleDateString('pl-PL', {day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit'});
                 }
-                const attendeesCount = post.attendees ? post.attendees.length : 0;
-                const hasJoined = post.attendees && post.attendees.includes(currentUid);
-                const buttonHtml = hasJoined 
-                    ? `<button style="background: var(--bg-color); color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: default;">Dołączyłeś ✅</button>`
-                    : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s;">Będę! 👍</button>`;
-                contentHtml = `
-                    <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text}</p>${imageHtml}
-                    <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); margin-top: 10px;">
+
+                let contentHtml = '';
+                let badgeHtml = '';
+                let borderStyle = '1px solid var(--border-color)';
+                const imageHtml = post.imageUrl ? `<img src="${post.imageUrl}" style="width: 100%; border-radius: 12px; margin-top: 10px; max-height: 350px; object-fit: cover;">` : '';
+                
+                // Bezpieczny tekst, na wypadek pustego posta
+                const safeText = post.text ? post.text.replace(/'/g, "\\'").replace(/\n/g, " ") : "";
+
+                if (post.type === 'alert') {
+                    borderStyle = '2px solid rgba(231, 76, 60, 0.4)';
+                    badgeHtml = `<div style="background: rgba(231, 76, 60, 0.1); color: var(--danger); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">⚠️ OSTRZEŻENIE</div>`;
+                    contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--danger); font-weight: 800; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
+                } else if (post.type === 'walk') {
+                    badgeHtml = `<div style="background: rgba(52, 172, 224, 0.1); color: var(--secondary); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🚶 USTAWKA</div>`;
+                    let walkTime = "Wkrótce";
+                    if (post.walkDate) {
+                        const wd = new Date(post.walkDate);
+                        walkTime = `${wd.toLocaleDateString('pl-PL', {day:'numeric', month:'short'})} o ${wd.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}`;
+                    }
+                    const attendeesCount = (post.attendees && Array.isArray(post.attendees)) ? post.attendees.length : 0;
+                    const hasJoined = post.attendees && Array.isArray(post.attendees) && post.attendees.includes(currentUid);
+                    const buttonHtml = hasJoined 
+                        ? `<button style="background: var(--bg-color); color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: default;">Dołączyłeś ✅</button>`
+                        : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s;">Będę! 👍</button>`;
+                    contentHtml = `
+                        <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text || ''}</p>${imageHtml}
+                        <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); margin-top: 10px;">
+                            <div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 800;">📍 ${post.walkLocation || 'W okolicy'}</div>
+                                <div style="font-size: 13px; color: var(--text-color); font-weight: 900;">📅 ${walkTime}</div>
+                                ${attendeesCount > 0 ? `<div style="font-size: 10px; color: var(--secondary); font-weight: 800; margin-top: 4px;">🐕 ${attendeesCount} psów dołączy!</div>` : ''}
+                            </div>
+                            ${buttonHtml}
+                        </div>`;
+                } else if (post.type === 'question') {
+                    badgeHtml = `<div style="background: rgba(255, 177, 66, 0.1); color: #e1b12c; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">❓ PYTANIE</div>`;
+                    contentHtml = `<p style="margin: 0; font-size: 15px; color: var(--text-color); font-weight: 800; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
+                } else {
+                    if (post.type === 'notice') badgeHtml = `<div style="background: rgba(46, 213, 115, 0.1); color: #2ed573; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🏠 OGŁOSZENIE</div>`;
+                    contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
+                }
+
+                // Odporność na brak lajków w starych postach
+                const hasLiked = post.likedBy && Array.isArray(post.likedBy) && post.likedBy.includes(currentUid);
+                const heartColor = hasLiked ? 'var(--danger)' : 'var(--text-muted)';
+                const heartFill = hasLiked ? 'var(--danger)' : 'none';
+                const heartIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${heartFill}" stroke="${heartColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+
+                html += `
+                <div style="background: white; border-radius: 20px; padding: 18px; border: ${borderStyle}; box-shadow: 0 4px 10px rgba(0,0,0,0.02); margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #2d3436; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900;">${post.authorName ? post.authorName.charAt(0).toUpperCase() : 'U'}</div>
                         <div>
-                            <div style="font-size: 11px; color: var(--text-muted); font-weight: 800;">📍 ${post.walkLocation || 'W okolicy'}</div>
-                            <div style="font-size: 13px; color: var(--text-color); font-weight: 900;">📅 ${walkTime}</div>
-                            ${attendeesCount > 0 ? `<div style="font-size: 10px; color: var(--secondary); font-weight: 800; margin-top: 4px;">🐕 ${attendeesCount} psów dołączy!</div>` : ''}
+                            <div style="font-size: 13px; font-weight: 900; color: var(--text-color);">${post.authorName || 'Użytkownik'}</div>
+                            <div style="font-size: 10px; font-weight: 700; color: var(--text-muted);">${timeStr}</div>
                         </div>
-                        ${buttonHtml}
-                    </div>`;
-            } else if (post.type === 'question') {
-                badgeHtml = `<div style="background: rgba(255, 177, 66, 0.1); color: #e1b12c; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">❓ PYTANIE</div>`;
-                contentHtml = `<p style="margin: 0; font-size: 15px; color: var(--text-color); font-weight: 800; line-height: 1.5;">${post.text}</p>${imageHtml}`;
-            } else {
-                if (post.type === 'notice') badgeHtml = `<div style="background: rgba(46, 213, 115, 0.1); color: #2ed573; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🏠 OGŁOSZENIE</div>`;
-                contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text}</p>${imageHtml}`;
-            }
-
-            // 🔥 Nowa, profesjonalna ikona serca (zmienia kolor gdy lajkujesz)
-            const hasLiked = post.likedBy && post.likedBy.includes(currentUid);
-            const heartColor = hasLiked ? 'var(--danger)' : 'var(--text-muted)';
-            const heartFill = hasLiked ? 'var(--danger)' : 'none';
-            const heartIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${heartFill}" stroke="${heartColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-
-            html += `
-            <div style="background: white; border-radius: 20px; padding: 18px; border: ${borderStyle}; box-shadow: 0 4px 10px rgba(0,0,0,0.02); margin-bottom: 15px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #2d3436; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900;">${post.authorName ? post.authorName.charAt(0).toUpperCase() : 'U'}</div>
-                    <div>
-                        <div style="font-size: 13px; font-weight: 900; color: var(--text-color);">${post.authorName || 'Użytkownik'}</div>
-                        <div style="font-size: 10px; font-weight: 700; color: var(--text-muted);">${timeStr}</div>
+                        ${badgeHtml}
                     </div>
-                    ${badgeHtml}
-                </div>
-                <div style="margin-bottom: 15px;">${contentHtml}</div>
-                <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--bg-color); padding-top: 12px;">
-                    <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(1.2)'" onmouseup="this.style.transform='scale(1)'">
-                        ${heartIcon}
-                        <span style="font-size: 12px; font-weight: 800; color: ${heartColor};">${post.likes || 0}</span>
-                    </button>
-                    <button onclick="window.Waggle.openComments('${post.id}', '${post.text.replace(/'/g, "\\'")}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
-                        <span style="font-size: 16px;">💬</span>
-                        <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.commentsCount || 0}</span>
-                    </button>
-                </div>
-            </div>`;
+                    <div style="margin-bottom: 15px;">${contentHtml}</div>
+                    <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--bg-color); padding-top: 12px;">
+                        <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(1.2)'" onmouseup="this.style.transform='scale(1)'">
+                            ${heartIcon}
+                            <span style="font-size: 12px; font-weight: 800; color: ${heartColor};">${post.likes || 0}</span>
+                        </button>
+                        <button onclick="window.Waggle.openComments('${post.id}', '${safeText}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
+                            <span style="font-size: 16px;">💬</span>
+                            <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.commentsCount || 0}</span>
+                        </button>
+                    </div>
+                </div>`;
+            } catch (err) {
+                console.warn("🛡️ Pominięto uszkodzony stary post:", post.id, err);
+            }
         });
+        
+        // Renderujemy tylko to, co bezpiecznie przebrnęło przez pętlę
         container.innerHTML = html;
     }
 
-    // Synchronizacja z widgetem na Mapie
     const activeAlertPill = document.getElementById('active-alert-pill');
     if (activeAlertPill) {
         const hasRecentAlert = posts.some(p => {
@@ -414,7 +420,6 @@ function renderPosts(posts) {
         newPill.onclick = () => {
             const boardTab = document.querySelector('[data-view="community"]');
             if (boardTab) boardTab.click();
-            
             setTimeout(() => {
                 const alertFilterBtn = Array.from(document.querySelectorAll('.board-filter-btn')).find(b => b.innerText.includes('Alerty'));
                 if (alertFilterBtn) window.Waggle.filterBoard('alert', alertFilterBtn);
