@@ -132,26 +132,34 @@ export function renderSearchResultsList(users, currentUid) {
     if (container) container.innerHTML = html || "<p style='text-align:center; margin-top:20px;'>Nikogo nie znaleziono.</p>";
 }
 
-export function renderGroupUsersList(filteredUsers, container) {
-    if(filteredUsers.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-weight: bold;">Brak innych piesków w bazie.</p>';
+export function renderGroupUsersList(users, container) {
+    if (users.length === 0) {
+        container.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-muted); padding: 20px;">Brak innych piesków w okolicy.</p>';
         return;
     }
+
     let html = '';
-    filteredUsers.forEach(user => {
-        const avatarSrc = user.avatar && user.avatar.trim() !== "" ? user.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
+    users.forEach(u => {
+        // Zabezpieczenie przed pustymi danymi z bazy
+        const name = u.dogName || u.name || 'Nieznany Piesek';
+        const city = u.city || 'Nieznane miasto';
+        const avatar = u.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`;
+
         html += `
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 15px; background:var(--bg-color); border-radius:12px; border:1px solid var(--border-color); overflow:hidden;">
-            <div style="display:flex; align-items:center; gap:12px; overflow:hidden; white-space:nowrap;">
-                <img src="${avatarSrc}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border: 2px solid var(--secondary); flex-shrink:0;">
-                <div style="overflow:hidden; text-overflow:ellipsis;">
-                    <b style="font-size:14px; color: var(--text-color);">${user.name || 'Piesek'}</b><br>
-                    <span style="font-size: 11px; color: var(--text-muted);">${user.city || 'Nieznane'}</span>
+        <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border: 1px solid var(--border-color); border-radius: 16px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1;">
+                <img src="${avatar}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-color); flex-shrink: 0;">
+                <div style="overflow: hidden;">
+                    <div style="font-weight: 900; font-size: 15px; color: var(--text-color); white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${name}</div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--text-muted);">${city}</div>
                 </div>
             </div>
-            <input type="checkbox" value="${user.id}" data-name="${user.name || 'Piesek'}" data-avatar="${avatarSrc}" onchange="window.Waggle.toggleGroupUser(this)" style="width:22px; height:22px; accent-color:var(--primary); cursor: pointer; flex-shrink:0;">
-        </div>`;
+            
+            <input type="checkbox" value="${u.id}" data-name="${name.replace(/'/g, "\\'")}" data-avatar="${avatar}" onchange="window.Waggle.toggleGroupUser(this)" class="group-user-checkbox" style="width: 24px; height: 24px; accent-color: var(--secondary); flex-shrink: 0; margin-left: 10px; cursor: pointer;">
+        </label>
+        `;
     });
+    
     container.innerHTML = html;
 }
 
