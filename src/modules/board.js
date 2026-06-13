@@ -8,14 +8,16 @@ let currentCommentsUnsubscribe = null;
 let selectedImageBase64 = null;
 
 export function initBoardEngine() {
-    console.log("🗣️ Inicjalizacja Tablicy zsynchronizowanej z Mapą...");
+    console.log("🗣️ Inicjalizacja Ostatecznej Tablicy...");
 
+    // Pokazywanie daty przy "Ustawce"
     window.Waggle.togglePostTypeOptions = () => {
         const type = document.getElementById('post-type-select').value;
         const walkOptions = document.getElementById('post-walk-options');
         if (walkOptions) walkOptions.style.display = (type === 'walk') ? 'block' : 'none';
     };
 
+    // Filtry (Górne Menu)
     window.Waggle.filterBoard = (type, btnElement) => {
         document.querySelectorAll('.board-filter-btn').forEach(btn => {
             btn.style.background = 'white';
@@ -33,30 +35,30 @@ export function initBoardEngine() {
         else renderPosts(allPosts.filter(p => p.type === type));
     };
 
-    // 🔥 HACK: PRZECHWYCENIE STAREGO PRZYCISKU Z MAPY
+    // Zastępowanie starego przycisku z Mapy
     const mapAlertBtn = document.getElementById('triggerAlertBtn');
     if (mapAlertBtn) {
-        // Klonujemy przycisk, aby ubić stare zdarzenia z app.js
         const newMapAlertBtn = mapAlertBtn.cloneNode(true);
         mapAlertBtn.parentNode.replaceChild(newMapAlertBtn, mapAlertBtn);
-        
         newMapAlertBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const typeSelect = document.getElementById('post-type-select');
-            if(typeSelect) typeSelect.value = 'alert'; // Ustawiamy automatycznie na "Alert"
+            if(typeSelect) typeSelect.value = 'alert'; 
             window.Waggle.togglePostTypeOptions();
             document.getElementById('post-creator-modal').style.display = 'flex';
         });
     }
 
-    // 🔥 LOGIKA DODAWANIA ZDJĘĆ Z KOMPRESJĄ I OPÓŹNIENIEM (HACK MOBILNY)
+    // 🔥 LOGIKA ZDJĘĆ Z MOBILNYM KOMPRESOREM
     const addPhotoBtn = document.getElementById('addPhotoBtn');
     const imageInput = document.getElementById('postImageInput');
+    const previewContainer = document.getElementById('post-image-preview-container');
+    const previewImg = document.getElementById('post-image-preview');
 
     if (addPhotoBtn && imageInput) {
         addPhotoBtn.onclick = (e) => {
-            e.preventDefault(); // Zapobiega dziwnym zachowaniom na ekranach dotykowych
-            imageInput.value = ''; // Resetuje input, żeby wybór pliku zawsze reagował
+            e.preventDefault();
+            imageInput.value = ''; 
             imageInput.click();
         };
 
@@ -64,8 +66,7 @@ export function initBoardEngine() {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Dajemy systemowi operacyjnemu 150ms na płynne zamknięcie paska "Aparat / Galeria" 
-            // zanim zablokujemy procesor kompresją zdjęcia.
+            // Opóźnienie dla Androida/iOS, by zdążył zamknąć galerię
             setTimeout(() => {
                 const reader = new FileReader();
                 reader.onload = (event) => {
@@ -90,9 +91,6 @@ export function initBoardEngine() {
 
                         selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
                         
-                        const previewImg = document.getElementById('post-image-preview');
-                        const previewContainer = document.getElementById('post-image-preview-container');
-                        
                         if (previewImg) previewImg.src = selectedImageBase64;
                         if (previewContainer) previewContainer.style.display = 'block';
                     };
@@ -105,13 +103,76 @@ export function initBoardEngine() {
 
     window.Waggle.removePostPhoto = () => {
         selectedImageBase64 = null;
-        const previewImg = document.getElementById('post-image-preview');
-        const previewContainer = document.getElementById('post-image-preview-container');
         if (previewImg) previewImg.src = '';
         if (previewContainer) previewContainer.style.display = 'none';
         if (imageInput) imageInput.value = '';
     };
 
+    // 🔥 PUBLIKOWANIE WPISÓW
+    const publishBtn = document.getElementById('publish-post-btn');
+    if (publishBtn) {
+        // Klonujemy przycisk na wszelki wypadek, żeby ubić zduplikowane listener'y
+        const newPublishBtn = publishBtn.cloneNode(true);
+        publishBtn.parentNode.replaceChild(newPublishBtn, publishBtn);
+
+        newPublishBtn.addEventListener('click', async () => {
+            const textEl = document.getElementById('post-content-input');
+            const typeEl = document.getElementById('post-type-select');
+            
+            if (!textEl || !typeEl) {
+                console.error("Nie znaleziono inputów od posta.");
+                return;
+            }
+
+            const text = textEl.value.trim();
+            const type = typeEl.value;
+            
+            if (!text && !selectedImageBase64) return alert("Musisz wpisać treść lub dodać zdjęcie!");
+
+            // Bezpieczne pobieranie nazwy użytkownika
+            let safeUserName = "Psiarz";
+            const localName = localStorage.getItem('userName');
+            if (localName) {
+                safeUserName = localName;
+            } else if (auth.currentUser && auth.currentUser.email) {
+                safeUserName = auth.currentUser.email.split('@')[0];
+            }
+
+            const postData = {
+                type: type,
+                text: text,
+                authorId: auth.currentUser ? auth.currentUser.uid : 'anonim',
+                authorName: safeUserName,
+                timestamp: fb.firestore.FieldValue.serverTimestamp(),
+                likes: 0,
+                commentsCount: 0,
+                attendees: []
+            };
+
+            if (selectedImageBase64) postData.imageUrl = selectedImageBase64;
+
+            if (type === 'walk') {
+                postData.walkDate = document.getElementById('post-walk-date').value;
+                postData.walkLocation = document.getElementById('post-walk-location').value || "W okolicy";
+            }
+
+            newPublishBtn.innerText = "WYSYŁANIE...";
+            
+            try {
+                await db.collection('posts').add(postData);
+                document.getElementById('post-creator-modal').style.display = 'none';
+                textEl.value = '';
+                window.Waggle.removePostPhoto();
+                if(window.Waggle.showToast) window.Waggle.showToast("✅ Opublikowano!");
+            } catch(e) {
+                console.error("Błąd zapisu:", e);
+                alert("Błąd publikacji. Sprawdź połączenie z internetem.");
+            }
+            newPublishBtn.innerText = "OPUBLIKUJ";
+        });
+    }
+
+    // Funkcje akcji pod postami
     window.Waggle.joinWalk = async (postId) => {
         const uid = auth.currentUser ? auth.currentUser.uid : 'anon';
         try {
@@ -173,72 +234,39 @@ export function initBoardEngine() {
     const answerInput = document.getElementById('new-answer-input');
     
     if(postAnswerBtn && answerInput) {
+        // Trik z klonowaniem guzika komentarzy na wypadek zduplikowanych zdarzeń
+        const newPostAnswerBtn = postAnswerBtn.cloneNode(true);
+        postAnswerBtn.parentNode.replaceChild(newPostAnswerBtn, postAnswerBtn);
+
         const sendComment = async () => {
             if (!currentPostId) return;
             const text = answerInput.value.trim();
             if (!text) return;
 
-            const userName = localStorage.getItem('userName') || (auth.currentUser ? auth.currentUser.email.split('@')[0] : "Opiekun");
-            const uid = auth.currentUser ? auth.currentUser.uid : 'unknown';
+            let safeUserName = "Psiarz";
+            const localName = localStorage.getItem('userName');
+            if (localName) {
+                safeUserName = localName;
+            } else if (auth.currentUser && auth.currentUser.email) {
+                safeUserName = auth.currentUser.email.split('@')[0];
+            }
+
+            const uid = auth.currentUser ? auth.currentUser.uid : 'anonim';
             answerInput.value = '';
 
             try {
                 const postRef = db.collection('posts').doc(currentPostId);
                 await postRef.collection('comments').add({
-                    text: text, authorId: uid, authorName: userName, timestamp: fb.firestore.FieldValue.serverTimestamp()
+                    text: text, authorId: uid, authorName: safeUserName, timestamp: fb.firestore.FieldValue.serverTimestamp()
                 });
                 await postRef.update({ commentsCount: fb.firestore.FieldValue.increment(1) });
             } catch(e) { console.error(e); }
         };
-        postAnswerBtn.onclick = sendComment;
+        newPostAnswerBtn.onclick = sendComment;
         answerInput.onkeypress = (e) => { if(e.key === 'Enter') sendComment(); };
     }
 
-    const publishBtn = document.getElementById('publish-post-btn');
-    if (publishBtn) {
-        publishBtn.addEventListener('click', async () => {
-            const textEl = document.getElementById('post-content-input');
-            const typeEl = document.getElementById('post-type-select');
-            
-            if (!textEl || !typeEl) return;
-            const text = textEl.value.trim();
-            const type = typeEl.value;
-            
-            if (!text && !selectedImageBase64) return alert("Wpisz treść lub dodaj zdjęcie!");
-
-            const postData = {
-                type: type,
-                text: text,
-                authorId: auth.currentUser ? auth.currentUser.uid : 'anon',
-                authorName: localStorage.getItem('userName') || (auth.currentUser ? auth.currentUser.email.split('@')[0] : "Opiekun"),
-                timestamp: fb.firestore.FieldValue.serverTimestamp(),
-                likes: 0,
-                commentsCount: 0,
-                attendees: []
-            };
-
-            if (selectedImageBase64) postData.imageUrl = selectedImageBase64;
-
-            if (type === 'walk') {
-                postData.walkDate = document.getElementById('post-walk-date').value;
-                postData.walkLocation = document.getElementById('post-walk-location').value || "W okolicy";
-            }
-
-            publishBtn.innerText = "WYSYŁANIE...";
-            try {
-                await db.collection('posts').add(postData);
-                document.getElementById('post-creator-modal').style.display = 'none';
-                textEl.value = '';
-                window.Waggle.removePostPhoto();
-                if(window.Waggle.showToast) window.Waggle.showToast("✅ Opublikowano!");
-            } catch(e) {
-                console.error(e);
-                alert("Błąd publikacji.");
-            }
-            publishBtn.innerText = "OPUBLIKUJ";
-        });
-    }
-
+    // Uruchomienie strumienia postów
     listenToPosts();
 }
 
@@ -252,6 +280,9 @@ function listenToPosts() {
             allPosts = [];
             snapshot.forEach(doc => { allPosts.push({ id: doc.id, ...doc.data() }); });
             renderPosts(allPosts);
+        }, (error) => {
+            console.error("Błąd ładowania tablicy:", error);
+            if (container) container.innerHTML = `<div style="text-align: center; color: var(--danger); font-size: 13px; font-weight: 700; margin-top: 20px;">Błąd połączenia z bazą.</div>`;
         });
 }
 
@@ -267,7 +298,7 @@ function renderPosts(posts) {
                 <div style="color: var(--text-muted); font-size: 12px; margin-top: 5px;">Bądź pierwszy i wrzuć fotkę psa lub zadaj pytanie.</div>
             </div>`;
     } else {
-        const currentUid = auth.currentUser ? auth.currentUser.uid : 'anon';
+        const currentUid = auth.currentUser ? auth.currentUser.uid : 'anonim';
         let html = '';
 
         posts.forEach(post => {
@@ -298,7 +329,7 @@ function renderPosts(posts) {
                 const hasJoined = post.attendees && post.attendees.includes(currentUid);
                 const buttonHtml = hasJoined 
                     ? `<button style="background: var(--bg-color); color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: default;">Dołączyłeś ✅</button>`
-                    : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer;">Będę! 👍</button>`;
+                    : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s;">Będę! 👍</button>`;
                 contentHtml = `
                     <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text}</p>${imageHtml}
                     <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); margin-top: 10px;">
@@ -329,7 +360,7 @@ function renderPosts(posts) {
                 </div>
                 <div style="margin-bottom: 15px;">${contentHtml}</div>
                 <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--bg-color); padding-top: 12px;">
-                    <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
+                    <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(1.2)'" onmouseup="this.style.transform='scale(1)'">
                         <span style="font-size: 16px; color: var(--danger);">❤️</span>
                         <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.likes || 0}</span>
                     </button>
@@ -343,22 +374,19 @@ function renderPosts(posts) {
         container.innerHTML = html;
     }
 
-    // 🔥 HACK: Połączenie widgetu powiadomień na mapie z nową tablicą
+    // Synchronizacja z widgetem Alerty na mapie
     const activeAlertPill = document.getElementById('active-alert-pill');
     if (activeAlertPill) {
-        // Zliczamy czy był jakiś alert w ciągu ostatnich 24h
         const hasRecentAlert = posts.some(p => {
             if (p.type !== 'alert') return false;
             if (!p.timestamp) return true;
             return (new Date() - p.timestamp.toDate()) < 24 * 60 * 60 * 1000;
         });
 
-        // Wymuszamy stylowanie (!important przebije to co robi app.js)
         activeAlertPill.style.cssText = hasRecentAlert 
             ? 'display: block !important; background: var(--danger); color: white; cursor: pointer;' 
             : 'display: none !important;';
 
-        // Odtwarzamy element, żeby usunąć stare akcje kliknięcia z app.js
         const newPill = activeAlertPill.cloneNode(true);
         activeAlertPill.parentNode.replaceChild(newPill, activeAlertPill);
 
