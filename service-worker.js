@@ -1,45 +1,43 @@
 // service-worker.js
-const CACHE_NAME = 'waggle-cache-v1.0.1'; // Pamiętaj, żeby to zmieniać przy dużych aktualizacjach!
+const CACHE_NAME = 'waggle-cache-dynamic';
 
-// ROZWIĄZANIE 3: Automatyczne przejęcie
+// 1. INSTALACJA - Od razu wymuszamy nową wersję (skipWaiting)
 self.addEventListener('install', (event) => {
-    console.log('[Service Worker] Instalacja nowej wersji...');
     self.skipWaiting(); 
+    console.log('[Service Worker] Zainstalowano nową wersję.');
 });
 
+// 2. AKTYWACJA - Brutalne czyszczenie starego Cache'u
 self.addEventListener('activate', (event) => {
-    console.log('[Service Worker] Aktywacja...');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('[Service Worker] Usuwam stary cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
+                cacheNames.map((cache) => {
+                    // Usuwamy absolutnie wszystko, co stare
+                    console.log('[Service Worker] Czyszczenie starego cache:', cache);
+                    return caches.delete(cache);
                 })
             );
-        }).then(() => self.clients.claim()) 
+        }).then(() => {
+            return clients.claim(); // Przejmujemy kontrolę nad otwartą aplikacją
+        })
     );
 });
 
-// ROZWIĄZANIE NA ETAP TESTÓW: Strategia "Network First"
-// Zawsze najpierw pyta serwera o nowy plik. Jeśli jesteś offline, bierze z cache.
+// 3. POBIERANIE - Zawsze pytamy serwer jako pierwszy (Network First)
 self.addEventListener('fetch', (event) => {
-    if (event.request.method !== 'GET') return;
-
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                // Jeśli serwer zwrócił nowy plik, zaktualizuj go w cache
-                const resClone = response.clone();
+                // Jeśli pobraliśmy najnowszy plik z sieci, aktualizujemy go w Cache
+                const responseClone = response.clone();
                 caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, resClone);
+                    cache.put(event.request, responseClone);
                 });
                 return response;
             })
             .catch(() => {
-                // Jeśli użytkownik nie ma internetu, zwróć plik z cache
+                // Jeśli nie ma internetu, próbujemy załadować z Cache'u
                 return caches.match(event.request);
             })
     );
