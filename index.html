@@ -449,39 +449,58 @@
         </div>
     </div>
 
-    <div id="settings-modal" class="modal">
-        <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <h3 style="margin-top: 0;">Ustawienia</h3>
-            <select id="settingTheme">
-                <option value="light">☀️ Jasny Motyw</option>
-                <option value="dark">🌙 Ciemny Motyw</option>
-            </select>
-            <select id="settingFontSize">
-                <option value="14px">Czcionka: Mała</option>
-                <option value="16px">Czcionka: Średnia</option>
-                <option value="18px">Czcionka: Duża</option>
-            </select>
-            <div class="legal-checkbox-container" style="margin-bottom: 10px; margin-top: 10px; text-align: left;">
-                <input type="checkbox" id="settingSearchable">
-                <label for="settingSearchable" style="font-size: 13px;">Tryb Ducha (przybliżona lokalizacja)</label>
+    <div id="settings-modal" class="modal" style="z-index: 20000;">
+        <div class="card" style="padding: 0; overflow: hidden; background: white; max-width: 400px; display: flex; flex-direction: column;">
+            
+            <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--panel-bg); flex-shrink: 0;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 900;">Ustawienia</h3>
+                <button class="close-modal-btn" style="position: static; margin: 0; box-shadow: none; background: var(--bg-color) !important;">✕</button>
             </div>
-            <div class="legal-checkbox-container" style="margin-bottom: 20px; text-align: left;">
-                <input type="checkbox" id="settingHidden">
-                <label for="settingHidden" style="font-size: 13px;">Całkowicie ukryty (na mapie i spacerach)</label>
-            </div>
-            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 15px 0 20px 0;">
-           <button id="togglePushBtn" class="btn-main" onclick="window.Waggle.toggleNotifications()" style="background: #ffb142; color: #2d3436; margin-bottom: 15px;">🔔 WŁĄCZ POWIADOMIENIA</button>
-            <button class="btn-main" id="saveSettingsBtn">ZAPISZ ZMIANY</button>
+            
+            <div style="padding: 20px; overflow-y: auto; text-align: left; flex: 1;">
+                
+                <div class="settings-group">
+                    <label class="settings-row">
+                        <div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 18px;">☀️</span> Motyw</div>
+                        <select id="settingTheme" class="settings-select">
+                            <option value="light">Jasny</option>
+                            <option value="dark">Ciemny</option>
+                        </select>
+                    </label>
+                    <label class="settings-row">
+                        <div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 18px;">🔤</span> Czcionka</div>
+                        <select id="settingFontSize" class="settings-select">
+                            <option value="14px">Mała</option>
+                            <option value="16px">Średnia</option>
+                            <option value="18px">Duża</option>
+                        </select>
+                    </label>
+                </div>
 
-            <button onclick="window.Waggle.forceAppUpdate()" style="width: 100%; padding: 12px; margin-top: 15px; border-radius: 12px; background: rgba(52, 172, 224, 0.1); border: 1px solid var(--primary); color: var(--primary); font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
-                <span>🔄 Wymuś aktualizację (v1.0.1)</span>
-            </button>
-            <div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(255, 82, 82, 0.3);">
-                <button id="deleteAccountBtn" class="btn-outline" style="border-color: var(--danger); color: var(--danger); font-size: 12px; font-weight: 800; padding: 12px; transition: 0.2s;">
-                    ⚠️ USUŃ MOJE KONTO
+                <div class="settings-group">
+                    <label class="settings-row">
+                        <div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 18px;">👻</span> Tryb Ducha</div>
+                        <input type="checkbox" id="settingSearchable" style="margin:0; width:22px; height:22px;">
+                    </label>
+                    <label class="settings-row">
+                        <div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 18px;">🥷</span> Pełne ukrycie</div>
+                        <input type="checkbox" id="settingHidden" style="margin:0; width:22px; height:22px;">
+                    </label>
+                </div>
+
+                <button id="togglePushBtn" class="btn-main" onclick="window.Waggle.toggleNotifications()" style="background: var(--gold); color: #2d3436; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(255, 177, 66, 0.3);">🔔 WŁĄCZ POWIADOMIENIA</button>
+                <button class="btn-main" id="saveSettingsBtn" style="margin-bottom: 25px;">ZAPISZ ZMIANY</button>
+                
+                <button onclick="window.Waggle.forceAppUpdate()" style="width: 100%; padding: 14px; margin-bottom: 30px; border-radius: 16px; background: rgba(52, 172, 224, 0.1); border: 1px solid var(--primary); color: var(--primary); font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+                    <span>🔄 Wymuś aktualizację (v1.1.0)</span>
                 </button>
-                <p style="font-size: 10px; color: var(--text-muted); margin-top: 8px; line-height: 1.4; font-weight: 600;">Ta akcja jest nieodwracalna. Trwale usuniemy Twój profil, dane psa, historię spacerów oraz wiadomości.</p>
+
+                <div style="text-align: center; padding-top: 15px; border-top: 1px dashed rgba(231, 76, 60, 0.3);">
+                    <button id="deleteAccountBtn" style="background:none; border:none; color: var(--danger); font-size: 12px; font-weight: 800; padding: 10px; cursor: pointer; text-decoration: underline;">
+                        ⚠️ Usuń moje konto
+                    </button>
+                    <p style="font-size: 10px; color: var(--text-muted); margin-top: 5px; line-height: 1.4; font-weight: 600;">Ta akcja jest nieodwracalna. Trwale usuniemy profil psa, historię oraz wiadomości.</p>
+                </div>
             </div>
         </div>
     </div>
