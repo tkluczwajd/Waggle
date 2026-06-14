@@ -1,6 +1,6 @@
 // src/modules/map/walksRenderer.js
 import { appState as state } from '../../core/state.js';
-import { mapManager } from '../../core/mapInit.js'; // 🔥 POPRAWIONY IMPORT!
+import { mapManager } from './mapManager.js'; // 🔥 PRZYWRÓCONY PRAWIDŁOWY IMPORT!
 
 let dogMarkers = {};
 
@@ -97,7 +97,6 @@ export function renderWalks(walks) {
             displayDogs.forEach((imgUrl, index) => {
                 const marginLeft = index === 0 ? '0' : '-12px';
                 const zIndex = 10 - index;
-                // flex-shrink: 0 chroni przed zgnieceniem zdjęć na PC
                 avatarsHtml += `
                     <img src="${imgUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid white; margin-left: ${marginLeft}; z-index: ${zIndex}; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0;">
                 `;
