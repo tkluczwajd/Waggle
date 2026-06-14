@@ -143,7 +143,7 @@ function renderWiedzaDnia() {
     const dzisiaj = new Date().getDate();
     const ciekawostka = WIEDZA_DNIA_BAZA[dzisiaj % WIEDZA_DNIA_BAZA.length];
 
-    // Szukamy nowego docelowego miejsca (nad S.A.F.E)
+    // Celujemy w nowe, przygotowane wczoraj miejsce na samym dole (nad S.A.F.E)
     const targetDiv = document.getElementById('wiedza-dnia-target');
     let wiedzaContainer = document.getElementById('wiedza-dnia-container');
     
@@ -154,9 +154,9 @@ function renderWiedzaDnia() {
     }
 
     if (wiedzaContainer) {
-        // 🔥 WERSJA COMPACT: Zamiast wielkiego bloku, zgrabna, biała karta informacyjna
+        // 🔥 WERSJA COMPACT: Zamiast wielkiego bloku, zgrabna, biała karta informacyjna używająca naszej nowej klasy!
         wiedzaContainer.innerHTML = `
-            <div class="waggle-card" onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="display: flex; gap: 15px; align-items: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="waggle-card" onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="display: flex; gap: 15px; align-items: center; cursor: pointer; transition: transform 0.2s; margin-bottom: 20px;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <div style="font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));">🧠</div>
                 <div>
                     <div style="font-size: var(--font-sm); font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; color: var(--secondary);">Wiedza Dnia</div>
@@ -170,8 +170,6 @@ function renderWiedzaDnia() {
 // 🔥 FUNKCJA OBLICZAJĄCA CIĄGI (STREAKS)
 function calculateStreak(entries, type) {
     if (!entries || entries.length === 0) return 0;
-    
-    // Zbieramy unikalne daty, w których wykonano daną czynność
     let daysWithActivity = new Set();
     entries.forEach(e => {
         if (e.type === type && e.timestamp && typeof e.timestamp.toDate === 'function') {
@@ -182,19 +180,14 @@ function calculateStreak(entries, type) {
     let streak = 0;
     let checkDate = new Date();
     
-    // Sprawdzamy czy zrobiono to dzisiaj
     if (daysWithActivity.has(checkDate.toDateString())) {
         streak++;
-        checkDate.setDate(checkDate.getDate() - 1); // Cofamy o dzień
-    } else {
-        // Jeśli nie dzisiaj, to może ciąg wciąż trwa z wczoraj?
         checkDate.setDate(checkDate.getDate() - 1);
-        if (!daysWithActivity.has(checkDate.toDateString())) {
-            return 0; // Ciąg przerwany
-        }
+    } else {
+        checkDate.setDate(checkDate.getDate() - 1);
+        if (!daysWithActivity.has(checkDate.toDateString())) return 0; 
     }
 
-    // Liczymy do tyłu tak długo, jak długo są wpisy
     while (daysWithActivity.has(checkDate.toDateString())) {
         streak++;
         checkDate.setDate(checkDate.getDate() - 1);
@@ -218,14 +211,11 @@ function initJournalListener() {
             
             if (!listElement) return;
 
-            // Rysujemy sekcję "Wiedza Dnia"
             renderWiedzaDnia();
 
             const todayStr = new Date().toDateString();
             const dailyCounts = { feed: 0, walk: 0, med: 0, water: 0 };
-            
             let lastWalkTime = null;
-            let lastFeedTime = null;
 
             if (entries && entries.length > 0) {
                 const sortedEntries = [...entries].sort((a, b) => {
@@ -235,10 +225,7 @@ function initJournalListener() {
                 });
 
                 const lastWalk = sortedEntries.find(e => e.type === 'walk');
-                const lastFeed = sortedEntries.find(e => e.type === 'feed');
-
                 if (lastWalk && lastWalk.timestamp) lastWalkTime = lastWalk.timestamp.toDate();
-                if (lastFeed && lastFeed.timestamp) lastFeedTime = lastFeed.timestamp.toDate();
 
                 entries.forEach(entry => {
                     if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
@@ -249,7 +236,7 @@ function initJournalListener() {
                 });
             }
 
-            // 🎯 RYSOWANIE PASKÓW POSTĘPU
+            // 🎯 PASKI POSTĘPU
             ['feed', 'walk', 'med', 'water'].forEach(type => {
                 const countEl = document.getElementById(`count-${type}`);
                 const goalEl = document.getElementById(`goal-${type}`);
@@ -262,98 +249,81 @@ function initJournalListener() {
                     bgEl.style.width = `${percentage}%`;
 
                     if (dailyGoals[type] > 0 && dailyCounts[type] >= dailyGoals[type]) {
-                        bgEl.style.background = 'rgba(46, 213, 115, 0.2)'; 
+                        bgEl.style.background = 'rgba(46, 213, 115, 0.15)'; 
                         countEl.style.color = '#2ed573';
                     } else {
-                        bgEl.style.background = 'rgba(52, 172, 224, 0.1)'; 
+                        bgEl.style.background = 'rgba(52, 172, 224, 0.08)'; 
                         countEl.style.color = 'var(--text-color)';
                     }
                 }
             });
 
-            // 🚨 INTELIGENTNE ALERTY OPIEKI I GAMIFIKACJA
+            // 🚨 CLEAN UI: INTELIGENTNE ALERTY (Stonowane karty z kolorowym marginesem bocznym!)
             let alertsHtml = '';
             const now = new Date();
             const currentHour = now.getHours();
 
-            // 1. GAMIFIKACJA (Ciągi)
             const walkStreak = calculateStreak(entries, 'walk');
             const medStreak = calculateStreak(entries, 'med');
 
             if (walkStreak >= 3) {
                 alertsHtml += `
-                <div style="background: rgba(255, 82, 82, 0.08); border: 1px solid rgba(255, 82, 82, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                    <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🔥</div>
+                <div class="waggle-card" style="padding: 12px 15px; border-left: 4px solid var(--danger); display: flex; align-items: center; gap: 12px; margin-bottom: 0;">
+                    <div style="font-size: 20px;">🔥</div>
                     <div>
-                        <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Imponująca Seria!</div>
-                        <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Stado wychodzi na spacery już <b>${walkStreak} dni</b> z rzędu!</div>
+                        <div style="font-size: var(--font-md); font-weight: 900; color: var(--danger);">Imponująca Seria!</div>
+                        <div style="font-size: var(--font-sm); color: var(--text-muted); font-weight: 600;">Spacery zaliczone <b>${walkStreak} dni</b> z rzędu.</div>
                     </div>
                 </div>`;
             }
 
             if (medStreak >= 5) {
                 alertsHtml += `
-                <div style="background: rgba(46, 213, 115, 0.08); border: 1px solid #2ed573; border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                    <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">💊</div>
+                <div class="waggle-card" style="padding: 12px 15px; border-left: 4px solid #2ed573; display: flex; align-items: center; gap: 12px; margin-bottom: 0;">
+                    <div style="font-size: 20px;">💊</div>
                     <div>
-                        <div style="font-size: 13px; font-weight: 900; color: #2ed573;">Zdrowie pod kontrolą!</div>
-                        <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Leki podawane na czas przez <b>${medStreak} dni</b> z rzędu.</div>
+                        <div style="font-size: var(--font-md); font-weight: 900; color: #2ed573;">Zdrowie pod kontrolą!</div>
+                        <div style="font-size: var(--font-sm); color: var(--text-muted); font-weight: 600;">Leki na czas przez <b>${medStreak} dni</b> z rzędu.</div>
                     </div>
                 </div>`;
             }
 
-            // 2. MONITY OPIEKI
-            // Brak śniadania (po 09:00)
             if (dailyCounts.feed === 0 && currentHour >= 9) {
                 alertsHtml += `
-                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🍖</div>
+                    <div class="waggle-card" style="padding: 12px 15px; border-left: 4px solid var(--danger); display: flex; align-items: center; gap: 12px; margin-bottom: 0;">
+                        <div style="font-size: 20px;">🍖</div>
                         <div>
-                            <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Głodny Pies!</div>
-                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Pies nie dostał dzisiaj jeszcze śniadania. Kto ze Stada karmi?</div>
+                            <div style="font-size: var(--font-md); font-weight: 900; color: var(--danger);">Głodny Pies!</div>
+                            <div style="font-size: var(--font-sm); color: var(--text-muted); font-weight: 600;">Pies nie dostał dzisiaj jeszcze śniadania.</div>
                         </div>
                     </div>`;
             }
-            // Brak kolacji (między 19:00 a 23:00, podano mniej niż 2 posiłki)
-            else if (dailyCounts.feed < 2 && currentHour >= 19 && currentHour <= 23) {
-                alertsHtml += `
-                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🥩</div>
-                        <div>
-                            <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Pora kolacji!</div>
-                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Zadbaj o wieczorny posiłek dla pupila.</div>
-                        </div>
-                    </div>`;
-            }
-
-            // Brak spaceru rano (po 08:30)
+            
             if (dailyCounts.walk === 0 && currentHour >= 8 && currentHour < 12) {
                 alertsHtml += `
-                    <div style="background: rgba(255, 177, 66, 0.08); border: 1px solid rgba(255, 177, 66, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">🦮</div>
+                    <div class="waggle-card" style="padding: 12px 15px; border-left: 4px solid #e1b12c; display: flex; align-items: center; gap: 12px; margin-bottom: 0;">
+                        <div style="font-size: 20px;">🦮</div>
                         <div>
-                            <div style="font-size: 13px; font-weight: 900; color: #e1b12c;">Poranny Spacer</div>
-                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Pies rano nie był jeszcze na dworze. Kto chwyta za smycz?</div>
+                            <div style="font-size: var(--font-md); font-weight: 900; color: #e1b12c;">Poranny Spacer</div>
+                            <div style="font-size: var(--font-sm); color: var(--text-muted); font-weight: 600;">Pies rano nie był jeszcze na dworze.</div>
                         </div>
                     </div>`;
-            }
-            // Krytyczny alert spacerowy (ponad 8 godzin bez wyjścia w ciągu dnia)
-            else if (lastWalkTime && (now - lastWalkTime) / (1000 * 60 * 60) >= 8 && currentHour >= 8 && currentHour <= 22) {
+            } else if (lastWalkTime && (now - lastWalkTime) / (1000 * 60 * 60) >= 8 && currentHour >= 8 && currentHour <= 22) {
                 alertsHtml += `
-                    <div style="background: rgba(231, 76, 60, 0.08); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                        <div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">⚠️</div>
+                    <div class="waggle-card" style="padding: 12px 15px; border-left: 4px solid var(--danger); display: flex; align-items: center; gap: 12px; margin-bottom: 0;">
+                        <div style="font-size: 20px;">⚠️</div>
                         <div>
-                            <div style="font-size: 13px; font-weight: 900; color: var(--danger);">Wymagany Spacer!</div>
-                            <div style="font-size: 11px; color: var(--text-color); font-weight: 600;">Minęło ponad 8 godzin od ostatniego wyjścia na dwór.</div>
+                            <div style="font-size: var(--font-md); font-weight: 900; color: var(--danger);">Wymagany Spacer!</div>
+                            <div style="font-size: var(--font-sm); color: var(--text-muted); font-weight: 600;">Minęło ponad 8 godzin od ostatniego wyjścia.</div>
                         </div>
                     </div>`;
             }
 
             if (alertsContainer) alertsContainer.innerHTML = alertsHtml;
 
-            // 📝 RYSOWANIE OSTATNICH WPISÓW (LIVE FEED)
+            // 📝 OSTATNIE WPISY
             if (!entries || entries.length === 0) {
-                listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
+                listElement.innerHTML = '<div style="text-align: center; font-size: var(--font-sm); color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
                 return;
             }
 
@@ -364,7 +334,7 @@ function initJournalListener() {
             const recentEntries = todaysEntries.slice(0, 3);
             
             if (recentEntries.length === 0) {
-                 listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
+                 listElement.innerHTML = '<div style="text-align: center; font-size: var(--font-sm); color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
                  return;
             }
 
@@ -374,17 +344,16 @@ function initJournalListener() {
                     timeString = entry.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 }
                 return `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border: 1px solid ${index === 0 ? 'rgba(46, 213, 115, 0.2)' : 'transparent'}; border-radius: 10px; font-size: 13px; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">${icons[entry.type] || '🐾'}</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border-radius: 10px; font-size: 12px; border-left: 2px solid ${index === 0 ? '#2ed573' : 'transparent'};">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 16px;">${icons[entry.type] || '🐾'}</span>
                         <div style="display: flex; flex-direction: column;">
-                            <span style="font-weight: 900; color: var(--text-color);">${labels[entry.type] || 'Aktywność'}</span>
-                            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">Przez: <span style="color: var(--primary);">${entry.doneByUserName}</span></span>
+                            <span style="font-weight: 800; color: var(--text-color);">${labels[entry.type] || 'Aktywność'}</span>
+                            <span style="font-size: 9px; color: var(--text-muted); font-weight: 700;">${entry.doneByUserName}</span>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-weight: 900; color: var(--text-color); font-size: 12px;">${timeString}</span>
-                        <span style="color: #2ed573; font-size: 14px;">✅</span>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span style="font-weight: 800; color: var(--text-muted); font-size: 11px;">${timeString}</span>
                     </div>
                 </div>`;
             }).join('');
