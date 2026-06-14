@@ -41,22 +41,29 @@
     <div id="app-interface" class="screen-container">
         
         <section id="view-home" class="view-section active">
-            <div class="sticky-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
+            <div class="sticky-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: none;">
                 <div>
-                    <h3 style="margin:0; font-size: 20px;">Mój Pies</h3>
-                    <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
+                    <h3 style="margin:0; font-size: 22px;">Mój Pies</h3>
+                    <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Centrum dowodzenia Waggle</p>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <button id="openSettingsBtn" style="background:none; border:none; cursor:pointer; color:var(--text-color); padding:0; display:flex;" title="Ustawienia">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     </button>
+                    <button id="logoutBtn" onclick="window.Waggle.logout()" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--danger); display: flex; align-items: center; justify-content: center;" title="Wyloguj się">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
                 </div>
             </div>
             
-            <div class="profile-header" style="padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; background: white;">
+            <div class="profile-header" style="padding: 15px 20px; text-align: left; background: white; margin-bottom: 20px; border-radius: 0 0 24px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <img id="profileAvatar" src="" style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--secondary); object-fit: cover; box-shadow: var(--soft-shadow);">
+                        <img id="profileAvatar" src="" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--bg-color); object-fit: cover;">
                         <div>
                             <h2 id="profileNameDisplay" style="margin: 0 0 5px 0; font-weight: 900; font-size: 18px; color: var(--text-color);">...</h2>
                             <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; display: flex; flex-direction: column; gap: 3px;">
@@ -65,11 +72,11 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="const det = document.getElementById('profile-details-expanded'); det.style.display = det.style.display === 'none' ? 'block' : 'none'; this.innerHTML = det.style.display === 'none' ? 'Szczegóły ▼' : 'Zwiń ▲';" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 12px; font-size: 11px; font-weight: 800; color: var(--text-color); cursor: pointer; height: fit-content;">Szczegóły ▼</button>
+                    <button onclick="const det = document.getElementById('profile-details-expanded'); det.style.display = det.style.display === 'none' ? 'block' : 'none'; this.innerHTML = det.style.display === 'none' ? 'Szczegóły ▼' : 'Zwiń ▲';" style="background: var(--bg-color); border: none; border-radius: 12px; padding: 8px 12px; font-size: 11px; font-weight: 800; color: var(--text-color); cursor: pointer; height: fit-content;">Szczegóły ▼</button>
                 </div>
                 
-                <div id="profile-details-expanded" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
-                    <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px;">
+                <div id="profile-details-expanded" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--bg-color);">
+                    <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 20px;">
                         <div>
                             <b id="statWalks" style="color: var(--primary); font-size: 24px; font-weight: 900; line-height: 1;">0</b><br>
                             <small style="font-weight: 900; color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Spacerów</small>
@@ -83,14 +90,14 @@
                         <span>🐶 Znajomi: <b id="profileFriendsDisplay" style="color: var(--text-color);">0</b></span>
                         <span>📅 W stadzie: <b id="profileJoinDateDisplay" style="color: var(--text-color);">...</b></span>
                     </div>
-                    <button id="openEditProfileBtn" style="width: 100%; background: white; border: 1px solid var(--border-color); padding: 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: var(--text-color); cursor: pointer;">Edytuj profil ✎</button>
+                    <button id="openEditProfileBtn" style="width: 100%; background: var(--bg-color); border: none; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: bold; color: var(--text-color); cursor: pointer;">Edytuj profil ✎</button>
                 </div>
             </div>
     
             <div style="padding: 0 15px 20px 15px;">
     
-                <div style="background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 15px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="background: white; border-radius: 20px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <h4 style="margin: 0; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-color);">📋 Codzienna Opieka</h4>
                             <button id="openCareSettingsBtn" style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 0;" title="Ustawienia celów">⚙️</button>
@@ -98,48 +105,48 @@
                         <span onclick="window.openJournalHistory()" style="font-size: 11px; font-weight: 900; color: var(--primary); cursor: pointer; text-transform: uppercase;">Historia ➔</span>    
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px; position: relative; overflow: hidden;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                        <div style="background: var(--bg-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden;">
                             <div id="progress-bg-feed" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s;"></div>
                             <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: 900; font-size: 13px; color: var(--text-color); margin-bottom: 2px;">🍖 Karmienie</div>
                                     <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-feed" style="color: var(--text-color);">0</span> / <span id="goal-feed">2</span> dzisiaj</div>
                                 </div>
-                                <button onclick="window.logDogActivity('feed')" style="background: white; border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--text-muted); cursor: pointer;">+</button>
+                                <button onclick="window.logDogActivity('feed')" style="background: white; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; font-weight: bold; color: var(--text-color); box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">+</button>
                             </div>
                         </div>
     
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px; position: relative; overflow: hidden;">
+                        <div style="background: var(--bg-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden;">
                             <div id="progress-bg-walk" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s;"></div>
                             <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: 900; font-size: 13px; color: var(--text-color); margin-bottom: 2px;">🚶 Spacer</div>
                                     <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-walk" style="color: var(--text-color);">0</span> / <span id="goal-walk">3</span> dzisiaj</div>
                                 </div>
-                                <button onclick="window.logDogActivity('walk')" style="background: white; border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--text-muted); cursor: pointer;">+</button>
+                                <button onclick="window.logDogActivity('walk')" style="background: white; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; font-weight: bold; color: var(--text-color); box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">+</button>
                             </div>
                         </div>
     
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px; position: relative; overflow: hidden;">
+                        <div style="background: var(--bg-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden;">
                             <div id="progress-bg-med" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s;"></div>
                             <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: 900; font-size: 13px; color: var(--text-color); margin-bottom: 2px;">💊 Lek</div>
                                     <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-med" style="color: var(--text-color);">0</span> / <span id="goal-med">1</span> dzisiaj</div>
                                 </div>
-                                <button onclick="window.logDogActivity('med')" style="background: white; border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--text-muted); cursor: pointer;">+</button>
+                                <button onclick="window.logDogActivity('med')" style="background: white; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; font-weight: bold; color: var(--text-color); box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">+</button>
                             </div>
                         </div>
     
-                        <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px; position: relative; overflow: hidden;">
+                        <div style="background: var(--bg-color); border-radius: 16px; padding: 14px; position: relative; overflow: hidden;">
                             <div id="progress-bg-water" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52, 172, 224, 0.1); z-index: 0; transition: width 0.4s;"></div>
                             <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: 900; font-size: 13px; color: var(--text-color); margin-bottom: 2px;">💧 Woda</div>
                                     <div style="font-size: 11px; font-weight: 800; color: var(--text-muted);"><span id="count-water" style="color: var(--text-color);">0</span> / <span id="goal-water">3</span> dzisiaj</div>
                                 </div>
-                                <button onclick="window.logDogActivity('water')" style="background: white; border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--text-muted); cursor: pointer;">+</button>
+                                <button onclick="window.logDogActivity('water')" style="background: white; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; font-weight: bold; color: var(--text-color); box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">+</button>
                             </div>
                         </div>
                     </div>
@@ -149,7 +156,7 @@
                             <h5 style="margin: 0 0 8px 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Ostatnio</h5>
                             <div id="journal-live-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
                         </div>
-                        <div style="width: 1px; background: var(--border-color);"></div>
+                        <div style="width: 1px; background: var(--bg-color);"></div>
                         <div style="flex: 1;">
                             <h5 style="margin: 0 0 8px 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Stado</h5>
                             <div id="caretakers-list-container" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;"></div>
@@ -157,19 +164,19 @@
                     </div>
                 </div>
     
-                <div id="smart-care-alerts" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+                <div id="smart-care-alerts" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
     
-                <div style="background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border-color); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: white; border-radius: 16px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 13px; cursor: pointer; flex: 1;" onclick="document.querySelector('[data-view=\'local\']').click()">
-                        <span style="font-size: 20px;">🗺️</span> 
+                        <span style="font-size: 22px;">🗺️</span> 
                         <div>
                             <div style="color: var(--text-color); margin-bottom: 2px;">Psy w okolicy</div>
                             <div style="color: var(--primary); font-size: 11px;"><span id="home-active-walks">0</span> na spacerze ➔</div>
                         </div>
                     </div>
-                    <div style="width: 1px; height: 30px; background: var(--border-color);"></div>
+                    <div style="width: 1px; height: 35px; background: var(--bg-color);"></div>
                     <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 13px; cursor: pointer; flex: 1; padding-left: 15px;" onclick="document.querySelector('[data-view=\'chat\']').click()">
-                        <span style="font-size: 20px;">💬</span> 
+                        <span style="font-size: 22px;">💬</span> 
                         <div>
                             <div style="color: var(--text-color); margin-bottom: 2px;">Wiadomości</div>
                             <div style="color: var(--secondary); font-size: 11px;" id="home-messages-status">Sprawdź ➔</div>
@@ -177,53 +184,53 @@
                     </div>
                 </div>
     
-                <div style="background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 15px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="background: white; border-radius: 16px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h4 style="margin: 0; font-size: 12px; font-weight: 900; text-transform: uppercase; color: var(--text-color);">📅 Nadchodzące zdarzenia</h4>
-                        <button id="openAddCalendarBtn" style="background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; cursor: pointer;">Dodaj</button>
+                        <button id="openAddCalendarBtn" style="background: var(--bg-color); border: none; color: var(--text-color); font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer;">Dodaj</button>
                     </div>
                     <div id="calendar-live-list" style="display: flex; flex-direction: column; gap: 8px;">
                         <div style="text-align: center; font-size: 11px; color: var(--text-muted); font-weight: 700; padding: 5px 0;">Brak wydarzeń...</div>
                     </div>
                 </div>
                 
-                <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(231, 76, 60, 0.1); margin-bottom: 25px; border: 1px solid rgba(231, 76, 60, 0.2);">
-                    <div style="background: var(--danger); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 25px;">
+                    <div style="padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bg-color);">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="font-size: 20px;">🏥</div>
                             <div>
-                                <h4 style="margin: 0; font-size: 13px; font-weight: 900; letter-spacing: 0.5px;">DANE RATUNKOWE S.A.F.E.</h4>
+                                <h4 style="margin: 0; font-size: 12px; font-weight: 900; color: var(--danger); letter-spacing: 0.5px;">KARTA S.A.F.E.</h4>
                             </div>
                         </div>
-                        <button id="openSafeSetupBtn" style="background: rgba(255,255,255,0.2); border: none; width: 28px; height: 28px; border-radius: 50%; color: white; cursor: pointer; font-size: 14px; backdrop-filter: blur(5px);">✎</button>
+                        <button id="openSafeSetupBtn" style="background: rgba(231, 76, 60, 0.1); border: none; width: 28px; height: 28px; border-radius: 50%; color: var(--danger); cursor: pointer; font-size: 14px;">✎</button>
                     </div>
     
-                    <div id="safe-data-fallback" style="padding: 15px; text-align: center;">
+                    <div id="safe-data-fallback" style="padding: 20px; text-align: center;">
                         <p style="font-size: 12px; font-weight: 900; color: var(--text-color); margin-bottom: 10px;">Brak danych medycznych</p>
                         <button class="btn-main" onclick="document.getElementById('openSafeSetupBtn').click()" style="background: var(--danger); padding: 8px 15px; font-size: 11px; width: auto; display: inline-block;">WYPEŁNIJ KARTOTEKĘ</button>
                     </div>
     
-                    <div id="safe-data-display" style="display: none; padding: 15px;">
-                        <h3 id="displaySafeName" style="margin: 0 0 10px 0; color: var(--text-color); font-size: 16px; font-weight: 900; text-align: center;">-</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                            <div style="background: var(--bg-color); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">🪪 Chip</div>
+                    <div id="safe-data-display" style="display: none; padding: 20px;">
+                        <h3 id="displaySafeName" style="margin: 0 0 15px 0; color: var(--text-color); font-size: 16px; font-weight: 900; text-align: center;">-</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div style="background: var(--bg-color); padding: 10px; border-radius: 12px;">
+                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">🪪 Chip</div>
                                 <div id="displayChip" style="font-size: 11px; font-weight: 900; color: var(--text-color); word-break: break-all;">-</div>
                             </div>
-                            <div style="background: var(--bg-color); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">📞 Telefon</div>
+                            <div style="background: var(--bg-color); padding: 10px; border-radius: 12px;">
+                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">📞 Telefon</div>
                                 <div id="displayVet" style="font-size: 11px; font-weight: 900; color: var(--text-color);">-</div>
                             </div>
-                            <div style="background: var(--bg-color); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">⚠️ Alergie</div>
+                            <div style="background: var(--bg-color); padding: 10px; border-radius: 12px;">
+                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">⚠️ Alergie</div>
                                 <div id="displayAllergies" style="font-size: 11px; font-weight: 800; color: var(--danger);">-</div>
                             </div>
-                            <div style="background: var(--bg-color); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">💊 Leki</div>
+                            <div style="background: var(--bg-color); padding: 10px; border-radius: 12px;">
+                                <div style="font-size: 9px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">💊 Leki</div>
                                 <div id="displayMeds" style="font-size: 11px; font-weight: 800; color: var(--text-color);">-</div>
                             </div>
                         </div>
-                        <button id="copySafeLinkBtn" style="width: 100%; background: var(--secondary); border: none; color: white; font-size: 11px; font-weight: 900; padding: 8px; border-radius: 8px; cursor: pointer;">KOPIUJ LINK RATUNKOWY 🔗</button>
+                        <button id="copySafeLinkBtn" style="width: 100%; background: var(--secondary); border: none; color: white; font-size: 11px; font-weight: 900; padding: 10px; border-radius: 12px; cursor: pointer;">KOPIUJ LINK RATUNKOWY 🔗</button>
                     </div>
                 </div>
             </div>
