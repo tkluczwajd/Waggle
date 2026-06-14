@@ -1,12 +1,14 @@
 // src/modules/map/walksRenderer.js
 import { appState as state } from '../../core/state.js';
-import { mapManager } from './mapManager.js';
+// USUNIĘTO: import { mapManager } from './mapManager.js'; 
 
 let dogMarkers = {};
 
 export function renderWalks(walks) {
     const L = window.L;
+    const mapManager = window.Waggle.mapManager; // 🔥 POBIERAMY Z GLOBALNEGO OBIEKTU
     const activeUids = new Set();
+    // ... reszta kodu zostaje bez zmian
     let html = "";
     let activeWalkersCount = 0; 
     let activeWalkersAvatars = []; 
