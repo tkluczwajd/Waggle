@@ -14,6 +14,44 @@
     --glass: rgba(255, 255, 255, 0.8);
 }
 
+/* =========================================
+   🔥 WAGGLE CLEAN UI - ZMIENNE I KARTY
+========================================= */
+:root {
+    --space-xs: clamp(6px, 1vw, 10px);
+    --space-sm: clamp(10px, 2vw, 14px);
+    --space-md: clamp(14px, 3vw, 18px);
+    
+    --font-sm: clamp(10px, 2vw, 12px);
+    --font-md: clamp(13px, 3vw, 15px);
+    --font-lg: clamp(16px, 4vw, 20px);
+}
+
+.waggle-card {
+    background: white;
+    border-radius: 16px;
+    padding: var(--space-md);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    border: 1px solid var(--border-color);
+    margin-bottom: var(--space-md);
+}
+
+.waggle-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.waggle-card-title {
+    margin: 0;
+    font-size: var(--font-sm);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-color);
+}
+
 .post-card, .modal-content, .bottom-nav {
     background: var(--glass) !important;
     backdrop-filter: blur(12px); 
