@@ -74,7 +74,7 @@ export function renderPostsList(posts, filter) {
         }
 
         const likesCount = p.likes ? p.likes.length : 0;
-        const hasLiked = p.likes && p.likes.includes(state.user?.uid);
+        const hasLiked = p.likedBy && Array.isArray(p.likedBy) && p.likedBy.includes(currentUid);
         const commentCount = p.commentCount || 0; 
 
         html += `<div class="post-card" style="${cardStyle}">
