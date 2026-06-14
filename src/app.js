@@ -140,27 +140,27 @@ const WIEDZA_DNIA_BAZA = [
 ];
 
 function renderWiedzaDnia() {
-    // Losujemy ciekawostkę przypisaną do dnia miesiąca (żeby codziennie była nowa)
     const dzisiaj = new Date().getDate();
     const ciekawostka = WIEDZA_DNIA_BAZA[dzisiaj % WIEDZA_DNIA_BAZA.length];
 
+    // Szukamy nowego docelowego miejsca (nad S.A.F.E)
+    const targetDiv = document.getElementById('wiedza-dnia-target');
     let wiedzaContainer = document.getElementById('wiedza-dnia-container');
-    const alertsDiv = document.getElementById('smart-care-alerts');
     
-    // Tworzymy kontener nad alertami, jeśli go jeszcze nie ma
-    if (!wiedzaContainer && alertsDiv) {
+    if (!wiedzaContainer && targetDiv) {
         wiedzaContainer = document.createElement('div');
         wiedzaContainer.id = 'wiedza-dnia-container';
-        alertsDiv.parentNode.insertBefore(wiedzaContainer, alertsDiv);
+        targetDiv.appendChild(wiedzaContainer);
     }
 
     if (wiedzaContainer) {
+        // 🔥 WERSJA COMPACT: Zamiast wielkiego bloku, zgrabna, biała karta informacyjna
         wiedzaContainer.innerHTML = `
-            <div onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="background: linear-gradient(135deg, var(--secondary), #0abde3); border-radius: 16px; padding: 15px; margin-bottom: 15px; color: white; box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3); display: flex; gap: 15px; align-items: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                <div style="font-size: 35px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🧠</div>
+            <div class="waggle-card" onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="display: flex; gap: 15px; align-items: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));">🧠</div>
                 <div>
-                    <div style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; opacity: 0.9;">Wiedza Dnia</div>
-                    <div style="font-size: 13px; font-weight: 600; line-height: 1.4; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">${ciekawostka}</div>
+                    <div style="font-size: var(--font-sm); font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; color: var(--secondary);">Wiedza Dnia</div>
+                    <div style="font-size: var(--font-md); font-weight: 600; line-height: 1.4; color: var(--text-color);">${ciekawostka}</div>
                 </div>
             </div>
         `;
