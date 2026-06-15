@@ -143,7 +143,7 @@ html, body {
 
 .post-card { 
     background: var(--panel-bg); 
-    margin: 15px 0; /* 🔥 ZEROWY margines po bokach */
+    margin: 15px -15px; /* 🔥 margines po bokach */
     border-radius: 12px; /* Mniejsze zaokrąglenie (wcześniej było 20px) */
     padding: 16px; 
     box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Delikatniejszy cień */
