@@ -432,4 +432,3 @@ function renderPosts(posts) {
             }, 100);
         };
     }
-}
