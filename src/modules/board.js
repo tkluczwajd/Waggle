@@ -326,7 +326,7 @@ function renderPosts(posts) {
 
             let contentHtml = '';
             let badgeHtml = '';
-            let cardIndicator = ''; // 🔥 Usunęliśmy twardą ramkę, dodajemy kolorowy znacznik z lewej
+            let cardIndicator = ''; 
             
             const imageHtml = post.imageUrl ? `<img src="${post.imageUrl}" style="width: 100%; border-radius: 12px; margin-top: 10px; max-height: 350px; object-fit: cover;">` : '';
             const safeText = post.text ? post.text.replace(/'/g, "\\'").replace(/\n/g, " ") : "";
@@ -375,7 +375,6 @@ function renderPosts(posts) {
             const heartFill = hasLiked ? 'var(--danger)' : 'none';
             const heartIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${heartFill}" stroke="${heartColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
 
-            // 🔥 TUTAJ BYŁ BŁĄD! Usunąłem wewnętrznego diva, który blokował style CSS!
             html += `
             <div class="post-card" style="${cardIndicator}">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
@@ -405,9 +404,6 @@ function renderPosts(posts) {
     
     container.innerHTML = html;
     
-    // ... reszta funkcji (alerty nad mapą) bez zmian
-}
-
     const activeAlertPill = document.getElementById('active-alert-pill');
     if (activeAlertPill) {
         const hasRecentAlert = posts.some(p => {
@@ -432,3 +428,4 @@ function renderPosts(posts) {
             }, 100);
         };
     }
+}
