@@ -52,7 +52,7 @@
     color: var(--text-color);
 }
 
-.post-card, .modal-content, .bottom-nav {
+.modal-content, .bottom-nav {
     background: var(--glass) !important;
     backdrop-filter: blur(12px); 
     -webkit-backdrop-filter: blur(12px);
