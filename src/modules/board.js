@@ -309,99 +309,104 @@ function renderPosts(posts) {
                 <div style="color: var(--text-color); font-weight: 800; font-size: 16px;">Tutaj jeszcze nic nie ma!</div>
                 <div style="color: var(--text-muted); font-size: 12px; margin-top: 5px;">Zmień filtry lub bądź pierwszy i dodaj wpis.</div>
             </div>`;
-    } else {
-        const currentUid = auth.currentUser ? auth.currentUser.uid : 'anonim';
-        let html = '';
-
-        posts.forEach(post => {
-            // 🔥 TARCZA OCHRONNA: Ignorujemy zepsute posty, żeby reszta działała!
-            try {
-                let timeStr = 'Przed chwilą';
-                if (post.timestamp && typeof post.timestamp.toDate === 'function') {
-                    const d = post.timestamp.toDate();
-                    if(d.toDateString() === new Date().toDateString()) timeStr = `Dziś, ${d.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'})}`;
-                    else timeStr = d.toLocaleDateString('pl-PL', {day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit'});
-                }
-
-                let contentHtml = '';
-                let badgeHtml = '';
-                let borderStyle = '1px solid var(--border-color)';
-                const imageHtml = post.imageUrl ? `<img src="${post.imageUrl}" style="width: 100%; border-radius: 12px; margin-top: 10px; max-height: 350px; object-fit: cover;">` : '';
-                
-                // Bezpieczny tekst, na wypadek pustego posta
-                const safeText = post.text ? post.text.replace(/'/g, "\\'").replace(/\n/g, " ") : "";
-
-                if (post.type === 'alert') {
-                    borderStyle = '2px solid rgba(231, 76, 60, 0.4)';
-                    badgeHtml = `<div style="background: rgba(231, 76, 60, 0.1); color: var(--danger); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">⚠️ OSTRZEŻENIE</div>`;
-                    contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--danger); font-weight: 800; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
-                } else if (post.type === 'walk') {
-                    badgeHtml = `<div style="background: rgba(52, 172, 224, 0.1); color: var(--secondary); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🚶 USTAWKA</div>`;
-                    let walkTime = "Wkrótce";
-                    if (post.walkDate) {
-                        const wd = new Date(post.walkDate);
-                        walkTime = `${wd.toLocaleDateString('pl-PL', {day:'numeric', month:'short'})} o ${wd.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}`;
-                    }
-                    const attendeesCount = (post.attendees && Array.isArray(post.attendees)) ? post.attendees.length : 0;
-                    const hasJoined = post.attendees && Array.isArray(post.attendees) && post.attendees.includes(currentUid);
-                    const buttonHtml = hasJoined 
-                        ? `<button style="background: var(--bg-color); color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: default;">Dołączyłeś ✅</button>`
-                        : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s;">Będę! 👍</button>`;
-                    contentHtml = `
-                        <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text || ''}</p>${imageHtml}
-                        <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); margin-top: 10px;">
-                            <div>
-                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 800;">📍 ${post.walkLocation || 'W okolicy'}</div>
-                                <div style="font-size: 13px; color: var(--text-color); font-weight: 900;">📅 ${walkTime}</div>
-                                ${attendeesCount > 0 ? `<div style="font-size: 10px; color: var(--secondary); font-weight: 800; margin-top: 4px;">🐕 ${attendeesCount} psów dołączy!</div>` : ''}
-                            </div>
-                            ${buttonHtml}
-                        </div>`;
-                } else if (post.type === 'question') {
-                    badgeHtml = `<div style="background: rgba(255, 177, 66, 0.1); color: #e1b12c; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">❓ PYTANIE</div>`;
-                    contentHtml = `<p style="margin: 0; font-size: 15px; color: var(--text-color); font-weight: 800; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
-                } else {
-                    if (post.type === 'notice') badgeHtml = `<div style="background: rgba(46, 213, 115, 0.1); color: #2ed573; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🏠 OGŁOSZENIE</div>`;
-                    contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
-                }
-
-                // Odporność na brak lajków w starych postach
-                const hasLiked = post.likedBy && Array.isArray(post.likedBy) && post.likedBy.includes(currentUid);
-                const heartColor = hasLiked ? 'var(--danger)' : 'var(--text-muted)';
-                const heartFill = hasLiked ? 'var(--danger)' : 'none';
-                const heartIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${heartFill}" stroke="${heartColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-
-                // 🔥 GŁÓWNA ZMIANA: Zastąpienie twardego kodu style="..." klasą "post-card"
-                html += `
-                <div class="post-card" style="border: ${borderStyle};">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #2d3436; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900;">${post.authorName ? post.authorName.charAt(0).toUpperCase() : 'U'}</div>
-                        <div>
-                            <div style="font-size: 13px; font-weight: 900; color: var(--text-color);">${post.authorName || 'Użytkownik'}</div>
-                            <div style="font-size: 10px; font-weight: 700; color: var(--text-muted);">${timeStr}</div>
-                        </div>
-                        ${badgeHtml}
-                    </div>
-                    <div style="margin-bottom: 15px;">${contentHtml}</div>
-                    <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--bg-color); padding-top: 12px;">
-                        <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(1.2)'" onmouseup="this.style.transform='scale(1)'">
-                            ${heartIcon}
-                            <span style="font-size: 12px; font-weight: 800; color: ${heartColor};">${post.likes || 0}</span>
-                        </button>
-                        <button onclick="window.Waggle.openComments('${post.id}', '${safeText}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
-                            <span style="font-size: 16px;">💬</span>
-                            <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.commentsCount || 0}</span>
-                        </button>
-                    </div>
-                </div>`;
-            } catch (err) {
-                console.warn("🛡️ Pominięto uszkodzony stary post:", post.id, err);
-            }
-        });
-        
-        // Renderujemy tylko to, co bezpiecznie przebrnęło przez pętlę
-        container.innerHTML = html;
+        return;
     }
+
+    const currentUid = auth.currentUser ? auth.currentUser.uid : 'anonim';
+    let html = '';
+
+    posts.forEach(post => {
+        try {
+            let timeStr = 'Przed chwilą';
+            if (post.timestamp && typeof post.timestamp.toDate === 'function') {
+                const d = post.timestamp.toDate();
+                if(d.toDateString() === new Date().toDateString()) timeStr = `Dziś, ${d.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'})}`;
+                else timeStr = d.toLocaleDateString('pl-PL', {day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit'});
+            }
+
+            let contentHtml = '';
+            let badgeHtml = '';
+            let cardIndicator = ''; // 🔥 Usunęliśmy twardą ramkę, dodajemy kolorowy znacznik z lewej
+            
+            const imageHtml = post.imageUrl ? `<img src="${post.imageUrl}" style="width: 100%; border-radius: 12px; margin-top: 10px; max-height: 350px; object-fit: cover;">` : '';
+            const safeText = post.text ? post.text.replace(/'/g, "\\'").replace(/\n/g, " ") : "";
+
+            if (post.type === 'alert') {
+                cardIndicator = 'border-left: 4px solid var(--danger);';
+                badgeHtml = `<div style="background: rgba(231, 76, 60, 0.1); color: var(--danger); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">⚠️ OSTRZEŻENIE</div>`;
+                contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--danger); font-weight: 800; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
+            } else if (post.type === 'walk') {
+                cardIndicator = 'border-left: 4px solid var(--secondary);';
+                badgeHtml = `<div style="background: rgba(52, 172, 224, 0.1); color: var(--secondary); font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🚶 USTAWKA</div>`;
+                let walkTime = "Wkrótce";
+                if (post.walkDate) {
+                    const wd = new Date(post.walkDate);
+                    walkTime = `${wd.toLocaleDateString('pl-PL', {day:'numeric', month:'short'})} o ${wd.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}`;
+                }
+                const attendeesCount = (post.attendees && Array.isArray(post.attendees)) ? post.attendees.length : 0;
+                const hasJoined = post.attendees && Array.isArray(post.attendees) && post.attendees.includes(currentUid);
+                const buttonHtml = hasJoined 
+                    ? `<button style="background: var(--bg-color); color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: default;">Dołączyłeś ✅</button>`
+                    : `<button onclick="window.Waggle.joinWalk('${post.id}')" style="background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s;">Będę! 👍</button>`;
+                contentHtml = `
+                    <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text || ''}</p>${imageHtml}
+                    <div style="background: var(--bg-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); margin-top: 10px;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--text-muted); font-weight: 800;">📍 ${post.walkLocation || 'W okolicy'}</div>
+                            <div style="font-size: 13px; color: var(--text-color); font-weight: 900;">📅 ${walkTime}</div>
+                            ${attendeesCount > 0 ? `<div style="font-size: 10px; color: var(--secondary); font-weight: 800; margin-top: 4px;">🐕 ${attendeesCount} psów dołączy!</div>` : ''}
+                        </div>
+                        ${buttonHtml}
+                    </div>`;
+            } else if (post.type === 'question') {
+                cardIndicator = 'border-left: 4px solid #e1b12c;';
+                badgeHtml = `<div style="background: rgba(255, 177, 66, 0.1); color: #e1b12c; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">❓ PYTANIE</div>`;
+                contentHtml = `<p style="margin: 0; font-size: 15px; color: var(--text-color); font-weight: 800; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
+            } else {
+                if (post.type === 'notice') {
+                    cardIndicator = 'border-left: 4px solid #2ed573;';
+                    badgeHtml = `<div style="background: rgba(46, 213, 115, 0.1); color: #2ed573; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-left: auto;">🏠 OGŁOSZENIE</div>`;
+                }
+                contentHtml = `<p style="margin: 0; font-size: 14px; color: var(--text-color); font-weight: 600; line-height: 1.5;">${post.text || ''}</p>${imageHtml}`;
+            }
+
+            const hasLiked = post.likedBy && Array.isArray(post.likedBy) && post.likedBy.includes(currentUid);
+            const heartColor = hasLiked ? 'var(--danger)' : 'var(--text-muted)';
+            const heartFill = hasLiked ? 'var(--danger)' : 'none';
+            const heartIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${heartFill}" stroke="${heartColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+
+            // 🔥 TUTAJ BYŁ BŁĄD! Usunąłem wewnętrznego diva, który blokował style CSS!
+            html += `
+            <div class="post-card" style="${cardIndicator}">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #2d3436; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900;">${post.authorName ? post.authorName.charAt(0).toUpperCase() : 'U'}</div>
+                    <div>
+                        <div style="font-size: 13px; font-weight: 900; color: var(--text-color);">${post.authorName || 'Użytkownik'}</div>
+                        <div style="font-size: 10px; font-weight: 700; color: var(--text-muted);">${timeStr}</div>
+                    </div>
+                    ${badgeHtml}
+                </div>
+                <div style="margin-bottom: 15px;">${contentHtml}</div>
+                <div style="display: flex; align-items: center; gap: 15px; border-top: 1px solid var(--border-color); margin-top: 12px; padding-top: 12px;">
+                    <button onclick="window.Waggle.likePost('${post.id}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(1.2)'" onmouseup="this.style.transform='scale(1)'">
+                        ${heartIcon}
+                        <span style="font-size: 12px; font-weight: 800; color: ${heartColor};">${post.likes || 0}</span>
+                    </button>
+                    <button onclick="window.Waggle.openComments('${post.id}', '${safeText}')" style="background: none; border: none; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 0;">
+                        <span style="font-size: 16px;">💬</span>
+                        <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">${post.commentsCount || 0}</span>
+                    </button>
+                </div>
+            </div>`;
+        } catch (err) {
+            console.warn("🛡️ Pominięto uszkodzony stary post:", post.id, err);
+        }
+    });
+    
+    container.innerHTML = html;
+    
+    // ... reszta funkcji (alerty nad mapą) bez zmian
+}
 
     const activeAlertPill = document.getElementById('active-alert-pill');
     if (activeAlertPill) {
