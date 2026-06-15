@@ -371,8 +371,9 @@ function renderPosts(posts) {
                 const heartFill = hasLiked ? 'var(--danger)' : 'none';
                 const heartIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${heartFill}" stroke="${heartColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
 
+                // 🔥 GŁÓWNA ZMIANA: Zastąpienie twardego kodu style="..." klasą "post-card"
                 html += `
-                <div style="background: white; border-radius: 20px; padding: 18px; border: ${borderStyle}; box-shadow: 0 4px 10px rgba(0,0,0,0.02); margin-bottom: 15px;">
+                <div class="post-card" style="border: ${borderStyle};">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                         <div style="width: 32px; height: 32px; border-radius: 50%; background: #2d3436; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900;">${post.authorName ? post.authorName.charAt(0).toUpperCase() : 'U'}</div>
                         <div>
