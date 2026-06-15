@@ -267,7 +267,7 @@
             </div>
 
             <div style="padding: 0 20px 100px 20px;">
-                <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none;">
+                <div class="horizontal-scroll-bar" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none;">
                     <button onclick="window.Waggle.filterPlaces('all', this)" class="place-filter-btn" style="background: var(--secondary); color: white; border: none; padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer; box-shadow: 0 4px 10px rgba(52,172,224,0.3);">🌟 Wszystkie</button>
                     <button onclick="window.Waggle.filterPlaces('favorites', this)" class="place-filter-btn" style="background: white; color: var(--gold, #f1c40f); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">⭐ Ulubione</button>
                     <button onclick="window.Waggle.filterPlaces('dogpark', this)" class="place-filter-btn" style="background: white; color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; white-space: nowrap; cursor: pointer;">🐕 Wybiegi</button>
@@ -293,14 +293,14 @@
                     </div>
                 </div>
                 
-                <<div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:5px; scrollbar-width:none; -webkit-overflow-scrolling: touch;">
-                    <button onclick="window.Waggle.filterBoard('all', this)" class="board-filter-btn" style="background:var(--text-color); color:white; border:none; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-shrink: 0;">📢 Wszystko</button>
-                    <button onclick="window.Waggle.filterBoard('photo', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">📷 Zdjęcia</button>
-                    <button onclick="window.Waggle.filterBoard('question', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">❓ Pytania</button>
-                    <button onclick="window.Waggle.filterBoard('walk', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">🚶 Spacery</button>
-                    <button onclick="window.Waggle.filterBoard('alert', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">⚠️ Alerty</button>
-                    <button onclick="window.Waggle.filterBoard('notice', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">🏠 Ogłoszenia</button>
-                </div>
+           <div class="horizontal-scroll-bar" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:5px; -webkit-overflow-scrolling: touch;">
+                 <button onclick="window.Waggle.filterBoard('all', this)" class="board-filter-btn" style="background:var(--text-color); color:white; border:none; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-shrink: 0;">📢 Wszystko</button>
+                 <button onclick="window.Waggle.filterBoard('photo', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">📷 Zdjęcia</button>
+                 <button onclick="window.Waggle.filterBoard('question', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">❓ Pytania</button>
+                 <button onclick="window.Waggle.filterBoard('walk', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">🚶 Spacery</button>
+                 <button onclick="window.Waggle.filterBoard('alert', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">⚠️ Alerty</button>
+                 <button onclick="window.Waggle.filterBoard('notice', this)" class="board-filter-btn" style="background:white; color:var(--text-color); border:1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">🏠 Ogłoszenia</button>
+            </div>
 
             <div id="board-feed-container" style="padding: 15px 20px 100px 20px; display: flex; flex-direction: column; gap: 15px;">
                 <div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700; margin-top: 20px;">Ładowanie tablicy... ⏳</div>
