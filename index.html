@@ -340,12 +340,48 @@
         <nav class="bottom-nav">
             <button class="nav-item active" data-view="home">🐶<span>Home</span></button>
             <button class="nav-item" data-view="local">🗺️<span>Mapa</span></button>
-            <button class="nav-item" data-view="places">📍<span>Miejsca</span></button>
             <button class="nav-item" data-view="community">📢<span>Tablica</span></button>
             <button class="nav-item" data-view="chat">💬<span>Rozmowy</span></button>
-            <button class="nav-item" data-view="help">🧠<span>Wiedza</span></button>
+            <button class="nav-item" onclick="document.getElementById('more-menu-modal').style.display='flex'">🍔<span>Więcej</span></button>
+            
+            <button id="hidden-btn-places" class="nav-item" data-view="places" style="display:none;"></button>
+            <button id="hidden-btn-help" class="nav-item" data-view="help" style="display:none;"></button>
         </nav>
-    </div>
+
+        <div id="more-menu-modal" class="modal" onclick="if(event.target===this) this.style.display='none'">
+        <div class="card" style="padding: 0; overflow: hidden; background: var(--bg-color); width: 90%; max-width: 400px; border-radius: 24px; position: absolute; bottom: 100px;">
+            <div style="background: var(--panel-bg); padding: 20px; text-align: left; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 900; color: var(--text-color);">Eksploruj Waggle</h3>
+                <button class="close-modal-btn" onclick="document.getElementById('more-menu-modal').style.display='none'" style="position: relative; top: 0; right: 0;">✕</button>
+            </div>
+            
+            <div style="padding: 10px;">
+                <div class="settings-row" onclick="document.getElementById('more-menu-modal').style.display='none'; document.getElementById('hidden-btn-places').click();">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="background: rgba(52, 172, 224, 0.1); padding: 10px; border-radius: 12px; font-size: 18px;">📍</div>
+                        <span style="font-size: 16px; font-weight: 800; color: var(--text-color);">Miejscówki dla psów</span>
+                    </div>
+                    <span style="color: var(--text-muted); font-weight: 900;">➤</span>
+                </div>
+                
+                <div class="settings-row" onclick="document.getElementById('more-menu-modal').style.display='none'; document.getElementById('hidden-btn-help').click();">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="background: rgba(46, 213, 115, 0.1); padding: 10px; border-radius: 12px; font-size: 18px;">📖</div>
+                        <span style="font-size: 16px; font-weight: 800; color: var(--text-color);">Psia Wiedza</span>
+                    </div>
+                    <span style="color: var(--text-muted); font-weight: 900;">➤</span>
+                </div>
+
+                <div class="settings-row" onclick="document.getElementById('more-menu-modal').style.display='none'; document.getElementById('settings-modal').style.display='flex';">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="background: rgba(255, 82, 82, 0.1); padding: 10px; border-radius: 12px; font-size: 18px;">⚙️</div>
+                        <span style="font-size: 16px; font-weight: 800; color: var(--text-color);">Ustawienia konta</span>
+                    </div>
+                    <span style="color: var(--text-muted); font-weight: 900;">➤</span>
+                </div>
+            </div>
+        </div>
+        </div>
 
     <div id="chat-window" class="modal" style="z-index: 9999;">
         <div class="card" style="height: 85vh; padding: 0; display: flex; flex-direction: column;">
