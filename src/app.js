@@ -320,10 +320,53 @@ function initJournalListener() {
             }
 
             if (alertsContainer) alertsContainer.innerHTML = alertsHtml;
+// 🔥 EFEKT WOW: OBLICZANIE PROCENTU DZIENNEJ OPIEKI
+            let totalGoals = (dailyGoals.feed || 0) + (dailyGoals.walk || 0) + (dailyGoals.med || 0) + (dailyGoals.water || 0);
+            let totalDone = Math.min(dailyCounts.feed, dailyGoals.feed || 0) 
+                          + Math.min(dailyCounts.walk, dailyGoals.walk || 0) 
+                          + Math.min(dailyCounts.med, dailyGoals.med || 0) 
+                          + Math.min(dailyCounts.water, dailyGoals.water || 0);
+            
+            let percent = totalGoals > 0 ? Math.round((totalDone / totalGoals) * 100) : 0;
+            let wowText = "Czas zacząć dzień! 🌅";
+            if (percent > 0 && percent < 50) wowText = "Dobry początek! 🐾";
+            else if (percent >= 50 && percent < 100) wowText = "Świetnie Ci idzie! 🔥";
+            else if (percent === 100 && totalGoals > 0) wowText = "Plan wykonany w 100%! 🏆";
 
-            // 📝 OSTATNIE WPISY
+            // WSTRZYKIWANIE STATUSU POD IMIĘ PSA NA GŁÓWNEJ KARCIE
+            let wowBadge = document.getElementById('daily-wow-badge');
+            if (!wowBadge) {
+                const nameEl = document.getElementById('profileNameDisplay');
+                if (nameEl && nameEl.parentNode) {
+                    wowBadge = document.createElement('div');
+                    wowBadge.id = 'daily-wow-badge';
+                    wowBadge.style.cssText = "display: inline-block; font-size: 11px; font-weight: 900; padding: 4px 10px; border-radius: 12px; margin-top: 5px; transition: all 0.3s;";
+                    // Wstawiamy pigułkę zaraz pod imieniem psa
+                    nameEl.parentNode.insertBefore(wowBadge, nameEl.nextSibling);
+                }
+            }
+            if (wowBadge) {
+                wowBadge.innerHTML = `Dzisiaj: <b>${percent}%</b> planu • ${wowText}`;
+                if (percent === 100) {
+                    wowBadge.style.background = 'rgba(46, 213, 115, 0.15)';
+                    wowBadge.style.color = '#2ed573';
+                } else {
+                    wowBadge.style.background = 'rgba(52, 172, 224, 0.1)';
+                    wowBadge.style.color = 'var(--secondary)';
+                }
+            }
+
+            // 📝 OSTATNIE WPISY (ZMIENIONY PUSTY STAN)
+            const emptyStateHtml = `
+                <div style="text-align: center; padding: 15px; background: rgba(52, 172, 224, 0.05); border: 1px dashed var(--secondary); border-radius: 14px; margin-top: 5px;">
+                    <div style="font-size: 24px; margin-bottom: 5px;">🌱</div>
+                    <div style="font-size: 13px; font-weight: 800; color: var(--text-color);">Dzień dopiero się zaczyna!</div>
+                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 2px;">Dodaj pierwszą aktywność, aby napełnić paski.</div>
+                </div>
+            `;
+
             if (!entries || entries.length === 0) {
-                listElement.innerHTML = '<div style="text-align: center; font-size: var(--font-sm); color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
+                listElement.innerHTML = emptyStateHtml;
                 return;
             }
 
@@ -334,7 +377,7 @@ function initJournalListener() {
             const recentEntries = todaysEntries.slice(0, 3);
             
             if (recentEntries.length === 0) {
-                 listElement.innerHTML = '<div style="text-align: center; font-size: var(--font-sm); color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak aktywności z dzisiaj...</div>';
+                 listElement.innerHTML = emptyStateHtml;
                  return;
             }
 
@@ -344,7 +387,7 @@ function initJournalListener() {
                     timeString = entry.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 }
                 return `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border-radius: 10px; font-size: 12px; border-left: 2px solid ${index === 0 ? '#2ed573' : 'transparent'};">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ${index === 0 ? 'rgba(46, 213, 115, 0.05)' : 'var(--bg-color)'}; border-radius: 10px; font-size: 12px; border-left: 2px solid ${index === 0 ? '#2ed573' : 'transparent'}; margin-bottom: 5px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 16px;">${icons[entry.type] || '🐾'}</span>
                         <div style="display: flex; flex-direction: column;">
