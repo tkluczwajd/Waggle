@@ -376,7 +376,7 @@
             <button class="nav-item" data-view="local">🗺️<span>Mapa</span></button>
             <button class="nav-item" data-view="community">📢<span>Tablica</span></button>
             <button class="nav-item" data-view="chat">💬<span>Rozmowy</span></button>
-            <button class="nav-item" onclick="document.getElementById('more-menu-modal').style.display='flex'">🍔<span>Więcej</span></button>
+            <button class="nav-item" onclick="event.stopPropagation(); document.getElementById('more-menu-modal').style.display='flex'">🍔<span>Więcej</span></button>
             
             <button id="hidden-btn-places" class="nav-item" data-view="places" style="display:none;"></button>
             <button id="hidden-btn-help" class="nav-item" data-view="help" style="display:none;"></button>
