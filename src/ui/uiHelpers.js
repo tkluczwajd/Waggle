@@ -49,6 +49,15 @@ export function updateStatsUI() {
     const tempEl = document.getElementById('weather-temp');
     if (tempEl && state.weather) tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
+
+    // 🔥 GENEROWANIE LINKU S.A.F.E. (przeniesione do brzucha funkcji updateStatsUI)
+    setTimeout(() => {
+        const linkInput = document.getElementById('safe-public-link-input');
+        if (linkInput) {
+            const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
+            linkInput.value = currentUid ? `https://joinwaggle.com/safe/${currentUid}` : 'Brak ID psa';
+        }
+    }, 100);
 }
 
 export function updateUserMarker(lat, lng) {
@@ -138,6 +147,7 @@ window.Waggle.startDirectChat = (uid, name, avatar) => {
         alert(`Uruchamiam czat z: ${name} 💬! (Silnik podepniemy w kolejnym kroku)`);
     }
 };
+
 // 🔥 WAGGLE S.A.F.E. - Generator Linku i Kopiowanie do schowka
 window.Waggle = window.Waggle || {};
 window.Waggle.copySafePublicLink = () => {
@@ -150,13 +160,3 @@ window.Waggle.copySafePublicLink = () => {
         }).catch(err => alert('Nie udało się skopiować linku.'));
     }
 };
-
-// Doklej to na końcu funkcji `updateStatsUI()` (wewnątrz `uiHelpers.js`),
-// aby aplikacja zawsze wpisywała tam aktualny ID psa:
-setTimeout(() => {
-    const linkInput = document.getElementById('safe-public-link-input');
-    if (linkInput) {
-        const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
-        linkInput.value = currentUid ? `https://joinwaggle.com/safe/${currentUid}` : 'Brak ID psa';
-    }
-}, 500);
