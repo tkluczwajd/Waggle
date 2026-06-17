@@ -1,7 +1,7 @@
 // src/services/postsService.js
 import { db, fb } from '../core/firebase.js';
 
-const IMGBB_KEY = "af2b35f5ca54dd9c8fc91595fe525de9"; 
+// Usunęliśmy stary klucz ImgBB - nie będzie już potrzebny!
 
 export function subscribeToPosts(limit, callback) {
     return db.collection("posts")
@@ -47,60 +47,76 @@ export function subscribeToComments(postId, callback) {
         });
 }
 
-export function addCommentInDb(postId, commentData) {
-    return db.collection("posts").doc(postId).collection("comments").add({
+export async function addComment(postId, commentData) {
+    const ref = db.collection("posts").doc(postId);
+    await ref.collection("comments").add({
         ...commentData,
         timestamp: fb.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        return db.collection("posts").doc(postId).update({
-            commentCount: fb.firestore.FieldValue.increment(1)
-        });
+    });
+    
+    // Zwiększamy licznik komentarzy w głównym poście
+    return ref.update({
+        commentsCount: fb.firestore.FieldValue.increment(1)
     });
 }
 
-// 🔥 SZEFIE, TUTAJ ZASZŁA MAGIA OPTYMALIZACJI TRANSFERU:
-export async function uploadImageToService(file) {
+// 🔥 WŁASNY FIREBASE STORAGE Z KOMPRESJĄ WEBP
+export function uploadImageToService(file) {
     return new Promise((resolve, reject) => {
-        const reader = new FileReader(); 
+        const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = e => {
-            const img = new Image(); 
-            img.src = e.target.result;
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
             img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height;
-                
-                // Podbijamy próg do 1024px dla lepszej ostrości, bo WebP i tak waży grosze!
-                const MAX_WIDTH = 1024;
-                if(w > MAX_WIDTH) { 
-                    h = Math.round((h * MAX_WIDTH) / w); 
-                    w = MAX_WIDTH; 
+                const canvas = document.createElement("canvas");
+                // Skalujemy do max 1200px szerokości, by oszczędzać transfer
+                const MAX_WIDTH = 1200;
+                let scaleSize = 1;
+                if (img.width > MAX_WIDTH) {
+                    scaleSize = MAX_WIDTH / img.width;
                 }
                 
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.width = img.width * scaleSize;
+                canvas.height = img.height * scaleSize;
                 
-                // 🎯 Przechodzimy na format 'image/webp' z kompresją 0.75.
-                // Zdjęcia z telefonów komórkowych będą teraz przesyłane błyskawicznie!
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
                 canvas.toBlob(blob => {
                     if (!blob) return reject(new Error("Błąd konwersji zdjęcia."));
                     
-                    const fd = new FormData(); 
-                    fd.append("image", blob, "waggle_upload.webp"); // Narzucamy rozszerzenie .webp
+                    // Tworzymy bezpieczną i unikalną nazwę pliku
+                    const fileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.webp`;
                     
-                    fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd })
-                        .then(r => r.json())
-                        .then(res => resolve(res.data.url))
-                        .catch(reject);
-                }, 'image/webp', 0.75);
+                    // Łączymy się z Twoim Firebase Storage
+                    const storageRef = fb.storage().ref().child(fileName);
+                    
+                    // Wysyłamy skompresowany plik WebP
+                    const uploadTask = storageRef.put(blob);
+                    
+                    uploadTask.on('state_changed', 
+                        null, 
+                        (error) => {
+                            console.error("Błąd Firebase Storage:", error);
+                            reject(error);
+                        }, 
+                        () => {
+                            // Sukces! Zwracamy publiczny, bezpieczny URL bezpośrednio z Google
+                            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                resolve(downloadURL);
+                            });
+                        }
+                    );
+                }, 'image/webp', 0.75); // Jakość 75% - złoty środek dla zdjęć psów
             };
         };
     });
 }
-// Ożywia przycisk "Będę!" - dodaje lub usuwa użytkownika z listy uczestników ustawki
+
+// Ożywia przycisk "Będę!" w ustawkach
 export async function toggleAttendanceInDb(postId, uid) {
     const postRef = db.collection('posts').doc(postId);
-    
     try {
         const doc = await postRef.get();
         if (!doc.exists) return;
@@ -109,17 +125,11 @@ export async function toggleAttendanceInDb(postId, uid) {
         const attendees = data.attendees || [];
         
         if (attendees.includes(uid)) {
-            // Użytkownik już tam jest -> Wypisuje się
-            return postRef.update({
-                attendees: attendees.filter(id => id !== uid)
-            });
+            return postRef.update({ attendees: attendees.filter(id => id !== uid) });
         } else {
-            // Użytkownik dołącza -> Zapisuje się
-            return postRef.update({
-                attendees: [...attendees, uid]
-            });
+            return postRef.update({ attendees: [...attendees, uid] });
         }
     } catch (error) {
-        console.error("Błąd podczas zmiany statusu obecności:", error);
+        console.error(error);
     }
 }
