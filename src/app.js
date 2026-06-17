@@ -140,27 +140,44 @@ const WIEDZA_DNIA_BAZA = [
 ];
 
 function renderWiedzaDnia() {
+    // 1. Pobieramy dzisiejszy dzień miesiąca (np. 17 dla 17 czerwca).
     const dzisiaj = new Date().getDate();
+    
+    // 2. Używamy operatora modulo (%), aby rotacyjnie wybierać ciekawostkę. 
+    // Dzięki temu, nawet jeśli mamy tylko 5 ciekawostek, a jest 17 dzień miesiąca, 
+    // system nie wyrzuci błędu, tylko zapętli się i wybierze ciekawostkę nr 2.
     const ciekawostka = WIEDZA_DNIA_BAZA[dzisiaj % WIEDZA_DNIA_BAZA.length];
 
-    // Celujemy w nowe, przygotowane wczoraj miejsce na samym dole (nad S.A.F.E)
+    // 3. Szukamy "kotwicy" (pustego diva) w index.html, gdzie mamy to wstrzyknąć.
     const targetDiv = document.getElementById('wiedza-dnia-target');
+    
+    // 4. Szukamy naszego kontenera. Na początku go nie ma, więc zmienna będzie pusta (null).
     let wiedzaContainer = document.getElementById('wiedza-dnia-container');
     
+    // 5. Jeśli kontener jeszcze nie istnieje (pierwsze ładowanie), a "kotwica" jest na stronie...
     if (!wiedzaContainer && targetDiv) {
+        // ...tworzymy nowy element <div> z poziomu JavaScriptu...
         wiedzaContainer = document.createElement('div');
         wiedzaContainer.id = 'wiedza-dnia-container';
+        
+        // ...i "podpinamy" go do naszej kotwicy na stronie głównej.
         targetDiv.appendChild(wiedzaContainer);
     }
 
+    // 6. Jeśli kontener istnieje (albo przed chwilą go stworzyliśmy)...
     if (wiedzaContainer) {
-        // 🔥 WERSJA COMPACT: Zamiast wielkiego bloku, zgrabna, biała karta informacyjna używająca naszej nowej klasy!
+        // 🔥 WERSJA ULTRA-COMPACT: Wstrzykujemy kod HTML. 
+        // 
+        // CO TU SIĘ DZIEJE:
+        // - onclick="...": Kliknięcie w ten pasek szuka zakładki "Psia Wiedza" i automatycznie w nią klika, przenosząc tam użytkownika.
+        // - onmouseover / onmouseout: Prosty efekt podświetlenia po najechaniu myszką/palcem.
+        // - display: -webkit-box...: Ten kod CSS sprawia, że jeśli tekst ciekawostki jest bardzo długi, zwinie się idealnie do 2 linijek i zakończy wielokropkiem (...), nie psując nam wyglądu apki!
+        
         wiedzaContainer.innerHTML = `
-            <div class="waggle-card" onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="display: flex; gap: 15px; align-items: center; cursor: pointer; transition: transform 0.2s; margin-bottom: 20px;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                <div style="font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));">🧠</div>
-                <div>
-                    <div style="font-size: var(--font-sm); font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; color: var(--secondary);">Wiedza Dnia</div>
-                    <div style="font-size: var(--font-md); font-weight: 600; line-height: 1.4; color: var(--text-color);">${ciekawostka}</div>
+            <div onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="display: flex; gap: 10px; align-items: center; cursor: pointer; padding: 10px 15px; background: transparent; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 20px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-color)'" onmouseout="this.style.background='transparent'">
+                <div style="font-size: 16px; opacity: 0.6;">💡</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    <b style="color: var(--text-color);">Psia wiedza:</b> ${ciekawostka}
                 </div>
             </div>
         `;
