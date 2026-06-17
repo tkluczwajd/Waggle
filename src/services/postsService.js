@@ -1,7 +1,8 @@
 // src/services/postsService.js
 import { db, fb } from '../core/firebase.js';
 
-// Usunęliśmy stary klucz ImgBB - nie będzie już potrzebny!
+// 🔥 Wracamy do darmowego ImgBB! Brak ukrytych kosztów i podpinania karty.
+const IMGBB_KEY = "af2b35f5ca54dd9c8fc91595fe525de9"; 
 
 export function subscribeToPosts(limit, callback) {
     return db.collection("posts")
@@ -60,7 +61,7 @@ export async function addComment(postId, commentData) {
     });
 }
 
-// 🔥 WŁASNY FIREBASE STORAGE Z KOMPRESJĄ WEBP
+// 🔥 Odchudzanie zdjęć (WebP) i darmowy upload
 export function uploadImageToService(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -86,29 +87,14 @@ export function uploadImageToService(file) {
                 canvas.toBlob(blob => {
                     if (!blob) return reject(new Error("Błąd konwersji zdjęcia."));
                     
-                    // Tworzymy bezpieczną i unikalną nazwę pliku
-                    const fileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.webp`;
+                    const fd = new FormData(); 
+                    fd.append("image", blob, "waggle_upload.webp"); // Narzucamy rozszerzenie .webp
                     
-                    // Łączymy się z Twoim Firebase Storage
-                    const storageRef = fb.storage().ref().child(fileName);
-                    
-                    // Wysyłamy skompresowany plik WebP
-                    const uploadTask = storageRef.put(blob);
-                    
-                    uploadTask.on('state_changed', 
-                        null, 
-                        (error) => {
-                            console.error("Błąd Firebase Storage:", error);
-                            reject(error);
-                        }, 
-                        () => {
-                            // Sukces! Zwracamy publiczny, bezpieczny URL bezpośrednio z Google
-                            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                resolve(downloadURL);
-                            });
-                        }
-                    );
-                }, 'image/webp', 0.75); // Jakość 75% - złoty środek dla zdjęć psów
+                    fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd })
+                        .then(r => r.json())
+                        .then(res => resolve(res.data.url))
+                        .catch(reject);
+                }, 'image/webp', 0.75); // Jakość 75%
             };
         };
     });
@@ -125,8 +111,10 @@ export async function toggleAttendanceInDb(postId, uid) {
         const attendees = data.attendees || [];
         
         if (attendees.includes(uid)) {
+            // Wypisywanie się z ustawki
             return postRef.update({ attendees: attendees.filter(id => id !== uid) });
         } else {
+            // Zapisywanie się na ustawkę
             return postRef.update({ attendees: [...attendees, uid] });
         }
     } catch (error) {
