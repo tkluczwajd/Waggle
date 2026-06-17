@@ -51,13 +51,19 @@ export function updateStatsUI() {
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 
     // 🔥 GENEROWANIE LINKU S.A.F.E. (przeniesione do brzucha funkcji updateStatsUI)
+    // 🔥 GENEROWANIE LINKU S.A.F.E. (Pancerna metoda pobierania ID)
     setTimeout(() => {
         const linkInput = document.getElementById('safe-public-link-input');
         if (linkInput) {
-            const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
+            // Szukamy ID psa kaskadowo: najpierw z obiektu "state", potem z pamięci, a na końcu z Firebase Auth
+            const currentUid = (state.user && state.user.uid) 
+                || localStorage.getItem('activeDogId') 
+                || localStorage.getItem('uid') 
+                || (window.firebase && window.firebase.auth().currentUser ? window.firebase.auth().currentUser.uid : null);
+            
             linkInput.value = currentUid ? `https://joinwaggle.com/safe/${currentUid}` : 'Brak ID psa';
         }
-    }, 100);
+    }, 500); // 500ms upewnia nas, że Firebase zdążył przetworzyć logowanie
 }
 
 export function updateUserMarker(lat, lng) {
