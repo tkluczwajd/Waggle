@@ -221,7 +221,7 @@
                         <div style="color: var(--primary); font-size: 11px; font-weight: 800;"><span id="home-active-walks">0</span> w okolicy</div>
                     </div>
                 </div>
-                <button onclick="const mapTab = document.querySelector('.bottom-nav [data-view=\\'local\\']'); if(mapTab) mapTab.click();" style="background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 11px; cursor: pointer; box-shadow: 0 4px 10px rgba(255,82,82,0.3);">
+                <button onclick="document.querySelector('button[data-view=local]').click()" style="background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 11px; cursor: pointer; box-shadow: 0 4px 10px rgba(255,82,82,0.3);">
                     OTWÓRZ MAPĘ ➔
                 </button>
             </div>
@@ -236,7 +236,7 @@
                         <div style="color: var(--text-muted); font-size: 11px; font-weight: 800;" id="home-messages-status">Sprawdź swoje stada</div>
                     </div>
                 </div>
-                <button onclick="const chatTab = document.querySelector('.bottom-nav [data-view=\\'chat\\']'); if(chatTab) chatTab.click();" style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 11px; cursor: pointer;">
+                <button onclick="document.querySelector('button[data-view=chat]').click()" style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 11px; cursor: pointer;">
                     CZATY ➔
                 </button>
             </div>
