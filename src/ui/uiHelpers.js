@@ -50,20 +50,19 @@ export function updateStatsUI() {
     if (tempEl && state.weather) tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 
-    // 🔥 GENEROWANIE LINKU S.A.F.E. (przeniesione do brzucha funkcji updateStatsUI)
-    // 🔥 GENEROWANIE LINKU S.A.F.E. (Pancerna metoda pobierania ID)
+    // 🔥 GENEROWANIE LINKU S.A.F.E. (Musi być pod koniec tej funkcji!)
     setTimeout(() => {
         const linkInput = document.getElementById('safe-public-link-input');
         if (linkInput) {
-            // Szukamy ID psa kaskadowo: najpierw z obiektu "state", potem z pamięci, a na końcu z Firebase Auth
-            const currentUid = (state.user && state.user.uid) 
-                || localStorage.getItem('activeDogId') 
-                || localStorage.getItem('uid') 
-                || (window.firebase && window.firebase.auth().currentUser ? window.firebase.auth().currentUser.uid : null);
+            // Szukamy ID w 3 miejscach na wypadek opóźnień Firebase
+            let currentUid = null;
+            if (state.user && state.user.uid) currentUid = state.user.uid;
+            else if (localStorage.getItem('activeDogId')) currentUid = localStorage.getItem('activeDogId');
+            else if (localStorage.getItem('uid')) currentUid = localStorage.getItem('uid');
             
             linkInput.value = currentUid ? `https://joinwaggle.com/safe/${currentUid}` : 'Brak ID psa';
         }
-    }, 500); // 500ms upewnia nas, że Firebase zdążył przetworzyć logowanie
+    }, 300);
 }
 
 export function updateUserMarker(lat, lng) {
