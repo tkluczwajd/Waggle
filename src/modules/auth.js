@@ -6,7 +6,7 @@ import { renderCaretakers } from "./family.js"; // 🔥 IMPORTUJEMY NASZ NOWY MO
 
 let appInitialized = false;
 
-// 🔥 SYSTEM BŁĘDÓW
+// 🔥 SYSTEM BŁĘDÓW I POWIADOMIEŃ
 function showAuthAlert(msg, isError = true) {
     let modal = document.getElementById('auth-alert-modal');
     if (!modal) {
@@ -18,7 +18,7 @@ function showAuthAlert(msg, isError = true) {
             <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
                 <div id="auth-alert-icon" style="font-size: 45px; margin-bottom: 15px;">🛑</div>
                 <h3 id="auth-alert-title" style="margin-top: 0; font-size: 22px;">Uwaga</h3>
-                <p id="auth-alert-msg" style="font-weight: 700; color: var(--text-color); margin-bottom: 25px; font-size: 15px; line-height: 1.4;"></p>
+                <p id="auth-alert-msg" style="font-weight: 700; color: var(--text-color); margin-bottom: 25px; font-size: 14px; line-height: 1.4;"></p>
                 <button id="auth-alert-btn" class="btn-main" style="width: 100%; padding: 14px; font-size: 14px; font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">OK, rozumiem</button>
             </div>
         `;
@@ -26,7 +26,7 @@ function showAuthAlert(msg, isError = true) {
         document.getElementById('auth-alert-btn').onclick = () => { modal.style.display = 'none'; };
     }
     document.getElementById('auth-alert-icon').innerText = isError ? '🛑' : '✅';
-    document.getElementById('auth-alert-title').innerText = isError ? 'Błąd' : 'Sukces';
+    document.getElementById('auth-alert-title').innerText = isError ? 'Błąd' : 'Informacja';
     document.getElementById('auth-alert-title').style.color = isError ? 'var(--danger)' : 'var(--secondary)';
     document.getElementById('auth-alert-btn').style.background = isError ? 'var(--danger)' : 'var(--secondary)';
     document.getElementById('auth-alert-msg').innerText = msg;
@@ -66,7 +66,7 @@ window.Waggle.logout = () => {
 function translateAuthError(errorCode) {
     switch (errorCode) {
         case 'auth/invalid-email': return "Niepoprawny format adresu e-mail.";
-        case 'auth/user-disabled': return "Konto zostało zablokowane.";
+        case 'auth/user-disabled': return "Konto zostało zablokowane przez administratora.";
         case 'auth/user-not-found': return "Nie znaleziono konta z tym adresem.";
         case 'auth/wrong-password': return "Błędne hasło.";
         case 'auth/invalid-credential': return "Błędny e-mail lub hasło.";
@@ -84,45 +84,61 @@ export function initAuth(onReady) {
         if (loader) loader.style.display = "none";
 
         if (user) {
-            setState('auth.user', user);
-            state.user = user; 
-            
-            const targetUid = localStorage.getItem('activeDogId') || user.uid;
-            
-            const unsub = db.collection("users").doc(targetUid).onSnapshot(doc => {
-                let data = doc.exists ? doc.data() : null;
-                
-                if (!data) {
-                    data = { 
-                        name: "Piesek", 
-                        walkCount: 0, 
-                        isSearchable: true, 
-                        city: "", 
-                        breed: "",
-                        createdAt: fb.firestore.FieldValue.serverTimestamp()
-                    };
-                    if (targetUid === user.uid) {
-                        db.collection("users").doc(user.uid).set(data, {merge: true});
-                    }
-                }
-                
-                data = { ...data, isPremium: data.isPremium || false };
-                
-                setState('profile', data);
-                state.profile = data;
-                eventBus.emit('profileUpdated', data);
+            // 🔥 WERYFIKACJA E-MAILA I KARTY TESTERA
+            db.collection("users").doc(user.uid).get().then(userDoc => {
+                const isTester = userDoc.exists && userDoc.data().isTester === true;
 
-                // 🔥 Wywołujemy zewnętrzną funkcję zarządzającą Stadem
-                renderCaretakers(data, user.uid);
-                
-                document.getElementById("auth-screen").style.display = "none";
-                document.getElementById("app-interface").style.display = "flex";
-                
-                if (!appInitialized && typeof onReady === 'function') {
-                    onReady();
-                    appInitialized = true;
+                // Jeśli e-mail NIE jest zweryfikowany i użytkownik NIE jest testerem = blokada
+                if (!user.emailVerified && !isTester) {
+                    auth.signOut();
+                    showAuthAlert("Twój e-mail nie został zweryfikowany!\n\nSprawdź skrzynkę (oraz folder SPAM) i kliknij w przesłany link, aby aktywować konto.");
+                    document.getElementById("app-interface").style.display = "none";
+                    document.getElementById("auth-screen").style.display = "flex";
+                    return;
                 }
+
+                // Jeśli przeszliśmy bramkę (zweryfikowany lub tester), ładujemy aplikację
+                setState('auth.user', user);
+                state.user = user; 
+                
+                const targetUid = localStorage.getItem('activeDogId') || user.uid;
+                
+                const unsub = db.collection("users").doc(targetUid).onSnapshot(doc => {
+                    let data = doc.exists ? doc.data() : null;
+                    
+                    if (!data) {
+                        data = { 
+                            name: "Piesek", 
+                            walkCount: 0, 
+                            isSearchable: true, 
+                            city: "", 
+                            breed: "",
+                            createdAt: fb.firestore.FieldValue.serverTimestamp()
+                        };
+                        if (targetUid === user.uid) {
+                            db.collection("users").doc(user.uid).set(data, {merge: true});
+                        }
+                    }
+                    
+                    data = { ...data, isPremium: data.isPremium || false };
+                    
+                    setState('profile', data);
+                    state.profile = data;
+                    eventBus.emit('profileUpdated', data);
+
+                    // Wywołujemy zewnętrzną funkcję zarządzającą Stadem
+                    renderCaretakers(data, user.uid);
+                    
+                    document.getElementById("auth-screen").style.display = "none";
+                    document.getElementById("app-interface").style.display = "flex";
+                    
+                    if (!appInitialized && typeof onReady === 'function') {
+                        onReady();
+                        appInitialized = true;
+                    }
+                });
             });
+            
         } else {
             appInitialized = false;
             document.getElementById("app-interface").style.display = "none";
@@ -149,7 +165,7 @@ export function initAuth(onReady) {
             });
         }
 
-        // REJESTRACJA
+        // 🔥 REJESTRACJA (Z WYSYŁANIEM E-MAILA)
         if (e.target.id === 'registerBtn') {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
@@ -164,11 +180,21 @@ export function initAuth(onReady) {
             btn.innerText = "Tworzenie...";
 
             auth.createUserWithEmailAndPassword(email, pass).then((userCredential) => {
-                db.collection("users").doc(userCredential.user.uid).set({
-                    email: email,
-                    createdAt: fb.firestore.FieldValue.serverTimestamp()
-                }, {merge: true});
-                showAuthAlert("Konto utworzone pomyślnie! Witaj w Stadzie!", false);
+                // Generowanie maila weryfikacyjnego
+                userCredential.user.sendEmailVerification().then(() => {
+                    db.collection("users").doc(userCredential.user.uid).set({
+                        email: email,
+                        createdAt: fb.firestore.FieldValue.serverTimestamp()
+                    }, {merge: true});
+                    
+                    // Od razu wylogowujemy, by zapobiec wpuszczeniu bez kliknięcia w link
+                    auth.signOut(); 
+                    btn.innerText = originalText;
+                    showAuthAlert("Konto utworzone pomyślnie! 🐾\n\nWysłaliśmy Ci link aktywacyjny na podany adres e-mail. Musisz w niego kliknąć przed pierwszym logowaniem.", false);
+                }).catch(err => {
+                    btn.innerText = originalText;
+                    showAuthAlert("Błąd wysyłania e-maila weryfikacyjnego: " + translateAuthError(err.code));
+                });
             }).catch(err => {
                 btn.innerText = originalText;
                 showAuthAlert(translateAuthError(err.code));
@@ -181,7 +207,7 @@ export function initAuth(onReady) {
             if (!email) return showAuthAlert("Wpisz swój e-mail wyżej, aby zresetować hasło!");
             
             auth.sendPasswordResetEmail(email).then(() => {
-                showAuthAlert("Link do resetu hasła został wysłany na Twój adres e-mail.", false);
+                showAuthAlert("Link do zmiany hasła został wysłany na Twój adres e-mail.", false);
             }).catch(err => showAuthAlert(translateAuthError(err.code)));
         }
     });
