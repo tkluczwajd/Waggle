@@ -40,28 +40,36 @@
 
     <div id="app-interface" class="screen-container">
         
-        <!-- EKRAN GŁÓWNY (HOME) -->
+    <!-- EKRAN GŁÓWNY (HOME) -->
     <section id="view-home" class="view-section active">
         
-        <!-- 1. GŁÓWNA KARTA PSA (Sticky Header)
-             Ta część zostaje na górze. Tutaj z poziomu app.js "wstrzykiwany" 
-             będzie dynamiczny pasek (Efekt WOW!) np. "Plan wykonany w 100%!" -->
         <div class="sticky-header" style="padding-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div style="position:relative;">
-                        <img id="profileAvatar" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 4px 10px rgba(255,82,82,0.2);" onclick="document.getElementById('settings-modal').style.display='flex'">
-                        <div style="position:absolute; bottom:-5px; right:-5px; background:var(--bg-color); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:var(--soft-shadow); cursor:pointer;" onclick="document.getElementById('settings-modal').style.display='flex'">
+                        <img id="profileAvatar" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 4px 10px rgba(255,82,82,0.2);" onclick="document.getElementById('profile-setup-modal').style.display='flex'">
+                        <div style="position:absolute; bottom:-5px; right:-5px; background:var(--bg-color); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:var(--soft-shadow); cursor:pointer;" onclick="document.getElementById('profile-setup-modal').style.display='flex'">
                             <span style="font-size:12px;">✏️</span>
                         </div>
                     </div>
                     <div>
                         <h2 id="profileNameDisplay" style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px; color: var(--text-color);">Piesek</h2>
-                        <!-- Poniżej zostanie podpięta z JS kolorowa belka z % wykonanego planu -->
                         <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-top: 2px;">
                             <span id="profileBreedDisplay">Rasa</span> • <span id="profileCityDisplay">Miasto</span>
                         </div>
                     </div>
+                </div>
+                
+                <!-- NAPRAWA 1: Przywrócone przyciski Ustawień i Wylogowywania -->
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <button id="openSettingsBtn" onclick="document.getElementById('settings-modal').style.display='flex'" style="background:none; border:none; cursor:pointer; color:var(--text-color); padding:0; display:flex;" title="Ustawienia">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </button>
+                    <button id="logoutBtn" onclick="window.Waggle.logout()" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--danger); display: flex; align-items: center; justify-content: center;" title="Wyloguj się">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
                 </div>
             </div>
             
@@ -83,13 +91,8 @@
             </div>
         </div>
 
-        <!-- GŁÓWNY KONTENER NA KARTY PONIŻEJ HEADER'A -->
         <div style="padding: 15px 20px;">
             
-            <!-- PRIORYTET 1: KARTA S.A.F.E.
-                 Zgodnie z audytem, przenieśliśmy ten element z samego dołu 
-                 tutaj, tuż pod główną statystyką, czyniąc go łatwiej 
-                 dostępnym dla użytkownika podczas sytuacji alarmowych. -->
             <div id="home-safe-card" class="waggle-card" style="border-left: 4px solid var(--primary); margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="const content = document.getElementById('safe-card-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">
                     <h3 class="waggle-card-title" style="display: flex; align-items: center; gap: 8px; margin: 0;">
@@ -97,13 +100,17 @@
                     </h3>
                     <span style="font-size: 12px; color: var(--text-muted);">Rozwiń ▾</span>
                 </div>
-                <!-- Treść karty rozwija się w dół jak akordeon -->
                 <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
                     <div id="safe-data-fallback" style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
                         Karta ratunkowa jest pusta.<br><button onclick="document.getElementById('safe-setup-modal').style.display='flex'" style="background:none; border:none; color:var(--primary); font-weight:900; margin-top:5px; cursor:pointer;">UZUPEŁNIJ TERAZ</button>
                     </div>
                     <div id="safe-data-display" style="display: none;">
-                        <!-- Struktura wewnętrzna (tabelka informacyjna) bez zmian z poprzedniej formy -->
+                        
+                        <!-- NAPRAWA 3: Przywrócony przycisk edycji wypełnionej karty SAFE -->
+                        <div style="text-align: right; margin-bottom: 8px;">
+                            <button id="openSafeSetupBtn" onclick="document.getElementById('safe-setup-modal').style.display='flex'" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--secondary);">✏️ Edytuj kartę</button>
+                        </div>
+
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
                             <div style="background: var(--bg-color); padding: 10px; border-radius: 10px;">
                                 <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">NUMER CHIP</div>
@@ -126,9 +133,6 @@
                 </div>
             </div>
 
-            <!-- PRIORYTET 2: CODZIENNA OPIEKA 
-                 Układ bloków został przebudowany, żeby być "klikalnym" kafelkiem 
-                 z kolorowymi paskami z tyłu obrazującymi postęp. -->
             <div id="daily-care-section" class="waggle-card" style="padding-bottom: 5px;">
                 <div class="waggle-card-header">
                     <h3 class="waggle-card-title">📋 Codzienna Opieka</h3>
@@ -183,39 +187,29 @@
                 </div>
             </div>
 
-            <!-- PRIORYTET 3: ALERTY
-                 Puste miejsce przeznaczone na komunikaty wstrzykiwane przez app.js
-                 np. "Głodny pies!" czy "Wymagany Spacer!" -->
-            <div id="smart-care-alerts" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-                <!-- Wstrzykiwane przez JS -->
-            </div>
+            <div id="smart-care-alerts" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;"></div>
 
-            <!-- PRIORYTET 4: SZYBKIE AKCJE
-                 Bezpośrednio pod alertami by można było na nie natychmiast zareagować. 
-                 Najważniejsze CTA (Call To Action) - WYJDŹ NA SPACER. -->
             <div id="quick-actions-panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-                <button onclick="window.Waggle.switchView('local')" style="background: var(--primary); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 900; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(255,82,82,0.2); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <!-- NAPRAWA 4: "Otwórz mapę" wykorzystuje sprawdzony system routing'u -->
+                <button onclick="document.querySelector('[data-view=\\'local\\']').click()" style="background: var(--primary); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 900; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(255,82,82,0.2); display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span style="font-size: 18px;">🗺️</span> OTWÓRZ MAPĘ
                 </button>
-                <button onclick="window.logDogActivity('vet')" style="background: white; color: var(--text-color); border: 2px solid var(--border-color); padding: 16px; border-radius: 16px; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <!-- NAPRAWA 5: Zamiast logować akcję, przycisk otwiera formularz dodawania nowej wizyty weterynaryjnej w kalendarzu -->
+                <button onclick="document.getElementById('calendar-add-modal').style.display='flex'; document.getElementById('calTypeSelect').value='vet';" style="background: white; color: var(--text-color); border: 2px solid var(--border-color); padding: 16px; border-radius: 16px; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span style="font-size: 18px;">🏥</span> WIZYTA WET.
                 </button>
             </div>
 
-            <!-- PRIORYTET 5: OSTATNIA AKTYWNOŚĆ (Historia Dziennika) -->
             <div class="waggle-card">
                 <div class="waggle-card-header">
                     <h3 class="waggle-card-title">📝 Ostatnio</h3>
                     <button onclick="window.openJournalHistory()" style="background: none; border: none; font-size: 12px; font-weight: 800; color: var(--secondary); cursor: pointer;">Historia ▾</button>
                 </div>
-                <!-- To miejsce dla "Efektu WOW" generowanego w app.js 
-                     z wesołym kafelkiem pustego stanu. -->
                 <div id="journal-live-list" style="display: flex; flex-direction: column; gap: 8px;">
                     <div style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">Ładowanie...</div>
                 </div>
             </div>
 
-            <!-- PRIORYTET 6: KTO JEST OBECNIE W OKOLICY (Psy Wokół) -->
             <div class="waggle-card">
                 <div class="waggle-card-header">
                     <h3 class="waggle-card-title">🐕 Psy wokół...</h3>
@@ -223,23 +217,22 @@
                         <span id="home-active-walks">0</span> na spacerze
                     </div>
                 </div>
-                <!-- Przez mapManager.js będziemy wstrzykiwać tutaj twarze/ikony psów -->
-                <div id="home-active-avatars" style="display: flex; align-items: center; height: 40px; padding-left: 5px;">
-                    <!-- JS wstrzykuje awatary -->
-                </div>
+                <div id="home-active-avatars" style="display: flex; align-items: center; height: 40px; padding-left: 5px;"></div>
             </div>
 
-            <!-- PRIORYTET 7: NASTĘPNE WYDARZENIE (Terminarz szczepień/fryzjera itp.) -->
             <div class="waggle-card">
-                <h3 class="waggle-card-title" style="margin-bottom: 12px;">📅 Następne wydarzenie...</h3>
+                <div class="waggle-card-header">
+                    <h3 class="waggle-card-title" style="margin-bottom: 0;">📅 Następne wydarzenie...</h3>
+                    <!-- NAPRAWA 6: Przywrócony przycisk DODAJ do kalendarza -->
+                    <button id="openAddCalendarBtn" style="background: var(--bg-color); border: none; color: var(--text-color); font-size: var(--font-sm); font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer;">Dodaj</button>
+                </div>
                 <div id="home-next-event">
-                    <div style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">Ładowanie...</div>
+                    <div id="calendar-live-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">Ładowanie...</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- PRIORYTET 8: STADO 
-                 Spadło na przedostatnie miejsce (poprzednio obok Ostatnio). 
-                 Zagląda się tam rzadziej, nie musi grać głównej roli. -->
             <div class="waggle-card">
                 <div class="waggle-card-header">
                     <h3 class="waggle-card-title">🐕 Moje Stado</h3>
@@ -249,10 +242,6 @@
                 </div>
             </div>
 
-            <!-- PRIORYTET 9: WIEDZA DNIA 
-                 Skurczona do cichego paska informacyjnego na samym dole. 
-                 Zawartość będzie dynamicznie zaciągnięta przez renderWiedzaDnia() 
-                 w app.js. -->
             <div id="wiedza-dnia-target"></div>
             
         </div>
@@ -360,7 +349,8 @@
             <div id="wiki-content" style="padding:0 10px; margin-top: 10px;"></div>
         </section>
 
-        <nav class="bottom-nav">
+        <!-- DODANO: onclick chowający modal przy kliknięciu w dowolną zakładkę -->
+        <nav class="bottom-nav" onclick="document.getElementById('more-menu-modal').style.display='none'">
             <button class="nav-item active" data-view="home">🐶<span>Home</span></button>
             <button class="nav-item" data-view="local">🗺️<span>Mapa</span></button>
             <button class="nav-item" data-view="community">📢<span>Tablica</span></button>
