@@ -67,8 +67,24 @@ function listenToCalendarEvents() {
             listElement.innerHTML = '';
 
             if (snapshot.empty) {
-                listElement.innerHTML = '<div style="text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 700; padding: 10px 0;">Brak nadchodzących wydarzeń...</div>';
+                // Gdy nie ma wydarzeń - ukrywamy klasyczny nagłówek karty i robimy jedną zgrabną, cienką pigułkę.
+                const cardHeader = listElement.previousElementSibling;
+                if (cardHeader) cardHeader.style.display = 'none'; // Chowamy "📅 Następne wydarzenie"
+                listElement.parentElement.style.padding = "10px 15px"; // Zmniejszamy marginesy całej karty
+                
+                listElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                            <span style="font-size: 16px;">📅</span> Brak nadchodzących wydarzeń
+                        </div>
+                        <button onclick="document.getElementById('calendar-add-modal').style.display='flex'" style="background: var(--bg-color); border: none; color: var(--text-color); font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer;">Dodaj</button>
+                    </div>`;
                 return;
+            } else {
+                // Jeśli SĄ wydarzenia - przywracamy normalny wygląd karty!
+                const cardHeader = listElement.previousElementSibling;
+                if (cardHeader) cardHeader.style.display = 'flex';
+                listElement.parentElement.style.padding = "15px 20px";
             }
 
             const icons = { vaccine: '💉', deworm: '💊', vet: '🏥', groomer: '✂️', other: '🗓️' };
