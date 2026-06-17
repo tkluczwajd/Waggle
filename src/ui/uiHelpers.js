@@ -138,3 +138,25 @@ window.Waggle.startDirectChat = (uid, name, avatar) => {
         alert(`Uruchamiam czat z: ${name} 💬! (Silnik podepniemy w kolejnym kroku)`);
     }
 };
+// 🔥 WAGGLE S.A.F.E. - Generator Linku i Kopiowanie do schowka
+window.Waggle = window.Waggle || {};
+window.Waggle.copySafePublicLink = () => {
+    const linkInput = document.getElementById('safe-public-link-input');
+    if (linkInput && linkInput.value) {
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            if (window.Waggle && window.Waggle.showToast) {
+                window.Waggle.showToast("🔗 Skopiowano link ratunkowy!");
+            }
+        }).catch(err => alert('Nie udało się skopiować linku.'));
+    }
+};
+
+// Doklej to na końcu funkcji `updateStatsUI()` (wewnątrz `uiHelpers.js`),
+// aby aplikacja zawsze wpisywała tam aktualny ID psa:
+setTimeout(() => {
+    const linkInput = document.getElementById('safe-public-link-input');
+    if (linkInput) {
+        const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
+        linkInput.value = currentUid ? `https://joinwaggle.com/safe/${currentUid}` : 'Brak ID psa';
+    }
+}, 500);
