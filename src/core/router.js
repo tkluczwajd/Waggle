@@ -4,6 +4,12 @@ import { eventBus } from './eventBus.js';
 
 export function switchView(view, pushToHistory = true) {
 
+    // 🧹 MIOTŁA NA MODALE: Zamyka wszystkie otwarte okienka przy zmianie zakładki
+    // Łapie wszystko co ma klasę .modal LUB id kończące się na "-modal"
+    document.querySelectorAll('.modal, [id$="-modal"]').forEach(modal => {
+        modal.style.display = 'none';
+    });
+
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
 
