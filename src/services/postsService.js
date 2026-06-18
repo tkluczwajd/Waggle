@@ -48,7 +48,7 @@ export function subscribeToComments(postId, callback) {
         });
 }
 
-export async function addComment(postId, commentData) {
+export async function addCommentInDb(postId, commentData) {
     const ref = db.collection("posts").doc(postId);
     await ref.collection("comments").add({
         ...commentData,
