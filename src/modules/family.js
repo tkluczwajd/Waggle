@@ -168,3 +168,29 @@ export function renderCaretakers(profileData, loggedInUid) {
         if (deleteAccountBtn) deleteAccountBtn.parentElement ? deleteAccountBtn.parentElement.style.display = 'none' : deleteAccountBtn.style.display = 'none';
     }
 }
+
+window.Waggle.joinFamily = async (ownerUid) => {
+    if (!ownerUid) return;
+    
+    // Zapisujemy, że od teraz "patrzymy" na profil tego psa
+    localStorage.setItem('activeDogId', ownerUid);
+    
+    // Możemy też zapisać to w bazie, by wiedzieć, do jakich stad należy użytkownik
+    const myUid = auth.currentUser.uid;
+    try {
+        await db.collection('users').doc(myUid).set({
+            memberOf: fb.firestore.FieldValue.arrayUnion(ownerUid)
+        }, { merge: true });
+        
+        window.Waggle.showToast("🐾 Dołączyłeś do nowego Stada!");
+        
+        // Przeładowujemy apkę, by zaciągnąć nowe statystyki i paski postępu
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+        
+    } catch(e) {
+        console.error(e);
+        alert("Błąd podczas dołączania do stada.");
+    }
+};
