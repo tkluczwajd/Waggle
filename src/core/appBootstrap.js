@@ -14,6 +14,7 @@ import { appState as state } from './state.js';
 import { fetchWeather } from '../services/weatherService.js';
 import { fetchNearbyParks } from '../services/parksService.js';
 import { renderParksOnMap } from '../modules/map/parksRenderer.js';
+import { listenToDailyCare } from '../modules/care.js';
 
 // Uporządkowane moduły komunikacji i powiadomień okolicy:
 import { initLiveFeed } from '../modules/map/liveFeed.js';
@@ -38,6 +39,7 @@ export function bootstrapApp() {
 
         // Rysujemy profil natychmiast po zalogowaniu
         updateStatsUI();
+        listenToDailyCare(); // 🔥 ODPALAMY SILNIK CODZIENNEJ OPIEKI
 
         // ODPALAMY RADAR SAFE (jeśli pies ma wygenerowany kod)
         if (state.profile && state.profile.safeId) {
