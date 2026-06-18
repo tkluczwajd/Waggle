@@ -577,25 +577,22 @@
         </div>
     </div>
 
-    <div id="profile-setup-modal" class="modal">
-        <div class="card">
-            <button class="close-modal-btn">✕</button>
-            <input type="text" id="setupName" placeholder="Imię">
-            <input type="text" id="setupCity" placeholder="Miasto">
-            <select id="setupBreed">
-                <option value="">Wybierz rasę...</option>
-                <option value="Kundelek">Kundelek</option>
-                <option value="Golden Retriever">Golden Retriever</option>
-                <option value="Owczarek Niemiecki">Owczarek Niemiecki</option>
-                <option value="Border Collie">Border Collie</option>
-                <option value="Labrador">Labrador</option>
-                <option value="Mops">Mops</option>
-                <option value="Buldog Francuski">Buldog Francuski</option>
-                <option value="Yorkshire Terrier">Yorkshire Terrier</option>
-                <option value="Maltańczyk">Maltańczyk</option>
-                <option value="Inna rasa">Inna rasa</option>
-            </select>
-            <button class="btn-main" id="saveProfileBtn">ZAPISZ</button>
+    <div id="profile-setup-modal" class="modal" style="display: none; align-items:center; justify-content:center; z-index: 10000; background: rgba(0,0,0,0.8);">
+        <div class="card" style="padding: 25px; width: 90%; max-width: 350px; text-align: center; border-radius: 24px; position: relative;">
+            <button class="close-modal-btn" onclick="document.getElementById('profile-setup-modal').style.display='none'" style="position: absolute; right: 15px; top: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">✕</button>
+            <h3 style="margin-top: 0; font-weight: 900;">Profil Twojego Psa</h3>
+            
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 20px auto; cursor: pointer;" id="triggerProfileImageUpload">
+                <img id="setupAvatarPreview" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: var(--bg-color);">
+                <div style="position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">📷</div>
+            </div>
+            <input type="file" id="setupAvatarInput" accept="image/*" style="display: none;">
+
+            <input type="text" id="setupName" class="waggle-input" placeholder="Imię psa (np. Burek)" style="margin-bottom: 10px; width: 100%; box-sizing: border-box;">
+            <input type="text" id="setupBreed" class="waggle-input" placeholder="Rasa (np. Mieszaniec)" style="margin-bottom: 10px; width: 100%; box-sizing: border-box;">
+            <input type="text" id="setupCity" class="waggle-input" placeholder="Miasto" style="margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+            
+            <button id="saveProfileBtn" class="waggle-btn" style="width: 100%;">Zapisz i kontynuuj</button>
         </div>
     </div>
 
