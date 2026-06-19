@@ -4,51 +4,38 @@ import { appState as state } from '../core/state.js';
 import { updateNotificationBtnUI } from '../services/notificationService.js';
 
 export function updateStatsUI() {
-    if (!state.profile) return; const p = state.profile;
+    if (!state.profile) return; 
+    const p = state.profile;
     
-    // 🔥 AKTUALIZACJA KARTOTEKI MEDYCZNEJ (Ekran SAFE)
-    const chipDisplay = document.getElementById('displayChip');
-    if (chipDisplay) {
-        const hasSafeData = p.chip || p.allergies || p.meds || p.vet;
-        const displayBlock = document.getElementById('safe-data-display');
-        const fallbackText = document.getElementById('safe-data-fallback');
+    // ... (jeśli masz tu wyżej kod od aktualizacji imienia psa, miasta czy awatara, zostaw go na swoim miejscu) ...
 
-        if (hasSafeData) {
-            if (displayBlock) displayBlock.style.display = 'block';
-            if (fallbackText) fallbackText.style.display = 'none';
-            
-            if (document.getElementById('displaySafeName')) document.getElementById('displaySafeName').innerText = p.name || "Nieznane";
-            if (document.getElementById('displayChip')) document.getElementById('displayChip').innerText = p.chip || "Brak danych";
-            if (document.getElementById('displayAllergies')) document.getElementById('displayAllergies').innerText = p.allergies || "Brak";
-            if (document.getElementById('displayMeds')) document.getElementById('displayMeds').innerText = p.meds || "Brak";
-            if (document.getElementById('displayVet')) document.getElementById('displayVet').innerText = p.vet || "Brak kontaktu";
-            
-        } else {
-            if (displayBlock) displayBlock.style.display = 'none';
-            if (fallbackText) fallbackText.style.display = 'block';
-        }
-        // --- ŁADOWANIE KARTY S.A.F.E. NA EKRAN ---
-    const hasSafeData = state.profile?.chip || state.profile?.allergies || state.profile?.meds || state.profile?.weight;
+    // --- ŁADOWANIE KARTY S.A.F.E. NA EKRAN ---
     const safeFallback = document.getElementById('safe-data-fallback');
     const safeDisplay = document.getElementById('safe-data-display');
     const safeCardContent = document.getElementById('safe-card-content');
     
-    // Pokazujemy całą sekcję S.A.F.E. w menu profilu
+    // Sprawdzamy, czy użytkownik wpisał JAKIEKOLWIEK dane medyczne w formularzu
+    const hasSafeData = Boolean(p.chip || p.allergies || p.meds || p.weight || p.phone || p.vet);
+
+    // Upewniamy się, że cała sekcja jest widoczna na profilu
     if (safeCardContent) safeCardContent.style.display = 'block';
 
+    // Przełączamy widok: jeśli są dane pokaż tabelkę, jeśli nie - pokaż przycisk "Uzupełnij teraz"
     if (safeFallback && safeDisplay) {
         safeFallback.style.display = hasSafeData ? 'none' : 'block';
         safeDisplay.style.display = hasSafeData ? 'block' : 'none';
     }
 
-    // Wypełnianie tekstów (jeśli nic nie wpisano, pokazujemy "Brak")
-    if (document.getElementById('displaySafeWeight')) document.getElementById('displaySafeWeight').innerText = state.profile?.weight ? state.profile.weight + " kg" : "Brak";
-    if (document.getElementById('displaySafeChip')) document.getElementById('displaySafeChip').innerText = state.profile?.chip || "Brak";
-    if (document.getElementById('displaySafeAllergies')) document.getElementById('displaySafeAllergies').innerText = state.profile?.allergies || "Brak";
-    if (document.getElementById('displaySafeMeds')) document.getElementById('displaySafeMeds').innerText = state.profile?.meds || "Brak";
-    if (document.getElementById('displaySafePhone')) document.getElementById('displaySafePhone').innerText = state.profile?.phone || state.profile?.vet || "Brak";
-    if (document.getElementById('displaySafeNotes')) document.getElementById('displaySafeNotes').innerText = state.profile?.notes || "-";
+    // Wstrzykujemy fizycznie teksty do okienek
+    if (hasSafeData) {
+        if (document.getElementById('displaySafeWeight')) document.getElementById('displaySafeWeight').innerText = p.weight ? p.weight + " kg" : "Brak";
+        if (document.getElementById('displaySafeChip')) document.getElementById('displaySafeChip').innerText = p.chip || "Brak";
+        if (document.getElementById('displaySafeAllergies')) document.getElementById('displaySafeAllergies').innerText = p.allergies || "Brak";
+        if (document.getElementById('displaySafeMeds')) document.getElementById('displaySafeMeds').innerText = p.meds || "Brak";
+        if (document.getElementById('displaySafePhone')) document.getElementById('displaySafePhone').innerText = p.phone || p.vet || "Brak";
+        if (document.getElementById('displaySafeNotes')) document.getElementById('displaySafeNotes').innerText = p.notes || "-";
     }
+}
     
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
     
