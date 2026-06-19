@@ -20,6 +20,22 @@ export function initProfileUi() {
                 preview.src = URL.createObjectURL(file); // Błyskawiczny podgląd
             }
         }
+        // OTWIERANIE MODALU KARTY S.A.F.E. (Z ZACIĄGANIEM DANYCH)
+        if (e.target.closest('#openSafeSetupBtn') || e.target.closest('#openEmptySafeBtn')) {
+            const safeModal = document.getElementById('safe-setup-modal');
+            if (safeModal) {
+                // Zaciągamy dane medyczne prosto do formularza
+                if(document.getElementById('safeWeight')) document.getElementById('safeWeight').value = state.profile?.weight || "";
+                if(document.getElementById('safeChip')) document.getElementById('safeChip').value = state.profile?.chip || "";
+                if(document.getElementById('safePhone')) document.getElementById('safePhone').value = state.profile?.phone || state.profile?.vet || "";
+                if(document.getElementById('safeAllergies')) document.getElementById('safeAllergies').value = state.profile?.allergies || "";
+                if(document.getElementById('safeMeds')) document.getElementById('safeMeds').value = state.profile?.meds || "";
+                if(document.getElementById('safeNotes')) document.getElementById('safeNotes').value = state.profile?.notes || "";
+                
+                // Pokazujemy wypełnione okno
+                safeModal.style.display = 'flex';
+            }
+        }
     });
 
     document.addEventListener('click', async (e) => {
