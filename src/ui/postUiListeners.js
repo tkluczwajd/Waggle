@@ -1,4 +1,3 @@
-import { setPostFilter, addPostComment, saveCommunityPost } from '../modules/posts/postsListeners.js';
 import { uploadImageToService as uploadImage } from '../services/postsService.js';
 
 export function initPostUi() {
