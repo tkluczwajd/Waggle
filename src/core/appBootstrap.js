@@ -14,7 +14,7 @@ import { fetchWeather } from '../services/weatherService.js';
 import { fetchNearbyParks } from '../services/parksService.js';
 import { renderParksOnMap } from '../modules/map/parksRenderer.js';
 import { listenToDailyCare } from '../modules/care.js';
-import { initProfileUi } from '../modules/profileUiListeners.js';
+import { initProfileUi } from '../ui/profileUiListeners.js';
 
 // Uporządkowane moduły komunikacji i powiadomień okolicy:
 import { initLiveFeed } from '../modules/map/liveFeed.js';
