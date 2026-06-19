@@ -30,29 +30,45 @@ export function initProfileUi() {
             if (fileInput) fileInput.click();
         }
 
-        // 3. OTWIERANIE MODALU EDYCJI PROFILU
+        // 3. OTWIERANIE MODALU EDYCJI PROFILU (Z HYDRACJĄ DANYCH S.A.F.E.)
         if (e.target.closest('#openEditProfileBtn') || e.target.closest('#open-profile-setup') || e.target.closest('.edit-profile-trigger')) {
             const modal = document.getElementById('profile-setup-modal');
             if(modal) {
+                // Ładowanie podstawowych danych
                 if(document.getElementById('setupName')) document.getElementById('setupName').value = state.profile?.name || "";
                 if(document.getElementById('setupCity')) document.getElementById('setupCity').value = state.profile?.city || "";
                 if(document.getElementById('setupBreed')) document.getElementById('setupBreed').value = state.profile?.breed || "";
                 
+                // Ładowanie danych medycznych S.A.F.E. do formularza
+                if(document.getElementById('setupChip')) document.getElementById('setupChip').value = state.profile?.chip || "";
+                if(document.getElementById('setupAllergies')) document.getElementById('setupAllergies').value = state.profile?.allergies || "";
+                if(document.getElementById('setupMeds')) document.getElementById('setupMeds').value = state.profile?.meds || "";
+                
+                // Obsługa telefonu/weterynarza (zabezpieczenie na dwie różne nazwy ID)
+                if(document.getElementById('setupVet')) document.getElementById('setupVet').value = state.profile?.vet || state.profile?.phone || "";
+                if(document.getElementById('setupPhone')) document.getElementById('setupPhone').value = state.profile?.vet || state.profile?.phone || "";
+
                 // Reset podglądu do zapisanego avatara
                 const preview = document.getElementById('setupAvatarPreview');
                 if (preview) preview.src = state.profile?.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
                 
-                pendingProfileFile = null; // Czyścimy stare śmieci
+                pendingProfileFile = null; 
                 modal.style.display = 'flex';
             }
         }
 
-        // 4. ZAPISYWANIE PROFILU (Z ODCHUDZANIEM ZDJĘCIA)
+        // 4. ZAPISYWANIE PROFILU (I SYNCHRONIZACJA Z BAZĄ S.A.F.E.)
         if (e.target.id === 'saveProfileBtn' || e.target.closest('#saveProfileBtn')) {
             const btn = e.target.closest('#saveProfileBtn');
             const newName = document.getElementById('setupName')?.value; 
             const newCity = document.getElementById('setupCity')?.value; 
             const newBreed = document.getElementById('setupBreed')?.value;
+            
+            // Pobieranie danych medycznych z formularza
+            const newChip = document.getElementById('setupChip')?.value || "";
+            const newAllergies = document.getElementById('setupAllergies')?.value || "";
+            const newMeds = document.getElementById('setupMeds')?.value || "";
+            const newVet = document.getElementById('setupVet')?.value || document.getElementById('setupPhone')?.value || "";
             
             if(!newName) return window.Waggle.showToast("Imię jest wymagane! 🐾"); 
             
@@ -62,31 +78,40 @@ export function initProfileUi() {
             try {
                 let finalAvatarUrl = state.profile?.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
                 
-                // Odpalamy ciężką maszynerię TYLKO jeśli użytkownik wybrał nowe zdjęcie
                 if (pendingProfileFile) {
                     window.Waggle.showToast("Optymalizuję zdjęcie... 📷");
                     finalAvatarUrl = await uploadImage(pendingProfileFile);
                 }
 
-                await db.collection("users").doc(state.user.uid).set({ 
+                // Pakiet wszystkich danych
+                const updatedData = { 
                     name: newName, 
                     city: newCity, 
                     breed: newBreed,
-                    avatar: finalAvatarUrl 
-                }, { merge: true }); 
+                    avatar: finalAvatarUrl,
+                    chip: newChip,
+                    allergies: newAllergies,
+                    meds: newMeds,
+                    vet: newVet
+                };
+
+                // Zapisujemy profil użytkownika
+                await db.collection("users").doc(state.user.uid).set(updatedData, { merge: true }); 
                 
-                state.profile.name = newName;
-                state.profile.city = newCity;
-                state.profile.breed = newBreed;
-                state.profile.avatar = finalAvatarUrl;
+                // 🔥 KLUCZOWE: Automatycznie aktualizujemy publiczną wizytówkę S.A.F.E.!
+                if (state.profile) {
+                    await createOrUpdateSafeProfile(state.user.uid, updatedData);
+                }
+                
+                state.profile = { ...state.profile, ...updatedData };
 
                 document.querySelectorAll('#profileAvatar, .current-user-avatar').forEach(img => img.src = finalAvatarUrl);
                 
                 window.Waggle.updateStatsUI(); 
                 document.getElementById('profile-setup-modal').style.display = 'none';
-                window.Waggle.showToast("Zapisano profil! 🐾");
+                window.Waggle.showToast("Zapisano profil i dane S.A.F.E.! 🐾");
                 
-                pendingProfileFile = null; // Czyścimy plik po udanym wysłaniu
+                pendingProfileFile = null; 
 
             } catch(err) { 
                 console.error("Błąd zapisu:", err);
