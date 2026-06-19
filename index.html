@@ -105,19 +105,29 @@
     
     <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
     
+   <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+    
     <div id="safe-data-fallback" style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
         Karta ratunkowa jest pusta.<br>
         <button id="openEmptySafeBtn" style="background:none; border:none; color:var(--primary); font-weight:900; margin-top:5px; cursor:pointer;">UZUPEŁNIJ TERAZ</button>
     </div>
     
     <div id="safe-data-display" style="display: none;">
-        <div style="text-align: right; margin-bottom: 8px;">
-            <button id="openSafeSetupBtn" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--secondary);">✏️ Edytuj kartę</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="font-weight: 900; color: var(--secondary); font-size: 14px;">Dane Medyczne</div>
+            <button id="openSafeSetupBtn" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--text-muted);">✏️ Edytuj</button>
         </div>
         
-        <div style="text-align: right; margin-bottom: 8px;">
-            <button id="generateQrBtn" class="waggle-btn" style="background: var(--text-color); margin-top: 15px; width: 100%;">Generuj kod QR na obrożę 🐾</button>
+        <div style="background: var(--panel-bg); padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; border: 1px solid var(--border-color); line-height: 1.6;">
+            <div><strong style="color:var(--text-color);">Waga:</strong> <span id="displaySafeWeight">-</span></div>
+            <div><strong style="color:var(--text-color);">Chip:</strong> <span id="displaySafeChip">-</span></div>
+            <div><strong style="color:var(--text-color);">Alergie:</strong> <span id="displaySafeAllergies">-</span></div>
+            <div><strong style="color:var(--text-color);">Leki:</strong> <span id="displaySafeMeds">-</span></div>
+            <div><strong style="color:var(--text-color);">Telefon:</strong> <span id="displaySafePhone">-</span></div>
+            <div><strong style="color:var(--text-color);">Notatki:</strong> <span id="displaySafeNotes">-</span></div>
         </div>
+        
+        <button id="generateQrBtn" class="waggle-btn" style="background: var(--text-color); width: 100%;">Generuj kod QR na obrożę 🐾</button>
     </div>
 </div>
                     
