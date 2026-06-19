@@ -102,21 +102,22 @@
             </div>
             
             <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                
-                <div id="safe-data-fallback" style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
-                    Karta ratunkowa jest pusta.<br>
-                    <button onclick="document.getElementById('safe-setup-modal').style.display='flex'" style="background:none; border:none; color:var(--primary); font-weight:900; margin-top:5px; cursor:pointer;">UZUPEŁNIJ TERAZ</button>
-                </div>
-                
-                <div id="safe-data-display" style="display: none;">
-                    
-                    <div style="text-align: right; margin-bottom: 8px;">
-                        <button id="openSafeSetupBtn" onclick="document.getElementById('safe-setup-modal').style.display='flex'" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--secondary);">✏️ Edytuj kartę</button>
-                    </div>
-                    
-                    <div style="text-align: right; margin-bottom: 8px;">
-                        <button id="generateQrBtn" class="waggle-btn" style="background: var(--text-color); margin-top: 15px; width: 100%;">Generuj kod QR na obrożę 🐾</button>
-                    </div>
+    
+    <div id="safe-data-fallback" style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
+        Karta ratunkowa jest pusta.<br>
+        <button id="openEmptySafeBtn" style="background:none; border:none; color:var(--primary); font-weight:900; margin-top:5px; cursor:pointer;">UZUPEŁNIJ TERAZ</button>
+    </div>
+    
+    <div id="safe-data-display" style="display: none;">
+        <div style="text-align: right; margin-bottom: 8px;">
+            <button id="openSafeSetupBtn" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--secondary);">✏️ Edytuj kartę</button>
+        </div>
+        
+        <div style="text-align: right; margin-bottom: 8px;">
+            <button id="generateQrBtn" class="waggle-btn" style="background: var(--text-color); margin-top: 15px; width: 100%;">Generuj kod QR na obrożę 🐾</button>
+        </div>
+    </div>
+</div>
                     
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
