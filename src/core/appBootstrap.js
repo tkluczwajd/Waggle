@@ -166,7 +166,7 @@ export function bootstrapApp() {
                         
                         if (state.map.instance) {
                             state.map.instance.setView([state.location.lat, state.location.lng], 15, { animate: true });
-                        }
+                        } 
                         
                         try {
                             const newPlaces = await fetchNearbyParks(state.location.lat, state.location.lng);
