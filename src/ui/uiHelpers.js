@@ -27,6 +27,27 @@ export function updateStatsUI() {
             if (displayBlock) displayBlock.style.display = 'none';
             if (fallbackText) fallbackText.style.display = 'block';
         }
+        // --- ŁADOWANIE KARTY S.A.F.E. NA EKRAN ---
+    const hasSafeData = state.profile?.chip || state.profile?.allergies || state.profile?.meds || state.profile?.weight;
+    const safeFallback = document.getElementById('safe-data-fallback');
+    const safeDisplay = document.getElementById('safe-data-display');
+    const safeCardContent = document.getElementById('safe-card-content');
+    
+    // Pokazujemy całą sekcję S.A.F.E. w menu profilu
+    if (safeCardContent) safeCardContent.style.display = 'block';
+
+    if (safeFallback && safeDisplay) {
+        safeFallback.style.display = hasSafeData ? 'none' : 'block';
+        safeDisplay.style.display = hasSafeData ? 'block' : 'none';
+    }
+
+    // Wypełnianie tekstów (jeśli nic nie wpisano, pokazujemy "Brak")
+    if (document.getElementById('displaySafeWeight')) document.getElementById('displaySafeWeight').innerText = state.profile?.weight ? state.profile.weight + " kg" : "Brak";
+    if (document.getElementById('displaySafeChip')) document.getElementById('displaySafeChip').innerText = state.profile?.chip || "Brak";
+    if (document.getElementById('displaySafeAllergies')) document.getElementById('displaySafeAllergies').innerText = state.profile?.allergies || "Brak";
+    if (document.getElementById('displaySafeMeds')) document.getElementById('displaySafeMeds').innerText = state.profile?.meds || "Brak";
+    if (document.getElementById('displaySafePhone')) document.getElementById('displaySafePhone').innerText = state.profile?.phone || state.profile?.vet || "Brak";
+    if (document.getElementById('displaySafeNotes')) document.getElementById('displaySafeNotes').innerText = state.profile?.notes || "-";
     }
     
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
