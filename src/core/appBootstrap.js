@@ -30,7 +30,7 @@ export function bootstrapApp() {
     // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
     setupAuth(() => {
         initRouter();
-        initProfileUiListeners();
+        initProfileUi();
         initUiListeners();
 
         // Uruchomienie lokalnego radaru oraz nasłuchu wiadomości
