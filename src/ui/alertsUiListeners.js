@@ -1,6 +1,5 @@
 import { appState as state } from '../core/state.js';
 import { switchView } from '../core/router.js';
-import { setPostFilter } from '../modules/posts/postsListeners.js';
 
 export function initAlertsUi() {
     document.addEventListener('click', (e) => {
