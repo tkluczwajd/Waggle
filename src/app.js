@@ -19,25 +19,25 @@ initWikiEngine();
 // ============================================================================
 // 🚨 RADAR S.A.F.E. (Przechwytywanie skanów QR z ulicy)
 // ============================================================================
-// ============================================================================
-// 🚨 RADAR S.A.F.E. (Przechwytywanie skanów QR z ulicy)
-// ============================================================================
-setTimeout(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const safeId = urlParams.get('safe');
+const urlParams = new URLSearchParams(window.location.search);
+const safeId = urlParams.get('safe');
 
-    if (safeId) {
-        console.log("🚨 Wykryto skan QR! Szukam ID:", safeId);
-        
-        // 1. Pokazujemy czerwoną kartę ratunkową
+if (safeId) {
+    console.log("🚨 Tryb Ratunkowy! Szukam ID:", safeId);
+    
+    // 1. TARCZA: Siłowo wyłączamy ekran logowania, menu i tło aplikacji!
+    const emergencyStyle = document.createElement('style');
+    emergencyStyle.innerHTML = `
+        #auth-screen, .bottom-nav, #app-interface { display: none !important; }
+        body { background: #1a1a1a !important; }
+    `;
+    document.head.appendChild(emergencyStyle);
+
+    // 2. Ładowanie danych po ułamku sekundy
+    setTimeout(() => {
         const modal = document.getElementById('public-safe-modal');
         if (modal) modal.style.display = 'flex';
 
-        // 2. UKRYWAMY DOLNE MENU (żeby znalazca nie wchodził w aplikację)
-        const bottomNav = document.querySelector('.bottom-nav');
-        if (bottomNav) bottomNav.style.display = 'none';
-
-        // 3. Pobieranie danych (używamy window.firebase, żeby ominąć błędy 404 z importami)
         window.firebase.firestore().collection('users').doc(safeId).get().then(doc => {
             if (doc.exists) {
                 const data = doc.data();
@@ -62,14 +62,15 @@ setTimeout(() => {
                 document.getElementById('publicSafeChip').innerText = data.chip || "Brak";
                 document.getElementById('publicSafeNotes').innerText = data.notes || "Brak";
             } else {
-                document.getElementById('publicSafeName').innerText = "Profil nie istnieje (błędne ID)";
+                document.getElementById('publicSafeName').innerText = "Profil nie istnieje";
             }
         }).catch(err => {
             console.error("❌ Błąd pobierania S.A.F.E:", err);
             document.getElementById('publicSafeName').innerText = "Błąd bazy danych";
         });
-    }
-}, 500);
+    }, 500);
+}
+// ============================================================================
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
