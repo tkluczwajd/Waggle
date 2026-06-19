@@ -15,9 +15,6 @@ export function updateStatsUI() {
     // Sprawdzamy, czy użytkownik wpisał JAKIEKOLWIEK dane medyczne w formularzu
     const hasSafeData = Boolean(p.chip || p.allergies || p.meds || p.weight || p.phone || p.vet);
 
-    // Upewniamy się, że cała sekcja jest widoczna na profilu
-    if (safeCardContent) safeCardContent.style.display = 'block';
-
     // Przełączamy widok: jeśli są dane pokaż tabelkę, jeśli nie - pokaż przycisk "Uzupełnij teraz"
     if (safeFallback && safeDisplay) {
         safeFallback.style.display = hasSafeData ? 'none' : 'block';
