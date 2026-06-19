@@ -94,6 +94,7 @@
     <div style="padding: 15px 20px;">
         
         <div id="home-safe-card" class="waggle-card" style="border-left: 4px solid var(--primary); margin-bottom: 20px;">
+    <!-- Nagłówek -->
     <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="const content = document.getElementById('safe-card-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">
         <h3 class="waggle-card-title" style="display: flex; align-items: center; gap: 8px; margin: 0;">
             <span style="font-size: 18px;">🚑</span> Karta S.A.F.E.
@@ -103,11 +104,13 @@
     
     <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
         
+        <!-- Stan Pusty -->
         <div id="safe-data-fallback" style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
             Karta ratunkowa jest pusta.<br>
             <button id="openEmptySafeBtn" style="background:none; border:none; color:var(--primary); font-weight:900; margin-top:5px; cursor:pointer;">UZUPEŁNIJ TERAZ</button>
         </div>
         
+        <!-- Stan Wypełniony (PREMIUM GRID) -->
         <div id="safe-data-display" style="display: none;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -115,13 +118,31 @@
                 <button id="openSafeSetupBtn" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--text-muted);">✏️ Edytuj</button>
             </div>
             
-            <div style="background: var(--panel-bg); padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; border: 1px solid var(--border-color); line-height: 1.6;">
-                <div><strong style="color:var(--text-color);">Waga:</strong> <span id="displaySafeWeight">-</span></div>
-                <div><strong style="color:var(--text-color);">Chip:</strong> <span id="displaySafeChip">-</span></div>
-                <div><strong style="color:var(--text-color);">Alergie:</strong> <span id="displaySafeAllergies">-</span></div>
-                <div><strong style="color:var(--text-color);">Leki:</strong> <span id="displaySafeMeds">-</span></div>
-                <div><strong style="color:var(--text-color);">Telefon:</strong> <span id="displaySafePhone">-</span></div>
-                <div><strong style="color:var(--text-color);">Notatki:</strong> <span id="displaySafeNotes">-</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+                <div style="background: var(--bg-color); padding: 10px; border-radius: 10px;">
+                    <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">NUMER CHIP</div>
+                    <div id="displaySafeChip" style="font-weight: 900; color: var(--text-color);">-</div>
+                </div>
+                <div style="background: var(--bg-color); padding: 10px; border-radius: 10px;">
+                    <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">KONTAKT WET.</div>
+                    <div id="displaySafePhone" style="font-weight: 900; color: var(--text-color);">-</div>
+                </div>
+                <div style="background: rgba(255, 82, 82, 0.05); padding: 10px; border-radius: 10px; grid-column: span 2; border: 1px dashed rgba(255, 82, 82, 0.3);">
+                    <div style="color: var(--danger); font-weight: 800; font-size: 10px; margin-bottom: 3px;">ALERGIE I ZAGROŻENIA</div>
+                    <div id="displaySafeAllergies" style="font-weight: 900; color: var(--danger);">-</div>
+                </div>
+                <div style="background: var(--bg-color); padding: 10px; border-radius: 10px; grid-column: span 2;">
+                    <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">PRZYJMOWANE LEKI</div>
+                    <div id="displaySafeMeds" style="font-weight: 900; color: var(--text-color);">-</div>
+                </div>
+                <div style="background: var(--bg-color); padding: 10px; border-radius: 10px;">
+                    <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">WAGA</div>
+                    <div id="displaySafeWeight" style="font-weight: 900; color: var(--text-color);">-</div>
+                </div>
+                 <div style="background: var(--bg-color); padding: 10px; border-radius: 10px;">
+                    <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">NOTATKI</div>
+                    <div id="displaySafeNotes" style="font-weight: 900; color: var(--text-color);">-</div>
+                </div>
             </div>
             
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
@@ -132,7 +153,8 @@
                 </div>
             </div>
             
-            <button id="generateQrBtn" class="waggle-btn" style="background: var(--text-color); width: 100%; margin-top: 15px;">Generuj kod QR na obrożę 🐾</button>
+            <!-- NOWY DZIAŁAJĄCY GUZIK QR -->
+            <button onclick="const link = document.getElementById('safe-public-link-input').value; if(link && link.includes('http')){ document.getElementById('safe-qr-code-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(link); document.getElementById('safe-qr-modal').style.display='flex'; } else { window.Waggle.showToast('Poczekaj na wygenerowanie linku!'); }" class="btn-main" style="background: var(--text-color); width: 100%; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">Generuj kod QR na obrożę 🐾</button>
             
         </div>
     </div>
@@ -812,5 +834,19 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <script type="module" src="/src/app.js?v=1009"></script>
+
+        <!-- MODAL S.A.F.E. QR -->
+<div id="safe-qr-modal" class="modal" style="z-index: 20005; display: none;">
+    <div class="card" style="text-align: center; max-width: 340px; padding: 30px 20px;">
+        <button class="close-modal-btn" onclick="document.getElementById('safe-qr-modal').style.display='none'">✕</button>
+        <div style="font-size: 40px; margin-bottom: 10px;">🐾</div>
+        <h3 style="margin-top: 0; color: var(--text-color); font-size: 22px;">Twój Kod S.A.F.E.</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; font-weight: 600;">Pokaż ten kod weterynarzowi lub przekaż do wygrawerowania na adresówce. Znalazca zeskanuje go telefonem.</p>
+        <div style="background: white; padding: 15px; border-radius: 16px; border: 2px dashed var(--border-color); display: inline-block; margin-bottom: 20px;">
+            <img id="safe-qr-code-img" src="" alt="QR SAFE" style="width: 150px; height: 150px; border-radius: 8px;">
+        </div>
+        <button onclick="document.getElementById('safe-qr-modal').style.display='none'" class="btn-main" style="width: 100%; background: var(--text-color);">ZAMKNIJ</button>
+    </div>
+</div>
 </body>
 </html>
