@@ -19,16 +19,26 @@ initWikiEngine();
 // ============================================================================
 // 🚨 RADAR S.A.F.E. (Przechwytywanie skanów QR z ulicy)
 // ============================================================================
+// ============================================================================
+// 🚨 RADAR S.A.F.E. (Przechwytywanie skanów QR z ulicy)
+// ============================================================================
 setTimeout(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const safeId = urlParams.get('safe');
 
     if (safeId) {
-        console.log("🚨 Wykryto skan QR! ID:", safeId);
+        console.log("🚨 Wykryto skan QR! Szukam ID:", safeId);
+        
+        // 1. Pokazujemy czerwoną kartę ratunkową
         const modal = document.getElementById('public-safe-modal');
         if (modal) modal.style.display = 'flex';
 
-        db.collection('users').doc(safeId).get().then(doc => {
+        // 2. UKRYWAMY DOLNE MENU (żeby znalazca nie wchodził w aplikację)
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) bottomNav.style.display = 'none';
+
+        // 3. Pobieranie danych (używamy window.firebase, żeby ominąć błędy 404 z importami)
+        window.firebase.firestore().collection('users').doc(safeId).get().then(doc => {
             if (doc.exists) {
                 const data = doc.data();
                 document.getElementById('publicSafeName').innerText = data.name || "Nieznane imię";
@@ -52,11 +62,11 @@ setTimeout(() => {
                 document.getElementById('publicSafeChip').innerText = data.chip || "Brak";
                 document.getElementById('publicSafeNotes').innerText = data.notes || "Brak";
             } else {
-                document.getElementById('publicSafeName').innerText = "Profil nie istnieje";
+                document.getElementById('publicSafeName').innerText = "Profil nie istnieje (błędne ID)";
             }
         }).catch(err => {
             console.error("❌ Błąd pobierania S.A.F.E:", err);
-            document.getElementById('publicSafeName').innerText = "Błąd połączenia z bazą";
+            document.getElementById('publicSafeName').innerText = "Błąd bazy danych";
         });
     }
 }, 500);
