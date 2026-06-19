@@ -5,7 +5,6 @@ import { openWikiDetails, renderWiki } from '../ui/wikiRenderer.js';
 import { db, auth } from './firebase.js';
 import { appState as state } from './state.js';
 import { uploadImageToService as uploadImage } from '../services/postsService.js';
-import { saveCommunityPost } from '../modules/posts/postsListeners.js';
 import { toggleFollowUserInDb } from '../services/profileService.js'; // 🔥 Import nowej funkcji
 
 export function initWaggleApi(updateUserMarker) {
