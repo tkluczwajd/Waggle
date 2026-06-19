@@ -1,6 +1,5 @@
 // src/core/appBootstrap.js
 import { initRouter } from './router.js';
-import { initProfileListeners } from '../modules/profile/profileListeners.js';
 import { initGlobalUtils } from '../ui/globalUtils.js';
 import { initUiListeners } from '../ui/uiListeners.js';
 import { initWaggleApi } from './waggleApi.js';
@@ -15,6 +14,7 @@ import { fetchWeather } from '../services/weatherService.js';
 import { fetchNearbyParks } from '../services/parksService.js';
 import { renderParksOnMap } from '../modules/map/parksRenderer.js';
 import { listenToDailyCare } from '../modules/care.js';
+import { initProfileUi } from '../modules/profileUiListeners.js';
 
 // Uporządkowane moduły komunikacji i powiadomień okolicy:
 import { initLiveFeed } from '../modules/map/liveFeed.js';
@@ -30,7 +30,7 @@ export function bootstrapApp() {
     // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
     setupAuth(() => {
         initRouter();
-        initProfileListeners();
+        initProfileUiListeners();
         initUiListeners();
 
         // Uruchomienie lokalnego radaru oraz nasłuchu wiadomości
