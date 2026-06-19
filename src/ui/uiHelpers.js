@@ -66,7 +66,7 @@ export function updateStatsUI() {
             else if (localStorage.getItem('activeDogId')) currentUid = localStorage.getItem('activeDogId');
             else if (localStorage.getItem('uid')) currentUid = localStorage.getItem('uid');
             
-            linkInput.value = currentUid ? `https://joinwaggle.com/safe/${currentUid}` : 'Brak ID psa';
+            linkInput.value = currentUid ? `https://joinwaggle.com/?safe=${currentUid}` : 'Brak ID psa';
         }
     }, 300);
 } 
