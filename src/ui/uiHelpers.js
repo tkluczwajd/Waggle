@@ -7,8 +7,6 @@ export function updateStatsUI() {
     if (!state.profile) return; 
     const p = state.profile;
     
-    // ... (jeśli masz tu wyżej kod od aktualizacji imienia psa, miasta czy awatara, zostaw go na swoim miejscu) ...
-
     // --- ŁADOWANIE KARTY S.A.F.E. NA EKRAN ---
     const safeFallback = document.getElementById('safe-data-fallback');
     const safeDisplay = document.getElementById('safe-data-display');
@@ -35,11 +33,10 @@ export function updateStatsUI() {
         if (document.getElementById('displaySafePhone')) document.getElementById('displaySafePhone').innerText = p.phone || p.vet || "Brak";
         if (document.getElementById('displaySafeNotes')) document.getElementById('displaySafeNotes').innerText = p.notes || "-";
     }
-}
     
+    // 👇 Reszta interfejsu (Imię, Rasa, Statystyki) wraca bezpiecznie do wnętrza funkcji
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
     
-    // 👇 Rysowanie Miasta i Rasy na ekranie HOME
     const cityDisplay = document.getElementById('profileCityDisplay'); if(cityDisplay) cityDisplay.innerText = p.city || "Nie podano";
     const breedDisplay = document.getElementById('profileBreedDisplay'); if(breedDisplay) breedDisplay.innerText = p.breed || "Nie podano";
     
@@ -47,9 +44,11 @@ export function updateStatsUI() {
     const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = ((p.walkCount || 0) * 1.2).toFixed(1);
     const breedInput = document.getElementById('setupBreed'); if(breedInput) breedInput.value = state.profile.breed || "";
     const cityInput = document.getElementById('setupCity'); if(cityInput) cityInput.value = state.profile.city || "";
+    
     let lvl = "🌱 Nowik";
     if (p.walkCount >= 5) lvl = "🐕 Spacerowicz"; if (p.walkCount >= 20) lvl = "🐺 Weteran Osiedla"; if (p.walkCount >= 50) lvl = "👑 Alfa Stada";
     const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
+    
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
     
     updateNotificationBtnUI(p.pushEnabled === true);
@@ -58,11 +57,10 @@ export function updateStatsUI() {
     if (tempEl && state.weather) tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 
-    // 🔥 GENEROWANIE LINKU S.A.F.E. (Musi być pod koniec tej funkcji!)
+    // 🔥 GENEROWANIE LINKU S.A.F.E. 
     setTimeout(() => {
         const linkInput = document.getElementById('safe-public-link-input');
         if (linkInput) {
-            // Szukamy ID w 3 miejscach na wypadek opóźnień Firebase
             let currentUid = null;
             if (state.user && state.user.uid) currentUid = state.user.uid;
             else if (localStorage.getItem('activeDogId')) currentUid = localStorage.getItem('activeDogId');
@@ -71,7 +69,7 @@ export function updateStatsUI() {
             linkInput.value = currentUid ? `https://joinwaggle.com/safe/${currentUid}` : 'Brak ID psa';
         }
     }, 300);
-}
+} 
 
 export function updateUserMarker(lat, lng) {
     const L = window.L; if (!L) return;
@@ -161,7 +159,6 @@ window.Waggle.startDirectChat = (uid, name, avatar) => {
     }
 };
 
-// 🔥 WAGGLE S.A.F.E. - Generator Linku i Kopiowanie do schowka
 window.Waggle = window.Waggle || {};
 window.Waggle.copySafePublicLink = () => {
     const linkInput = document.getElementById('safe-public-link-input');
