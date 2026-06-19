@@ -94,74 +94,49 @@
     <div style="padding: 15px 20px;">
         
         <div id="home-safe-card" class="waggle-card" style="border-left: 4px solid var(--primary); margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="const content = document.getElementById('safe-card-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">
-                <h3 class="waggle-card-title" style="display: flex; align-items: center; gap: 8px; margin: 0;">
-                    <span style="font-size: 18px;">🚑</span> Karta S.A.F.E.
-                </h3>
-                <span style="font-size: 12px; color: var(--text-muted);">Rozwiń ▾</span>
-            </div>
-            
-            <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="const content = document.getElementById('safe-card-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">
+        <h3 class="waggle-card-title" style="display: flex; align-items: center; gap: 8px; margin: 0;">
+            <span style="font-size: 18px;">🚑</span> Karta S.A.F.E.
+        </h3>
+        <span style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Rozwiń ▾</span>
+    </div>
     
     <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-    
-   <div id="safe-card-content" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-    
-    <div id="safe-data-fallback" style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
-        Karta ratunkowa jest pusta.<br>
-        <button id="openEmptySafeBtn" style="background:none; border:none; color:var(--primary); font-weight:900; margin-top:5px; cursor:pointer;">UZUPEŁNIJ TERAZ</button>
-    </div>
-    
-    <div id="safe-data-display" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <div style="font-weight: 900; color: var(--secondary); font-size: 14px;">Dane Medyczne</div>
-            <button id="openSafeSetupBtn" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--text-muted);">✏️ Edytuj</button>
+        
+        <div id="safe-data-fallback" style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
+            Karta ratunkowa jest pusta.<br>
+            <button id="openEmptySafeBtn" style="background:none; border:none; color:var(--primary); font-weight:900; margin-top:5px; cursor:pointer;">UZUPEŁNIJ TERAZ</button>
         </div>
         
-        <div style="background: var(--panel-bg); padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; border: 1px solid var(--border-color); line-height: 1.6;">
-            <div><strong style="color:var(--text-color);">Waga:</strong> <span id="displaySafeWeight">-</span></div>
-            <div><strong style="color:var(--text-color);">Chip:</strong> <span id="displaySafeChip">-</span></div>
-            <div><strong style="color:var(--text-color);">Alergie:</strong> <span id="displaySafeAllergies">-</span></div>
-            <div><strong style="color:var(--text-color);">Leki:</strong> <span id="displaySafeMeds">-</span></div>
-            <div><strong style="color:var(--text-color);">Telefon:</strong> <span id="displaySafePhone">-</span></div>
-            <div><strong style="color:var(--text-color);">Notatki:</strong> <span id="displaySafeNotes">-</span></div>
-        </div>
-        
-        <button id="generateQrBtn" class="waggle-btn" style="background: var(--text-color); width: 100%;">Generuj kod QR na obrożę 🐾</button>
-    </div>
-</div>
-                    
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
-                        <div style="background: var(--bg-color); padding: 10px; border-radius: 10px;">
-                            <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">NUMER CHIP</div>
-                            <div id="displayChip" style="font-weight: 900; color: var(--text-color);">Brak</div>
-                        </div>
-                        <div style="background: var(--bg-color); padding: 10px; border-radius: 10px;">
-                            <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">KONTAKT WET.</div>
-                            <div id="displayVet" style="font-weight: 900; color: var(--text-color);">Brak</div>
-                        </div>
-                        <div style="background: rgba(255, 82, 82, 0.05); padding: 10px; border-radius: 10px; grid-column: span 2; border: 1px dashed rgba(255, 82, 82, 0.3);">
-                            <div style="color: var(--danger); font-weight: 800; font-size: 10px; margin-bottom: 3px;">ALERGIE I ZAGROŻENIA</div>
-                            <div id="displayAllergies" style="font-weight: 900; color: var(--danger);">Brak stwierdzonych</div>
-                        </div>
-                        <div style="background: var(--bg-color); padding: 10px; border-radius: 10px; grid-column: span 2;">
-                            <div style="color: var(--text-muted); font-weight: 800; font-size: 10px; margin-bottom: 3px;">PRZYJMOWANE LEKI</div>
-                            <div id="displayMeds" style="font-weight: 900; color: var(--text-color);">Brak</div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
-                        <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Publiczny profil ratunkowy:</div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <input type="text" id="safe-public-link-input" readonly value="Ładowanie linku..." style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-muted); font-size: 11px; font-weight: 700; outline: none; margin: 0;">
-                            <button onclick="window.Waggle.copySafePublicLink()" style="background: var(--secondary); border: none; color: white; padding: 10px 16px; border-radius: 10px; font-size: 11px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(52, 172, 224, 0.2);">KOPIUJ</button>
-                        </div>
-                    </div>
-
+        <div id="safe-data-display" style="display: none;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-weight: 900; color: var(--secondary); font-size: 14px;">Dane Medyczne</div>
+                <button id="openSafeSetupBtn" style="background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; color: var(--text-muted);">✏️ Edytuj</button>
+            </div>
+            
+            <div style="background: var(--panel-bg); padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; border: 1px solid var(--border-color); line-height: 1.6;">
+                <div><strong style="color:var(--text-color);">Waga:</strong> <span id="displaySafeWeight">-</span></div>
+                <div><strong style="color:var(--text-color);">Chip:</strong> <span id="displaySafeChip">-</span></div>
+                <div><strong style="color:var(--text-color);">Alergie:</strong> <span id="displaySafeAllergies">-</span></div>
+                <div><strong style="color:var(--text-color);">Leki:</strong> <span id="displaySafeMeds">-</span></div>
+                <div><strong style="color:var(--text-color);">Telefon:</strong> <span id="displaySafePhone">-</span></div>
+                <div><strong style="color:var(--text-color);">Notatki:</strong> <span id="displaySafeNotes">-</span></div>
+            </div>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Publiczny profil ratunkowy:</div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="safe-public-link-input" readonly value="Ładowanie linku..." style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-muted); font-size: 11px; font-weight: 700; outline: none; margin: 0;">
+                    <button onclick="window.Waggle.copySafePublicLink()" style="background: var(--secondary); border: none; color: white; padding: 10px 16px; border-radius: 10px; font-size: 11px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(52, 172, 224, 0.2);">KOPIUJ</button>
                 </div>
             </div>
+            
+            <button id="generateQrBtn" class="waggle-btn" style="background: var(--text-color); width: 100%; margin-top: 15px;">Generuj kod QR na obrożę 🐾</button>
+            
         </div>
+    </div>
+</div>
 
         <div id="daily-care-section" class="waggle-card" style="padding-bottom: 5px;">
             <div class="waggle-card-header">
