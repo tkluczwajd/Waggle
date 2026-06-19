@@ -4,20 +4,65 @@ import { addJournalEntry, subscribeToJournal, getJournalHistory } from './servic
 import { initChatEngine } from './modules/chat/chatEngine.js'; 
 import { initCalendarEngine } from './modules/calendar.js';
 import { initPlacesEngine } from './modules/places.js';
-import { initBoardEngine } from './modules/board.js'; // 🔥 1. IMPORTUJEMY TABLICĘ
+import { initBoardEngine } from './modules/board.js';
 import { initWikiEngine } from './modules/wiki.js';
+import { db } from './core/firebase.js'; // 🔥 DODANY IMPORT BAZY
 
 // Uruchomienie głównych systemów
 bootstrapApp();
 initChatEngine();
 initCalendarEngine();
 initPlacesEngine();
-initBoardEngine(); // 🔥 2. URUCHAMIAMY TABLICĘ
+initBoardEngine();
 initWikiEngine();
 
 // ============================================================================
+// 🚨 RADAR S.A.F.E. (Przechwytywanie skanów QR z ulicy)
+// ============================================================================
+setTimeout(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const safeId = urlParams.get('safe');
+
+    if (safeId) {
+        console.log("🚨 Wykryto skan QR! ID:", safeId);
+        const modal = document.getElementById('public-safe-modal');
+        if (modal) modal.style.display = 'flex';
+
+        db.collection('users').doc(safeId).get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('publicSafeName').innerText = data.name || "Nieznane imię";
+                document.getElementById('publicSafeBreed').innerText = data.breed || "Brak danych o rasie";
+
+                if (data.avatar) {
+                    const av = document.getElementById('publicSafeAvatar');
+                    av.src = data.avatar;
+                    av.style.display = 'block';
+                }
+
+                const phone = data.phone || data.vet || "";
+                const phoneBtn = document.getElementById('publicSafePhone');
+                if (phone) {
+                    phoneBtn.href = "tel:" + phone;
+                    phoneBtn.style.display = 'inline-block';
+                }
+
+                document.getElementById('publicSafeAllergies').innerText = data.allergies || "Brak";
+                document.getElementById('publicSafeMeds').innerText = data.meds || "Brak";
+                document.getElementById('publicSafeChip').innerText = data.chip || "Brak";
+                document.getElementById('publicSafeNotes').innerText = data.notes || "Brak";
+            } else {
+                document.getElementById('publicSafeName').innerText = "Profil nie istnieje";
+            }
+        }).catch(err => {
+            console.error("❌ Błąd pobierania S.A.F.E:", err);
+            document.getElementById('publicSafeName').innerText = "Błąd połączenia z bazą";
+        });
+    }
+}, 500);
+
+// ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
-// reszta Twojego kodu w app.js pozostaje bez zmian...
 // ============================================================================
 window.Waggle = window.Waggle || {};
 window.Waggle.closeAllModals = () => {
@@ -51,7 +96,7 @@ function initPwaHistoryManager() {
     });
 
     document.querySelectorAll('.modal').forEach(modal => {
-        observer.observe(modal, { attributes: true });
+        if(modal) observer.observe(modal, { attributes: true });
     });
 
     window.addEventListener('popstate', (e) => {
@@ -65,7 +110,6 @@ document.addEventListener('DOMContentLoaded', initPwaHistoryManager);
 // ============================================================================
 export const APP_VERSION = "1.0.1";
 
-// Detektor nowej wersji aplikacji
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js').then(reg => {
@@ -73,7 +117,6 @@ if ('serviceWorker' in navigator) {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // ROZWIĄZANIE 4: Profesjonalny komunikat i twardy restart
                         if (window.Waggle && window.Waggle.showToast) {
                             window.Waggle.showToast("🐾 Dostępna nowa wersja Waggle! Odświeżam...");
                         }
@@ -91,13 +134,11 @@ window.Waggle.forceAppUpdate = async () => {
         window.Waggle.showToast("🔄 Pobieranie najnowszej wersji...");
     }
     
-    // 1. Czyszczenie całej pamięci podręcznej (Cache)
     if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
     }
     
-    // 2. Wyrejestrowanie Service Workera
     if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (let reg of registrations) {
@@ -105,10 +146,7 @@ window.Waggle.forceAppUpdate = async () => {
         }
     }
     
-    // 3. Twardy reload ze zignorowaniem cache przeglądarki
-    setTimeout(() => {
-        window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
-    }, 1000);
+    setTimeout(() => window.location.reload(true), 1000);
 };
 
 // ============================================================================
@@ -130,7 +168,6 @@ window.logDogActivity = async (type) => {
     }
 };
 
-// 🧠 BAZA WIEDZY DNIA (Ciekawostki na ekran Home)
 const WIEDZA_DNIA_BAZA = [
     "🐕 Czy wiesz, że nos psa ma aż 300 milionów receptorów węchowych? Twój ma tylko 6 milionów!",
     "🥵 Pies może dostać udaru cieplnego już przy 24°C, jeśli biega na pełnym słońcu. Zawsze miej przy sobie wodę!",
@@ -140,39 +177,18 @@ const WIEDZA_DNIA_BAZA = [
 ];
 
 function renderWiedzaDnia() {
-    // 1. Pobieramy dzisiejszy dzień miesiąca (np. 17 dla 17 czerwca).
     const dzisiaj = new Date().getDate();
-    
-    // 2. Używamy operatora modulo (%), aby rotacyjnie wybierać ciekawostkę. 
-    // Dzięki temu, nawet jeśli mamy tylko 5 ciekawostek, a jest 17 dzień miesiąca, 
-    // system nie wyrzuci błędu, tylko zapętli się i wybierze ciekawostkę nr 2.
     const ciekawostka = WIEDZA_DNIA_BAZA[dzisiaj % WIEDZA_DNIA_BAZA.length];
-
-    // 3. Szukamy "kotwicy" (pustego diva) w index.html, gdzie mamy to wstrzyknąć.
     const targetDiv = document.getElementById('wiedza-dnia-target');
-    
-    // 4. Szukamy naszego kontenera. Na początku go nie ma, więc zmienna będzie pusta (null).
     let wiedzaContainer = document.getElementById('wiedza-dnia-container');
     
-    // 5. Jeśli kontener jeszcze nie istnieje (pierwsze ładowanie), a "kotwica" jest na stronie...
     if (!wiedzaContainer && targetDiv) {
-        // ...tworzymy nowy element <div> z poziomu JavaScriptu...
         wiedzaContainer = document.createElement('div');
         wiedzaContainer.id = 'wiedza-dnia-container';
-        
-        // ...i "podpinamy" go do naszej kotwicy na stronie głównej.
         targetDiv.appendChild(wiedzaContainer);
     }
 
-    // 6. Jeśli kontener istnieje (albo przed chwilą go stworzyliśmy)...
     if (wiedzaContainer) {
-        // 🔥 WERSJA ULTRA-COMPACT: Wstrzykujemy kod HTML. 
-        // 
-        // CO TU SIĘ DZIEJE:
-        // - onclick="...": Kliknięcie w ten pasek szuka zakładki "Psia Wiedza" i automatycznie w nią klika, przenosząc tam użytkownika.
-        // - onmouseover / onmouseout: Prosty efekt podświetlenia po najechaniu myszką/palcem.
-        // - display: -webkit-box...: Ten kod CSS sprawia, że jeśli tekst ciekawostki jest bardzo długi, zwinie się idealnie do 2 linijek i zakończy wielokropkiem (...), nie psując nam wyglądu apki!
-        
         wiedzaContainer.innerHTML = `
             <div onclick="const tab = document.querySelector('[data-view=\\'wiki\\']'); if(tab) tab.click();" style="display: flex; gap: 10px; align-items: center; cursor: pointer; padding: 10px 15px; background: transparent; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 20px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-color)'" onmouseout="this.style.background='transparent'">
                 <div style="font-size: 16px; opacity: 0.6;">💡</div>
@@ -184,7 +200,6 @@ function renderWiedzaDnia() {
     }
 }
 
-// 🔥 FUNKCJA OBLICZAJĄCA CIĄGI (STREAKS)
 function calculateStreak(entries, type) {
     if (!entries || entries.length === 0) return 0;
     let daysWithActivity = new Set();
@@ -253,7 +268,6 @@ function initJournalListener() {
                 });
             }
 
-            // 🎯 PASKI POSTĘPU
             ['feed', 'walk', 'med', 'water'].forEach(type => {
                 const countEl = document.getElementById(`count-${type}`);
                 const goalEl = document.getElementById(`goal-${type}`);
@@ -275,7 +289,6 @@ function initJournalListener() {
                 }
             });
 
-            // 🚨 CLEAN UI: INTELIGENTNE ALERTY (Stonowane karty z kolorowym marginesem bocznym!)
             let alertsHtml = '';
             const now = new Date();
             const currentHour = now.getHours();
@@ -337,7 +350,7 @@ function initJournalListener() {
             }
 
             if (alertsContainer) alertsContainer.innerHTML = alertsHtml;
-// 🔥 EFEKT WOW: OBLICZANIE PROCENTU DZIENNEJ OPIEKI
+
             let totalGoals = (dailyGoals.feed || 0) + (dailyGoals.walk || 0) + (dailyGoals.med || 0) + (dailyGoals.water || 0);
             let totalDone = Math.min(dailyCounts.feed, dailyGoals.feed || 0) 
                           + Math.min(dailyCounts.walk, dailyGoals.walk || 0) 
@@ -350,7 +363,6 @@ function initJournalListener() {
             else if (percent >= 50 && percent < 100) wowText = "Świetnie Ci idzie! 🔥";
             else if (percent === 100 && totalGoals > 0) wowText = "Plan wykonany w 100%! 🏆";
 
-            // WSTRZYKIWANIE STATUSU POD IMIĘ PSA NA GŁÓWNEJ KARCIE
             let wowBadge = document.getElementById('daily-wow-badge');
             if (!wowBadge) {
                 const nameEl = document.getElementById('profileNameDisplay');
@@ -358,7 +370,6 @@ function initJournalListener() {
                     wowBadge = document.createElement('div');
                     wowBadge.id = 'daily-wow-badge';
                     wowBadge.style.cssText = "display: inline-block; font-size: 11px; font-weight: 900; padding: 4px 10px; border-radius: 12px; margin-top: 5px; transition: all 0.3s;";
-                    // Wstawiamy pigułkę zaraz pod imieniem psa
                     nameEl.parentNode.insertBefore(wowBadge, nameEl.nextSibling);
                 }
             }
@@ -373,7 +384,6 @@ function initJournalListener() {
                 }
             }
 
-            // 📝 OSTATNIE WPISY (ZMIENIONY PUSTY STAN)
             const emptyStateHtml = `
                 <div style="text-align: center; padding: 15px; background: rgba(52, 172, 224, 0.05); border: 1px dashed var(--secondary); border-radius: 14px; margin-top: 5px;">
                     <div style="font-size: 24px; margin-bottom: 5px;">🌱</div>
