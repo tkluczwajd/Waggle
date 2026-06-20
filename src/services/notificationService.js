@@ -80,3 +80,24 @@ export function updateNotificationBtnUI(isEnabled) {
 // Eksport do globalnego obiektu, aby HTML mógł to kliknąć
 window.Waggle = window.Waggle || {};
 window.Waggle.toggleNotifications = toggleNotifications;
+
+// Nasłuchiwanie powiadomień, gdy użytkownik ma OTWARTĄ aplikację (Pierwszy plan)
+if ('serviceWorker' in navigator) {
+    try {
+        const messaging = window.firebase.messaging();
+        messaging.onMessage((payload) => {
+            console.log('🔔 Odebrano powiadomienie na żywo w aplikacji:', payload);
+            
+            // Pobieramy treść powiadomienia
+            const title = payload.notification?.title || "Waggle 🐾";
+            const body = payload.notification?.body || "Nowa wiadomość!";
+            
+            // Wyświetlamy piękny Toast wewnątrz aplikacji zamiast systemowego paska
+            if (window.Waggle && window.Waggle.showToast) {
+                window.Waggle.showToast(`<b>${title}</b><br>${body}`);
+            }
+        });
+    } catch (e) {
+        console.warn("FCM foreground messaging nie mogło wystartować (prawdopodobnie brak logowania):", e);
+    }
+}
