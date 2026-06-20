@@ -66,6 +66,7 @@ export function updateStatsUI() {
             linkInput.value = currentUid ? `https://joinwaggle.com/safe.html?id=${currentUid}` : 'Brak ID psa';
         }
     }, 300);
+}
 
 export function updateUserMarker(lat, lng) {
     const L = window.L; if (!L) return;
