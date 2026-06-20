@@ -1,4 +1,23 @@
 // src/app.js - Nowy, minimalistyczny punkt wejścia ekosystemu Waggle 🐾
+
+// ============================================================================
+// 🚨 NATYCHMIASTOWA TARCZA S.A.F.E. (Blokada wyścigu skryptów - URUCHAMIANA OD RAZU)
+// ============================================================================
+const urlParams = new URLSearchParams(window.location.search);
+const safeId = urlParams.get('safe');
+
+if (safeId) {
+    // Wstrzykujemy styl blokujący zanim przeglądarka w ogóle pomyśli o renderowaniu HTML
+    const emergencyStyle = document.createElement('style');
+    emergencyStyle.innerHTML = `
+        #auth-screen, .bottom-nav, #app-interface, .waggle-tab-nav { display: none !important; }
+        body { background: #1a1a1a !important; }
+        #public-safe-modal { display: flex !important; }
+    `;
+    document.head.appendChild(emergencyStyle);
+}
+
+// Standardowe importy systemowe
 import { bootstrapApp } from './core/appBootstrap.js';
 import { addJournalEntry, subscribeToJournal, getJournalHistory } from './services/journalService.js';
 import { initChatEngine } from './modules/chat/chatEngine.js'; 
@@ -6,7 +25,7 @@ import { initCalendarEngine } from './modules/calendar.js';
 import { initPlacesEngine } from './modules/places.js';
 import { initBoardEngine } from './modules/board.js';
 import { initWikiEngine } from './modules/wiki.js';
-import { db } from './core/firebase.js'; // 🔥 DODANY IMPORT BAZY
+import { db } from './core/firebase.js'; 
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -17,28 +36,54 @@ initBoardEngine();
 initWikiEngine();
 
 // ============================================================================
-// 🚨 RADAR S.A.F.E. (Przechwytywanie skanów QR z ulicy)
+// 🚑 LOGIKA RADARU S.A.F.E. I POWIADOMIENIA O LOKALIZACJI GPS
 // ============================================================================
-const urlParams = new URLSearchParams(window.location.search);
-const safeId = urlParams.get('safe');
-
 if (safeId) {
-    console.log("🚨 Tryb Ratunkowy! Szukam ID:", safeId);
+    window.Waggle = window.Waggle || {};
     
-    // 1. TARCZA: Siłowo wyłączamy ekran logowania, menu i tło aplikacji!
-    const emergencyStyle = document.createElement('style');
-    emergencyStyle.innerHTML = `
-        #auth-screen, .bottom-nav, #app-interface { display: none !important; }
-        body { background: #1a1a1a !important; }
-    `;
-    document.head.appendChild(emergencyStyle);
+    // Funkcja pobierająca lokalizację znalazcy i wysyłająca ją właścicielowi psa
+    window.Waggle.shareFinderLocation = () => {
+        const btn = document.getElementById('shareLocationBtn');
+        if (!btn) return;
+        
+        btn.innerText = "POBIERAM SYGNAŁ GPS... ⏳";
+        btn.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords;
+                    
+                    // Zapisujemy współrzędne znalazcy bezpośrednio w profilu psa
+                    await db.collection('users').doc(safeId).set({
+                        lastSeen: {
+                            lat: latitude,
+                            lng: longitude,
+                            timestamp: window.firebase.firestore.FieldValue.serverTimestamp()
+                        }
+                    }, { merge: true });
+                    
+                    btn.innerText = "✅ LOKALIZACJA WYSŁANA WŁAŚCICIELOWI!";
+                    btn.style.background = "#2ed573";
+                    btn.style.borderColor = "#2ed573";
+                } catch (err) {
+                    console.error(err);
+                    btn.innerText = "❌ BŁĄD ZAPISU W BAZIE DANYCH";
+                    btn.disabled = false;
+                }
+            },
+            (err) => {
+                console.error(err);
+                btn.innerText = "❌ BRAK ZGODY NA GPS W TELEFONIE";
+                btn.disabled = false;
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
 
-    // 2. Ładowanie danych po ułamku sekundy
+    // Pobieranie danych do wyświetlenia na karcie ratunkowej
     setTimeout(() => {
-        const modal = document.getElementById('public-safe-modal');
-        if (modal) modal.style.display = 'flex';
-
-        window.firebase.firestore().collection('users').doc(safeId).get().then(doc => {
+        db.collection('users').doc(safeId).get().then(doc => {
             if (doc.exists) {
                 const data = doc.data();
                 document.getElementById('publicSafeName').innerText = data.name || "Nieznane imię";
@@ -66,11 +111,10 @@ if (safeId) {
             }
         }).catch(err => {
             console.error("❌ Błąd pobierania S.A.F.E:", err);
-            document.getElementById('publicSafeName').innerText = "Błąd bazy danych";
+            document.getElementById('publicSafeName').innerText = "Błąd połączenia z bazą";
         });
-    }, 500);
+    }, 300);
 }
-// ============================================================================
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
