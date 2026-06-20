@@ -54,7 +54,7 @@ export function updateStatsUI() {
     if (tempEl && state.weather) tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 
-    // 🔥 GENEROWANIE LINKU S.A.F.E. 
+    // 🔥 GENEROWANIE LINKU S.A.F.E. (Kieruje na osobny plik safe.html!)
     setTimeout(() => {
         const linkInput = document.getElementById('safe-public-link-input');
         if (linkInput) {
@@ -63,10 +63,9 @@ export function updateStatsUI() {
             else if (localStorage.getItem('activeDogId')) currentUid = localStorage.getItem('activeDogId');
             else if (localStorage.getItem('uid')) currentUid = localStorage.getItem('uid');
             
-            linkInput.value = currentUid ? `https://joinwaggle.com/?safe=${currentUid}` : 'Brak ID psa';
+            linkInput.value = currentUid ? `https://joinwaggle.com/safe.html?id=${currentUid}` : 'Brak ID psa';
         }
     }, 300);
-} 
 
 export function updateUserMarker(lat, lng) {
     const L = window.L; if (!L) return;
