@@ -39,7 +39,6 @@
         <h2 id="dogName" style="font-size: 32px; font-weight: 900; margin: 0 0 5px 0; color: var(--waggle-dark); letter-spacing: -0.5px;">...</h2>
         <p id="dogBreed" style="font-size: 15px; color: var(--text-muted); font-weight: 800; margin: 0 0 25px 0;">...</p>
 
-        <!-- 🔥 NOWA SIATKA DANYCH RATUNKOWYCH -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;">
             <div style="background: #e8f5e9; padding: 15px; border-radius: 16px; border: 1px solid #c8e6c9; text-align: left;">
                 <div style="font-size: 10px; color: #2e7d32; font-weight: 900; text-transform: uppercase;">Chip</div>
@@ -58,7 +57,7 @@
         <div class="action-buttons">
             <a id="callBtn" class="btn-primary" href="#">📞 ZADZWOŃ DO OPIEKUNA</a>
             <a id="smsBtn" class="btn-secondary" href="#">💬 NAPISZ WIADOMOŚĆ</a>
-            <button id="locationBtn" style="background: transparent; border: 2px solid var(--waggle-dark); color: var(--waggle-dark); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 15px; padding: 14px; border-radius: 100px; font-weight: 800; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;">📍 WYŚLIJ LOKALIZACJĘ PSA</button>
+            <button id="locationBtn" onclick="sendLocation()" style="background: transparent; border: 2px solid var(--waggle-dark); color: var(--waggle-dark); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 15px; padding: 14px; border-radius: 100px; font-weight: 800; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;">📍 WYŚLIJ LOKALIZACJĘ PSA</button>
         </div>
     </div>
 
@@ -68,43 +67,58 @@
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <script type="module">
-        import { db } from './src/core/firebase.js';
+    <script>
+        // INICJALIZACJA BAZY DANYCH (BEZ AUTH)
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", 
+            authDomain: "waggle-app-31ffa.firebaseapp.com", 
+            projectId: "waggle-app-31ffa", 
+            storageBucket: "waggle-app-31ffa.firebasestorage.app", 
+            messagingSenderId: "711707392068", 
+            appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
+        // POBIERANIE DANYCH Z KOLEKCJI "USERS"
         async function loadSafeProfile() {
             const urlParams = new URLSearchParams(window.location.search);
             const safeId = urlParams.get('id');
             if (!safeId) { showError(); return; }
 
             try {
-                const doc = await db.collection("safe_profiles").doc(safeId).get();
-                if (doc.exists && doc.data().active) {
+                const doc = await db.collection("users").doc(safeId).get();
+                if (doc.exists) {
                     const data = doc.data();
-                    document.getElementById('dogName').innerText = data.dogName || "Piesek";
-                    document.getElementById('dogBreed').innerText = data.breed || "Rasa nieznana";
+                    document.getElementById('dogName').innerText = data.name || "Nieznane imię";
+                    document.getElementById('dogBreed').innerText = data.breed || "Brak danych o rasie";
                     
-                    // 🔥 Wypełnianie nowej siatki danych
                     document.getElementById('dogChip').innerText = data.chip || "Brak";
                     document.getElementById('dogMeds').innerText = data.meds || "Brak";
-                    document.getElementById('dogNotes').innerHTML = (data.notes || "Brak").replace(/\n/g, '<br>');
                     
-                    document.getElementById('dogImage').src = data.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300";
+                    let notesStr = "";
+                    if (data.allergies && data.allergies !== "-" && data.allergies !== "Brak") notesStr += "Alergie: " + data.allergies + "<br>";
+                    if (data.notes && data.notes !== "-") notesStr += data.notes;
+                    document.getElementById('dogNotes').innerHTML = notesStr || "Brak uwag";
+                    
+                    document.getElementById('dogImage').src = data.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300";
 
-                    if (data.phone && data.allowPhone) {
-                        const cleanPhone = data.phone.replace(/[^0-9+]/g, '');
+                    const phone = data.phone || data.vet || "";
+                    if (phone) {
+                        const cleanPhone = phone.replace(/[^0-9+]/g, '');
                         document.getElementById('callBtn').href = `tel:${cleanPhone}`; 
                         document.getElementById('smsBtn').href = `sms:${cleanPhone}?body=Hej!%20Znalazłem%20Twojego%20psa.`;
                     } else {
                         document.getElementById('callBtn').style.display = 'none'; 
                         document.getElementById('smsBtn').style.display = 'none'; 
                     }
+                    
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('safe-content').style.display = 'block';
                 } else { showError(); }
-            } catch (error) { showError(); }
+            } catch (error) { console.error(error); showError(); }
         }
 
         function showError() {
@@ -112,8 +126,52 @@
             document.getElementById('error-content').style.display = 'block';
         }
 
+        // FUNKCJA GPS DLA ZNALAZCY
+        window.sendLocation = function() {
+            const btn = document.getElementById('locationBtn');
+            const urlParams = new URLSearchParams(window.location.search);
+            const safeId = urlParams.get('id');
+            
+            if (!safeId) return;
+
+            btn.innerText = "POBIERAM SYGNAŁ GPS... ⏳";
+            btn.style.color = "#879296";
+            btn.style.borderColor = "#879296";
+            btn.disabled = true;
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        const { latitude, longitude } = position.coords;
+                        await db.collection('users').doc(safeId).set({
+                            lastSeen: {
+                                lat: latitude,
+                                lng: longitude,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            }
+                        }, { merge: true });
+                        
+                        btn.innerText = "✅ WYSŁANO LOKALIZACJĘ!";
+                        btn.style.color = "#2ecc71";
+                        btn.style.borderColor = "#2ecc71";
+                    } catch (err) {
+                        console.error(err);
+                        btn.innerText = "❌ BŁĄD BAZY DANYCH";
+                        btn.disabled = false;
+                    }
+                },
+                (err) => {
+                    console.error(err);
+                    btn.innerText = "❌ BRAK ZGODY NA GPS";
+                    btn.style.color = "#e74c3c";
+                    btn.style.borderColor = "#e74c3c";
+                    btn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        };
+
         loadSafeProfile();
-        // ... reszta logiki geolokalizacji pozostaje bez zmian ...
     </script>
 </body>
 </html>
