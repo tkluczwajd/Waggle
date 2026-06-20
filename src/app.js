@@ -1,22 +1,5 @@
 // src/app.js - Nowy, minimalistyczny punkt wejścia ekosystemu Waggle 🐾
 
-// ============================================================================
-// 🚨 NATYCHMIASTOWA TARCZA S.A.F.E. (Blokada wyścigu skryptów - URUCHAMIANA OD RAZU)
-// ============================================================================
-const urlParams = new URLSearchParams(window.location.search);
-const safeId = urlParams.get('safe');
-
-if (safeId) {
-    // Wstrzykujemy styl blokujący zanim przeglądarka w ogóle pomyśli o renderowaniu HTML
-    const emergencyStyle = document.createElement('style');
-    emergencyStyle.innerHTML = `
-        #auth-screen, .bottom-nav, #app-interface, .waggle-tab-nav { display: none !important; }
-        body { background: #1a1a1a !important; }
-        #public-safe-modal { display: flex !important; }
-    `;
-    document.head.appendChild(emergencyStyle);
-}
-
 // Standardowe importy systemowe
 import { bootstrapApp } from './core/appBootstrap.js';
 import { addJournalEntry, subscribeToJournal, getJournalHistory } from './services/journalService.js';
@@ -34,87 +17,6 @@ initCalendarEngine();
 initPlacesEngine();
 initBoardEngine();
 initWikiEngine();
-
-// ============================================================================
-// 🚑 LOGIKA RADARU S.A.F.E. I POWIADOMIENIA O LOKALIZACJI GPS
-// ============================================================================
-if (safeId) {
-    window.Waggle = window.Waggle || {};
-    
-    // Funkcja pobierająca lokalizację znalazcy i wysyłająca ją właścicielowi psa
-    window.Waggle.shareFinderLocation = () => {
-        const btn = document.getElementById('shareLocationBtn');
-        if (!btn) return;
-        
-        btn.innerText = "POBIERAM SYGNAŁ GPS... ⏳";
-        btn.disabled = true;
-        
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const { latitude, longitude } = position.coords;
-                    
-                    // Zapisujemy współrzędne znalazcy bezpośrednio w profilu psa
-                    await db.collection('users').doc(safeId).set({
-                        lastSeen: {
-                            lat: latitude,
-                            lng: longitude,
-                            timestamp: window.firebase.firestore.FieldValue.serverTimestamp()
-                        }
-                    }, { merge: true });
-                    
-                    btn.innerText = "✅ LOKALIZACJA WYSŁANA WŁAŚCICIELOWI!";
-                    btn.style.background = "#2ed573";
-                    btn.style.borderColor = "#2ed573";
-                } catch (err) {
-                    console.error(err);
-                    btn.innerText = "❌ BŁĄD ZAPISU W BAZIE DANYCH";
-                    btn.disabled = false;
-                }
-            },
-            (err) => {
-                console.error(err);
-                btn.innerText = "❌ BRAK ZGODY NA GPS W TELEFONIE";
-                btn.disabled = false;
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    };
-
-    // Pobieranie danych do wyświetlenia na karcie ratunkowej
-    setTimeout(() => {
-        db.collection('users').doc(safeId).get().then(doc => {
-            if (doc.exists) {
-                const data = doc.data();
-                document.getElementById('publicSafeName').innerText = data.name || "Nieznane imię";
-                document.getElementById('publicSafeBreed').innerText = data.breed || "Brak danych o rasie";
-
-                if (data.avatar) {
-                    const av = document.getElementById('publicSafeAvatar');
-                    av.src = data.avatar;
-                    av.style.display = 'block';
-                }
-
-                const phone = data.phone || data.vet || "";
-                const phoneBtn = document.getElementById('publicSafePhone');
-                if (phone) {
-                    phoneBtn.href = "tel:" + phone;
-                    phoneBtn.style.display = 'inline-block';
-                }
-
-                document.getElementById('publicSafeAllergies').innerText = data.allergies || "Brak";
-                document.getElementById('publicSafeMeds').innerText = data.meds || "Brak";
-                document.getElementById('publicSafeChip').innerText = data.chip || "Brak";
-                document.getElementById('publicSafeNotes').innerText = data.notes || "Brak";
-            } else {
-                document.getElementById('publicSafeName').innerText = "Profil nie istnieje";
-            }
-        }).catch(err => {
-            console.error("❌ Błąd pobierania S.A.F.E:", err);
-            document.getElementById('publicSafeName').innerText = "Błąd połączenia z bazą";
-        });
-    }, 300);
-}
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
