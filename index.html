@@ -154,8 +154,7 @@
             </div>
             
             <!-- NOWY DZIAŁAJĄCY GUZIK QR -->
-            <button onclick="const link = document.getElementById('safe-public-link-input').value; if(link && link.includes('http')){ document.getElementById('safe-qr-code-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(link); document.getElementById('safe-qr-modal').style.display='flex'; } else { window.Waggle.showToast('Poczekaj na wygenerowanie linku!'); }" class="btn-main" style="background: var(--text-color); width: 100%; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">Generuj kod QR na obrożę 🐾</button>
-            
+           <button onclick="const link = document.getElementById('safe-public-link-input').value; if(link && link.includes('http')){ document.getElementById('safe-qr-code-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(link); document.getElementById('safe-qr-modal').style.display='flex'; } else { window.Waggle.showToast('Poczekaj na wygenerowanie linku!'); }" class="btn-main" style="background: var(--text-color); width: 100%; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">Generuj kod QR na obrożę 🐾</button>            
         </div>
     </div>
 </div>
