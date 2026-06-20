@@ -41,14 +41,6 @@ export async function toggleNotifications() {
                     
                     window.Waggle.showToast("🔔 Powiadomienia aktywne!");
                     updateNotificationBtnUI(true);
-
-                    // Nasłuchujemy wiadomości również wtedy, gdy aplikacja jest OTWARTA
-                    messaging.onMessage((payload) => {
-                        console.log('💬 Otrzymano wiadomość na żywo (Foreground):', payload);
-                        const msgTitle = payload.notification?.title || 'Waggle';
-                        const msgBody = payload.notification?.body || 'Masz nową wiadomość!';
-                        window.Waggle.showToast(`💬 ${msgTitle}: ${msgBody}`);
-                    });
                 }
             } else {
                 window.Waggle.showToast("❌ Odblokuj powiadomienia w ustawieniach przeglądarki!");
@@ -81,23 +73,24 @@ export function updateNotificationBtnUI(isEnabled) {
 window.Waggle = window.Waggle || {};
 window.Waggle.toggleNotifications = toggleNotifications;
 
-// Nasłuchiwanie powiadomień, gdy użytkownik ma OTWARTĄ aplikację (Pierwszy plan)
+// 📡 JEDYNY GŁÓWNY NASŁUCH NA ŻYWO (Otwarta aplikacja)
 if ('serviceWorker' in navigator) {
-    try {
-        const messaging = window.firebase.messaging();
-        messaging.onMessage((payload) => {
-            console.log('🔔 Odebrano powiadomienie na żywo w aplikacji:', payload);
-            
-            // Pobieramy treść powiadomienia
-            const title = payload.notification?.title || "Waggle 🐾";
-            const body = payload.notification?.body || "Nowa wiadomość!";
-            
-            // Wyświetlamy piękny Toast wewnątrz aplikacji zamiast systemowego paska
-            if (window.Waggle && window.Waggle.showToast) {
-                window.Waggle.showToast(`<b>${title}</b><br>${body}`);
-            }
-        });
-    } catch (e) {
-        console.warn("FCM foreground messaging nie mogło wystartować (prawdopodobnie brak logowania):", e);
-    }
+    // Opóźnienie zapobiega błędom ładowania, jeśli Firebase jeszcze nie wstał
+    setTimeout(() => {
+        try {
+            const messaging = window.firebase.messaging();
+            messaging.onMessage((payload) => {
+                console.log('🔔 Odebrano powiadomienie na żywo w aplikacji:', payload);
+                
+                const title = payload.notification?.title || "Waggle 🐾";
+                const body = payload.notification?.body || "Nowa wiadomość!";
+                
+                if (window.Waggle && window.Waggle.showToast) {
+                    window.Waggle.showToast(`<b>${title}</b><br>${body}`);
+                }
+            });
+        } catch (e) {
+            console.warn("FCM foreground messaging oczekuje na inicjalizację.");
+        }
+    }, 1500);
 }
