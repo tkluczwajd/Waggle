@@ -15,35 +15,26 @@ exports.notifyOnNewAlert = functions.firestore
     
     console.log(`[Push] Nowy alert od ${authorId}: ${alertData.type}`);
 
-    // Krok A: Pobieramy wszystkich użytkowników (wersja MVP - później dodamy filtrowanie po GPS)
+    // Pobieramy wszystkich użytkowników z bazy
     const usersSnapshot = await admin.firestore().collection("users").get();
     const tokens = [];
-    const tokensToUserId = {}; // Do ewentualnego czyszczenia nieważnych tokenów
 
     usersSnapshot.forEach((doc) => {
       const userData = doc.data();
       const userId = doc.id;
 
-      // Nie wysyłamy powiadomienia do samego autora alertu!
-      if (userId !== authorId && userData.fcmToken) {
-        // Sprawdzamy czy token to tablica czy zwykły string
-        const userTokens = Array.isArray(userData.fcmToken) ? userData.fcmToken : [userData.fcmToken];
-        
-        userTokens.forEach(token => {
-            if (token) {
-                tokens.push(token);
-                tokensToUserId[token] = userId;
-            }
-        });
+      // 🔥 KRYTYCZNA ZMIANA: Sprawdzamy, czy użytkownik ma token ORAZ czy nie wyciszył powiadomień (pushEnabled)
+      if (userId !== authorId && userData.fcmToken && userData.pushEnabled === true) {
+        tokens.push(userData.fcmToken);
       }
     });
 
     if (tokens.length === 0) {
-      console.log("[Push] Brak aktywnych tokenów. Przerywam wysyłkę.");
+      console.log("[Push] Brak aktywnych tokenów (lub wszyscy wyciszyli). Przerywam wysyłkę.");
       return null;
     }
 
-    // Krok B: Budujemy paczkę powiadomienia
+    // Budujemy paczkę powiadomienia
     const payload = {
       notification: {
         title: "🚨 Nowy Alert w okolicy!",
@@ -56,7 +47,7 @@ exports.notifyOnNewAlert = functions.firestore
       }
     };
 
-    // Krok C: Wysyłamy powiadomienia używając nowej metody sendEachForMulticast
+    // Wysyłamy do wszystkich naraz
     try {
       const message = {
           ...payload,
@@ -65,21 +56,6 @@ exports.notifyOnNewAlert = functions.firestore
       
       const response = await admin.messaging().sendEachForMulticast(message);
       console.log(`[Push] Sukces: ${response.successCount}, Błędy: ${response.failureCount}`);
-
-      // Krok D: Czyszczenie starych/nieaktywnych tokenów (np. gdy ktoś odinstalował apkę)
-      if (response.failureCount > 0) {
-        const failedTokens = [];
-        response.responses.forEach((resp, idx) => {
-          if (!resp.success) {
-            failedTokens.push(tokens[idx]);
-          }
-        });
-        
-        if (failedTokens.length > 0) {
-            console.log("[Push] Do usunięcia tokeny:", failedTokens);
-            // Tu w przyszłości dodamy usuwanie starych tokenów z bazy, żeby jej nie zaśmiecać
-        }
-      }
     } catch (error) {
       console.error("[Push] Błąd krytyczny podczas wysyłania:", error);
     }
