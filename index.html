@@ -804,7 +804,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     <script type="module" src="/src/app.js?v=1009"></script>
     
-    <script>
+ <script>
         // REJESTRACJA SERVICE WORKERA I POMOCNICZE SKRYPTY
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -816,6 +816,24 @@
                 .catch(err => {
                     console.error('❌ Błąd rejestracji Service Workera:', err);
                 });
+            });
+        }
+
+        // 🔥 WAGGLE: NASŁUCHIWANIE POWIADOMIEŃ GDY APLIKACJA JEST OTWARTA (FOREGROUND)
+        if ('serviceWorker' in navigator && typeof firebase !== 'undefined' && firebase.messaging.isSupported()) {
+            const messaging = firebase.messaging();
+            
+            messaging.onMessage((payload) => {
+                console.log('[Waggle Live] Otrzymano sygnał Push na żywo:', payload);
+                
+                const title = payload.notification?.title || "Ważne powiadomienie!";
+                const body = payload.notification?.body || "Masz nową wiadomość w systemie.";
+                
+                if (window.Waggle && window.Waggle.showToast) {
+                    window.Waggle.showToast(`🔔 ${title}: ${body}`);
+                } else {
+                    alert(`🔔 ${title}\n${body}`);
+                }
             });
         }
 
