@@ -34,7 +34,7 @@ exports.notifyOnNewAlert = functions.firestore
       return null;
     }
 
-    // Budujemy paczkę powiadomienia
+// Budujemy paczkę powiadomienia
     const payload = {
       notification: {
         title: "🚨 Nowy Alert w okolicy!",
@@ -43,7 +43,9 @@ exports.notifyOnNewAlert = functions.firestore
       data: {
         type: "NEW_ALERT",
         alertId: context.params.alertId,
-        url: "/" // Gdzie przenieść po kliknięciu
+        lat: String(alertData.lat || ""), // Zmiana: przesyłamy współrzędne
+        lng: String(alertData.lng || ""), // Zmiana: przesyłamy współrzędne
+        url: "/" 
       }
     };
 
