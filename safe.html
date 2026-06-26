@@ -143,13 +143,16 @@
                 async (position) => {
                     try {
                         const { latitude, longitude } = position.coords;
-                        await db.collection('users').doc(safeId).set({
-                            lastSeen: {
-                                lat: latitude,
-                                lng: longitude,
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            }
-                        }, { merge: true });
+                        
+                        // [WAGGLE V2] - Zapisujemy do nowej kolekcji bezpiecznych raportów!
+                        await db.collection('safe_reports').add({
+                            ownerUid: safeId,
+                            lat: latitude,
+                            lng: longitude,
+                            status: 'NEW',
+                            source: 'QR_SCAN',
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                         
                         btn.innerText = "✅ WYSŁANO LOKALIZACJĘ!";
                         btn.style.color = "#2ecc71";
