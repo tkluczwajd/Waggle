@@ -43,8 +43,8 @@ exports.notifyOnNewAlert = functions.firestore
       data: {
         type: "NEW_ALERT",
         alertId: context.params.alertId,
-        lat: String(alertData.lat || ""), // Zmiana: przesyłamy współrzędne
-        lng: String(alertData.lng || ""), // Zmiana: przesyłamy współrzędne
+        lat: String(alertData.lat || ""),
+        lng: String(alertData.lng || ""),
         url: "/" 
       }
     };
