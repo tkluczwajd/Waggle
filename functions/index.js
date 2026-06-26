@@ -64,3 +64,33 @@ exports.notifyOnNewAlert = functions.firestore
 
     return null;
   });
+
+exports.notifyOnSafeReport = functions.firestore
+  .document("safe_reports/{reportId}")
+  .onCreate(async (snap, context) => {
+    const report = snap.data();
+    
+    // Szukamy właściciela
+    const userDoc = await admin.firestore().collection("users").doc(report.ownerUid).get();
+    if (!userDoc.exists) return null;
+    
+    const userData = userDoc.data();
+    if (!userData.fcmToken || !userData.pushEnabled) return null;
+
+    // Wysyłamy Push z koordynatami, żeby otworzyć mapę!
+    const payload = {
+      notification: {
+        title: "🚨 S.A.F.E: Zlokalizowano Twojego psa!",
+        body: "Ktoś właśnie zeskanował zawieszkę! Kliknij, aby zobaczyć dokładną lokalizację na mapie."
+      },
+      data: {
+        type: "SAFE_REPORT",
+        reportId: context.params.reportId,
+        lat: String(report.lat),
+        lng: String(report.lng),
+        url: "/" 
+      }
+    };
+
+    return admin.messaging().send({ token: userData.fcmToken, ...payload });
+  });
