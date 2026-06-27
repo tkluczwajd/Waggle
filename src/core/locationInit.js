@@ -20,10 +20,18 @@ export function setupLocationTracking(onFirstFix) {
     navigator.geolocation.watchPosition(pos => {
         const lat = pos.coords.latitude; 
         const lng = pos.coords.longitude;
+        
+        // 🔥 WAGGLE V2: Zapisujemy "czarną skrzynkę" przy każdym nowym odczycie GPS!
+        if (window.Waggle && window.Waggle.saveCheckpoint) {
+            window.Waggle.saveCheckpoint(pos.coords);
+        }
+
         const isFirstFix = !state.location.lat; 
         
         state.location.lat = lat; 
         state.location.lng = lng;
+
+        // ... reszta Twojego kodu bez zmian ...
 
         // Jeśli to pierwszy sygnał GPS, uruchamiamy mapę i resztę aplikacji (callback z appBootstrap)
         if (isFirstFix) onFirstFix(lat, lng);
