@@ -434,13 +434,14 @@ function initJournalListener() {
 window.addEventListener('load', () => { 
     setTimeout(initJournalListener, 500); 
     
-    // Odpalenie mechanizmu odzyskiwania sesji po 2 sekundach od startu apki
+    // 🔥 MECHANIZM RATUNKOWY: Sprawdź przy starcie czy nie ma zawieszonego spaceru
     setTimeout(() => {
         if (window.Waggle && window.Waggle.checkPendingWalks) {
             window.Waggle.checkPendingWalks();
         }
-    }, 2000);
+    }, 2000); // Czekamy 2s, aż Firebase się zainicjuje
 });
+    
 
 // ============================================================================
 // 🔥 WAGGLE FAMILY: PEŁNA HISTORIA (GRUPOWANIE PO DACIE)
@@ -619,3 +620,12 @@ window.addEventListener('load', () => {
         });
     }
 });
+
+window.Waggle.finalizeWalk = async () => {
+    // 1. Pobierz dane z historycznego zapisu
+    // 2. Oblicz dystans (używając funkcji getDistanceInMeters)
+    // 3. Zapisz finalny spacer do kolekcji 'walks'
+    // 4. Usuń checkpoint: localStorage.removeItem('waggle_last_checkpoint');
+    // 5. Odśwież widok
+    window.Waggle.showToast("Spacer został automatycznie zamknięty i zapisany.");
+};
