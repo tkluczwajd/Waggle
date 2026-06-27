@@ -9,6 +9,7 @@ import { initPlacesEngine } from './modules/places.js';
 import { initBoardEngine } from './modules/board.js';
 import { initWikiEngine } from './modules/wiki.js';
 import { db } from './core/firebase.js'; 
+import { NotificationEngine } from './services/notificationEngine.js';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -16,7 +17,10 @@ initChatEngine();
 initCalendarEngine();
 initPlacesEngine();
 initBoardEngine();
+// ... poprzednie init
 initWikiEngine();
+// Dodaj to:
+window.Waggle.notify = NotificationEngine.notify;
 
 // ============================================================================
 // 🔥 MANAGER HISTORII PWA (Naprawa przycisku "Wstecz" na Androidzie)
