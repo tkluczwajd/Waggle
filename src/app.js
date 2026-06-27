@@ -107,6 +107,50 @@ window.Waggle.forceAppUpdate = async () => {
 };
 
 // ============================================================================
+// 🔥 WAGGLE TRACKING: MECHANIZM RATUNKOWY (Checkpointing)
+// ============================================================================
+window.Waggle.saveCheckpoint = async (coords) => {
+    // Zapis lokalny - błyskawiczny
+    localStorage.setItem('waggle_last_checkpoint', JSON.stringify({
+        lat: coords.latitude,
+        lng: coords.longitude,
+        timestamp: Date.now()
+    }));
+    
+    // Zapis w chmurze (tylko jeśli mamy aktywne ID psa)
+    const currentUid = localStorage.getItem('activeDogId');
+    if (!currentUid) return;
+    
+    try {
+        await db.collection('users').doc(currentUid).collection('activeWalkHistory').add({
+            lat: coords.latitude,
+            lng: coords.longitude,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) {
+        console.error("Błąd zapisu checkpointu w chmurze", e);
+    }
+};
+
+window.Waggle.checkPendingWalks = () => {
+    const lastCheckpoint = JSON.parse(localStorage.getItem('waggle_last_checkpoint'));
+    if (!lastCheckpoint) return;
+
+    const now = Date.now();
+    const twoHours = 2 * 60 * 60 * 1000;
+
+    // Jeśli ostatni punkt był > 2h temu, uznajemy to za zapomniany spacer
+    if (now - lastCheckpoint.timestamp > twoHours) {
+        if (confirm("Wykryto niedokończony spacer! Czy chcesz go teraz zakończyć i zapisać?")) {
+            // Tutaj wywołujesz swoją funkcję kończącą spacer (zapisującą całość)
+            if (window.Waggle.finalizeWalk) window.Waggle.finalizeWalk(); 
+        } else {
+            localStorage.removeItem('waggle_last_checkpoint'); // Kasujemy "zombie"
+        }
+    }
+};
+
+// ============================================================================
 // 🔥 WAGGLE FAMILY: LOGIKA DZIENNIKA PSA
 // ============================================================================
 window.logDogActivity = async (type) => {
@@ -387,7 +431,16 @@ function initJournalListener() {
         });
     });
 }
-window.addEventListener('load', () => { setTimeout(initJournalListener, 500); });
+window.addEventListener('load', () => { 
+    setTimeout(initJournalListener, 500); 
+    
+    // Odpalenie mechanizmu odzyskiwania sesji po 2 sekundach od startu apki
+    setTimeout(() => {
+        if (window.Waggle && window.Waggle.checkPendingWalks) {
+            window.Waggle.checkPendingWalks();
+        }
+    }, 2000);
+});
 
 // ============================================================================
 // 🔥 WAGGLE FAMILY: PEŁNA HISTORIA (GRUPOWANIE PO DACIE)
