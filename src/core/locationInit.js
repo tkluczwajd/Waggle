@@ -21,12 +21,13 @@ export function setupLocationTracking(onFirstFix) {
         const lat = pos.coords.latitude; 
         const lng = pos.coords.longitude;
         
-        // 🔥 WAGGLE V2: Zapisujemy "czarną skrzynkę" przy każdym nowym odczycie GPS!
+        // 🔥 WSTAW TO TUTAJ (Wewnątrz watchPosition)
         if (window.Waggle && window.Waggle.saveCheckpoint) {
             window.Waggle.saveCheckpoint(pos.coords);
         }
 
         const isFirstFix = !state.location.lat; 
+        // ... reszta Twojego kodu ...
         
         state.location.lat = lat; 
         state.location.lng = lng;
