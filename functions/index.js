@@ -18,14 +18,15 @@ exports.notifyOnNewAlert = functions.firestore
     // Pobieramy wszystkich użytkowników z bazy
     const usersSnapshot = await admin.firestore().collection("users").get();
     const tokens = [];
+    const tokensToUid = {}; // Słownik do mapowania tokenów na UID użytkowników
 
     usersSnapshot.forEach((doc) => {
       const userData = doc.data();
       const userId = doc.id;
 
-      // 🔥 KRYTYCZNA ZMIANA: Sprawdzamy, czy użytkownik ma token ORAZ czy nie wyciszył powiadomień (pushEnabled)
       if (userId !== authorId && userData.fcmToken && userData.pushEnabled === true) {
         tokens.push(userData.fcmToken);
+        tokensToUid[userData.fcmToken] = userId;
       }
     });
 
@@ -34,7 +35,7 @@ exports.notifyOnNewAlert = functions.firestore
       return null;
     }
 
-// Budujemy paczkę powiadomienia
+    // Budujemy paczkę powiadomienia
     const payload = {
       notification: {
         title: "🚨 Nowy Alert w okolicy!",
@@ -49,7 +50,6 @@ exports.notifyOnNewAlert = functions.firestore
       }
     };
 
-    // Wysyłamy do wszystkich naraz
     try {
       const message = {
           ...payload,
@@ -58,6 +58,27 @@ exports.notifyOnNewAlert = functions.firestore
       
       const response = await admin.messaging().sendEachForMulticast(message);
       console.log(`[Push] Sukces: ${response.successCount}, Błędy: ${response.failureCount}`);
+      
+      // 🔥 SYSTEM CZYSZCZENIA BAZY Z MARTWYCH TOKENÓW
+      if (response.failureCount > 0) {
+        const failedTokensIds = [];
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            const errCode = resp.error.code;
+            if (errCode === 'messaging/invalid-registration-token' || errCode === 'messaging/registration-token-not-registered') {
+              const failedToken = tokens[idx];
+              const failedUid = tokensToUid[failedToken];
+              if (failedUid) {
+                // Usuwamy zepsuty token, aby nie spowalniał przyszłych wysyłek
+                admin.firestore().collection("users").doc(failedUid).update({ fcmToken: admin.firestore.FieldValue.delete() });
+                failedTokensIds.push(failedUid);
+              }
+            }
+          }
+        });
+        if (failedTokensIds.length > 0) console.log(`[Push] Usunięto martwe tokeny dla UID:`, failedTokensIds);
+      }
+
     } catch (error) {
       console.error("[Push] Błąd krytyczny podczas wysyłania:", error);
     }
@@ -65,32 +86,60 @@ exports.notifyOnNewAlert = functions.firestore
     return null;
   });
 
+// ============================================================================
+// 2. RADAR S.A.F.E - POWIADOMIENIE O NAMIERZENIU PSA Z AKTUALIZACJĄ STATUSU
+// ============================================================================
 exports.notifyOnSafeReport = functions.firestore
   .document("safe_reports/{reportId}")
   .onCreate(async (snap, context) => {
     const report = snap.data();
+    const reportRef = snap.ref;
     
-    // Szukamy właściciela
-    const userDoc = await admin.firestore().collection("users").doc(report.ownerUid).get();
-    if (!userDoc.exists) return null;
-    
-    const userData = userDoc.data();
-    if (!userData.fcmToken || !userData.pushEnabled) return null;
-
-    // Wysyłamy Push z koordynatami, żeby otworzyć mapę!
-    const payload = {
-      notification: {
-        title: "🚨 S.A.F.E: Zlokalizowano Twojego psa!",
-        body: "Ktoś właśnie zeskanował zawieszkę! Kliknij, aby zobaczyć dokładną lokalizację na mapie."
-      },
-      data: {
-        type: "SAFE_REPORT",
-        reportId: context.params.reportId,
-        lat: String(report.lat),
-        lng: String(report.lng),
-        url: "/" 
+    try {
+      // Szukamy właściciela
+      const userDoc = await admin.firestore().collection("users").doc(report.ownerUid).get();
+      if (!userDoc.exists) {
+        console.error(`[SAFE] Brak profilu właściciela: ${report.ownerUid}`);
+        return reportRef.update({ status: 'ERROR_NO_USER' });
       }
-    };
+      
+      const userData = userDoc.data();
+      if (!userData.fcmToken || userData.pushEnabled === false) {
+        console.warn(`[SAFE] Użytkownik ${report.ownerUid} nie ma tokena lub wyciszył powiadomienia`);
+        return reportRef.update({ status: 'ERROR_NO_TOKEN' });
+      }
 
-    return admin.messaging().send({ token: userData.fcmToken, ...payload });
+      const payload = {
+        notification: {
+          title: "🚨 S.A.F.E: Zlokalizowano Twojego psa!",
+          body: "Ktoś właśnie zeskanował zawieszkę! Kliknij, aby zobaczyć dokładną lokalizację na mapie."
+        },
+        data: {
+          type: "SAFE_REPORT",
+          reportId: context.params.reportId,
+          lat: String(report.lat),
+          lng: String(report.lng),
+          url: "/" 
+        }
+      };
+
+      // Wysyłamy i czekamy na wynik
+      await admin.messaging().send({ token: userData.fcmToken, ...payload });
+      console.log(`[SAFE] Powiadomienie skutecznie wysłane do ${report.ownerUid}`);
+      
+      // Zapisujemy potwierdzenie doręczenia (Dzięki temu audyt będzie czysty!)
+      return reportRef.update({ status: 'SENT', sentAt: admin.firestore.FieldValue.serverTimestamp() });
+      
+    } catch (error) {
+      console.error("[SAFE] Błąd wysyłania powiadomienia:", error);
+      
+      // 🔥 Sprzątamy token, jeśli przestał być ważny (ktoś usunął przeglądarkę / wyczyścił dane)
+      if (error.code === 'messaging/invalid-registration-token' || error.code === 'messaging/registration-token-not-registered') {
+        console.log(`[SAFE] Usuwam martwy token dla usera ${report.ownerUid}`);
+        await admin.firestore().collection("users").doc(report.ownerUid).update({ fcmToken: admin.firestore.FieldValue.delete() });
+      }
+      
+      // Rejestrujemy błąd w raporcie
+      return reportRef.update({ status: 'ERROR_FCM', errorDetails: error.message });
+    }
   });
