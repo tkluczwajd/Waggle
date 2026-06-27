@@ -157,9 +157,10 @@
                         btn.innerText = "✅ WYSŁANO LOKALIZACJĘ!";
                         btn.style.color = "#2ecc71";
                         btn.style.borderColor = "#2ecc71";
+                    // ... wewnątrz funkcji sendLocation ...
                     } catch (err) {
-                        console.error(err);
-                        btn.innerText = "❌ BŁĄD BAZY DANYCH";
+                        console.error("Szczegóły błędu Firebase:", err);
+                        btn.innerText = "❌ BŁĄD: " + err.code; // Wyświetli kod błędu (np. permission-denied)
                         btn.disabled = false;
                     }
                 },
