@@ -85,9 +85,11 @@ if ('serviceWorker' in navigator) {
                 const title = payload.notification?.title || "Waggle 🐾";
                 const body = payload.notification?.body || "Nowa wiadomość!";
                 
-                if (window.Waggle && window.Waggle.showToast) {
-                    window.Waggle.showToast(`<b>${title}</b><br>${body}`);
-                }
+                if (window.Waggle && window.Waggle.notify) {
+    window.Waggle.notify('PUSH_RECEIVED', { 
+        message: `${title}: ${body}` 
+    });
+}
             });
         } catch (e) {
             console.warn("FCM foreground messaging oczekuje na inicjalizację.");
