@@ -633,3 +633,16 @@ window.Waggle.finalizeWalk = async () => {
     // 5. Odśwież widok
     window.Waggle.showToast("Spacer został automatycznie zamknięty i zapisany.");
 };
+// 🔥 FIX: Odbieranie sygnałów z Service Workera (GOTO_MAP)
+navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'GOTO_MAP') {
+        console.log("✅ Odebrano GOTO_MAP:", event.data);
+        const { lat, lng } = event.data;
+        
+        // Wywołujemy naszą centralną funkcję do centrowania mapy
+        if (window.Waggle && window.Waggle.centerOnTarget) {
+            window.Waggle.centerOnTarget(lat, lng);
+            window.Waggle.showToast("🚨 Otwieram mapę...");
+        }
+    }
+});
