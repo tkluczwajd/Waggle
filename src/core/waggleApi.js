@@ -13,7 +13,14 @@ export function initWaggleApi(updateUserMarker) {
     // Podpinamy funkcje pod globalne API
     window.Waggle.triggerMarkerRefresh = updateUserMarker;
     window.Waggle.executeSearch = (query) => { if (typeof searchUsers === 'function') searchUsers(query); };
-    window.Waggle.centerOnTarget = (lat, lng) => { switchView('map'); setTimeout(() => mapManager.flyTo(lat, lng, 16), 300); };
+window.Waggle.centerOnTarget = (lat, lng) => { 
+    switchView('local'); // Zmieniono z 'map' na 'local'
+    setTimeout(() => {
+        if (mapManager && typeof mapManager.flyTo === 'function') {
+            mapManager.flyTo(lat, lng, 16);
+        }
+    }, 500); // Zwiększyłem czas na wczytanie mapy
+};
     window.Waggle.openWikiDetails = openWikiDetails;
     
     window.Waggle.likeWiki = (id) => {
