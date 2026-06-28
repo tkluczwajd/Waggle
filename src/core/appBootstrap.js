@@ -76,44 +76,22 @@ export function bootstrapApp() {
     setupAuth(() => {
         initRouter();
 
-        // 🔥 OBSŁUGA LINKÓW Z POWIADOMIEŃ I DIAGNOSTYKA
+       // 🔥 OBSŁUGA LINKÓW Z POWIADOMIEŃ (Czysty Deep Linking)
         const params = new URLSearchParams(window.location.search);
-        const urlString = window.location.search;
         
-        // DIAGNOSTYKA: Jeśli cokolwiek jest w URL, wyświetl to na ekranie!
-        if (urlString) {
-            setTimeout(() => {
-                if (window.Waggle && window.Waggle.showToast) {
-                    window.Waggle.showToast("🔗 URL przy starcie: " + urlString, 5000);
-                }
-            }, 2000);
-        }
-
         if (params.get('view') === 'local') {
             const lat = parseFloat(params.get('lat'));
             const lng = parseFloat(params.get('lng'));
             
             if (lat && lng) {
-                // Całkowicie nadpisujemy funkcję centrowania, żeby mieć 100% pewności, że zadziała
-                window.Waggle.centerOnTarget = (tLat, tLng) => {
-                    // 1. Brutalna symulacja kliknięcia w dolne menu (najbezpieczniejsza opcja)
-                    const mapBtn = document.querySelector('button[data-view="local"]');
-                    if (mapBtn) mapBtn.click();
-                    
-                    // 2. Czekamy na animację i centrujemy mapę
-                    setTimeout(() => {
-                        import('./modules/map/mapManager.js').then(({ mapManager }) => {
-                            if (mapManager && typeof mapManager.flyTo === 'function') {
-                                mapManager.flyTo(tLat, tLng, 17);
-                            }
-                        });
-                    }, 800);
-                };
-
+                console.log("🔗 BOOTSTRAP: URL z parametrami, przekazuję do API.");
+                // Zlecenie dla jednej, głównej funkcji w waggleApi.js
+                // Opóźnienie rzędu mikrosekundy (100ms) daje pewność, że globalny obiekt Window załadował interfejsy
                 setTimeout(() => {
-                    window.Waggle.showToast(`🚨 Namierzono psa! Otwieram mapę...`, 4000);
-                    window.Waggle.centerOnTarget(lat, lng);
-                }, 1500);
+                    if (window.Waggle && window.Waggle.centerOnTarget) {
+                        window.Waggle.centerOnTarget(lat, lng);
+                    }
+                }, 100);
             }
         }
         // 🔥 KONIEC OBSŁUGI LINKÓW
