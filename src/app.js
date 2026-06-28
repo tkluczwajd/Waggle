@@ -92,22 +92,21 @@ if ('serviceWorker' in navigator) {
 // ROZWIĄZANIE 5: Funkcja dla przycisku "Wymuś aktualizację"
 window.Waggle.forceAppUpdate = async () => {
     if (window.Waggle && window.Waggle.showToast) {
-        window.Waggle.showToast("🔄 Pobieranie najnowszej wersji...");
+        window.Waggle.showToast("🔄 Czyścimy stary cache...");
     }
     
-    if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
+    // 1. Usuwamy wszystkie cache
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    
+    // 2. Unregister SW
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (let reg of registrations) {
+        await reg.unregister();
     }
     
-    if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let reg of registrations) {
-            await reg.unregister();
-        }
-    }
-    
-    setTimeout(() => window.location.reload(true), 1000);
+    // 3. Przeładowanie z pominięciem cache
+    window.location.reload(true);
 };
 
 // ============================================================================
