@@ -1,5 +1,6 @@
 // src/modules/map/mapManager.js
 import { appState as state } from '../../core/state.js';
+import { eventBus } from '../../core/eventBus.js';
 
 class MapManager {
     constructor() {
@@ -35,8 +36,10 @@ class MapManager {
             parks: L.layerGroup() 
         };
 
-        console.log("🗺️ Map ready", this.map);
-    }
+       console.log("🗺️ Map ready", this.map);
+        // 🔥 Emitujemy sygnał, że mapa wstała i można centrować
+        eventBus.emit('MAP_READY', this.map);
+    } // koniec funkcji init
 
     // 🔥 NOWOŚĆ: Funkcja aktualizująca puls na żywo
     updatePulse() {
