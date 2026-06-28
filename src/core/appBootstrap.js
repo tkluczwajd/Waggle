@@ -83,16 +83,24 @@ export function bootstrapApp() {
             const lng = parseFloat(params.get('lng'));
             
             if (lat && lng) {
-                console.log("📍 Wykryto lokalizację z powiadomienia, przełączam widok...");
-                // Dajemy aplikacji chwilę na inicjalizację mapy i modułów
+                console.log("📍 Wykryto lokalizację w URL:", lat, lng);
+                
+                // Wydłużamy czas oczekiwania, aby mapa i router na pewno były gotowe
                 setTimeout(() => {
-                    // Używamy switchView z routera, żeby poprawnie przełączyć zakładkę
-                    import('./router.js').then(({ switchView }) => switchView('local'));
+                    console.log("📍 Próbuję przełączyć widok na 'local'...");
+                    
+                    import('./router.js').then(({ switchView }) => {
+                        switchView('local');
+                        console.log("📍 Router: Widok zmieniony.");
+                    });
                     
                     if (window.Waggle && window.Waggle.centerOnTarget) {
                         window.Waggle.centerOnTarget(lat, lng);
+                        console.log("📍 Map: Centrowanie wywołane.");
+                    } else {
+                        console.error("📍 BŁĄD: window.Waggle.centerOnTarget nie istnieje!");
                     }
-                }, 1000); // 1 sekunda "rozgrzewki" dla aplikacji
+                }, 2000); // 2 sekundy oczekiwania
             }
         }
         // 🔥 KONIEC OBSŁUGI LINKÓW
