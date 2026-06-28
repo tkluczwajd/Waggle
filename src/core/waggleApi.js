@@ -6,6 +6,7 @@ import { db, auth } from './firebase.js';
 import { appState as state } from './state.js';
 import { uploadImageToService as uploadImage } from '../services/postsService.js';
 import { toggleFollowUserInDb } from '../services/profileService.js'; // 🔥 Import nowej funkcji
+import { eventBus } from './eventBus.js';
 
 export function initWaggleApi(updateUserMarker) {
     window.Waggle = window.Waggle || {};
@@ -14,13 +15,24 @@ export function initWaggleApi(updateUserMarker) {
     window.Waggle.triggerMarkerRefresh = updateUserMarker;
     window.Waggle.executeSearch = (query) => { if (typeof searchUsers === 'function') searchUsers(query); };
 window.Waggle.centerOnTarget = (lat, lng) => { 
-    switchView('local'); // Zmieniono z 'map' na 'local'
-    setTimeout(() => {
-        if (mapManager && typeof mapManager.flyTo === 'function') {
-            mapManager.flyTo(lat, lng, 16);
+        console.log("📍 API: Otrzymano żądanie centrowania dla:", lat, lng);
+        switchView('local'); // Zawsze najpierw przełączamy widok na mapę
+
+        if (state.map && state.map.instance) {
+            // Sytuacja A: Mapa jest już załadowana (np. apka działała w tle)
+            console.log("📍 API: Mapa jest już gotowa, wykonuję flyTo.");
+            mapManager.flyTo(lat, lng, 17);
+        } else {
+            // Sytuacja B: Aplikacja dopiero startuje (zimny start), czekamy na eventBus
+            console.log("📍 API: Mapa ładuje się, czekam na sygnał MAP_READY...");
+            const onMapReady = () => {
+                console.log("📍 API: Sygnał MAP_READY odebrany, wykonuję flyTo.");
+                mapManager.flyTo(lat, lng, 17);
+                eventBus.off('MAP_READY', onMapReady); // Odpinamy listener, żeby się nie dublował
+            };
+            eventBus.on('MAP_READY', onMapReady);
         }
-    }, 500); // Zwiększyłem czas na wczytanie mapy
-};
+    };
     window.Waggle.openWikiDetails = openWikiDetails;
     
     window.Waggle.likeWiki = (id) => {
