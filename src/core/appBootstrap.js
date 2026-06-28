@@ -72,14 +72,39 @@ export function bootstrapApp() {
     window.Waggle.updateStatsUI = updateStatsUI; 
 
     // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
+// Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
     setupAuth(() => {
         initRouter();
+
+        // 🔥 OBSŁUGA LINKÓW Z POWIADOMIEŃ (Deep Linking)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('view') === 'local') {
+            const lat = parseFloat(params.get('lat'));
+            const lng = parseFloat(params.get('lng'));
+            
+            if (lat && lng) {
+                console.log("📍 Wykryto lokalizację z powiadomienia, przełączam widok...");
+                // Dajemy aplikacji chwilę na inicjalizację mapy i modułów
+                setTimeout(() => {
+                    // Używamy switchView z routera, żeby poprawnie przełączyć zakładkę
+                    import('./router.js').then(({ switchView }) => switchView('local'));
+                    
+                    if (window.Waggle && window.Waggle.centerOnTarget) {
+                        window.Waggle.centerOnTarget(lat, lng);
+                    }
+                }, 1000); // 1 sekunda "rozgrzewki" dla aplikacji
+            }
+        }
+        // 🔥 KONIEC OBSŁUGI LINKÓW
+
         initProfileUi();
         initUiListeners();
 
         // Uruchomienie lokalnego radaru oraz nasłuchu wiadomości
         initLiveFeed();
         loadInbox();
+        
+        // ... (reszta Twojego kodu bez zmian)
 
         // Rysujemy profil natychmiast po zalogowaniu
         updateStatsUI();
