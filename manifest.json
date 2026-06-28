@@ -2,7 +2,7 @@
   "name": "Waggle Premium",
   "short_name": "Waggle",
   "description": "Społeczność i mapa dla psiarzy",
-  "start_url": "/index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2d3436",
