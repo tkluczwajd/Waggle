@@ -2,7 +2,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-// 🔥 Twoja autentyczna konfiguracja projektu Waggle
+// Twoja autentyczna konfiguracja projektu Waggle
 const firebaseConfig = { 
     apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", 
     authDomain: "waggle-app-31ffa.firebaseapp.com", 
@@ -25,40 +25,39 @@ messaging.onBackgroundMessage((payload) => {
         body: payload.notification?.body || 'Nowe zdarzenie w Twoim stadzie!',
         icon: '/favicon.ico', 
         badge: '/favicon.ico',
-        vibrate: [200, 100, 200, 100, 200], // Wibracja systemowa dla Androida
-        data: payload.data
+        vibrate: [200, 100, 200, 100, 200],
+        data: payload.data // Tutaj przesyłamy dane takie jak lat/lng
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
+
 // Nasłuchiwanie na kliknięcie w baner powiadomienia
 self.addEventListener('notificationclick', function(event) {
     event.notification.close(); // Zamknij baner systemowy
 
     const data = event.notification.data || {};
-    const urlToOpen = data.url || '/';
+    // Budujemy URL docelowy
+    let targetUrl = data.url || '/';
+    
+    // Jeśli to alert SAFE, dołączamy parametry lokalizacji
+    if (data.lat && data.lng) {
+        targetUrl = `/?view=local&lat=${data.lat}&lng=${data.lng}`;
+    }
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // Sprawdź, czy aplikacja Waggle jest już otwarta gdzieś w tle
+            // Szukamy otwartego okna aplikacji Waggle (pomijając stronę publicznego SAFE)
             for (let i = 0; i < windowClients.length; i++) {
                 let client = windowClients[i];
-                if (client.url.includes(self.registration.scope) && 'focus' in client) {
-                    // Jeśli otwarta - przenieś ją na wierzch i wyślij jej dane
-                    client.postMessage({ 
-                        type: 'GOTO_MAP', 
-                        lat: data.lat, 
-                        lng: data.lng 
-                    });
-                    return client.focus();
+                // Upewniamy się, że nie nawigujemy wewnątrz okna profilu SAFE
+                if (client.url.includes(self.registration.scope) && !client.url.includes('safe.html') && 'focus' in client) {
+                    // Nawigujemy istniejące okno do poprawnego URL z parametrami
+                    return client.navigate(targetUrl).then(client => client.focus());
                 }
             }
             
-            // Jeśli aplikacja była całkowicie zamknięta - otwórz ją
-            let targetUrl = urlToOpen;
-            if (data.lat && data.lng) {
-                targetUrl += `?view=local&lat=${data.lat}&lng=${data.lng}`;
-            }
+            // Jeśli nie ma otwartej aplikacji, otwieramy w nowym oknie
             if (clients.openWindow) {
                 return clients.openWindow(targetUrl);
             }
