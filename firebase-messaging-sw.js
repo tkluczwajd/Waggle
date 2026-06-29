@@ -23,29 +23,50 @@ messaging.onBackgroundMessage((payload) => {
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// ... reszta kodu firebase-messaging-sw (3).js ...
+// 🔥 NOWOŚĆ: Pamięć podręczna Service Workera dla "zimnego startu"
+let pendingNavigation = null; 
+
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
+    console.log('[SW] Notification clicked');
+
     const data = event.notification.data || {};
     const coords = { lat: data.lat, lng: data.lng };
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // 1. Sprawdzamy czy apka już działa
+            // SCENARIUSZ A: Aplikacja działa w tle
             for (let client of windowClients) {
                 if (client.url.includes(self.registration.scope) && 'focus' in client) {
+                    console.log('[SW] Apka w tle, wysyłam postMessage');
                     client.focus();
-                    // Wysyłamy wiadomość bezpośrednio do otwartego okna
                     client.postMessage({ type: 'GOTO_MAP', ...coords });
                     return;
                 }
             }
-            // 2. Jeśli apka nie działa, otwieramy ją (i liczymy, że appBootstrap odczyta parametry z URL)
-            // Jako fallback zostawiamy URL, bo na "zimnym starcie" tylko on zadziała
+
+            // SCENARIUSZ B: Zimny start (Aplikacja była zamknięta)
+            console.log('[SW] Zimny start. Zapisuję dane i otwieram okno...');
+            if (coords.lat && coords.lng) {
+                pendingNavigation = coords; // Zapamiętujemy, dokąd chcemy lecieć
+            }
+
             let targetUrl = (coords.lat && coords.lng) 
                 ? `/?view=local&lat=${coords.lat}&lng=${coords.lng}` 
                 : '/';
             return clients.openWindow(targetUrl);
         })
     );
+});
+
+// 🔥 NOWOŚĆ: Nasłuchujemy, aż nowo otwarta aplikacja wstanie i poprosi o dane
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'APP_READY') {
+        console.log('[SW] Aplikacja zgłasza gotowość!');
+        if (pendingNavigation) {
+            console.log('[SW] Mam zaległą nawigację, wysyłam do aplikacji...');
+            event.source.postMessage({ type: 'GOTO_MAP', ...pendingNavigation });
+            pendingNavigation = null; // Czyścimy pamięć po pomyślnym wysłaniu
+        }
+    }
 });
