@@ -26,22 +26,25 @@ messaging.onBackgroundMessage((payload) => {
 // ... reszta kodu firebase-messaging-sw (3).js ...
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
-    console.log('[SW] Notification clicked');
-
     const data = event.notification.data || {};
-    let targetUrl = data.lat && data.lng 
-        ? `/?view=local&lat=${data.lat}&lng=${data.lng}` 
-        : '/';
+    const coords = { lat: data.lat, lng: data.lng };
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // 1. Sprawdzamy czy apka już działa
             for (let client of windowClients) {
                 if (client.url.includes(self.registration.scope) && 'focus' in client) {
-                    console.log('[SW] Found active client, navigating...');
-                    return client.navigate(targetUrl).then(c => c.focus());
+                    client.focus();
+                    // Wysyłamy wiadomość bezpośrednio do otwartego okna
+                    client.postMessage({ type: 'GOTO_MAP', ...coords });
+                    return;
                 }
             }
-            console.log('[SW] No active client, opening new window...');
+            // 2. Jeśli apka nie działa, otwieramy ją (i liczymy, że appBootstrap odczyta parametry z URL)
+            // Jako fallback zostawiamy URL, bo na "zimnym starcie" tylko on zadziała
+            let targetUrl = (coords.lat && coords.lng) 
+                ? `/?view=local&lat=${coords.lat}&lng=${coords.lng}` 
+                : '/';
             return clients.openWindow(targetUrl);
         })
     );
