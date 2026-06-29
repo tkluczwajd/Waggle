@@ -73,28 +73,29 @@ export function bootstrapApp() {
 
     // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
 // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
+// ... wewnątrz bootstrapApp() -> setupAuth() ...
     setupAuth(() => {
         initRouter();
 
-       // 🔥 OBSŁUGA LINKÓW Z POWIADOMIEŃ (Czysty Deep Linking)
-        const params = new URLSearchParams(window.location.search);
+        // 🔥 PEŁNY TRACE DIAGNOSTYCZNY
+        console.log("BOOTSTRAP START");
+        console.log("Location:", location.href);
+        console.log("Search:", location.search);
         
-        if (params.get('view') === 'local') {
-            const lat = parseFloat(params.get('lat'));
-            const lng = parseFloat(params.get('lng'));
+        const params = new URLSearchParams(window.location.search);
+        const lat = parseFloat(params.get('lat'));
+        const lng = parseFloat(params.get('lng'));
+
+        if (params.get('view') === 'local' && lat && lng) {
+            console.log("PARAM READ: lat=", lat, "lng=", lng);
             
-            if (lat && lng) {
-                console.log("🔗 BOOTSTRAP: URL z parametrami, przekazuję do API.");
-                // Zlecenie dla jednej, głównej funkcji w waggleApi.js
-                // Opóźnienie rzędu mikrosekundy (100ms) daje pewność, że globalny obiekt Window załadował interfejsy
-                setTimeout(() => {
-                    if (window.Waggle && window.Waggle.centerOnTarget) {
-                        window.Waggle.centerOnTarget(lat, lng);
-                    }
-                }, 100);
+            // BEZ TIMEOUTU - od razu wywołujemy API, ono zajmie się czekaniem na MAP_READY
+            if (window.Waggle && window.Waggle.centerOnTarget) {
+                console.log("BOOTSTRAP: Calling centerOnTarget directly");
+                window.Waggle.centerOnTarget(lat, lng);
             }
         }
-        // 🔥 KONIEC OBSŁUGI LINKÓW
+        // ... reszta initów ...
 
         initProfileUi();
         initUiListeners();
