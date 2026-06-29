@@ -87,20 +87,7 @@ export function bootstrapApp() {
         const lat = parseFloat(params.get('lat'));
         const lng = parseFloat(params.get('lng'));
 
-        // Pokaże nam brutalny popup z adresem, z jakim próbuje wystartować apka
-        setTimeout(() => {
-            alert("START WAGGLE!\nTwój adres URL to:\n" + window.location.href);
-        }, 1000);
-
-        if (params.get('view') === 'local' && lat && lng) {
-            alert("SUKCES!\nMamy GPS: " + lat + " / " + lng + "\nLecimy na mapę!");
-            
-            setTimeout(() => {
-                if (window.Waggle && window.Waggle.centerOnTarget) {
-                    window.Waggle.centerOnTarget(lat, lng);
-                }
-            }, 500);
-        }
+    
         // ... reszta initów ...
 
         initProfileUi();
