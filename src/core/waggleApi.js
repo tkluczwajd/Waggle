@@ -16,17 +16,13 @@ export function initWaggleApi(updateUserMarker) {
     window.Waggle.executeSearch = (query) => { if (typeof searchUsers === 'function') searchUsers(query); };
 // ... wewnątrz waggleApi (3).js ...
 window.Waggle.centerOnTarget = (lat, lng) => { 
-    console.log("API: centerOnTarget requested", lat, lng);
+    console.log("📍 API: Centrowanie wywołane dla:", lat, lng);
     switchView('local'); 
 
-    // Sprawdzamy czy mapa już jest (zmienna globalna w state lub instance)
     if (state.map && state.map.instance) {
-        console.log("API: Map exists, flying to...");
         mapManager.flyTo(lat, lng, 17);
     } else {
-        console.log("API: Waiting for MAP_READY event...");
-        const onMapReady = (mapInstance) => {
-            console.log("API: MAP_READY received, flying to...");
+        const onMapReady = () => {
             mapManager.flyTo(lat, lng, 17);
             eventBus.off('MAP_READY', onMapReady);
         };
