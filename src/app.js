@@ -623,3 +623,42 @@ window.addEventListener('load', () => {
         });
     }
 });
+
+// 🔥 ZOPTYMALIZOWANA FUNKCJA TOGGLE (Optimistic UI)
+window.Waggle.toggleNotifications = async () => {
+    const btn = document.getElementById('togglePushBtn');
+    if (!btn) return;
+
+    // 1. Zidentyfikuj aktualny stan (zakładamy, że tekst przycisku jest "WŁĄCZ" lub "WYŁĄCZ")
+    const isCurrentlyOn = btn.innerText.includes("WYŁĄCZ");
+    const newState = !isCurrentlyOn;
+
+    // 2. OPTIMISTIC UI: Zmień wygląd przycisku NATYCHMIAST (0ms czekania)
+    const originalText = btn.innerText;
+    btn.innerText = newState ? "🔔 WYŁĄCZ POWIADOMIENIA" : "🔔 WŁĄCZ POWIADOMIENIA";
+    btn.style.opacity = "0.6"; // Lekkie przygaszenie informujące o pracy w tle
+    btn.disabled = true;
+
+    try {
+        const user = firebase.auth().currentUser;
+        if (!user) throw new Error("Nie jesteś zalogowany");
+
+        // 3. Wykonaj zapis w tle
+        await firebase.firestore().collection('users').doc(user.uid).update({
+            pushEnabled: newState
+        });
+        
+        localStorage.setItem('pushEnabled', newState.toString());
+        window.Waggle.showToast(newState ? "✅ Powiadomienia włączone!" : "✅ Powiadomienia wyłączone!");
+        
+    } catch (err) {
+        // 4. ROLLBACK: Jeśli coś pójdzie nie tak, cofnij zmiany wizualne
+        console.error("Błąd przy zmianie powiadomień:", err);
+        btn.innerText = originalText;
+        window.Waggle.showToast("❌ Błąd! Sprawdź połączenie.");
+    } finally {
+        // 5. Przywróć przycisk do stanu klikalnego
+        btn.style.opacity = "1";
+        btn.disabled = false;
+    }
+};
