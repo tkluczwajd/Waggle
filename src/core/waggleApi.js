@@ -14,25 +14,25 @@ export function initWaggleApi(updateUserMarker) {
     // Podpinamy funkcje pod globalne API
     window.Waggle.triggerMarkerRefresh = updateUserMarker;
     window.Waggle.executeSearch = (query) => { if (typeof searchUsers === 'function') searchUsers(query); };
+// ... wewnątrz waggleApi (3).js ...
 window.Waggle.centerOnTarget = (lat, lng) => { 
-        console.log("📍 API: Otrzymano żądanie centrowania dla:", lat, lng);
-        switchView('local'); // Zawsze najpierw przełączamy widok na mapę
+    console.log("API: centerOnTarget requested", lat, lng);
+    switchView('local'); 
 
-        if (state.map && state.map.instance) {
-            // Sytuacja A: Mapa jest już załadowana (np. apka działała w tle)
-            console.log("📍 API: Mapa jest już gotowa, wykonuję flyTo.");
+    // Sprawdzamy czy mapa już jest (zmienna globalna w state lub instance)
+    if (state.map && state.map.instance) {
+        console.log("API: Map exists, flying to...");
+        mapManager.flyTo(lat, lng, 17);
+    } else {
+        console.log("API: Waiting for MAP_READY event...");
+        const onMapReady = (mapInstance) => {
+            console.log("API: MAP_READY received, flying to...");
             mapManager.flyTo(lat, lng, 17);
-        } else {
-            // Sytuacja B: Aplikacja dopiero startuje (zimny start), czekamy na eventBus
-            console.log("📍 API: Mapa ładuje się, czekam na sygnał MAP_READY...");
-            const onMapReady = () => {
-                console.log("📍 API: Sygnał MAP_READY odebrany, wykonuję flyTo.");
-                mapManager.flyTo(lat, lng, 17);
-                eventBus.off('MAP_READY', onMapReady); // Odpinamy listener, żeby się nie dublował
-            };
-            eventBus.on('MAP_READY', onMapReady);
-        }
-    };
+            eventBus.off('MAP_READY', onMapReady);
+        };
+        eventBus.on('MAP_READY', onMapReady);
+    }
+};
     window.Waggle.openWikiDetails = openWikiDetails;
     
     window.Waggle.likeWiki = (id) => {
