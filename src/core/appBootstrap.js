@@ -82,18 +82,24 @@ export function bootstrapApp() {
         console.log("Location:", location.href);
         console.log("Search:", location.search);
         
+        // 🔥 BRUTALNY TEST DIAGNOSTYCZNY
         const params = new URLSearchParams(window.location.search);
         const lat = parseFloat(params.get('lat'));
         const lng = parseFloat(params.get('lng'));
 
+        // Pokaże nam brutalny popup z adresem, z jakim próbuje wystartować apka
+        setTimeout(() => {
+            alert("START WAGGLE!\nTwój adres URL to:\n" + window.location.href);
+        }, 1000);
+
         if (params.get('view') === 'local' && lat && lng) {
-            console.log("PARAM READ: lat=", lat, "lng=", lng);
+            alert("SUKCES!\nMamy GPS: " + lat + " / " + lng + "\nLecimy na mapę!");
             
-            // BEZ TIMEOUTU - od razu wywołujemy API, ono zajmie się czekaniem na MAP_READY
-            if (window.Waggle && window.Waggle.centerOnTarget) {
-                console.log("BOOTSTRAP: Calling centerOnTarget directly");
-                window.Waggle.centerOnTarget(lat, lng);
-            }
+            setTimeout(() => {
+                if (window.Waggle && window.Waggle.centerOnTarget) {
+                    window.Waggle.centerOnTarget(lat, lng);
+                }
+            }, 500);
         }
         // ... reszta initów ...
 
