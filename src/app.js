@@ -633,7 +633,7 @@ window.Waggle.finalizeWalk = async () => {
     window.Waggle.showToast("Spacer został automatycznie zamknięty i zapisany.");
 };
 
-// DODAJ TO W PLIKU src/app.js (np. na samym dole)
+// Odbieranie współrzędnych z Service Workera
 navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'GOTO_MAP') {
         console.log("📨 APP: Otrzymano GOTO_MAP przez postMessage:", event.data);
@@ -643,3 +643,13 @@ navigator.serviceWorker.addEventListener('message', (event) => {
     }
 });
 
+// 🔥 NOWOŚĆ: Po pełnym załadowaniu aplikacji pytamy SW o zaległą nawigację
+window.addEventListener('load', () => {
+    // Dajemy aplikacji chwilę na wyrenderowanie roota (500ms)
+    setTimeout(() => {
+        if (navigator.serviceWorker.controller) {
+            console.log("👋 APP: Pukam do Service Workera (APP_READY)...");
+            navigator.serviceWorker.controller.postMessage({ type: 'APP_READY' });
+        }
+    }, 500);
+});
