@@ -19,37 +19,24 @@ messaging.onBackgroundMessage((payload) => {
     const notificationOptions = {
         body: payload.data?.body || 'Nowe zdarzenie!',
         icon: '/favicon.ico', 
-        data: payload.data // Przekazujemy kompletne dane GPS do kliknięcia
+        data: payload.data 
     };
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-let pendingNavigation = null; 
-
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
-    const data = event.notification.data || {};
-    const coords = { lat: data.lat, lng: data.lng };
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // Szukamy otwartego okna z aplikacją i je wybudzamy (focus)
             for (let client of windowClients) {
                 if (client.url.includes(self.registration.scope) && 'focus' in client) {
-                    client.focus();
-                    client.postMessage({ type: 'GOTO_MAP', ...coords });
-                    return;
+                    return client.focus();
                 }
             }
-            if (coords.lat && coords.lng) pendingNavigation = coords;
-            let targetUrl = (coords.lat && coords.lng) ? `/?view=local&lat=${coords.lat}&lng=${coords.lng}` : '/';
-            return clients.openWindow(targetUrl);
+            // Jeśli apka była całkowicie uśpiona, otwieramy stronę główną
+            return clients.openWindow('/');
         })
     );
-});
-
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'APP_READY' && pendingNavigation) {
-        event.source.postMessage({ type: 'GOTO_MAP', ...pendingNavigation });
-        pendingNavigation = null; 
-    }
 });
