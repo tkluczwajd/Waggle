@@ -11,6 +11,7 @@ import { initWikiEngine } from './modules/wiki.js';
 import { db } from './core/firebase.js'; 
 import { NotificationEngine } from './services/notificationEngine.js';
 import { UserRepository } from './data/userRepository.js';
+import { WalkRepository } from './data/walkRepository.js';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -114,25 +115,22 @@ window.Waggle.forceAppUpdate = async () => {
 // 🔥 WAGGLE TRACKING: MECHANIZM RATUNKOWY (Checkpointing)
 // ============================================================================
 window.Waggle.saveCheckpoint = async (coords) => {
-    // Zapis lokalny - błyskawiczny
+    // 1. Zapis lokalny - błyskawiczny (Storage)
     localStorage.setItem('waggle_last_checkpoint', JSON.stringify({
         lat: coords.latitude,
         lng: coords.longitude,
         timestamp: Date.now()
     }));
     
-    // Zapis w chmurze (tylko jeśli mamy aktywne ID psa)
+    // 2. Pobranie ID psa
     const currentUid = localStorage.getItem('activeDogId');
     if (!currentUid) return;
     
+    // 3. Zapis w chmurze przez Repozytorium (Zero bezpośredniego Firebase'a w widoku!)
     try {
-        await db.collection('users').doc(currentUid).collection('activeWalkHistory').add({
-            lat: coords.latitude,
-            lng: coords.longitude,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        await WalkRepository.saveCheckpoint(currentUid, coords.latitude, coords.longitude);
     } catch(e) {
-        console.error("Błąd zapisu checkpointu w chmurze", e);
+        console.error("Nie udało się wysłać checkpointu do chmury:", e);
     }
 };
 
