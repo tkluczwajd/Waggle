@@ -623,33 +623,3 @@ window.addEventListener('load', () => {
         });
     }
 });
-
-window.Waggle.finalizeWalk = async () => {
-    // 1. Pobierz dane z historycznego zapisu
-    // 2. Oblicz dystans (używając funkcji getDistanceInMeters)
-    // 3. Zapisz finalny spacer do kolekcji 'walks'
-    // 4. Usuń checkpoint: localStorage.removeItem('waggle_last_checkpoint');
-    // 5. Odśwież widok
-    window.Waggle.showToast("Spacer został automatycznie zamknięty i zapisany.");
-};
-
-// Odbieranie współrzędnych z Service Workera
-navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'GOTO_MAP') {
-        console.log("📨 APP: Otrzymano GOTO_MAP przez postMessage:", event.data);
-        if (window.Waggle && window.Waggle.centerOnTarget) {
-            window.Waggle.centerOnTarget(event.data.lat, event.data.lng);
-        }
-    }
-});
-
-// 🔥 NOWOŚĆ: Po pełnym załadowaniu aplikacji pytamy SW o zaległą nawigację
-window.addEventListener('load', () => {
-    // Dajemy aplikacji chwilę na wyrenderowanie roota (500ms)
-    setTimeout(() => {
-        if (navigator.serviceWorker.controller) {
-            console.log("👋 APP: Pukam do Service Workera (APP_READY)...");
-            navigator.serviceWorker.controller.postMessage({ type: 'APP_READY' });
-        }
-    }, 500);
-});
