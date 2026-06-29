@@ -633,3 +633,13 @@ window.Waggle.finalizeWalk = async () => {
     window.Waggle.showToast("Spacer został automatycznie zamknięty i zapisany.");
 };
 
+// DODAJ TO W PLIKU src/app.js (np. na samym dole)
+navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'GOTO_MAP') {
+        console.log("📨 APP: Otrzymano GOTO_MAP przez postMessage:", event.data);
+        if (window.Waggle && window.Waggle.centerOnTarget) {
+            window.Waggle.centerOnTarget(event.data.lat, event.data.lng);
+        }
+    }
+});
+
