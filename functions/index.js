@@ -57,15 +57,29 @@ exports.notifyOnSafePing = functions.firestore
     const pingData = snap.data();
     const ownerId = pingData.ownerUid; 
     
-    if (!ownerId) return null;
+    // 🔥 DIAGNOSTYKA START
+    console.log(`[SAFE ENGINE] Nowy raport ratunkowy ID: ${context.params.reportId}`);
+    console.log(`[SAFE ENGINE] Szukam właściciela o UID: ${ownerId}`);
+
+    if (!ownerId) {
+        console.error("[SAFE ENGINE] BŁĄD: Raport nie ma przypisanego ownerUid!");
+        return null;
+    }
 
     const userDoc = await admin.firestore().collection("users").doc(ownerId).get();
+    console.log(`[SAFE ENGINE] Czy profil właściciela istnieje? ${userDoc.exists}`);
+    
     if (!userDoc.exists) return null;
     
     const userData = userDoc.data();
-    if (!userData.fcmToken || !userData.pushEnabled) return null;
+    console.log(`[SAFE ENGINE] Status powiadomień właściciela (pushEnabled): ${userData.pushEnabled}`);
+    console.log(`[SAFE ENGINE] Posiada token FCM: ${!!userData.fcmToken}`);
 
-    // 🔥 ZMIANA: Wysyłamy TYLKO obiekt data z priorytetem "high", aby wybudzić Androida!
+    if (!userData.fcmToken || !userData.pushEnabled) {
+        console.log("[SAFE ENGINE] PRZERWANO: Użytkownik wyłączył powiadomienia lub nie ma wygenerowanego tokena FCM.");
+        return null;
+    }
+
     const message = {
       token: userData.fcmToken,
       data: {
@@ -80,10 +94,23 @@ exports.notifyOnSafePing = functions.firestore
     };
 
     try {
-      await admin.messaging().send(message);
-      console.log("[Push SAFE Ping] Wysłano data-only push z wysokim priorytetem");
+      const response = await admin.messaging().send(message);
+      console.log(`[SAFE ENGINE] SUKCES! Wysłano ping ratunkowy. FCM Message ID: ${response}`);
+      
+      // 🔥 Zgodnie z wytycznymi z audytu: Zostawiamy ślad w bazie, że powiadomienie poszło w eter
+      await snap.ref.update({ 
+          pushSent: true, 
+          pushDeliveredAt: admin.firestore.FieldValue.serverTimestamp() 
+      });
+
     } catch (error) {
-      console.error("[Push SAFE Ping] Błąd:", error);
+      console.error("[SAFE ENGINE] KRYTYCZNY BŁĄD WYSYŁANIA FCM:", error);
+      
+      // Rejestrujemy błąd w raporcie, żeby łatwo było namierzyć problem z konkretnym telefonem
+      await snap.ref.update({ 
+          pushSent: false, 
+          pushError: error.message 
+      });
     }
     return null;
   });
