@@ -74,22 +74,67 @@ export function bootstrapApp() {
     // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
 // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
 // ... wewnątrz bootstrapApp() -> setupAuth() ...
+    // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
     setupAuth(() => {
         initRouter();
 
-        // 🔥 PEŁNY TRACE DIAGNOSTYCZNY
-        console.log("BOOTSTRAP START");
-        console.log("Location:", location.href);
-        console.log("Search:", location.search);
+        // 🔥 PANCERNY SYSTEM RATUNKOWY S.A.F.E. (Baza Danych)
+        const checkRecentSafeReports = () => {
+            // Szukamy ID aktualnie wybranego psa lub fallback na usera
+            const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
+            if (!currentUid) return;
+
+            // Importujemy db dynamicznie, by uniknąć problemów z ładowaniem modułów
+            import('./firebase.js').then(({ db }) => {
+                db.collection('safe_reports')
+                .where('ownerUid', '==', currentUid)
+                .get()
+                .then(snap => {
+                    if (snap.empty) return;
+                    
+                    // Sortujemy od najnowszego raportu
+                    const reports = snap.docs.map(doc => doc.data()).sort((a, b) => {
+                        const timeA = a.timestamp && typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : 0;
+                        const timeB = b.timestamp && typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : 0;
+                        return timeB - timeA;
+                    });
+
+                    const latestReport = reports[0];
+                    const reportTime = latestReport.timestamp && typeof latestReport.timestamp.toMillis === 'function' ? latestReport.timestamp.toMillis() : 0;
+                    
+                    if (!reportTime) return; // Zabezpieczenie przed błędnym rekordem
+
+                    // Obliczamy ile minut temu wygenerowano skan
+                    const ageInMinutes = (Date.now() - reportTime) / 60000;
+
+                    // Jeśli skan jest świeży (np. mniej niż 15 minut) i ma koordynaty
+                    if (ageInMinutes < 15 && latestReport.lat && latestReport.lng) {
+                        console.log("🚨 ODCZYT Z BAZY: Wykryto świeży alarm ratunkowy!");
+                        
+                        // Opóźniamy akcję, by UI zdążyło się w pełni wyrenderować
+                        setTimeout(() => {
+                            if (window.Waggle && window.Waggle.centerOnTarget) {
+                                window.Waggle.showToast("🚨 Namierzono Twojego psa! Pobieram lokalizację...", 6000);
+                                window.Waggle.centerOnTarget(parseFloat(latestReport.lat), parseFloat(latestReport.lng));
+                            }
+                        }, 1200);
+                    }
+                }).catch(e => console.error("Błąd skanowania S.A.F.E:", e));
+            });
+        };
+
+        // Odpalamy sprawdzanie natychmiast przy każdym "wybudzeniu" lub "zimnym starcie"
+        checkRecentSafeReports();
         
-        // 🔥 BRUTALNY TEST DIAGNOSTYCZNY
-        const params = new URLSearchParams(window.location.search);
-        const lat = parseFloat(params.get('lat'));
-        const lng = parseFloat(params.get('lng'));
+        // Dodajemy nasłuch na powrót aplikacji z tła na Androidzie (visibilitychange)
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'visible') {
+                checkRecentSafeReports();
+            }
+        });
 
-    
-        // ... reszta initów ...
-
+        // -------------------------------------------------------------
+        
         initProfileUi();
         initUiListeners();
 
