@@ -10,6 +10,7 @@ import { initBoardEngine } from './modules/board.js';
 import { initWikiEngine } from './modules/wiki.js';
 import { db } from './core/firebase.js'; 
 import { NotificationEngine } from './services/notificationEngine.js';
+import { UserRepository } from './data/userRepository.js';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -643,10 +644,8 @@ window.Waggle.toggleNotifications = async () => {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error("Nie jesteś zalogowany");
 
-        // 3. Wykonaj zapis w tle
-        await firebase.firestore().collection('users').doc(user.uid).update({
-            pushEnabled: newState
-        });
+        // 3. Wykonaj zapis w tle za pomocą Repozytorium
+        await UserRepository.updatePushSettings(user.uid, newState);
         
         localStorage.setItem('pushEnabled', newState.toString());
         window.Waggle.showToast(newState ? "✅ Powiadomienia włączone!" : "✅ Powiadomienia wyłączone!");
