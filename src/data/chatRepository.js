@@ -3,11 +3,13 @@ import { db } from '../core/firebase.js';
 
 export const ChatRepository = {
     // 🔥 NOWOŚĆ: Live nasłuch na skrzynkę odbiorczą
-    subscribeToInbox(uid, callback) {
+   subscribeToInbox(uid, callback) {
+        console.log("[DEBUG] Próbuję pobrać czaty dla UID:", uid);
         return db.collection('chats')
             .where('participants', 'array-contains', uid)
             .orderBy('lastActivity', 'desc')
             .onSnapshot(snap => {
+                console.log("[DEBUG] Snapshot odebrany! Liczba czatów:", snap.size);
                 const chats = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 callback(chats);
             }, error => {
