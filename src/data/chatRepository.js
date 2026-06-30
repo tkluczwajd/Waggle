@@ -3,10 +3,11 @@ import { db } from '../core/firebase.js';
 
 export const ChatRepository = {
     // 🔥 NOWOŚĆ: Live nasłuch na skrzynkę odbiorczą
-   subscribeToInbox(uid, callback) {
+subscribeToInbox(uid, callback) {
         console.log("[DEBUG] Próbuję pobrać czaty dla UID:", uid);
         return db.collection('chats')
-            .where('participants', 'array-contains', uid)
+            // 🔥 POPRAWKA: Szukamy w tablicy 'users', a nie 'participants'
+            .where('users', 'array-contains', uid) 
             .orderBy('lastActivity', 'desc')
             .onSnapshot(snap => {
                 console.log("[DEBUG] Snapshot odebrany! Liczba czatów:", snap.size);
@@ -15,7 +16,7 @@ export const ChatRepository = {
             }, error => {
                 console.error("[ChatRepository] Błąd nasłuchu skrzynki:", error);
             });
-    },
+    },,
 
     async sendMessage(chatId, senderId, text, imageUrl = null) {
         try {
