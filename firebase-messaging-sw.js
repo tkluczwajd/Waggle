@@ -29,13 +29,14 @@ self.addEventListener('notificationclick', function(event) {
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // Szukamy otwartego okna z aplikacją i je wybudzamy (focus)
+            // 1. Jeśli apka jest w tle (np. zminimalizowana), po prostu ją obudź i przenieś na wierzch
             for (let client of windowClients) {
                 if (client.url.includes(self.registration.scope) && 'focus' in client) {
                     return client.focus();
                 }
             }
-            // Jeśli apka była całkowicie uśpiona, otwieramy stronę główną
+            // 2. Jeśli apka była całkowicie zamknięta, otwieramy CZYSTY adres root (/)
+            // To gwarantuje, że Android rozpozna PWA i otworzy apkę, a nie przeglądarkę Chrome!
             return clients.openWindow('/');
         })
     );
