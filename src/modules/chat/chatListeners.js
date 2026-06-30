@@ -1,7 +1,9 @@
 // src/modules/chat/chatListeners.js
 import { appState as state } from '../../core/state.js';
 import { uploadImageToService as uploadImage } from '../../services/postsService.js';
-import { subscribeToInbox, searchUsersInDb, subscribeToMessages, saveMessageInDb, markChatAsRead } from '../../services/chatService.js';
+// Zostawiamy stare importy tylko dla funkcji, których jeszcze nie przenieśliśmy
+import { subscribeToInbox, searchUsersInDb, markChatAsRead } from '../../services/chatService.js';
+import { ChatRepository } from '../../data/chatRepository.js'; // 🔥 Nasze nowe repozytorium!
 import { renderInboxList } from './inboxRenderer.js';
 import { renderChatMessages, renderChatImagePreviewsUI } from './messageRenderer.js';
 import { renderSearchResultsList } from './groupRenderer.js';
@@ -98,7 +100,6 @@ export function openChat(targetId, name) {
     if (settingsBtn) {
         if (isGroupChat) {
             settingsBtn.style.display = 'block';
-            // 🔥 AKCJA: Podpinamy nową globalną funkcję zarządzania stadem
             settingsBtn.onclick = () => window.Waggle.openGroupSettings(chatId);
         } else { settingsBtn.style.display = 'none'; }
     }
@@ -107,7 +108,9 @@ export function openChat(targetId, name) {
     markChatAsRead(chatId, state.user.uid);
 
     if(currentChatUnsub) currentChatUnsub();
-    currentChatUnsub = subscribeToMessages(chatId, (messages) => {
+    
+    // 🔥 ZMIANA: Używamy Repozytorium do nasłuchu
+    currentChatUnsub = ChatRepository.subscribeToMessages(chatId, (messages) => {
         renderChatMessages(messages, state.user.uid, isGroupChat);
     });
 }
@@ -136,6 +139,7 @@ export function removeChatImagePreview(index) {
     if (previewBox) renderChatImagePreviewsUI(pendingChatImages, previewBox);
 }
 
+// 🔥 ZMIANA: Całkowicie nowa, zoptymalizowana funkcja wysyłania (Tekst + Zdjęcia) przez Repozytorium
 export async function sendMessage(text) {
     if (!state.currentChatId) return;
     
@@ -143,17 +147,6 @@ export async function sendMessage(text) {
     const imagesToSend = [...pendingChatImages]; 
     if (!textToSend && imagesToSend.length === 0) return;
     
-    const partnerName = document.getElementById('chatPartnerName').innerText;
-    const baseMsg = { 
-        sender: state.user.uid, 
-        senderName: state.profile?.name || "Piesek",
-        senderAvatar: state.profile?.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150",
-        time: Date.now() 
-    };
-    const senderData = { uid: state.user.uid, name: state.profile?.name, avatar: state.profile?.avatar };
-
-    if (textToSend) saveMessageInDb(state.currentChatId, { ...baseMsg, text: textToSend, imageUrl: null }, null, partnerName, senderData);
-
     const inputEl = document.getElementById('chatInput');
     if (inputEl) { inputEl.value = ''; inputEl.style.height = 'auto'; }
     
@@ -161,14 +154,23 @@ export async function sendMessage(text) {
     const previewBox = document.getElementById('chat-preview-box');
     if (previewBox) renderChatImagePreviewsUI(pendingChatImages, previewBox);
 
-    if (imagesToSend.length > 0) {
-        window.Waggle.showToast(`Wysyłam zdjęcia (${imagesToSend.length})... ⏳`);
-        for (let file of imagesToSend) {
-            try {
-                const url = await uploadImage(file);
-                saveMessageInDb(state.currentChatId, { ...baseMsg, text: "", imageUrl: url }, null, partnerName, senderData);
-            } catch(err) { window.Waggle.showToast("Błąd wysyłania zdjęcia!"); }
+    try {
+        // 1. Jeśli jest tekst, wysyłamy jako zwykłą wiadomość
+        if (textToSend) {
+            await ChatRepository.sendMessage(state.currentChatId, state.user.uid, textToSend, null);
         }
+
+        // 2. Jeśli są zdjęcia, wysyłamy je pojedynczo jako kolejne wiadomości
+        if (imagesToSend.length > 0) {
+            window.Waggle.showToast(`Wysyłam zdjęcia (${imagesToSend.length})... ⏳`);
+            for (let file of imagesToSend) {
+                const url = await uploadImage(file);
+                await ChatRepository.sendMessage(state.currentChatId, state.user.uid, "", url);
+            }
+        }
+    } catch (err) {
+        console.error("Błąd wysyłania w czacie:", err);
+        window.Waggle.showToast("Błąd wysyłania wiadomości!");
     }
 }
 
