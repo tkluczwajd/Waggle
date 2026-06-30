@@ -16,7 +16,7 @@ subscribeToInbox(uid, callback) {
             }, error => {
                 console.error("[ChatRepository] Błąd nasłuchu skrzynki:", error);
             });
-    },,
+    },
 
     async sendMessage(chatId, senderId, text, imageUrl = null) {
         try {
