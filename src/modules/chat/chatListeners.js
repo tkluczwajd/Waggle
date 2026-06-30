@@ -104,12 +104,17 @@ export function openChat(targetId, name) {
         } else { settingsBtn.style.display = 'none'; }
     }
     
+    // 🔥 ZMIANA: Natychmiastowe czyszczenie DOM, aby uniknąć "duchów" poprzedniej rozmowy!
+    const messagesContainer = document.getElementById('chatMessages');
+    if (messagesContainer) {
+        messagesContainer.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted); font-size:12px; font-weight:700;">Ładowanie konwersacji... ⏳</div>';
+    }
+    
     document.getElementById('chat-window').style.display = 'flex';
     markChatAsRead(chatId, state.user.uid);
 
     if(currentChatUnsub) currentChatUnsub();
     
-    // 🔥 ZMIANA: Używamy Repozytorium do nasłuchu
     currentChatUnsub = ChatRepository.subscribeToMessages(chatId, (messages) => {
         renderChatMessages(messages, state.user.uid, isGroupChat);
     });
