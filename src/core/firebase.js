@@ -8,24 +8,26 @@ const firebaseConfig = {
     appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" 
 };
 
+// Inicjalizacja
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-export const db = firebase.firestore();
-export const auth = firebase.auth();
-export const fb = firebase;
+// Pobranie instancji
+const dbInstance = firebase.firestore();
 
-// BEZPIECZNA INICJALIZACJA
+// Ustawienia cache (jednorazowe)
 try {
-    // 1. Ustawienia cache (musi być przed enablePersistence)
-    db.settings({
+    dbInstance.settings({
         cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
     });
-    
-    // 2. Włączenie persistence
-    db.enablePersistence({ synchronizeTabs: true })
-      .catch((err) => console.warn("[Cache] Pamięć podręczna już aktywna lub niedostępna."));
+    // Włączenie Persistence (tylko raz)
+    dbInstance.enablePersistence({ synchronizeTabs: true })
+        .catch(err => console.warn("[Cache] Info:", err.code));
 } catch (e) {
-    console.warn("Firestore settings/persistence already configured.");
+    // Ignorujemy, jeśli już zainicjalizowano
 }
+
+export const db = dbInstance;
+export const auth = firebase.auth();
+export const fb = firebase;
