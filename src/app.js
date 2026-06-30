@@ -135,6 +135,9 @@ window.Waggle.saveCheckpoint = async (coords) => {
 };
 
 window.Waggle.checkPendingWalks = () => {
+    // 🔥 ZABEZPIECZENIE: Sprawdź czy już pokazywaliśmy ten komunikat w tej sesji
+    if (sessionStorage.getItem('pending_walk_alert_shown')) return;
+
     const lastCheckpointStr = localStorage.getItem('waggle_last_checkpoint');
     if (!lastCheckpointStr) return;
 
@@ -143,33 +146,29 @@ window.Waggle.checkPendingWalks = () => {
         const now = Date.now();
         const twoHours = 2 * 60 * 60 * 1000;
 
-        // Jeśli spacer wisi powyżej 2 godzin
         if (now - lastCheckpoint.timestamp > twoHours) {
+            // Zapisujemy, że już wyświetliliśmy ten alert
+            sessionStorage.setItem('pending_walk_alert_shown', 'true');
+            
             const confirmModal = document.getElementById('custom-confirm-modal');
             const confirmMsg = document.getElementById('custom-confirm-msg');
             
             if (confirmModal && confirmMsg) {
-                confirmMsg.innerText = "Wykryto niedokończony spacer (ponad 2 godziny temu). Czy chcesz go awaryjnie zamknąć?";
+                confirmMsg.innerText = "Wykryto niedokończony spacer (ponad 2 godziny temu). Czy chcesz go teraz zakończyć i zapisać?";
                 confirmModal.style.display = 'flex';
                 
-                // Kliknięcie TAK
                 document.getElementById('custom-confirm-ok').onclick = () => {
                     confirmModal.style.display = 'none';
                     if (window.Waggle.finalizeWalk) window.Waggle.finalizeWalk(); 
                 };
                 
-                // Kliknięcie ANULUJ
                 document.getElementById('custom-confirm-cancel').onclick = () => {
                     confirmModal.style.display = 'none';
                     localStorage.removeItem('waggle_last_checkpoint');
-                    window.Waggle.showToast("Zignorowano stary spacer.");
                 };
-            } else {
-                localStorage.removeItem('waggle_last_checkpoint');
             }
         }
     } catch (e) {
-        console.error("Błąd odczytu checkpointu:", e);
         localStorage.removeItem('waggle_last_checkpoint');
     }
 };
