@@ -20,22 +20,25 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// src/core/firebase.js - Czysta, bezpieczna końcówka pliku:
-
+// Inicjalizacja samej bazy
 export const db = firebase.firestore();
 
-// 🔥 WŁĄCZAMY PANCERNY CACHE (Wiadomości i dane ładują się natychmiast z pamięci telefonu)
-db.enablePersistence({ synchronizeTabs: true })
-  .catch((err) => {
-      if (err.code == 'failed-precondition') {
-          console.warn("[Cache] Wiele kart otwartych naraz, cache działa tylko w pierwszej.");
-      } else if (err.code == 'unimplemented') {
-          console.warn("[Cache] Twoja przeglądarka nie wspiera lokalnego cache'owania.");
-      }
-  });
+// WŁĄCZAMY PANCERNY CACHE (Zabezpieczone przed powtórnym uruchomieniem)
+try {
+    db.enablePersistence({ synchronizeTabs: true })
+      .catch((err) => {
+          if (err.code == 'failed-precondition') {
+              console.warn("[Cache] Wiele kart, działa w pierwszej.");
+          } else if (err.code == 'unimplemented') {
+              console.warn("[Cache] Przeglądarka nie wspiera.");
+          }
+      });
+} catch (e) {
+    console.warn("Cache był już zainicjowany.");
+}
 
 export const auth = firebase.auth();
-export const fb = firebase; // Potrzebne do FieldValue
+export const fb = firebase;
 
 // Włączamy cache w wersji podstawowej (pancernej i bezkonfliktowej)
 db.settings({
