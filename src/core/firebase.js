@@ -7,21 +7,24 @@ const firebaseConfig = {
     appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" 
 };
 
-// Inicjalizacja tylko raz
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    // Ustawienia cache tylko przy pierwszej inicjalizacji
-    firebase.firestore().settings({
-        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-    });
 }
 
-export const db = firebase.firestore();
+const db = firebase.firestore();
+
+// Ustawienia cache
+try {
+    db.settings({
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+    });
+    // Włączamy persistencję, ale z obsługą błędów
+    db.enablePersistence({ synchronizeTabs: true })
+        .catch(err => console.warn("[Cache] Nie można włączyć persistencji:", err.code));
+} catch (e) {
+    console.warn("Firestore już skonfigurowany.");
+}
+
+export { db };
 export const auth = firebase.auth();
 export const fb = firebase;
-
-// Persistence
-try {
-    db.enablePersistence({ synchronizeTabs: true })
-      .catch(err => console.log("[Cache] Status:", err.code));
-} catch (e) {}
