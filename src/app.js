@@ -135,23 +135,51 @@ window.Waggle.saveCheckpoint = async (coords) => {
 };
 
 window.Waggle.checkPendingWalks = () => {
-    const lastCheckpoint = JSON.parse(localStorage.getItem('waggle_last_checkpoint'));
-    if (!lastCheckpoint) return;
+    const lastCheckpointStr = localStorage.getItem('waggle_last_checkpoint');
+    if (!lastCheckpointStr) return;
 
-    const now = Date.now();
-    const twoHours = 2 * 60 * 60 * 1000;
+    try {
+        const lastCheckpoint = JSON.parse(lastCheckpointStr);
+        const now = Date.now();
+        const twoHours = 2 * 60 * 60 * 1000;
 
-    // Jeśli ostatni punkt był > 2h temu, uznajemy to za zapomniany spacer
-    if (now - lastCheckpoint.timestamp > twoHours) {
-        if (confirm("Wykryto niedokończony spacer! Czy chcesz go teraz zakończyć i zapisać?")) {
-            // Tutaj wywołujesz swoją funkcję kończącą spacer (zapisującą całość)
-            if (window.Waggle.finalizeWalk) window.Waggle.finalizeWalk(); 
-        } else {
-            localStorage.removeItem('waggle_last_checkpoint'); // Kasujemy "zombie"
+        // Jeśli spacer wisi powyżej 2 godzin
+        if (now - lastCheckpoint.timestamp > twoHours) {
+            const confirmModal = document.getElementById('custom-confirm-modal');
+            const confirmMsg = document.getElementById('custom-confirm-msg');
+            
+            if (confirmModal && confirmMsg) {
+                confirmMsg.innerText = "Wykryto niedokończony spacer (ponad 2 godziny temu). Czy chcesz go awaryjnie zamknąć?";
+                confirmModal.style.display = 'flex';
+                
+                // Kliknięcie TAK
+                document.getElementById('custom-confirm-ok').onclick = () => {
+                    confirmModal.style.display = 'none';
+                    if (window.Waggle.finalizeWalk) window.Waggle.finalizeWalk(); 
+                };
+                
+                // Kliknięcie ANULUJ
+                document.getElementById('custom-confirm-cancel').onclick = () => {
+                    confirmModal.style.display = 'none';
+                    localStorage.removeItem('waggle_last_checkpoint');
+                    window.Waggle.showToast("Zignorowano stary spacer.");
+                };
+            } else {
+                localStorage.removeItem('waggle_last_checkpoint');
+            }
         }
+    } catch (e) {
+        console.error("Błąd odczytu checkpointu:", e);
+        localStorage.removeItem('waggle_last_checkpoint');
     }
 };
 
+window.Waggle.finalizeWalk = async () => {
+    // 🔥 Na razie robimy awaryjne zamknięcie: czyścimy pamięć, żeby odblokować apkę.
+    // Docelowo podepniemy tu WalkRepository do zapisu pełnej historii.
+    localStorage.removeItem('waggle_last_checkpoint');
+    window.Waggle.showToast("Spacer został awaryjnie zamknięty.");
+};
 // ============================================================================
 // 🔥 WAGGLE FAMILY: LOGIKA DZIENNIKA PSA
 // ============================================================================
