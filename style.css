@@ -431,3 +431,15 @@ body {
     background: #dcdde1; /* Delikatny szary kolor */
     border-radius: 10px;
 }
+
+/* 🔥 NAPRAWA: Odsunięcie pola wpisywania w czacie od dolnego paska nawigacji */
+#chat-window {
+    padding-bottom: 90px !important; /* Zrób miejsce na pasek dolny */
+}
+
+/* Jeśli klawiatura systemowa psuje widok na Androidzie (opcjonalne zabezpieczenie) */
+@media screen and (max-height: 500px) {
+    #chat-window {
+        padding-bottom: 10px !important; /* Gdy klawiatura jest wysunięta, pasek nawigacji zwykle znika, więc zmniejszamy margines */
+    }
+}
