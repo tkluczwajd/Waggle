@@ -36,15 +36,27 @@ export function renderInboxList(chats, currentUid) {
 
         const lastMsg = chat.lastMsg || "Brak wiadomości";
         
-        // Formatowanie czasu
+        // ... (wewnątrz pętli chats.forEach)
+
+        // 🔥 POPRAWKA: Stabilne formatowanie daty (wspiera Firestore Timestamp)
         let timeStr = '';
         if (chat.lastUpdate) {
-            const date = new Date(chat.lastUpdate);
-            const today = new Date();
-            if(date.toDateString() === today.toDateString()) {
-                timeStr = date.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'});
+            // Sprawdzamy czy to obiekt Firestore (ma metodę toDate)
+            let date;
+            if (chat.lastUpdate.toDate) {
+                date = chat.lastUpdate.toDate();
             } else {
-                timeStr = date.toLocaleDateString('pl-PL', {day: '2-digit', month:'2-digit'});
+                date = new Date(chat.lastUpdate);
+            }
+
+            // Sprawdzamy czy data jest poprawna
+            if (date instanceof Date && !isNaN(date)) {
+                const today = new Date();
+                if(date.toDateString() === today.toDateString()) {
+                    timeStr = date.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    timeStr = date.toLocaleDateString('pl-PL', {day: '2-digit', month:'2-digit'});
+                }
             }
         }
 
