@@ -1,5 +1,4 @@
 // src/core/firebase.js
-
 const firebaseConfig = { 
     apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", 
     authDomain: "waggle-app-31ffa.firebaseapp.com", 
@@ -9,7 +8,6 @@ const firebaseConfig = {
     appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" 
 };
 
-// Sprawdzamy, czy aplikacja nie została już zainicjalizowana
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
@@ -18,25 +16,16 @@ export const db = firebase.firestore();
 export const auth = firebase.auth();
 export const fb = firebase;
 
-// 1. KROK PIERWSZY: Ustawienia bazy danych (MUSZĄ być przed włączeniem cache)
+// BEZPIECZNA INICJALIZACJA
 try {
+    // 1. Ustawienia cache (musi być przed enablePersistence)
     db.settings({
         cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
     });
-} catch (e) {
-    console.warn("Ustawienia Firestore zostały już załadowane.");
-}
-
-// 2. KROK DRUGI: Włączenie pancernego cache (Offline Persistence)
-try {
+    
+    // 2. Włączenie persistence
     db.enablePersistence({ synchronizeTabs: true })
-      .catch((err) => {
-          if (err.code == 'failed-precondition') {
-              console.warn("[Cache] Wiele kart, działa w pierwszej.");
-          } else if (err.code == 'unimplemented') {
-              console.warn("[Cache] Przeglądarka nie wspiera.");
-          }
-      });
+      .catch((err) => console.warn("[Cache] Pamięć podręczna już aktywna lub niedostępna."));
 } catch (e) {
-    console.warn("Cache był już zainicjowany.");
+    console.warn("Firestore settings/persistence already configured.");
 }
