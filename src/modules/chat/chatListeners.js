@@ -1,9 +1,8 @@
 // src/modules/chat/chatListeners.js
 import { appState as state } from '../../core/state.js';
 import { uploadImageToService as uploadImage } from '../../services/postsService.js';
-// Zostawiamy stare importy tylko dla funkcji, których jeszcze nie przenieśliśmy
-import { subscribeToInbox, searchUsersInDb, markChatAsRead } from '../../services/chatService.js';
-import { ChatRepository } from '../../data/chatRepository.js'; // 🔥 Nasze nowe repozytorium!
+import { searchUsersInDb } from '../../services/chatService.js'; // Zostawiamy tylko wyszukiwanie userów
+import { ChatRepository } from '../../data/chatRepository.js'; // 🔥 Główne repozytorium!
 import { renderInboxList } from './inboxRenderer.js';
 import { renderChatMessages, renderChatImagePreviewsUI } from './messageRenderer.js';
 import { renderSearchResultsList } from './groupRenderer.js';
@@ -34,7 +33,8 @@ function playNotificationSound() {
 export function loadInbox() {
     if (!state.user || inboxUnsub) return; 
     
-    inboxUnsub = subscribeToInbox(state.user.uid, (chats) => {
+    // 🔥 Używamy Repozytorium do nasłuchu skrzynki odbiorczej
+    inboxUnsub = ChatRepository.subscribeToInbox(state.user.uid, (chats) => {
         let currentTotalUnread = 0;
 
         chats.forEach(chat => {
@@ -104,14 +104,15 @@ export function openChat(targetId, name) {
         } else { settingsBtn.style.display = 'none'; }
     }
     
-    // 🔥 ZMIANA: Natychmiastowe czyszczenie DOM, aby uniknąć "duchów" poprzedniej rozmowy!
     const messagesContainer = document.getElementById('chatMessages');
     if (messagesContainer) {
         messagesContainer.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted); font-size:12px; font-weight:700;">Ładowanie konwersacji... ⏳</div>';
     }
     
     document.getElementById('chat-window').style.display = 'flex';
-    markChatAsRead(chatId, state.user.uid);
+    
+    // 🔥 Używamy Repozytorium do czyszczenia licznika nieprzeczytanych wiadomości
+    ChatRepository.markAsRead(chatId, state.user.uid);
 
     if(currentChatUnsub) currentChatUnsub();
     
@@ -144,7 +145,6 @@ export function removeChatImagePreview(index) {
     if (previewBox) renderChatImagePreviewsUI(pendingChatImages, previewBox);
 }
 
-// 🔥 ZMIANA: Całkowicie nowa, zoptymalizowana funkcja wysyłania (Tekst + Zdjęcia) przez Repozytorium
 export async function sendMessage(text) {
     if (!state.currentChatId) return;
     
@@ -160,12 +160,10 @@ export async function sendMessage(text) {
     if (previewBox) renderChatImagePreviewsUI(pendingChatImages, previewBox);
 
     try {
-        // 1. Jeśli jest tekst, wysyłamy jako zwykłą wiadomość
         if (textToSend) {
             await ChatRepository.sendMessage(state.currentChatId, state.user.uid, textToSend, null);
         }
 
-        // 2. Jeśli są zdjęcia, wysyłamy je pojedynczo jako kolejne wiadomości
         if (imagesToSend.length > 0) {
             window.Waggle.showToast(`Wysyłam zdjęcia (${imagesToSend.length})... ⏳`);
             for (let file of imagesToSend) {
