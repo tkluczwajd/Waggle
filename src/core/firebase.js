@@ -23,6 +23,17 @@ if (!firebase.apps.length) {
 // src/core/firebase.js - Czysta, bezpieczna końcówka pliku:
 
 export const db = firebase.firestore();
+
+// 🔥 WŁĄCZAMY PANCERNY CACHE (Wiadomości i dane ładują się natychmiast z pamięci telefonu)
+db.enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+      if (err.code == 'failed-precondition') {
+          console.warn("[Cache] Wiele kart otwartych naraz, cache działa tylko w pierwszej.");
+      } else if (err.code == 'unimplemented') {
+          console.warn("[Cache] Twoja przeglądarka nie wspiera lokalnego cache'owania.");
+      }
+  });
+
 export const auth = firebase.auth();
 export const fb = firebase; // Potrzebne do FieldValue
 
