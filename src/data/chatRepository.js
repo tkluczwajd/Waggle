@@ -2,7 +2,7 @@
 import { db } from '../core/firebase.js';
 
 export const ChatRepository = {
-    // 🔥 NOWOŚĆ: Live nasłuch na skrzynkę odbiorczą (zastępuje stare getInbox)
+    // 🔥 NOWOŚĆ: Live nasłuch na skrzynkę odbiorczą
     subscribeToInbox(uid, callback) {
         return db.collection('chats')
             .where('participants', 'array-contains', uid)
@@ -27,9 +27,10 @@ export const ChatRepository = {
             // 1. Zapisujemy wiadomość
             await db.collection('chats').doc(chatId).collection('messages').add(messageData);
 
-            // 2. Aktualizujemy główny dokument czatu
+            // 2. Aktualizujemy główny dokument czatu - POPRAWIONA SKŁADNIA
             let updates = {
                 lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp(), // <--- Poprawione tutaj
                 lastMessage: text ? text.substring(0, 30) + (text.length > 30 ? "..." : "") : "📷 Zdjęcie"
             };
 
