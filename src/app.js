@@ -686,4 +686,52 @@ window.Waggle.toggleNotifications = async () => {
         btn.style.opacity = "1";
         btn.disabled = false;
     }
+
+    // ============================================================================
+// 🔥 PANCERNY SYSTEM S.A.F.E. (Niezależny od błędów Androida)
+// ============================================================================
+async function checkRecentSafeReports() {
+    const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
+    if (!currentUid) return;
+
+    try {
+        // Pytamy bazę o NAJŚWIEŻSZY raport ratunkowy
+        const snap = await db.collection('safe_reports')
+            .where('ownerUid', '==', currentUid)
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
+
+        if (!snap.empty) {
+            const report = snap.docs[0].data();
+            const reportTime = report.timestamp ? report.timestamp.toMillis() : 0;
+            const ageMins = (Date.now() - reportTime) / 60000;
+
+            // Reagujemy TYLKO, jeśli raport jest z ostatnich 15 minut
+            if (ageMins < 15 && report.lat && report.lng) {
+                console.log("🚨 PANCERNY SKAN: Znaleziono świeży alarm z S.A.F.E!");
+                if (window.Waggle && window.Waggle.centerOnTarget) {
+                    window.Waggle.showToast("🚨 Namierzono psa! Pobieram lokalizację...", 6000);
+                    // Odbijamy na mapę i centrujemy
+                    const tab = document.querySelector('[data-view="local"]');
+                    if(tab) tab.click();
+                    
+                    setTimeout(() => {
+                        window.Waggle.centerOnTarget(parseFloat(report.lat), parseFloat(report.lng));
+                    }, 500);
+                }
+            }
+        }
+    } catch(e) { console.error("Błąd pancernego skanowania S.A.F.E:", e); }
+}
+
+// Sprawdzaj po wejściu do aplikacji (zimny start)...
+window.addEventListener('load', () => setTimeout(checkRecentSafeReports, 2000));
+
+// ...oraz za każdym razem, gdy apka budzi się z tła po kliknięciu powiadomienia
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'visible') {
+        setTimeout(checkRecentSafeReports, 1000);
+    }
+});
 };
