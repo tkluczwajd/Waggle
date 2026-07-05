@@ -130,50 +130,81 @@ export function bootstrapApp() {
     setupAuth(() => {
         initRouter();
 
-        // 🔥 PANCERNY SYSTEM RATUNKOWY S.A.F.E. (Baza Danych)
-        const checkRecentSafeReports = () => {
-            // Szukamy ID aktualnie wybranego psa lub fallback na usera
+        // 🔥 PANCERNY SYSTEM RATUNKOWY S.A.F.E. - RADAR NA ŻYWO
+        const startSafeRadar = () => {
             const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
             if (!currentUid) return;
 
-            // Importujemy db dynamicznie, by uniknąć problemów z ładowaniem modułów
             import('./firebase.js').then(({ db }) => {
+                // Używamy onSnapshot, aby apka nasłuchiwała bazy przez cały czas
                 db.collection('safe_reports')
                 .where('ownerUid', '==', currentUid)
-                .get()
-                .then(snap => {
-                    if (snap.empty) return;
-                    
-                    // Sortujemy od najnowszego raportu
-                    const reports = snap.docs.map(doc => doc.data()).sort((a, b) => {
-                        const timeA = a.timestamp && typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : 0;
-                        const timeB = b.timestamp && typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : 0;
-                        return timeB - timeA;
-                    });
+                .onSnapshot(snap => {
+                    snap.docChanges().forEach(change => {
+                        // Reagujemy tylko na nowo dodane lub zaktualizowane raporty
+                        if (change.type === 'added' || change.type === 'modified') {
+                            const report = change.doc.data();
+                            const reportTime = report.timestamp && typeof report.timestamp.toMillis === 'function' ? report.timestamp.toMillis() : Date.now();
+                            const ageInMinutes = (Date.now() - reportTime) / 60000;
 
-                    const latestReport = reports[0];
-                    const reportTime = latestReport.timestamp && typeof latestReport.timestamp.toMillis === 'function' ? latestReport.timestamp.toMillis() : 0;
-                    
-                    if (!reportTime) return; // Zabezpieczenie przed błędnym rekordem
+                            // Reagujemy na alarmy wyłącznie z ostatnich 15 minut
+                            if (ageInMinutes < 15 && report.lat && report.lng) {
+                                console.log("🚨 RADAR SAFE: Odebrano sygnał ratunkowy!");
+                                
+                                // 1. Wibracja (jeśli przeglądarka na telefonie na to pozwala)
+                                if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
+                                
+                                // 2. Agresywny komunikat Toast
+                                if (window.Waggle && window.Waggle.showToast) {
+                                    window.Waggle.showToast("🚨 UWAGA! Ktoś namierzył Twojego psa! Sprawdź mapę!", 8000);
+                                }
 
-                    // Obliczamy ile minut temu wygenerowano skan
-                    const ageInMinutes = (Date.now() - reportTime) / 60000;
+                                // 3. Przełączenie widoku na mapę
+                                const mapTab = document.querySelector('[data-view="local"]');
+                                if (mapTab) mapTab.click();
 
-                    // Jeśli skan jest świeży (np. mniej niż 15 minut) i ma koordynaty
-                    if (ageInMinutes < 15 && latestReport.lat && latestReport.lng) {
-                        console.log("🚨 ODCZYT Z BAZY: Wykryto świeży alarm ratunkowy!");
-                        
-                        // Opóźniamy akcję, by UI zdążyło się w pełni wyrenderować
-                        setTimeout(() => {
-                            if (window.Waggle && window.Waggle.centerOnTarget) {
-                                window.Waggle.showToast("🚨 Namierzono Twojego psa! Pobieram lokalizację...", 6000);
-                                window.Waggle.centerOnTarget(parseFloat(latestReport.lat), parseFloat(latestReport.lng));
+                                // 4. Rysowanie potężnego czerwonego markera SOS
+                                setTimeout(() => {
+                                    if (state.map && state.map.instance) {
+                                        const L = window.L;
+                                        const sosIcon = L.divIcon({
+                                            className: 'sos-marker',
+                                            html: `
+                                                <div style="background: white; border: 4px solid #ff5252; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 25px rgba(255, 82, 82, 0.9), 0 0 0 10px rgba(255, 82, 82, 0.3);">
+                                                    <div style="font-size: 24px; animation: pulse 1s infinite;">🚨</div>
+                                                </div>
+                                            `,
+                                            iconSize: [53, 53],
+                                            iconAnchor: [26, 26],
+                                            popupAnchor: [0, -30]
+                                        });
+
+                                        const popupHtml = `
+                                            <div style="text-align: center; font-family: 'Inter', sans-serif; min-width: 160px; padding: 5px;">
+                                                <div style="font-size: 11px; color: #ff5252; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px;">LOKALIZACJA PSA</div>
+                                                <div style="font-size: 14px; color: #2d3436; font-weight: 800; line-height: 1.2;">Skan Kodu S.A.F.E.</div>
+                                                <div style="font-size: 11px; color: #636e72; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">Znalazca udostępnił pozycję</div>
+                                            </div>
+                                        `;
+
+                                        // Dodajemy marker i centrujemy mapę
+                                        L.marker([report.lat, report.lng], { icon: sosIcon, zIndexOffset: 99999 })
+                                            .addTo(state.map.instance)
+                                            .bindPopup(popupHtml, { closeButton: false, offset: L.point(0, -10) })
+                                            .openPopup();
+
+                                        state.map.instance.flyTo([report.lat, report.lng], 18, { animate: true, duration: 1.5 });
+                                    }
+                                }, 1000);
                             }
-                        }, 1200);
-                    }
-                }).catch(e => console.error("Błąd skanowania S.A.F.E:", e));
+                        }
+                    });
+                });
             });
         };
+
+        // Odpalamy nasłuch natychmiast
+        startSafeRadar();
 
         // Odpalamy sprawdzanie natychmiast przy każdym "wybudzeniu" lub "zimnym starcie"
         checkRecentSafeReports();
