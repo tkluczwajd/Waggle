@@ -123,10 +123,6 @@ export function bootstrapApp() {
     initWaggleApi(updateUserMarker);
     window.Waggle.updateStatsUI = updateStatsUI; 
 
-    // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
-// Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
-// ... wewnątrz bootstrapApp() -> setupAuth() ...
-    // Startujemy auth, po którym bezpiecznie odpala się reszta aplikacji
     setupAuth(() => {
         initRouter();
 
@@ -136,72 +132,61 @@ export function bootstrapApp() {
             if (!currentUid) return;
 
             import('./firebase.js').then(({ db }) => {
-                // Używamy onSnapshot, aby apka nasłuchiwała bazy przez cały czas
                 db.collection('safe_reports')
                 .where('ownerUid', '==', currentUid)
                 .onSnapshot(snap => {
                     snap.docChanges().forEach(change => {
-                        // Reagujemy tylko na nowo dodane lub zaktualizowane raporty
                         if (change.type === 'added' || change.type === 'modified') {
                             const report = change.doc.data();
                             const reportTime = report.timestamp && typeof report.timestamp.toMillis === 'function' ? report.timestamp.toMillis() : Date.now();
-                            const ageInMinutes = (Date.now() - reportTime) / 60000;
-
-                            // Reagujemy na alarmy wyłącznie z ostatnich 15 minut
-                            if (ageInMinutes < 15 && report.lat && report.lng) {
-                                console.log("🚨 RADAR SAFE: Odebrano sygnał ratunkowy!");
-                                
-                                // 1. Wibracja (jeśli przeglądarka na telefonie na to pozwala)
-                                if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
-                                
-                                // 2. Agresywny komunikat Toast
-                                if (window.Waggle && window.Waggle.showToast) {
-                                    window.Waggle.showToast("🚨 UWAGA! Ktoś namierzył Twojego psa! Sprawdź mapę!", 8000);
-                                }
-
-                                // 3. Przełączenie widoku na mapę
+                            if ((Date.now() - reportTime) < 15 * 60000 && report.lat && report.lng) {
+                                if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+                                if (window.Waggle.showToast) window.Waggle.showToast("🚨 Namierzono psa! Sprawdź mapę!", 8000);
                                 const mapTab = document.querySelector('[data-view="local"]');
                                 if (mapTab) mapTab.click();
-
-                                // 4. Rysowanie potężnego czerwonego markera SOS
-                                setTimeout(() => {
-                                    if (state.map && state.map.instance) {
-                                        const L = window.L;
-                                        const sosIcon = L.divIcon({
-                                            className: 'sos-marker',
-                                            html: `
-                                                <div style="background: white; border: 4px solid #ff5252; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 25px rgba(255, 82, 82, 0.9), 0 0 0 10px rgba(255, 82, 82, 0.3);">
-                                                    <div style="font-size: 24px; animation: pulse 1s infinite;">🚨</div>
-                                                </div>
-                                            `,
-                                            iconSize: [53, 53],
-                                            iconAnchor: [26, 26],
-                                            popupAnchor: [0, -30]
-                                        });
-
-                                        const popupHtml = `
-                                            <div style="text-align: center; font-family: 'Inter', sans-serif; min-width: 160px; padding: 5px;">
-                                                <div style="font-size: 11px; color: #ff5252; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px;">LOKALIZACJA PSA</div>
-                                                <div style="font-size: 14px; color: #2d3436; font-weight: 800; line-height: 1.2;">Skan Kodu S.A.F.E.</div>
-                                                <div style="font-size: 11px; color: #636e72; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">Znalazca udostępnił pozycję</div>
-                                            </div>
-                                        `;
-
-                                        // Dodajemy marker i centrujemy mapę
-                                        L.marker([report.lat, report.lng], { icon: sosIcon, zIndexOffset: 99999 })
-                                            .addTo(state.map.instance)
-                                            .bindPopup(popupHtml, { closeButton: false, offset: L.point(0, -10) })
-                                            .openPopup();
-
-                                        state.map.instance.flyTo([report.lat, report.lng], 18, { animate: true, duration: 1.5 });
-                                    }
-                                }, 1000);
                             }
                         }
                     });
                 });
             });
         };
+        startSafeRadar();
+        
+        // -------------------------------------------------------------
+        initProfileUi(); // To ładuje zakładkę SAFE i profil
+        initUiListeners(); // To ożywia krzyżyki i zapisywanie
+        initLiveFeed();
+        loadInbox();
+        
+        updateStatsUI();
+        listenToDailyCare();
+
+        setupLocationTracking((lat, lng) => {
+            initMap(); 
+            updateStatsUI(); 
+            if(state.map.instance) {
+                state.map.instance.setView([lat, lng], 15);
+            }
+            setupSubscriptions();
+            fetchWeather(lat, lng);
+            renderWiki('sytuacje');
+
+            // Ładowanie parków
+            (async () => {
+                try {
+                    const places = await fetchNearbyParks(lat, lng); 
+                    if (places) renderParksOnMap(places);
+                } catch (e) { console.error(e); }
+            })();
+
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 300);
+            }
+        });
+    });
+}
 
         // Odpalamy nasłuch natychmiast
         startSafeRadar();
