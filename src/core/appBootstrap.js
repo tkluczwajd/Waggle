@@ -26,6 +26,58 @@ import { listenForSafeAlerts } from '../services/safeService.js';
 const urlParams = new URLSearchParams(window.location.search);
 const safeId = urlParams.get('safe');
 
+// --- LOGIKA WYSYŁANIA LOKALIZACJI PRZEZ ZNALAZCĘ ---
+window.Waggle.shareFinderLocation = () => {
+    const btn = document.getElementById('shareLocationBtn');
+    if (btn) {
+        btn.innerText = "POBIERAM SYGNAŁ GPS... ⏳";
+        btn.disabled = true;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            try {
+                const { latitude, longitude } = position.coords;
+                // Dynamiczny import z uwagi na globalny kontekst funkcji
+                const { db, fb } = await import('./firebase.js');
+                
+                await db.collection('safe_reports').add({
+                    ownerUid: safeId,
+                    lat: latitude,
+                    lng: longitude,
+                    status: 'NEW',
+                    source: 'APP_MODAL',
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+
+                if (btn) {
+                    btn.innerText = "✅ WYSŁANO LOKALIZACJĘ!";
+                    btn.style.background = "#2ed573";
+                    btn.style.borderColor = "#2ed573";
+                }
+                if (window.Waggle.showToast) window.Waggle.showToast("Dziękujemy! Opiekun otrzymał powiadomienie z pozycją na mapie.");
+            } catch (err) {
+                console.error("Błąd zapisu SAFE:", err);
+                if (btn) {
+                    btn.innerText = "❌ BŁĄD WYSYŁANIA";
+                    btn.disabled = false;
+                }
+                if (window.Waggle.showToast) window.Waggle.showToast("Błąd serwera. Spróbuj ponownie.");
+            }
+        },
+        (err) => {
+            console.warn("Błąd GPS:", err);
+            if (btn) {
+                btn.innerText = "❌ BRAK ZGODY NA GPS";
+                btn.disabled = false;
+            }
+            alert("Musisz zezwolić przeglądarce na dostęp do lokalizacji, aby pomóc pieskowi!");
+        },
+        // Wymuszamy najwyższą dokładność, dajemy 15 sekund na znalezienie satelit i nie używamy cache'u GPS
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+};
+
 if (safeId) {
     const modal = document.getElementById('public-safe-modal');
     if (modal) modal.style.display = 'flex';
