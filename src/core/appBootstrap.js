@@ -231,52 +231,6 @@ export function bootstrapApp() {
         updateStatsUI();
         listenToDailyCare(); // 🔥 ODPALAMY SILNIK CODZIENNEJ OPIEKI
 
-        // ODPALAMY RADAR SAFE (jeśli pies ma wygenerowany kod)
-        if (state.profile && state.profile.safeId) {
-            listenForSafeAlerts(state.profile.safeId, (alertData) => {
-                if (alertData.type === 'sighting' && alertData.location) {
-                    const lat = alertData.location.latitude;
-                    const lng = alertData.location.longitude;
-
-                    window.Waggle.showToast("🚨 UWAGA! Ktoś namierzył Twojego psa! Sprawdź mapę!", 8000); 
-
-                    if (state.map.instance) { 
-                        const L = window.L;
-
-                        const sosIcon = L.divIcon({
-                            className: 'sos-marker',
-                            html: `
-                                <div style="background: white; border: 4px solid #ff5252; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 25px rgba(255, 82, 82, 0.8), 0 0 0 8px rgba(255, 82, 82, 0.2);">
-                                    <div style="font-size: 22px; animation: pulse 1s infinite;">🚨</div>
-                                </div>
-                            `,
-                            iconSize: [53, 53],
-                            iconAnchor: [26, 26],
-                            popupAnchor: [0, -30]
-                        });
-
-                        const popupHtml = `
-                            <div style="text-align: center; font-family: 'Inter', sans-serif; min-width: 160px; padding: 4px;">
-                                <div style="font-size: 11px; color: #ff5252; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px;">OSTATNIA ZNANA POZYCJA</div>
-                                <div style="font-size: 16px; color: #2d3436; font-weight: 800; line-height: 1.2;">Pies namierzony!</div>
-                                <div style="font-size: 12px; color: #636e72; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">Zgłoszono przez znalazcę<br>Waggle SAFE</div>
-                            </div>
-                        `;
-
-                        L.marker([lat, lng], { icon: sosIcon, zIndexOffset: 9999 })
-                            .addTo(state.map.instance)
-                            .bindPopup(popupHtml, { 
-                                closeButton: false, 
-                                offset: L.point(0, -10)
-                            })
-                            .openPopup();
-
-                        state.map.instance.flyTo([lat, lng], 17, { animate: true, duration: 1.5 });
-                    }
-                }
-            });
-        }
-
         // Geolokalizacja i dynamiczne ładowanie otoczenia
         setupLocationTracking((lat, lng) => {
             initMap(); 
