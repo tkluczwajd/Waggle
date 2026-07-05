@@ -126,7 +126,7 @@
             document.getElementById('error-content').style.display = 'block';
         }
 
-        // FUNKCJA GPS DLA ZNALAZCY
+        // FUNKCJA GPS DLA ZNALAZCY (BEZ APLIKACJI WAGGLE)
         window.sendLocation = function() {
             const btn = document.getElementById('locationBtn');
             const urlParams = new URLSearchParams(window.location.search);
@@ -144,7 +144,6 @@
                     try {
                         const { latitude, longitude } = position.coords;
                         
-                        // [WAGGLE V2] - Zapisujemy do nowej kolekcji bezpiecznych raportów!
                         await db.collection('safe_reports').add({
                             ownerUid: safeId,
                             lat: latitude,
@@ -157,21 +156,28 @@
                         btn.innerText = "✅ WYSŁANO LOKALIZACJĘ!";
                         btn.style.color = "#2ecc71";
                         btn.style.borderColor = "#2ecc71";
-                    // ... wewnątrz funkcji sendLocation ...
                     } catch (err) {
                         console.error("Szczegóły błędu Firebase:", err);
-                        btn.innerText = "❌ BŁĄD: " + err.code; // Wyświetli kod błędu (np. permission-denied)
+                        btn.innerText = "❌ BŁĄD SERWERA"; 
                         btn.disabled = false;
                     }
                 },
                 (err) => {
-                    console.error(err);
+                    console.error("Błąd pobierania GPS:", err);
                     btn.innerText = "❌ BRAK ZGODY NA GPS";
                     btn.style.color = "#e74c3c";
                     btn.style.borderColor = "#e74c3c";
                     btn.disabled = false;
+                    
+                    // Precyzyjna informacja, dlaczego GPS zawiódł
+                    if (err.code === 1) { // 1 = PERMISSION_DENIED
+                        alert("Odmówiono dostępu do lokalizacji! Jeśli otworzyłeś ten profil przez wbudowany skaner QR, kliknij ikonę opcji (np. trzy kropki) i wybierz 'Otwórz w przeglądarce' (Chrome/Safari), a następnie spróbuj ponownie.");
+                    } else {
+                        alert("Nie udało się złapać sygnału GPS. Spróbuj wyjść zza budynków na otwartą przestrzeń i kliknij jeszcze raz.");
+                    }
                 },
-                { enableHighAccuracy: true, timeout: 10000 }
+                // Odświeżony silnik geolokalizacji
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         };
 
