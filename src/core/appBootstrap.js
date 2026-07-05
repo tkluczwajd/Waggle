@@ -191,16 +191,6 @@ export function bootstrapApp() {
         // Odpalamy nasłuch natychmiast
         startSafeRadar();
 
-       // Odpalamy sprawdzanie natychmiast przy każdym "wybudzeniu" lub "zimnym starcie"
-        checkRecentSafeReports();
-        
-        // Dodajemy nasłuch na powrót aplikacji z tła na Androidzie (visibilitychange)
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === 'visible') {
-                checkRecentSafeReports();
-            }
-        });
-
         // -------------------------------------------------------------
         
         initProfileUi();
