@@ -153,8 +153,9 @@ export function bootstrapApp() {
         startSafeRadar();
         
         // -------------------------------------------------------------
-        initProfileUi(); // To ładuje zakładkę SAFE i profil
-        initUiListeners(); // To ożywia krzyżyki i zapisywanie
+        
+        initProfileUi();
+        initUiListeners();
         initLiveFeed();
         loadInbox();
         
@@ -165,13 +166,14 @@ export function bootstrapApp() {
             initMap(); 
             updateStatsUI(); 
             if(state.map.instance) {
-                state.map.instance.setView([lat, lng], 15);
+                state.map.instance.setView([lat, lng], 15, { animate: false });
+                setTimeout(() => { state.map.instance.invalidateSize(true); }, 300);
             }
+
             setupSubscriptions();
             fetchWeather(lat, lng);
             renderWiki('sytuacje');
 
-            // Ładowanie parków
             (async () => {
                 try {
                     const places = await fetchNearbyParks(lat, lng); 
