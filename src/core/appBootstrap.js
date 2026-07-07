@@ -1,7 +1,7 @@
 // src/core/appBootstrap.js
 import { initAuthFlow } from './bootstrap/authBootstrap.js';
+import { initSafeFinderLogic, startSafeRadar } from './bootstrap/safeBootstrap.js';
 
-// Pozostałe importy (będziemy je przenosić w kolejnych krokach)
 import { initUiListeners } from '../ui/uiListeners.js';
 import { setupSubscriptions } from './subscriptionInit.js';
 import { setupLocationTracking } from './locationInit.js';
@@ -18,52 +18,13 @@ import { initLiveFeed } from '../modules/map/liveFeed.js';
 import { loadInbox } from '../modules/chat/chatListeners.js';
 import '../modules/chat/groupListeners.js'; 
 
-// --- LOGIKA WYSYŁANIA LOKALIZACJI PRZEZ ZNALAZCĘ ---
-window.Waggle.shareFinderLocation = async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const safeId = urlParams.get('safe');
-    const btn = document.getElementById('shareLocationBtn');
-    if (btn) { btn.innerText = "POBIERAM SYGNAŁ GPS... ⏳"; btn.disabled = true; }
-
-    navigator.geolocation.getCurrentPosition(async (position) => {
-        try {
-            const { latitude, longitude } = position.coords;
-            const { db, fb } = await import('./firebase.js');
-            await db.collection('safe_reports').add({
-                ownerUid: safeId, lat: latitude, lng: longitude, status: 'NEW', source: 'APP_MODAL',
-                timestamp: fb.firestore.FieldValue.serverTimestamp()
-            });
-            if (btn) { btn.innerText = "✅ WYSŁANO LOKALIZACJĘ!"; btn.style.background = "#2ed573"; }
-            if (window.Waggle.showToast) window.Waggle.showToast("Dziękujemy! Opiekun otrzymał powiadomienie.");
-        } catch (err) {
-            console.error(err);
-            if (btn) { btn.innerText = "❌ BŁĄD"; btn.disabled = false; }
-        }
-    }, (err) => { alert("Musisz zezwolić na dostęp do lokalizacji!"); btn.disabled = false; }, 
-    { enableHighAccuracy: true, timeout: 15000 });
-};
-
 export function bootstrapApp() {
-    // 🔥 STARTUJEMY Z CZYSTEGO MODUŁU AUTORYZACJI
-    initAuthFlow(() => {
+    // 1. Zezwalamy na wysyłanie lokalizacji bez logowania (dla znalazcy)
+    initSafeFinderLogic();
 
-        // 🔥 PANCERNY SYSTEM RATUNKOWY S.A.F.E.
-        const startSafeRadar = () => {
-             const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
-// ... i tutaj leci reszta Twojego dotychczasowego kodu radaru startSafeRadar i ładowania mapy ...
-            if (!currentUid) return;
-            import('./firebase.js').then(({ db }) => {
-                db.collection('safe_reports').where('ownerUid', '==', currentUid).onSnapshot(snap => {
-                    snap.docChanges().forEach(change => {
-                        if (change.type === 'added' && (Date.now() - (change.doc.data().timestamp?.toMillis() || Date.now())) < 900000) {
-                            if (window.Waggle.showToast) window.Waggle.showToast("🚨 Namierzono psa!", 8000);
-                            const mapTab = document.querySelector('[data-view="local"]');
-                            if (mapTab) mapTab.click();
-                        }
-                    });
-                });
-            });
-        };
+    // 2. Startujemy proces logowania
+    initAuthFlow(() => {
+        // 🔥 3. Po zalogowaniu odpalamy Radar i całą resztę modułów
         startSafeRadar();
         
         initProfileUi();
@@ -73,6 +34,7 @@ export function bootstrapApp() {
         updateStatsUI();
         listenToDailyCare();
 
+        // 4. Pobieramy lokalizację i ładujemy mapę
         setupLocationTracking((lat, lng) => {
             initMap(); 
             updateStatsUI(); 
