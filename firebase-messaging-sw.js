@@ -15,29 +15,53 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
     console.log('[SW] Odebrano powiadomienie w tle:', payload);
-    const notificationTitle = payload.data?.title || 'Waggle 🐾';
+    
+    const data = payload.data || {};
+    const notificationTitle = data.title || 'Waggle 🐾';
+    
+    // Ustalamy wzór wibracji w zależności od priorytetu
+    const isEmergency = data.type === 'SAFE' || data.type === 'SIGHTING';
+    const vibrationPattern = isEmergency ? [500, 200, 500, 200, 1000] : [200, 100, 200];
+
     const notificationOptions = {
-        body: payload.data?.body || 'Nowe zdarzenie!',
-        icon: '/favicon.ico', 
-        data: payload.data 
+        body: data.body || 'Nowe zdarzenie w okolicy!',
+        icon: data.icon || '/assets/logo.png', // Możesz tu podać ścieżkę do ładnej ikony powiadomienia
+        vibrate: vibrationPattern,
+        requireInteraction: isEmergency, // Wymusza kliknięcie przez użytkownika przy alarmach
+        data: {
+            type: data.type || 'GENERAL',
+            chatId: data.chatId || null,
+            targetUrl: data.url || '/'
+        }
     };
+    
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
+    
+    const payloadData = event.notification.data || {};
+    const targetUrl = new URL(payloadData.targetUrl, self.location.origin).href;
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // 1. Jeśli apka jest w tle (np. zminimalizowana), po prostu ją obudź i przenieś na wierzch
+            // 1. Aplikacja jest już otwarta w tle (Android PWA trzyma ją w pamięci)
             for (let client of windowClients) {
                 if (client.url.includes(self.registration.scope) && 'focus' in client) {
-                    return client.focus();
+                    client.focus();
+                    // 🔥 ROUTER: Mówimy otwartej aplikacji, gdzie ma się przełączyć
+                    client.postMessage({ 
+                        type: 'NOTIFICATION_ROUTING', 
+                        routeData: payloadData 
+                    });
+                    return;
                 }
             }
-            // 2. Jeśli apka była całkowicie zamknięta, otwieramy CZYSTY adres root (/)
-            // To gwarantuje, że Android rozpozna PWA i otworzy apkę, a nie przeglądarkę Chrome!
-            return clients.openWindow('/');
+            
+            // 2. Aplikacja była całkowicie ubita - otwieramy z dedykowanym URL
+            // (Możemy w przyszłości dopisać odczytywanie parametrów np. /?chatId=123)
+            return clients.openWindow(targetUrl);
         })
     );
 });
