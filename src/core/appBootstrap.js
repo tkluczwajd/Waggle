@@ -1,13 +1,12 @@
 // src/core/appBootstrap.js
-import { initRouter } from './router.js';
-import { initGlobalUtils } from '../ui/globalUtils.js';
+import { initAuthFlow } from './bootstrap/authBootstrap.js';
+
+// Pozostałe importy (będziemy je przenosić w kolejnych krokach)
 import { initUiListeners } from '../ui/uiListeners.js';
-import { initWaggleApi } from './waggleApi.js';
-import { setupAuth } from './authInit.js';
 import { setupSubscriptions } from './subscriptionInit.js';
 import { setupLocationTracking } from './locationInit.js';
 import { renderWiki } from '../ui/wikiRenderer.js';
-import { updateStatsUI, updateUserMarker } from '../ui/uiHelpers.js';
+import { updateStatsUI } from '../ui/uiHelpers.js';
 import { initMap } from '../modules/map/mapManager.js';
 import { appState as state } from './state.js';
 import { fetchWeather } from '../services/weatherService.js';
@@ -45,16 +44,13 @@ window.Waggle.shareFinderLocation = async () => {
 };
 
 export function bootstrapApp() {
-    initGlobalUtils();
-    initWaggleApi(updateUserMarker);
-    window.Waggle.updateStatsUI = updateStatsUI; 
+    // 🔥 STARTUJEMY Z CZYSTEGO MODUŁU AUTORYZACJI
+    initAuthFlow(() => {
 
-    setupAuth(() => {
-        initRouter();
-
-        // 🔥 RADAR S.A.F.E.
+        // 🔥 PANCERNY SYSTEM RATUNKOWY S.A.F.E.
         const startSafeRadar = () => {
-            const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
+             const currentUid = localStorage.getItem('activeDogId') || localStorage.getItem('uid');
+// ... i tutaj leci reszta Twojego dotychczasowego kodu radaru startSafeRadar i ładowania mapy ...
             if (!currentUid) return;
             import('./firebase.js').then(({ db }) => {
                 db.collection('safe_reports').where('ownerUid', '==', currentUid).onSnapshot(snap => {
