@@ -1,6 +1,8 @@
 // src/services/notificationService.js
 import { appState as state } from '../core/state.js';
 import { db } from '../core/firebase.js';
+import { Logger } from '../core/logger.js';
+import { NotificationEngine } from './notificationEngine.js';
 
 export async function toggleNotifications() {
     if (!state.user) {
@@ -13,17 +15,17 @@ export async function toggleNotifications() {
         const doc = await userRef.get();
         const userData = doc.data() || {};
         
-        // Sprawdzamy, czy użytkownik ma aktualnie włączone powiadomienia
         const isCurrentlyEnabled = userData.pushEnabled === true;
 
         if (isCurrentlyEnabled) {
-            // 🔴 AKCJA: WYŁĄCZANIE (Soft Disable)
+            // 🔴 WYŁĄCZANIE
             await userRef.update({ pushEnabled: false });
             window.Waggle.showToast("🔕 Powiadomienia wyciszone.");
             updateNotificationBtnUI(false);
+            Logger.info('NotificationService', 'Powiadomienia wyłączone przez użytkownika.');
             
         } else {
-            // 🟢 AKCJA: WŁĄCZANIE (Pytanie o zgodę i pobieranie tokena)
+            // 🟢 WŁĄCZANIE
             const permission = await Notification.requestPermission();
             
             if (permission === 'granted') {
@@ -33,7 +35,6 @@ export async function toggleNotifications() {
                 });
                 
                 if (currentToken) {
-                    // Zapisujemy token i włączamy zielone światło dla serwera
                     await userRef.update({
                         fcmToken: currentToken,
                         pushEnabled: true
@@ -41,17 +42,18 @@ export async function toggleNotifications() {
                     
                     window.Waggle.showToast("🔔 Powiadomienia aktywne!");
                     updateNotificationBtnUI(true);
+                    Logger.info('NotificationService', 'Powiadomienia aktywne, token zapisany.');
                 }
             } else {
                 window.Waggle.showToast("❌ Odblokuj powiadomienia w ustawieniach przeglądarki!");
+                Logger.warn('NotificationService', 'Odmowa uprawnień do powiadomień.');
             }
         }
     } catch (error) {
-        console.error("Błąd zarządzania powiadomieniami:", error);
+        Logger.error('NotificationService', 'Błąd zarządzania powiadomieniami', error);
     }
 }
 
-// Funkcja aktualizująca wygląd przycisku w zależności od statusu
 export function updateNotificationBtnUI(isEnabled) {
     const btn = document.getElementById('togglePushBtn');
     if (btn) {
@@ -62,37 +64,27 @@ export function updateNotificationBtnUI(isEnabled) {
             btn.style.color = 'var(--danger)';
         } else {
             btn.innerHTML = '🔔 WŁĄCZ POWIADOMIENIA';
-            btn.style.background = '#ffb142'; // Złoty kolor Waggle
+            btn.style.background = '#ffb142'; 
             btn.style.border = 'none';
             btn.style.color = '#2d3436';
         }
     }
 }
 
-// Eksport do globalnego obiektu, aby HTML mógł to kliknąć
 window.Waggle = window.Waggle || {};
 window.Waggle.toggleNotifications = toggleNotifications;
 
-// 📡 JEDYNY GŁÓWNY NASŁUCH NA ŻYWO (Otwarta aplikacja)
+// 📡 DELEGACJA ODBIORU NA ŻYWO (gdy apka jest otwarta)
 if ('serviceWorker' in navigator) {
-    // Opóźnienie zapobiega błędom ładowania, jeśli Firebase jeszcze nie wstał
     setTimeout(() => {
         try {
             const messaging = window.firebase.messaging();
             messaging.onMessage((payload) => {
-                console.log('🔔 Odebrano powiadomienie na żywo w aplikacji:', payload);
-                
-                const title = payload.notification?.title || "Waggle 🐾";
-                const body = payload.notification?.body || "Nowa wiadomość!";
-                
-                if (window.Waggle && window.Waggle.notify) {
-    window.Waggle.notify('PUSH_RECEIVED', { 
-        message: `${title}: ${body}` 
-    });
-}
+                // Przekazujemy ładunek od razu do Mózgu Operacyjnego
+                NotificationEngine.handleForegroundPush(payload);
             });
         } catch (e) {
-            console.warn("FCM foreground messaging oczekuje na inicjalizację.");
+            Logger.warn('NotificationService', 'FCM foreground messaging oczekuje na inicjalizację.');
         }
     }, 1500);
 }
