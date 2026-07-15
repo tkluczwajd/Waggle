@@ -32,14 +32,13 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
     try {
         const userRef = db.collection("users").doc(userUid);
         const userDoc = await userRef.get();
-        let safeId = userDoc.data().safeId;
+        let safeId = userDoc.data()?.safeId;
 
         if (!safeId) {
             safeId = await getUniqueSafeId();
             await userRef.update({ safeId: safeId });
         }
 
-        // 🔥 NOWOŚĆ: Ustrukturyzowane dane medyczne w osobnej kolekcji
         const safeProfileData = {
             safeId: safeId,
             ownerUid: userUid,
@@ -62,26 +61,4 @@ export async function createOrUpdateSafeProfile(userUid, profileData) {
         console.error("Błąd generowania SAFE ID:", error);
         throw error;
     }
-}
-
-// Nasłuchiwanie na sygnał SOS OD ZNALAZCY
-export function listenForSafeAlerts(safeId, onAlertReceived) {
-    if (!safeId) return;
-
-    console.log("🚨 Uruchamiam radar SAFE dla ID:", safeId);
-
-    return db.collection("safe_messages")
-        .where("safeId", "==", safeId)
-        .where("status", "==", "unread")
-        .onSnapshot((snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const alertData = change.doc.data();
-                    change.doc.ref.update({ status: 'read' });
-                    onAlertReceived(alertData);
-                }
-            });
-        }, (error) => {
-            console.error("Błąd radaru SAFE:", error);
-        });
 }
