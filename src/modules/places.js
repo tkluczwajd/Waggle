@@ -1,6 +1,7 @@
 // src/modules/places.js
-import { db, auth, fb } from "../core/firebase.js"; // 🔥 Dopisaliśmy bazę danych
-import { mapManager } from './map/mapManager.js'; 
+import { db, auth, fb } from "../core/firebase.js";
+import { mapManager } from './map/mapManager.js';
+import { Logger } from '../core/logger.js'; // 🔥 Podpięty nasz Logger
 
 window.Waggle = window.Waggle || {};
 let allPlaces = [];
@@ -14,8 +15,9 @@ let currentPlaceCommentsUnsubscribe = null;
 let currentPlaceId = null;
 
 export function initPlacesEngine() {
+    Logger.info('PlacesEngine', 'Inicjalizacja modułu miejsc...');
     const container = document.getElementById('places-list-container');
-    if(container) container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 40px; font-weight: 700;">Szukam spacerowych miejsc w Twojej okolicy... 🐕⏳</div>';
+    if (container) container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 40px; font-weight: 700;">Szukam spacerowych miejsc w Twojej okolicy... 🐕⏳</div>';
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -25,8 +27,8 @@ export function initPlacesEngine() {
                 fetchPlacesFromOSM(userLat, userLon);
             },
             (err) => {
-                console.error("Błąd geolokalizacji:", err);
-                if(container) container.innerHTML = '<div style="text-align: center; color: var(--danger); font-size: 13px; margin-top: 40px; font-weight: 700;">Brak dostępu do lokalizacji. Włącz GPS! 🛰️</div>';
+                Logger.error('PlacesEngine', 'Błąd geolokalizacji:', err);
+                if (container) container.innerHTML = '<div style="text-align: center; color: var(--danger); font-size: 13px; margin-top: 40px; font-weight: 700;">Brak dostępu do lokalizacji. Włącz GPS! 🛰️</div>';
             },
             { enableHighAccuracy: true }
         );
@@ -43,7 +45,7 @@ export function initPlacesEngine() {
     });
 
     window.Waggle.filterPlaces = (category, btnElement) => {
-        currentFilter = category; 
+        currentFilter = category;
         
         if (btnElement) {
             document.querySelectorAll('.place-filter-btn').forEach(btn => {
@@ -61,19 +63,20 @@ export function initPlacesEngine() {
     };
 
     window.Waggle.toggleFavoritePlace = (placeId, event) => {
-        if (event) event.stopPropagation(); 
+        if (event) event.stopPropagation();
         if (favoritePlacesIds.includes(placeId)) favoritePlacesIds = favoritePlacesIds.filter(id => id !== placeId);
         else favoritePlacesIds.push(placeId);
         
         localStorage.setItem('waggle_fav_places', JSON.stringify(favoritePlacesIds));
         const place = allPlaces.find(p => p.id === placeId);
-        if(place) place.isFavorite = favoritePlacesIds.includes(placeId);
+        if (place) place.isFavorite = favoritePlacesIds.includes(placeId);
         applyCurrentFilter();
     };
 
+    // 🔥 Naprawiony adres Google Maps
     window.Waggle.openGoogleMaps = (lat, lon, event) => {
         if (event) event.stopPropagation();
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`, '_blank');
+        window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
     };
 
     window.Waggle.showPlaceOnMap = (lat, lon, name, category, event) => {
@@ -90,14 +93,13 @@ export function initPlacesEngine() {
             .addTo(mapManager.map)
             .bindPopup(`<div style="text-align:center;"><b style="font-size:14px; color:var(--primary);">${name}</b><br><span style="font-size:10px; color:var(--text-muted);">Tymczasowy podgląd miejsca</span></div>`);
         
-        mapManager.flyTo(lat, lon, 16); 
+        mapManager.flyTo(lat, lon, 16);
         setTimeout(() => window.Waggle.tempPlaceMarker.openPopup(), 600);
         
         const mapTabBtn = document.querySelector('.bottom-nav [data-view="local"]');
         if (mapTabBtn) mapTabBtn.click();
     };
 
-    // 🔥 LOGIKA OTWIERANIA KOMENTARZY (Z SYSTEMEM FIREBASE)
     window.Waggle.openPlaceDetails = (placeId, placeName, event) => {
         if (event) event.stopPropagation();
         currentPlaceId = placeId;
@@ -109,7 +111,6 @@ export function initPlacesEngine() {
 
         if (currentPlaceCommentsUnsubscribe) currentPlaceCommentsUnsubscribe();
 
-        // Podpinamy się pod konkretne ID miejsca z OpenStreetMap
         currentPlaceCommentsUnsubscribe = db.collection('place_reviews').doc(placeId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
@@ -143,11 +144,10 @@ export function initPlacesEngine() {
             });
     };
 
-    // Publikacja komentarza
     const postBtn = document.getElementById('post-place-comment-btn');
     const inputField = document.getElementById('place-comment-input');
     
-    if(postBtn && inputField) {
+    if (postBtn && inputField) {
         const postAction = async () => {
             if (!currentPlaceId) return;
             const text = inputField.value.trim();
@@ -157,7 +157,6 @@ export function initPlacesEngine() {
             const uid = auth.currentUser ? auth.currentUser.uid : 'anonim';
 
             inputField.value = '';
-
             try {
                 await db.collection('place_reviews').doc(currentPlaceId).collection('messages').add({
                     text: text,
@@ -165,14 +164,13 @@ export function initPlacesEngine() {
                     authorName: userName,
                     timestamp: fb.firestore.FieldValue.serverTimestamp()
                 });
-            } catch(e) {
-                console.error("Błąd dodawania komentarza:", e);
+            } catch (e) {
+                Logger.error('PlacesEngine', 'Błąd dodawania komentarza:', e);
                 alert("Wystąpił błąd podczas dodawania opinii.");
             }
         };
-
         postBtn.onclick = postAction;
-        inputField.onkeypress = (e) => { if(e.key === 'Enter') postAction(); };
+        inputField.onkeypress = (e) => { if (e.key === 'Enter') postAction(); };
     }
 }
 
@@ -183,7 +181,7 @@ function applyCurrentFilter() {
 }
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-    const R = 6371; 
+    const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
@@ -204,6 +202,8 @@ async function fetchPlacesFromOSM(lat, lon) {
 
     try {
         const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error(`OSM Error: ${response.status}`);
+        
         const data = await response.json();
         
         allPlaces = data.elements.map(el => {
@@ -253,7 +253,9 @@ async function fetchPlacesFromOSM(lat, lon) {
         allPlaces.sort((a, b) => a.distance - b.distance);
         applyCurrentFilter();
     } catch (e) {
-        console.error("Błąd OSM:", e);
+        Logger.warn('PlacesEngine', 'Nie udało się pobrać danych z OSM (może chwilowy brak sieci?):', e.message);
+        const container = document.getElementById('places-list-container');
+        if (container) container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">Brak danych o miejscach w okolicy. Spróbuj później! 🐾</div>';
     }
 }
 
@@ -276,27 +278,21 @@ function renderPlacesList(places) {
 
     container.innerHTML = places.map(place => {
         const starColor = place.isFavorite ? 'var(--gold, #f1c40f)' : 'var(--text-muted)';
-        
         return `
         <div style="background: white; border-radius: 16px; padding: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; gap: 12px; align-items: center;">
-            
             <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--bg-color); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);">
                 ${icons[place.category] || '📍'}
             </div>
-
             <div style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
                 <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 900; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${place.name}</h3>
                 <div style="font-size: 11px; font-weight: 800; color: var(--primary);">${place.distance} km stąd</div>
             </div>
-
-            <!-- 🔥 DODANY PRZYCISK OPINII 💬 -->
             <div style="display: flex; gap: 6px; flex-shrink: 0;">
                 <button onclick="window.Waggle.openPlaceDetails('${place.id}', '${place.name.replace(/'/g, "\\'")}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Sprawdź opinie">💬</button>
                 <button onclick="window.Waggle.openGoogleMaps(${place.lat}, ${place.lon}, event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Nawiguj Google Maps">🗺️</button>
                 <button onclick="window.Waggle.showPlaceOnMap(${place.lat}, ${place.lon}, '${place.name.replace(/'/g, "\\'")}', '${place.category}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;" title="Pokaż na mapie">🧭</button>
                 <button onclick="window.Waggle.toggleFavoritePlace('${place.id}', event)" style="width: 36px; height: 36px; border-radius: 10px; background: var(--bg-color); border: 1px solid var(--border-color); color: ${starColor}; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Ulubione">★</button>
             </div>
-            
         </div>
         `;
     }).join('');
