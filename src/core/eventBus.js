@@ -10,7 +10,9 @@ export const EVENTS = Object.freeze({
     USER_LOGGED_IN: 'USER_LOGGED_IN',
     USER_LOGGED_OUT: 'USER_LOGGED_OUT',
     LOCATION_UPDATED: 'LOCATION_UPDATED',
-    NOTIFICATION_RECEIVED: 'NOTIFICATION_RECEIVED'
+    NOTIFICATION_RECEIVED: 'NOTIFICATION_RECEIVED',
+    PROFILE_UPDATED: 'profileUpdated', // Dodane ze starego kodu
+    VIEW_CHANGED: 'viewChanged'        // Dodane ze starego kodu
 });
 
 const listeners = {};
