@@ -1,6 +1,7 @@
 // src/core/appBootstrap.js
 import { initAuthFlow } from './bootstrap/authBootstrap.js';
-import { SafeEngine } from './SafeEngine.js'; // 🔥 Zmiana: nasz nowy silnik
+import { SafeEngine } from './SafeEngine.js'; 
+import { NotificationEngine } from '../services/notificationEngine.js'; // 🔥 DODANY IMPORT
 import { eventBus, EVENTS } from './eventBus.js';
 import { Logger } from './logger.js';
 
@@ -22,10 +23,14 @@ import '../modules/chat/groupListeners.js';
 
 export function bootstrapApp() {
     Logger.info('Bootstrap', 'Startowanie aplikacji WAGGLE...');
+    
+    // 🔥 TUTAJ ODPALAMY NASZ NOWY SILNIK POWIADOMIEŃ
+    NotificationEngine.init(); 
 
     // 1. Zezwalamy na wysyłanie lokalizacji bez logowania (dla znalazcy)
     window.Waggle.shareFinderLocation = async () => {
         const urlParams = new URLSearchParams(window.location.search);
+// ... i tu dalej leci reszta Twojego kodu bez zmian
         const safeId = urlParams.get('safe');
         const btn = document.getElementById('shareLocationBtn');
         if (btn) { btn.innerText = "POBIERAM SYGNAŁ GPS... ⏳"; btn.disabled = true; }
