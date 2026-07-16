@@ -29,12 +29,12 @@
                 <button id="resetPasswordBtn" style="background:none; border:none; color:var(--text-muted); font-size:12px; margin-top:15px; cursor:pointer; font-weight:700; text-decoration:underline;">Zapomniałeś hasła?</button>
             </div>
             
-            <div class="legal-checkbox-container" style="justify-content: center; margin-top: 25px;">
-                <input type="checkbox" id="legalTerms">
-                <label for="legalTerms" style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
-                    Akceptuję <span style="color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="document.getElementById('legal-modal').style.display='flex'">Regulamin i Politykę Prywatności</span>.
-                </label>
-            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; text-align: left; background: rgba(0,0,0,0.03); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+    <input type="checkbox" id="legalTerms" style="margin-top: 3px; transform: scale(1.3); cursor: pointer; accent-color: var(--primary);">
+    <label for="legalTerms" style="font-size: 11px; color: var(--text-muted); line-height: 1.4; cursor: pointer;">
+        Akceptuję <a href="javascript:void(0)" onclick="window.Waggle.showLegalModal('terms')" style="color: var(--primary); font-weight: 800; text-decoration: none;">Regulamin</a> oraz <a href="javascript:void(0)" onclick="window.Waggle.showLegalModal('privacy')" style="color: var(--primary); font-weight: 800; text-decoration: none;">Politykę Prywatności (RODO)</a>. Rozumiem, że aplikacja wykorzystuje moją lokalizację GPS.
+    </label>
+</div>
         </div>
     </div>
 
