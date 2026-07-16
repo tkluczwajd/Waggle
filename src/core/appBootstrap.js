@@ -20,12 +20,14 @@ import { initProfileUi } from '../ui/profileUiListeners.js';
 import { initLiveFeed } from '../modules/map/liveFeed.js';
 import { loadInbox } from '../modules/chat/chatListeners.js';
 import '../modules/chat/groupListeners.js'; 
+import { initLegalManager } from '../ui/legalManager.js';
 
 export function bootstrapApp() {
     Logger.info('Bootstrap', 'Startowanie aplikacji WAGGLE...');
     
     // 🔥 TUTAJ ODPALAMY NASZ NOWY SILNIK POWIADOMIEŃ
     NotificationEngine.init(); 
+    initLegalManager();
 
     // 1. Zezwalamy na wysyłanie lokalizacji bez logowania (dla znalazcy)
     window.Waggle.shareFinderLocation = async () => {
