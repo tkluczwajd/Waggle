@@ -73,6 +73,7 @@ function translateAuthError(errorCode) {
         case 'auth/email-already-in-use': return "Ten adres e-mail jest już zajęty.";
         case 'auth/weak-password': return "Hasło jest za słabe (min. 6 znaków).";
         case 'auth/missing-password': return "Wpisz hasło.";
+        case 'auth/network-request-failed': return "Brak połączenia z internetem."; // 🔥 Dodany przypadek na wszelki wypadek
         default: return "Wystąpił błąd autoryzacji. Spróbuj ponownie.";
     }
 }
@@ -151,6 +152,11 @@ export function initAuth(onReady) {
         
         // LOGOWANIE
         if (e.target.id === 'loginBtn') {
+            // 🔥 WYZWALACZ OFFLINE DLA LOGOWANIA
+            if (!navigator.onLine) {
+                return showAuthAlert("Brak połączenia z siecią. Zalogowanie wymaga dostępu do internetu.");
+            }
+
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
             if(!email || !pass) return showAuthAlert("Wpisz e-mail i hasło!");
@@ -167,6 +173,11 @@ export function initAuth(onReady) {
 
         // 🔥 REJESTRACJA (Z WYSYŁANIEM E-MAILA)
         if (e.target.id === 'registerBtn') {
+            // 🔥 WYZWALACZ OFFLINE DLA REJESTRACJI
+            if (!navigator.onLine) {
+                return showAuthAlert("Brak połączenia z siecią. Rejestracja wymaga dostępu do internetu.");
+            }
+
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPass').value.trim();
             const termsChecked = document.getElementById('legalTerms')?.checked;
@@ -203,6 +214,11 @@ export function initAuth(onReady) {
         
         // RESET HASŁA
         if (e.target.id === 'resetPasswordBtn') {
+            // 🔥 WYZWALACZ OFFLINE DLA RESETU HASŁA
+            if (!navigator.onLine) {
+                return showAuthAlert("Brak połączenia z siecią. Reset hasła wymaga dostępu do internetu.");
+            }
+
             const email = document.getElementById('authEmail').value.trim();
             if (!email) return showAuthAlert("Wpisz swój e-mail wyżej, aby zresetować hasło!");
             
