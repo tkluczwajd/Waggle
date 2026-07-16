@@ -1,61 +1,58 @@
 // service-worker.js
-const CACHE_NAME = 'waggle-cache-dynamic';
+const CACHE_NAME = 'waggle-cache-v1'; // Zmiana nazwy wymusi odświeżenie cache u użytkowników
 
-// 1. INSTALACJA - Od razu wymuszamy nową wersję (skipWaiting)
+// 1. INSTALACJA - Od razu wymuszamy nową wersję
 self.addEventListener('install', (event) => {
     self.skipWaiting(); 
-    console.log('[Service Worker] Zainstalowano nową wersję.');
+    console.log('[Service Worker] Zainstalowano wersję:', CACHE_NAME);
 });
 
-// 2. AKTYWACJA - Brutalne czyszczenie starego Cache'u
+// 2. AKTYWACJA - Czyszczenie starego Cache'u
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cache) => {
-                    // Usuwamy absolutnie wszystko, co stare
-                    console.log('[Service Worker] Czyszczenie starego cache:', cache);
-                    return caches.delete(cache);
+                    if (cache !== CACHE_NAME) {
+                        console.log('[Service Worker] Usuwam stary cache:', cache);
+                        return caches.delete(cache);
+                    }
                 })
             );
         }).then(() => {
-            return clients.claim(); // Przejmujemy kontrolę nad otwartą aplikacją
+            return clients.claim(); 
         })
     );
 });
 
-// 3. POBIERANIE - Zawsze pytamy serwer jako pierwszy (Network First)
-// 3. POBIERANIE - Zawsze pytamy serwer jako pierwszy (Network First)
+// 3. POBIERANIE - Strategia Stale-While-Revalidate
 self.addEventListener('fetch', (event) => {
     
-    // 🔥 KLUCZOWA ZMIANA: Ignorujemy wszystko co nie jest pobieraniem (GET)
-    // Dzięki temu Firebase może swobodnie używać POST do gadania z bazą danych
-    if (event.request.method !== 'GET') {
+    // Ignorujemy zapytania inne niż GET oraz API Firebase/Google
+    if (event.request.method !== 'GET' || 
+        event.request.url.includes('firestore.googleapis.com') || 
+        event.request.url.includes('identitytoolkit.googleapis.com')) {
         return; 
     }
 
-    // Pomijamy też bezpośrednie wywołania do API Google i Firebase (dla bezpieczeństwa)
-    if (event.request.url.includes('firestore.googleapis.com') || 
-        event.request.url.includes('identitytoolkit.googleapis.com')) {
-        return;
-    }
-
     event.respondWith(
-        fetch(event.request)
-            .then((response) => {
-                // Zapisujemy w Cache tylko poprawne odpowiedzi
-                if (response && response.status === 200) {
-                    const responseClone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        // Dodany .catch, żeby nigdy więcej nie wywalić apki przy problemie z cachem
-                        cache.put(event.request, responseClone).catch(e => console.warn("Cache skip:", e));
-                    });
-                }
-                return response;
-            })
-            .catch(() => {
-                // Jeśli nie ma internetu, wyciągamy z pamięci
-                return caches.match(event.request);
-            })
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.match(event.request).then((cachedResponse) => {
+                
+                // Tworzymy zapytanie sieciowe w tle (do odświeżenia cache)
+                const fetchPromise = fetch(event.request).then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                }).catch((e) => {
+                    console.warn("[SW] Background update failed (tryb offline):", e);
+                });
+
+                // Zwracamy odpowiedź z cache natychmiast (Stale), 
+                // lub czekamy na sieć jeśli w cache jeszcze nie ma pliku
+                return cachedResponse || fetchPromise;
+            });
+        })
     );
 });
