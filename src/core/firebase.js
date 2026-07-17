@@ -1,3 +1,4 @@
+// src/core/firebase.js
 const firebaseConfig = { 
     apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", 
     authDomain: "waggle-app-31ffa.firebaseapp.com", 
@@ -13,16 +14,19 @@ if (!firebase.apps.length) {
 
 const db = firebase.firestore();
 
-// Ustawienia cache
+// 🔥 NOWOCZESNE USTAWIENIA CACHE (Lekarstwo na Lie-Fi i czysta konsola)
 try {
     db.settings({
-        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+        // Wdrażamy nowy, agresywny system pamięci offline.
+        // Jeśli telefon ma 1 kreskę zasięgu (Lie-Fi), apka natychmiast pokaże dane z cache,
+        // a dopiero w tle spróbuje je zsynchronizować z serwerem.
+        cache: firebase.firestore.persistentLocalCache({
+            tabManager: firebase.firestore.persistentMultipleTabManager(),
+            cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+        })
     });
-    // Włączamy persistencję, ale z obsługą błędów
-    db.enablePersistence({ synchronizeTabs: true })
-        .catch(err => console.warn("[Cache] Nie można włączyć persistencji:", err.code));
 } catch (e) {
-    console.warn("Firestore już skonfigurowany.");
+    console.warn("Firestore już skonfigurowany:", e.message);
 }
 
 export { db };
