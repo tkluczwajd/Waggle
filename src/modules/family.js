@@ -1,7 +1,6 @@
 // src/modules/family.js
 import { auth, db, fb } from "../core/firebase.js";
 
-// Globalny obiekt Waggle
 window.Waggle = window.Waggle || {};
 
 function notifyUser(msg) {
@@ -35,9 +34,7 @@ window.Waggle.openMemberManagement = (uid, name, currentRole) => {
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 10px; width:100%;">
-                    <!-- 🔥 NOWOŚĆ: Szybka wiadomość do członka stada -->
                     <button id="mgmt-msg-btn" class="btn-outline" style="border-color: var(--primary); color: var(--primary); font-weight: 900; margin-bottom: 5px;">Napisz wiadomość 💬</button>
-                    
                     <button id="mgmt-save-btn" class="btn-main" style="background: var(--secondary); font-weight:900;">ZAPISZ ZMIANY</button>
                     <button id="mgmt-kick-btn" class="btn-outline" style="border-color: var(--danger); color: var(--danger); font-weight: 900; margin-top: 5px;">Usuń ze Stada ❌</button>
                 </div>
@@ -51,7 +48,6 @@ window.Waggle.openMemberManagement = (uid, name, currentRole) => {
     
     const dogOwnerUid = auth.currentUser.uid;
 
-    // Obsługa wiadomości prywatnej
     document.getElementById('mgmt-msg-btn').onclick = () => {
         modal.style.display = 'none';
         if (window.Waggle && window.Waggle.openChatWithUser) {
@@ -101,6 +97,73 @@ window.Waggle.openMemberManagement = (uid, name, currentRole) => {
     modal.style.display = 'flex';
 };
 
+// 🔥 NOWOŚĆ: MODAL ZAPROSZENIA (Dla Właściciela)
+window.openInviteModal = () => {
+    let modal = document.getElementById('invite-pack-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'invite-pack-modal';
+        modal.className = 'modal';
+        modal.style.zIndex = '2147483646';
+        document.body.appendChild(modal);
+    }
+    
+    // Używamy UID jako unikalnego kodu Stada
+    const packCode = auth.currentUser.uid;
+    
+    modal.innerHTML = `
+        <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <button class="close-modal-btn" onclick="document.getElementById('invite-pack-modal').style.display='none'">✕</button>
+            <div style="font-size: 40px; margin-bottom: 10px;">💌</div>
+            <h3 style="margin-top: 0; font-size: 22px; font-weight:900;">Zaproś do Stada</h3>
+            <p style="font-size: 13px; color: var(--text-muted); font-weight: 600; line-height: 1.5; margin-bottom: 20px;">
+                Przekaż poniższy kod członkowi rodziny. Aby dołączyć, musi on kliknąć "Dołącz do Stada" w swoim profilu Waggle.
+            </p>
+            <div style="background: var(--bg-color); border: 2px dashed var(--border-color); border-radius: 16px; padding: 15px; margin-bottom: 20px; user-select: all; font-family: monospace; font-size: 16px; font-weight: 900; color: var(--primary); letter-spacing: 1px;">
+                ${packCode}
+            </div>
+            <button onclick="navigator.clipboard.writeText('${packCode}'); window.Waggle.showToast('✅ Skopiowano kod!');" class="btn-main" style="width: 100%; box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3);">📋 Kopiuj Kod</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
+// 🔥 NOWOŚĆ: MODAL DOŁĄCZANIA (Dla Współopiekuna)
+window.Waggle.showJoinPackModal = () => {
+    let modal = document.getElementById('join-pack-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'join-pack-modal';
+        modal.className = 'modal';
+        modal.style.zIndex = '2147483646';
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = `
+        <div class="card" style="padding: 30px 20px; max-width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <button class="close-modal-btn" onclick="document.getElementById('join-pack-modal').style.display='none'">✕</button>
+            <div style="font-size: 40px; margin-bottom: 10px;">🤝</div>
+            <h3 style="margin-top: 0; font-size: 22px; font-weight:900;">Dołącz do Stada</h3>
+            <p style="font-size: 13px; color: var(--text-muted); font-weight: 600; line-height: 1.5; margin-bottom: 20px;">
+                Wpisz Kod Stada otrzymany od głównego właściciela psa, aby uzyskać dostęp do dziennika i spacerów.
+            </p>
+            <input type="text" id="join-pack-input" placeholder="Wklej Kod Stada..." style="width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 15px; background: var(--bg-color); color: var(--text-color); font-weight: 700; text-align: center; font-family: monospace;">
+            <button id="join-pack-submit-btn" class="btn-main" style="width: 100%; background: var(--secondary);">Połącz konta 🔗</button>
+        </div>
+    `;
+    
+    document.getElementById('join-pack-submit-btn').onclick = () => {
+        const code = document.getElementById('join-pack-input').value.trim();
+        if(code) {
+            document.getElementById('join-pack-submit-btn').innerText = "ŁĄCZENIE... ⏳";
+            window.Waggle.joinFamily(code);
+            modal.style.display = 'none';
+        }
+    };
+    
+    modal.style.display = 'flex';
+};
+
 // 🔥 WAGGLE FAMILY: Rysowanie awatarów, czatu i blokada UI
 export function renderCaretakers(profileData, loggedInUid) {
     const container = document.getElementById('caretakers-list-container');
@@ -111,7 +174,6 @@ export function renderCaretakers(profileData, loggedInUid) {
     
     let html = '';
     
-    // Główny właściciel
     html += `<div style="width: 36px; height: 36px; background: #2c3e50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); position: relative; flex-shrink: 0;" title="Główny Właściciel psa">
                 WŁ
                 <span style="position: absolute; bottom: -3px; right: -3px; background: #2d3436; color: #fff; font-size: 6px; padding: 1px 3px; border-radius: 4px; font-weight: 900; scale: 0.85; border: 1px solid white;">WŁ</span>
@@ -148,12 +210,10 @@ export function renderCaretakers(profileData, loggedInUid) {
         html += `<button onclick="window.openInviteModal()" style="background: var(--bg-color); border: 1px dashed var(--text-muted); color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; flex-shrink: 0;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Zaproś nowego opiekuna">+</button>`;
     }
 
-    // 🔥 NOWOŚĆ: CZAT GRUPOWY STADA
     html += `<button onclick="if(window.Waggle && window.Waggle.openGroupChat) { window.Waggle.openGroupChat('${dogOwnerUid}', 'Stado: ${profileData.name || 'Piesek'}'); } else { alert('Czat grupowy Stada wkrótce!'); }" style="background: var(--primary); border: none; color: white; height: 36px; border-radius: 18px; padding: 0 15px; font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3); transition: transform 0.2s; margin-left: auto; flex-shrink: 0;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">💬 Czat Stada</button>`;
     
     container.innerHTML = html;
 
-    // 🔥 BLOKADA UPRAWNIEŃ W UI
     const careSettingsBtn = document.getElementById('openCareSettingsBtn');
     const safeSetupBtn = document.getElementById('openSafeSetupBtn');
     const deleteAccountBtn = document.getElementById('deleteAccountBtn');
@@ -169,28 +229,48 @@ export function renderCaretakers(profileData, loggedInUid) {
     }
 }
 
+// 🔥 KRYTYCZNA POPRAWKA: Dwukierunkowa synchronizacja Stada
 window.Waggle.joinFamily = async (ownerUid) => {
     if (!ownerUid) return;
+    if (ownerUid === auth.currentUser.uid) {
+        return notifyUser("Nie możesz dołączyć do własnego stada!");
+    }
     
-    // Zapisujemy, że od teraz "patrzymy" na profil tego psa
-    localStorage.setItem('activeDogId', ownerUid);
-    
-    // Możemy też zapisać to w bazie, by wiedzieć, do jakich stad należy użytkownik
     const myUid = auth.currentUser.uid;
+    let myName = localStorage.getItem('userName');
+    if (!myName && auth.currentUser.email) myName = auth.currentUser.email.split('@')[0];
+    if (!myName) myName = "Współopiekun";
+
     try {
+        // Sprawdzamy czy Właściciel istnieje w bazie
+        const ownerDoc = await db.collection('users').doc(ownerUid).get();
+        if (!ownerDoc.exists) {
+            return notifyUser("❌ Nie znaleziono Stada z takim kodem.");
+        }
+
+        // 1. Zapisujemy Współopiekuna u Właściciela psa (jako domyślnie 'caretaker')
+        await db.collection('users').doc(ownerUid).set({
+            [`caretakers.${myUid}`]: {
+                name: myName,
+                role: 'caretaker'
+            }
+        }, { merge: true });
+
+        // 2. Zapisujemy u Współopiekuna, że od teraz "patrzy" na profil tego psa
+        localStorage.setItem('activeDogId', ownerUid);
+        
         await db.collection('users').doc(myUid).set({
             memberOf: fb.firestore.FieldValue.arrayUnion(ownerUid)
         }, { merge: true });
         
-        window.Waggle.showToast("🐾 Dołączyłeś do nowego Stada!");
+        notifyUser("🐾 Połączono konta! Witaj w nowym Stadzie.");
         
-        // Przeładowujemy apkę, by zaciągnąć nowe statystyki i paski postępu
         setTimeout(() => {
             window.location.reload();
         }, 1500);
         
     } catch(e) {
         console.error(e);
-        alert("Błąd podczas dołączania do stada.");
+        notifyUser("Błąd podczas dołączania do stada.");
     }
 };
