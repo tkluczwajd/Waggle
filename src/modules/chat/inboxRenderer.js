@@ -4,12 +4,14 @@ export function renderInboxList(chats, currentUid) {
     const container = document.getElementById('inbox-container');
     if (!container) return;
 
-    // Komunikat gdy brak wiadomości
+    // 🔥 NOWY SYSTEM PUSTYCH STANÓW (FUX) DLA CZATU
     if (chats.length === 0) {
         container.innerHTML = `
-            <div style="text-align:center; padding:40px 20px;">
-                <div style="font-size:40px; margin-bottom:10px; opacity:0.5;">📭</div>
-                <b style="color:var(--text-muted);">Brak wiadomości.</b>
+            <div style="text-align: center; margin-top: 30px; padding: 40px 20px; background: white; border-radius: 24px; border: 1px dashed var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
+                <div style="font-size: 56px; margin-bottom: 15px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">📭</div>
+                <div style="color: var(--text-color); font-weight: 900; font-size: 20px; margin-bottom: 10px; letter-spacing: -0.5px;">Pusta skrzynka</div>
+                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.6; max-width: 260px; margin: 0 auto;">Nie masz jeszcze żadnych rozpoczętych rozmów. Poznaj sąsiadów z psami i umów się na wspólny spacer!</div>
+                <button onclick="const searchTab = document.getElementById('chatTabSearch'); if(searchTab) searchTab.click();" style="margin-top: 20px; padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔍 Znajdź przyjaciół z psami</button>
             </div>`;
         return;
     }
@@ -36,8 +38,6 @@ export function renderInboxList(chats, currentUid) {
 
         const lastMsg = chat.lastMsg || "Brak wiadomości";
         
-        // ... (wewnątrz pętli chats.forEach)
-
         // 🔥 POPRAWKA: Stabilne formatowanie daty (wspiera Firestore Timestamp)
         let timeStr = '';
         if (chat.lastUpdate) {
