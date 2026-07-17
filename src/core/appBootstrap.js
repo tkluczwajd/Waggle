@@ -22,12 +22,15 @@ import { loadInbox } from '../modules/chat/chatListeners.js';
 import '../modules/chat/groupListeners.js'; 
 import { initLegalManager } from '../ui/legalManager.js';
 
+
+
 export function bootstrapApp() {
     Logger.info('Bootstrap', 'Startowanie aplikacji WAGGLE...');
     
-    // 🔥 TUTAJ ODPALAMY NASZ NOWY SILNIK POWIADOMIEŃ
     NotificationEngine.init(); 
     initLegalManager();
+    initNetworkMonitor(); // 🔥 DODANE: Odpalamy radar połączenia
+    // ... reszta kodu
 
     // 1. Zezwalamy na wysyłanie lokalizacji bez logowania (dla znalazcy)
     window.Waggle.shareFinderLocation = async () => {
@@ -93,4 +96,55 @@ export function bootstrapApp() {
             if (loader) { loader.style.opacity = '0'; setTimeout(() => loader.style.display = 'none', 300); }
         });
     });
+}
+
+// 🔥 SYSTEM MONITOROWANIA SIECI (Lie-Fi & Offline UX)
+function initNetworkMonitor() {
+    // 1. Tworzymy element UI (Pigułka statusu)
+    let offlineBadge = document.getElementById('waggle-offline-badge');
+    if (!offlineBadge) {
+        offlineBadge = document.createElement('div');
+        offlineBadge.id = 'waggle-offline-badge';
+        offlineBadge.innerHTML = '☁️ Tryb Offline';
+        offlineBadge.style.cssText = `
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            background: rgba(255, 71, 87, 0.9); color: white; padding: 6px 14px;
+            border-radius: 20px; font-size: 11px; font-weight: 800; z-index: 99999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(4px); letter-spacing: 0.5px;
+        `;
+        document.body.appendChild(offlineBadge);
+    }
+
+    // 2. Funkcja aktualizująca stan
+    const updateNetworkStatus = () => {
+        if (!navigator.onLine) {
+            // Brak sieci - wysuwamy czerwoną pigułkę
+            offlineBadge.style.transform = 'translateX(-50%) translateY(0)';
+            offlineBadge.style.background = 'rgba(255, 71, 87, 0.9)';
+            offlineBadge.innerHTML = '☁️ Brak połączenia (Offline)';
+            if (window.Waggle && window.Waggle.showToast) {
+                window.Waggle.showToast("Działasz w trybie offline. Ładuję dane z pamięci.");
+            }
+        } else {
+            // Sieć wróciła - na chwilę zmieniamy na zielono, a potem chowamy
+            offlineBadge.style.background = 'rgba(46, 213, 115, 0.9)';
+            offlineBadge.innerHTML = '✅ Jesteś z powrotem online!';
+            if (window.Waggle && window.Waggle.showToast) {
+                window.Waggle.showToast("Połączenie przywrócone! 🚀");
+            }
+            setTimeout(() => {
+                offlineBadge.style.transform = 'translateX(-50%) translateY(-100px)';
+            }, 3000);
+        }
+    };
+
+    // 3. Podpinamy nasłuchiwacze pod przeglądarkę
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+
+    // 4. Sprawdzamy stan początkowy przy starcie apki
+    if (!navigator.onLine) {
+        updateNetworkStatus();
+    }
 }
