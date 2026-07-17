@@ -14,7 +14,7 @@ window.Waggle = window.Waggle || {};
 let allPosts = [];
 let currentPostId = null;
 let currentCommentsUnsubscribe = null;
-let selectedFileToUpload = null; // Zmiana: przechowujemy plik, a nie bazę64
+let selectedFileToUpload = null; 
 let boardUnsubscribe = null; 
 let currentBoardFilter = 'all';
 
@@ -70,7 +70,6 @@ export function initBoardEngine() {
             imageInput.click();
         };
 
-        // 🔥 ODCHUDZONY PODGLĄD ZDJĘCIA (Kompresja robi się teraz przy wysyłaniu)
         imageInput.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -128,7 +127,6 @@ export function initBoardEngine() {
 
             newPublishBtn.innerText = "WYSYŁANIE...";
             try {
-                // 🔥 UŻYWAMY NASZEGO NOWEGO SERWISU DO WYSYŁKI ZDJĘCIA
                 if (selectedFileToUpload) {
                     if(window.Waggle.showToast) window.Waggle.showToast("Przygotowuję zdjęcie... ⏳");
                     postData.imageUrl = await uploadImageToService(selectedFileToUpload);
@@ -148,7 +146,6 @@ export function initBoardEngine() {
         });
     }
 
-    // 🔥 PRZYWRÓCONE TWOJE FUNKCJE Z NOWYM SILNIKIEM BAZY
     window.Waggle.joinWalk = async (postId) => {
         const uid = auth.currentUser ? auth.currentUser.uid : 'anon';
         await toggleAttendanceInDb(postId, uid);
@@ -160,7 +157,6 @@ export function initBoardEngine() {
         await toggleLikeInDb(postId, uid);
     };
 
-    // 🔥 TWOJE KOMENTARZE
     window.Waggle.openComments = (postId, postText) => {
         currentPostId = postId;
         document.getElementById('modal-question-text').innerText = postText || "Wątek";
@@ -256,7 +252,6 @@ function listenToPosts() {
             container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700; margin-top: 20px;">Ładowanie tablicy... ⏳</div>`;
         }
 
-        // 🔥 NASŁUCHUJEMY Z NASZEGO SERWISU
         boardUnsubscribe = subscribeToPosts(50, (posts) => {
             allPosts = posts;
             applyCurrentBoardFilter();
@@ -264,16 +259,39 @@ function listenToPosts() {
     });
 }
 
+// 🔥 NOWY SYSTEM PUSTYCH STANÓW (FUX) DLA TABLICY
 function renderPosts(posts) {
     const container = document.getElementById('board-feed-container');
     if (!container) return;
 
     if (posts.length === 0) {
+        let emptyIcon = '🍃';
+        let emptyTitle = 'Cisza na osiedlu!';
+        let emptyText = 'Nikt jeszcze nic nie opublikował w tej kategorii.';
+        let ctaHtml = '';
+
+        if (currentBoardFilter === 'all') {
+            emptyIcon = '🐕';
+            emptyTitle = 'Cisza w okolicy!';
+            emptyText = 'Bądź pierwszą osobą, która przywita się z sąsiadami. Dodaj zdjęcie swojego psa lub zaproponuj spacer.';
+            ctaHtml = `<button onclick="document.getElementById('post-creator-modal').style.display = 'flex'" style="margin-top: 20px; padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">✏️ Dodaj pierwszy wpis</button>`;
+        } else if (currentBoardFilter === 'walk') {
+            emptyIcon = '🚶‍♂️';
+            emptyTitle = 'Brak planowanych spacerów';
+            emptyText = 'Nikt w okolicy nie szuka teraz towarzystwa. Zaproponuj własną ustawkę, a inni dołączą!';
+            ctaHtml = `<button onclick="document.getElementById('post-type-select').value='walk'; window.Waggle.togglePostTypeOptions(); document.getElementById('post-creator-modal').style.display = 'flex';" style="margin-top: 20px; padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(52, 172, 224, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📅 Zaplanuj spacer</button>`;
+        } else if (currentBoardFilter === 'alert') {
+            emptyIcon = '✅';
+            emptyTitle = 'Jest bezpiecznie!';
+            emptyText = 'Brak aktywnych ostrzeżeń o zagrożeniach w Twojej okolicy. Możecie spacerować spokojnie!';
+        }
+
         container.innerHTML = `
-            <div style="text-align: center; margin-top: 40px;">
-                <div style="font-size: 40px; margin-bottom: 10px;">🍃</div>
-                <div style="color: var(--text-color); font-weight: 800; font-size: 16px;">Tutaj jeszcze nic nie ma!</div>
-                <div style="color: var(--text-muted); font-size: 12px; margin-top: 5px;">Zmień filtry lub bądź pierwszy i dodaj wpis.</div>
+            <div style="text-align: center; margin-top: 30px; padding: 40px 20px; background: white; border-radius: 24px; border: 1px dashed var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
+                <div style="font-size: 56px; margin-bottom: 15px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">${emptyIcon}</div>
+                <div style="color: var(--text-color); font-weight: 900; font-size: 20px; margin-bottom: 10px; letter-spacing: -0.5px;">${emptyTitle}</div>
+                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.6; max-width: 260px; margin: 0 auto;">${emptyText}</div>
+                ${ctaHtml}
             </div>`;
         return;
     }
@@ -281,7 +299,6 @@ function renderPosts(posts) {
     const currentUid = auth.currentUser ? auth.currentUser.uid : 'anonim';
     let html = '';
 
-    // 🔥 TWOJE ORYGINALNE RENDEROWANIE KART (Zachowane w 100%)
     posts.forEach(post => {
         try {
             let timeStr = 'Przed chwilą';
@@ -372,7 +389,6 @@ function renderPosts(posts) {
     
     container.innerHTML = html;
     
-    // 🔥 TWOJA CZERWONA PIGUŁKA ALERTÓW (Przywrócona!)
     const activeAlertPill = document.getElementById('active-alert-pill');
     if (activeAlertPill) {
         const hasRecentAlert = posts.some(p => {
