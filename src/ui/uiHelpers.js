@@ -12,16 +12,13 @@ export function updateStatsUI() {
     const safeDisplay = document.getElementById('safe-data-display');
     const safeCardContent = document.getElementById('safe-card-content');
     
-    // Sprawdzamy, czy użytkownik wpisał JAKIEKOLWIEK dane medyczne w formularzu
     const hasSafeData = Boolean(p.chip || p.allergies || p.meds || p.weight || p.phone || p.vet);
 
-    // Przełączamy widok: jeśli są dane pokaż tabelkę, jeśli nie - pokaż przycisk "Uzupełnij teraz"
     if (safeFallback && safeDisplay) {
         safeFallback.style.display = hasSafeData ? 'none' : 'block';
         safeDisplay.style.display = hasSafeData ? 'block' : 'none';
     }
 
-    // Wstrzykujemy fizycznie teksty do okienek
     if (hasSafeData) {
         if (document.getElementById('displaySafeWeight')) document.getElementById('displaySafeWeight').innerText = p.weight ? p.weight + " kg" : "Brak";
         if (document.getElementById('displaySafeChip')) document.getElementById('displaySafeChip').innerText = p.chip || "Brak";
@@ -31,20 +28,35 @@ export function updateStatsUI() {
         if (document.getElementById('displaySafeNotes')) document.getElementById('displaySafeNotes').innerText = p.notes || "-";
     }
     
-    // 👇 Reszta interfejsu (Imię, Rasa, Statystyki) wraca bezpiecznie do wnętrza funkcji
+    // --- STATYSTYKI, DYSTANS I RANGI ---
     const nameEl = document.getElementById('profileNameDisplay'); if(nameEl) nameEl.innerText = p.name || "Piesek";
-    
     const cityDisplay = document.getElementById('profileCityDisplay'); if(cityDisplay) cityDisplay.innerText = p.city || "Nie podano";
     const breedDisplay = document.getElementById('profileBreedDisplay'); if(breedDisplay) breedDisplay.innerText = p.breed || "Nie podano";
     
-    const walksEl = document.getElementById('statWalks'); if(walksEl) walksEl.innerText = p.walkCount || 0;
-    const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = ((p.walkCount || 0) * 1.2).toFixed(1);
+    const walksCount = p.walkCount || 0;
+    // Pobieramy prawdziwy dystans z bazy (lub estymujemy dla starych kont)
+    const distTotal = p.totalDistance || (walksCount * 1.2); 
+    
+    const walksEl = document.getElementById('statWalks'); if(walksEl) walksEl.innerText = walksCount;
+    const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = distTotal.toFixed(1);
+    
     const breedInput = document.getElementById('setupBreed'); if(breedInput) breedInput.value = state.profile.breed || "";
     const cityInput = document.getElementById('setupCity'); if(cityInput) cityInput.value = state.profile.city || "";
     
+    // 🔥 NOWY SYSTEM RANG Z KOLORAMI
     let lvl = "🌱 Nowik";
-    if (p.walkCount >= 5) lvl = "🐕 Spacerowicz"; if (p.walkCount >= 20) lvl = "🐺 Weteran Osiedla"; if (p.walkCount >= 50) lvl = "👑 Alfa Stada";
-    const lvlEl = document.getElementById('profileLevelDisplay'); if (lvlEl) lvlEl.innerText = lvl;
+    let lvlColor = "var(--text-muted)";
+    
+    if (distTotal >= 10) { lvl = "🐕 Wędrowiec"; lvlColor = "#2ed573"; } 
+    if (distTotal >= 50) { lvl = "🐺 Tropiciel"; lvlColor = "#1e90ff"; } 
+    if (distTotal >= 150) { lvl = "🏅 Weteran Osiedla"; lvlColor = "#9c88ff"; } 
+    if (distTotal >= 300) { lvl = "👑 Alfa Stada"; lvlColor = "var(--gold)"; } 
+    
+    const lvlEl = document.getElementById('profileLevelDisplay'); 
+    if (lvlEl) { 
+        lvlEl.innerText = lvl;
+        lvlEl.style.color = lvlColor;
+    }
     
     const av = document.getElementById('profileAvatar'); if(av) av.src = (p.avatar && p.avatar.trim() !== "") ? p.avatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
     
@@ -54,7 +66,6 @@ export function updateStatsUI() {
     if (tempEl && state.weather) tempEl.innerHTML = `${state.weather.icon} ${state.weather.temp}°C`;
     if(state.location.lat && state.location.lng) updateUserMarker(state.location.lat, state.location.lng);
 
-    // 🔥 GENEROWANIE LINKU S.A.F.E. (Kieruje na osobny plik safe.html!)
     setTimeout(() => {
         const linkInput = document.getElementById('safe-public-link-input');
         if (linkInput) {
@@ -148,11 +159,10 @@ window.Waggle.openUserMenu = (uid, name, avatar) => {
 
 window.Waggle.startDirectChat = (uid, name, avatar) => {
     document.getElementById('user-action-modal').style.display = 'none';
-    
     if (typeof window.Waggle.openChat === 'function') {
         window.Waggle.openChat(uid, name, avatar);
     } else {
-        alert(`Uruchamiam czat z: ${name} 💬! (Silnik podepniemy w kolejnym kroku)`);
+        alert(`Uruchamiam czat z: ${name} 💬!`);
     }
 };
 
