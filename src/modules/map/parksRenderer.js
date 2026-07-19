@@ -1,3 +1,4 @@
+// src/modules/map/parksRenderer.js
 import { mapManager } from './mapManager.js';
 
 function formatDistance(distKm) {
@@ -6,10 +7,10 @@ function formatDistance(distKm) {
 }
 
 const typeConfig = {
-    'dogpark': { icon: '🐕', label: 'Wybieg dla psów' },
-    'forest': { icon: '🌲', label: 'Las' },
-    'park': { icon: '🌳', label: 'Park' },
-    'walk': { icon: '🚶', label: 'Teren spacerowy' }
+    'dogpark': { icon: '🐕', label: 'Wybieg dla psów', img: 'https://images.unsplash.com/photo-1596797882870-8c33dee144db?auto=format&fit=crop&w=300&q=80' },
+    'forest': { icon: '🌲', label: 'Las', img: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=300&q=80' },
+    'park': { icon: '🌳', label: 'Park', img: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?auto=format&fit=crop&w=300&q=80' },
+    'walk': { icon: '🚶', label: 'Teren spacerowy', img: 'https://images.unsplash.com/photo-1517626154316-db322df72381?auto=format&fit=crop&w=300&q=80' }
 };
 
 export function renderParksOnMap(places, favIds = []) {
@@ -20,10 +21,8 @@ export function renderParksOnMap(places, favIds = []) {
     places.forEach(place => {
         const config = typeConfig[place.type] || typeConfig['walk'];
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
-        
         const isFav = favIds.includes(place.id);
 
-        // 🔥 Dynamiczna ikona SVG (Gwiazdka) dla Popupu
         const starSvg = `
             <svg width="18" height="18" viewBox="0 0 24 24" 
                  fill="${isFav ? 'var(--gold)' : 'none'}" 
@@ -84,7 +83,6 @@ export function renderPlacesList(places, favIds = [], containerId = 'places-cont
         const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
         const isFav = favIds.includes(place.id);
         
-        // 🔥 Dynamiczna ikona SVG (Gwiazdka) dla Listy
         const starSvg = `
             <svg width="22" height="22" viewBox="0 0 24 24" 
                  fill="${isFav ? 'var(--gold)' : 'none'}" 
@@ -94,11 +92,15 @@ export function renderPlacesList(places, favIds = [], containerId = 'places-cont
             </svg>
         `;
         
+        // 🔥 NOWOŚĆ: Miniaturki zdjęć dla uatrakcyjnienia miejscówki
         html += `
-            <div class="place-card" style="background: white; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color);">
-                <div style="font-size: 32px; flex-shrink: 0; background: var(--bg-color); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
-                    ${config.icon}
+            <div class="place-card" style="background: white; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color);">
+                
+                <div style="width: 65px; height: 65px; flex-shrink: 0; border-radius: 12px; overflow: hidden; position: relative; cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
+                    <img src="${config.img}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px;">${config.icon}</div>
                 </div>
+
                 <div style="flex: 1; text-align: left; cursor: pointer;" onclick="window.open('${mapsLink}', '_blank')">
                     <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: var(--text-color);">${place.name}</h4>
                     <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); font-weight: 600;">
@@ -107,6 +109,7 @@ export function renderPlacesList(places, favIds = [], containerId = 'places-cont
                         <span style="color: var(--primary); font-weight: 800;">📍 ${formatDistance(place.distance)}</span>
                     </div>
                 </div>
+                
                 <button style="background: ${isFav ? 'rgba(255,177,66,0.1)' : 'var(--bg-color)'}; border: 1px solid ${isFav ? 'var(--gold)' : 'var(--border-color)'}; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;" 
                         onclick="window.Waggle.toggleFavoritePlace('${place.id}')">
                     ${starSvg}
