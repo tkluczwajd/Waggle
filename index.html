@@ -272,9 +272,14 @@
             <div class="waggle-card-header">
                 <h3 class="waggle-card-title">🐕 Moje Stado</h3>
             </div>
-            <div id="caretakers-list-container" style="display: flex; gap: -10px; align-items: center; overflow-x: auto; padding-bottom: 5px;">
+            <div id="caretakers-list-container" style="display: flex; gap: -10px; align-items: center; overflow-x: auto; padding-bottom: 10px;">
                 <div style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700; width: 100%;">Ładowanie...</div>
             </div>
+            
+            <!-- NOWY PRZYCISK DO WPISYWANIA KODU -->
+            <button onclick="window.Waggle.showJoinPackModal()" style="width: 100%; padding: 12px; background: transparent; border: 2px dashed var(--secondary); color: var(--secondary); border-radius: 12px; font-weight: 800; font-size: 12px; margin-top: 10px; cursor: pointer; text-transform: uppercase;">
+                🤝 Dołącz do stada (wpisz kod)
+            </button>
         </div>
 
         <div id="wiedza-dnia-target"></div>
