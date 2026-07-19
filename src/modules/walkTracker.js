@@ -55,7 +55,7 @@ export function startWalkTracker() {
             
             walkData.positions.push({ lat: latitude, lng: longitude, time: Date.now() });
 
-            // 🔥 OPCJONALNIE: Wyświetlanie dystansu na żywo w interfejsie
+            // Wyświetlanie dystansu na żywo w interfejsie
             const distCounter = document.getElementById('walk-distance-counter');
             if (distCounter) {
                 distCounter.innerText = walkData.distanceKm.toFixed(2) + " km";
@@ -78,35 +78,50 @@ export async function stopWalkTracker() {
     
     const durationMs = Date.now() - walkData.startTime;
     const durationMins = Math.round(durationMs / 60000);
+    const finalDistance = parseFloat(walkData.distanceKm.toFixed(2));
     
     if (window.Waggle && window.Waggle.showToast) {
-        window.Waggle.showToast(`🏁 Koniec spaceru! Dystans: ${walkData.distanceKm.toFixed(2)} km`);
+        window.Waggle.showToast(`🏁 Koniec spaceru! Dystans: ${finalDistance} km`);
     }
 
     const currentUid = localStorage.getItem('activeDogId') || (auth.currentUser ? auth.currentUser.uid : null);
-    if (currentUid && walkData.distanceKm > 0.05) { // Zapisujemy tylko jeśli spacer miał min. 50 metrów
+    
+    // Zapisujemy tylko jeśli spacer miał min. 50 metrów (0.05 km)
+    if (currentUid && finalDistance > 0.05) { 
         try {
             // Upraszczamy ścieżkę do bazy: zostawiamy co 5 punkt, żeby zaoszczędzić miejsce w dokumencie
             const simplifiedPath = walkData.positions.filter((_, index) => index % 5 === 0);
 
-            // 1 operacja: Zapis pełnej historii spaceru do nowej kolekcji
+            // 1 operacja: Zapis pełnej historii spaceru (do rysowania tras w przyszłości)
             await db.collection('walks').add({
                 dogId: currentUid,
-                distanceKm: parseFloat(walkData.distanceKm.toFixed(2)),
+                distanceKm: finalDistance,
                 durationMinutes: durationMins,
                 path: simplifiedPath,
                 timestamp: fb.firestore.FieldValue.serverTimestamp()
             });
             
-            // 2 operacja: Dodanie "+1" do dziennych statystyk na głównym ekranie
+            // 2 operacja: Dodanie "+1" do dziennych statystyk na głównym ekranie (Paski postępu)
             const today = new Date().toISOString().split('T')[0];
             await db.collection('users').doc(currentUid).collection('daily_care').doc(today).set({
                 walk: fb.firestore.FieldValue.increment(1),
                 lastUpdated: fb.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
+            // 🔥 3 operacja (NOWA): Dodanie statystyk do profilu głównego, aby górny pasek je wyświetlił
+            await db.collection('users').doc(currentUid).set({
+                walkCount: fb.firestore.FieldValue.increment(1),
+                totalDistance: fb.firestore.FieldValue.increment(finalDistance)
+            }, { merge: true });
+
         } catch (err) {
             console.error("Błąd zapisu spaceru:", err);
+            if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("❌ Błąd zapisu spaceru.");
+        }
+    } else if (currentUid && finalDistance <= 0.05) {
+        // 🔥 Powiadomienie, gdy użytkownik zrobi krok i wyłączy spacer
+        if (window.Waggle && window.Waggle.showToast) {
+            window.Waggle.showToast("Zbyt krótki dystans (<50m), aby zapisać spacer w statystykach.");
         }
     }
 }
