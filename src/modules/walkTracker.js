@@ -1,8 +1,11 @@
 // src/modules/walkTracker.js
 import { db, fb, auth } from '../core/firebase.js';
+import { appState as state } from '../core/state.js'; // 🔥 DODANO: Dostęp do silnika mapy
 
 let watchId = null;
-let wakeLock = null; // Zabezpieczenie przed uśpieniem GPS przez telefon
+let wakeLock = null; 
+let activePolyline = null; // 🔥 Zmienna trzymająca "wstążkę" na mapie
+
 let walkData = {
     positions: [],
     distanceKm: 0,
@@ -27,7 +30,7 @@ function deg2rad(deg) {
     return deg * (Math.PI / 180);
 }
 
-// Blokada ekranu, by system nie "ubił" GPS-a w kieszeni
+// Blokada ekranu przed uśpieniem (Dla PWA)
 async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) {
@@ -50,10 +53,21 @@ export async function startWalkTracker() {
     if (walkData.isActive) return;
 
     walkData = { positions: [], distanceKm: 0, startTime: Date.now(), isActive: true };
-    await requestWakeLock(); // Odpalamy blokadę uśpienia
+    await requestWakeLock(); 
+    
+    // 🔥 TWORZYMY LINIĘ NA MAPIE (Tylko wizualnie)
+    if (state.map && state.map.instance && window.L) {
+        activePolyline = window.L.polyline([], {
+            color: '#ff5252', // Zgodny z Twoim kolorem var(--danger/primary)
+            weight: 5,
+            opacity: 0.85,
+            dashArray: '10, 10', // Przerywana linia symulująca ślad kroków
+            lineJoin: 'round'
+        }).addTo(state.map.instance);
+    }
     
     if (window.Waggle && window.Waggle.showToast) {
-        window.Waggle.showToast("🐕 Spacer rozpoczęty! Zbieram sygnał GPS...");
+        window.Waggle.showToast("🐕 Spacer rozpoczęty! Ruszaj przed siebie.");
     }
 
     watchId = navigator.geolocation.watchPosition(
@@ -61,28 +75,32 @@ export async function startWalkTracker() {
             const { latitude, longitude, accuracy } = position.coords;
             const now = Date.now();
             
-            // 1. ZAOSTRZONY RYGOR: Odrzucamy punkty z dokładnością gorszą niż 25 metrów 
-            // (Blokujemy "skoki" wywołane odbiciem od bloków)
+            // 1. ZAOSTRZONY RYGOR MIEJSKI: Odrzucamy zgadywanki satelity gorsze niż 25m
             if (accuracy > 25) return;
 
             if (walkData.positions.length > 0) {
                 const lastPos = walkData.positions[walkData.positions.length - 1];
                 const dist = getDistanceFromLatLonInKm(lastPos.lat, lastPos.lng, latitude, longitude);
                 
-                // 2. FILTR PRĘDKOŚCIOWY: Czas w godzinach
+                // 2. FILTR PRĘDKOŚCIOWY I DYSTANSOWY
                 const timeDiffHours = (now - lastPos.time) / 3600000; 
                 
-                // Zabezpieczenie przed dzieleniem przez 0
                 if (timeDiffHours > 0) {
                     const speedKmH = dist / timeDiffHours;
                     
-                    // Akceptujemy dystans TYLKO jeśli:
-                    // A) Jest większy niż 3 metry (0.003 km)
-                    // B) Prędkość jest mniejsza niż 15 km/h (odrzucamy jazdę autem i błędy GPS)
+                    // Akceptujemy punkt gdy:
+                    // A) Zrobiłeś minimum 3 metry kroku (0.003 km)
+                    // B) Prędkość < 15 km/h (Brak aut, brak "teleportacji" pod blokami)
                     if (dist > 0.003 && speedKmH < 15) { 
                         walkData.distanceKm += dist;
                         walkData.positions.push({ lat: latitude, lng: longitude, time: now });
                         
+                        // 🔥 DODAJEMY ZAAKCEPTOWANY PUNKT DO RYSOWANEJ LINII
+                        if (activePolyline) {
+                            activePolyline.addLatLng([latitude, longitude]);
+                        }
+                        
+                        // Aktualizacja licznika "KM" na ekranie na żywo
                         const distCounter = document.getElementById('walk-distance-counter');
                         if (distCounter) {
                             distCounter.innerText = walkData.distanceKm.toFixed(2) + " km";
@@ -90,8 +108,11 @@ export async function startWalkTracker() {
                     }
                 }
             } else {
-                // Pierwszy punkt
+                // To jest pierwszy, startowy punkt po kliknięciu Start
                 walkData.positions.push({ lat: latitude, lng: longitude, time: now });
+                if (activePolyline) {
+                    activePolyline.addLatLng([latitude, longitude]);
+                }
             }
         },
         (error) => {
@@ -106,8 +127,14 @@ export async function stopWalkTracker() {
     if (!walkData.isActive) return;
     
     navigator.geolocation.clearWatch(watchId);
-    await releaseWakeLock(); // Zwalniamy blokadę uśpienia
+    await releaseWakeLock(); 
     walkData.isActive = false;
+    
+    // 🔥 ZWIJAMY NARYSOWANĄ LINIĘ Z MAPY
+    if (activePolyline && state.map && state.map.instance) {
+        state.map.instance.removeLayer(activePolyline);
+        activePolyline = null;
+    }
     
     const durationMs = Date.now() - walkData.startTime;
     const durationMins = Math.round(durationMs / 60000);
@@ -119,12 +146,13 @@ export async function stopWalkTracker() {
 
     const currentUid = localStorage.getItem('activeDogId') || (auth.currentUser ? auth.currentUser.uid : null);
     
-    // 🔥 UWAGA: Wymagany minimum 50 metrów (0.05 km) do zapisania w bazie!
+    // Zapisujemy w bazie wyłącznie spacery powyżej 50 metrów (0.05 km)
     if (currentUid && finalDistance > 0.05) { 
         try {
+            // Zostawiamy co 5 punkt, żeby oszczędzać miejsce w bazie
             const simplifiedPath = walkData.positions.filter((_, index) => index % 5 === 0);
 
-            // 1. Zapis śladu GPS do bazy
+            // Zapis historii na potrzeby tablicy/feedów
             await db.collection('walks').add({
                 dogId: currentUid,
                 distanceKm: finalDistance,
@@ -133,14 +161,14 @@ export async function stopWalkTracker() {
                 timestamp: fb.firestore.FieldValue.serverTimestamp()
             });
             
-            // 2. Dodanie +1 do dziennika (Paski postępu w "Codziennej opiece")
+            // +1 do dziennika paska postępu
             const today = new Date().toISOString().split('T')[0];
             await db.collection('users').doc(currentUid).collection('daily_care').doc(today).set({
                 walk: fb.firestore.FieldValue.increment(1),
                 lastUpdated: fb.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
-            // 3. Aktualizacja globalnych statystyk profilu (Górny pasek: ilość spacerów i łączne KM)
+            // Zsumowanie dystansu (Ożywia System Rang i statystyki)
             await db.collection('users').doc(currentUid).set({
                 walkCount: fb.firestore.FieldValue.increment(1),
                 totalDistance: fb.firestore.FieldValue.increment(finalDistance)
