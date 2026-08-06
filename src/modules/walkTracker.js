@@ -6,16 +6,16 @@ let watchId = null;
 let wakeLock = null; 
 let activePolyline = null; 
 
-// 🔥 KONFIGURACJA ZAAKCEPTOWANA PRZEZ AUDYT (Brak magicznych liczb)
-const MAX_WALK_SPEED = 12; // km/h (Powyżej tej prędkości ignorujemy ruch - rower/auto)
-const MAX_JUMP_KM = 0.05;  // 50m (Nagły skok między jednym a drugim odczytem to błąd GPS)
+// 🔥 KONFIGURACJA ZAAKCEPTOWANA PRZEZ AUDYT
+const MAX_WALK_SPEED = 25; // km/h (Pozwala na bieganie, rolki, canicross. Powyżej odrzucamy jako auto)
 const MIN_MOVE_KM = 0.003; // 3m (Minimalny ruch, by uznać, że nie stoimy w miejscu)
-const DB_SAVE_DIST = 0.01; // 10m (Co ile metrów zapisać punkt na stałe do bazy)
+const DB_SAVE_DIST = 0.01; // 10m (Co ile metrów zapisać punkt na stałe do bazy, optymalizacja trasy)
 
 let walkData = {
     positions: [],
-    pathForDb: [], // Oddzielna tablica tylko dla punktów zapisywanych do chmury
+    pathForDb: [], 
     lastSavedDbPos: null,
+    lastRawPos: null, // Zabezpieczenie przed "martwym punktem" GPS
     distanceKm: 0,
     startTime: null,
     isActive: false
@@ -49,7 +49,7 @@ async function releaseWakeLock() {
 export async function startWalkTracker() {
     if (walkData.isActive) return;
 
-    walkData = { positions: [], pathForDb: [], lastSavedDbPos: null, distanceKm: 0, startTime: Date.now(), isActive: true };
+    walkData = { positions: [], pathForDb: [], lastSavedDbPos: null, lastRawPos: null, distanceKm: 0, startTime: Date.now(), isActive: true };
     await requestWakeLock(); 
     
     if (state.map && state.map.instance && window.L) {
@@ -65,50 +65,58 @@ export async function startWalkTracker() {
             const { latitude, longitude, accuracy } = position.coords;
             const now = Date.now();
             
+            // 1. ZAOSTRZONY RYGOR MIEJSKI: Odrzucamy zgadywanki satelity gorsze niż 25m
             if (accuracy > 25) return;
 
+            // Zapisujemy obecny, surowy punkt GPS
+            const currentRawPoint = { lat: latitude, lng: longitude, time: now };
+
             if (walkData.positions.length > 0) {
-                const lastPos = walkData.positions[walkData.positions.length - 1];
+                // 🔥 KRYTYCZNA ZMIANA: Mierzymy dystans i prędkość od ostatniego SUROWEGO punktu. 
+                // To rozwiązuje problem usypiania aplikacji w tle na plaży!
+                const lastPos = walkData.lastRawPos || walkData.positions[walkData.positions.length - 1];
                 const dist = getDistanceFromLatLonInKm(lastPos.lat, lastPos.lng, latitude, longitude);
                 
-                // 🔥 Zabezpieczenie przed "teleportacją" i zgubieniem punktów
-                if (dist > MAX_JUMP_KM) return; 
-
                 const timeDiffHours = (now - lastPos.time) / 3600000; 
                 
                 if (timeDiffHours > 0) {
                     const speedKmH = dist / timeDiffHours;
                     
+                    // Akceptujemy punkt gdy ruch to minimum 3m i mniej niż 25 km/h
                     if (dist > MIN_MOVE_KM && speedKmH < MAX_WALK_SPEED) { 
                         walkData.distanceKm += dist;
-                        const currentPoint = { lat: latitude, lng: longitude, time: now };
+                        walkData.positions.push(currentRawPoint);
                         
-                        walkData.positions.push(currentPoint);
+                        // Rysowanie na żywo
                         if (activePolyline) activePolyline.addLatLng([latitude, longitude]);
                         
-                        // 🔥 Uproszczenie trasy oparte na DYSTANSIE, a nie na indeksie
+                        // Uproszczenie trasy do zapisu (odrzucamy punkty bliższe niż 10m dla optymalizacji)
                         if (!walkData.lastSavedDbPos) {
-                            walkData.pathForDb.push(currentPoint);
-                            walkData.lastSavedDbPos = currentPoint;
+                            walkData.pathForDb.push(currentRawPoint);
+                            walkData.lastSavedDbPos = currentRawPoint;
                         } else {
                             const distFromLastSaved = getDistanceFromLatLonInKm(walkData.lastSavedDbPos.lat, walkData.lastSavedDbPos.lng, latitude, longitude);
                             if (distFromLastSaved > DB_SAVE_DIST) {
-                                walkData.pathForDb.push(currentPoint);
-                                walkData.lastSavedDbPos = currentPoint;
+                                walkData.pathForDb.push(currentRawPoint);
+                                walkData.lastSavedDbPos = currentRawPoint;
                             }
                         }
                         
+                        // Aktualizacja licznika na ekranie
                         const distCounter = document.getElementById('walk-distance-counter');
                         if (distCounter) distCounter.innerText = walkData.distanceKm.toFixed(2) + " km";
                     }
                 }
             } else {
-                const startPoint = { lat: latitude, lng: longitude, time: now };
-                walkData.positions.push(startPoint);
-                walkData.pathForDb.push(startPoint);
-                walkData.lastSavedDbPos = startPoint;
+                // To jest pierwszy, startowy punkt po kliknięciu Start
+                walkData.positions.push(currentRawPoint);
+                walkData.pathForDb.push(currentRawPoint);
+                walkData.lastSavedDbPos = currentRawPoint;
                 if (activePolyline) activePolyline.addLatLng([latitude, longitude]);
             }
+
+            // Zawsze uaktualniamy ostatni surowy punkt
+            walkData.lastRawPos = currentRawPoint;
         },
         (error) => { console.warn("GPS wstrzymany lub zgubił zasięg:", error); },
         { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
@@ -123,6 +131,7 @@ export async function stopWalkTracker() {
     await releaseWakeLock(); 
     walkData.isActive = false;
     
+    // Zwijamy narysowaną linię z mapy
     if (activePolyline && state.map && state.map.instance) {
         state.map.instance.removeLayer(activePolyline);
         activePolyline = null;
@@ -138,23 +147,26 @@ export async function stopWalkTracker() {
 
     const currentUid = localStorage.getItem('activeDogId') || (auth.currentUser ? auth.currentUser.uid : null);
     
+    // Zapisujemy w bazie wyłącznie spacery powyżej 50 metrów (0.05 km)
     if (currentUid && finalDistance > 0.05) { 
         try {
+            // Zapis historii trasy
             await db.collection('walks').add({
                 dogId: currentUid,
                 distanceKm: finalDistance,
                 durationMinutes: durationMins,
-                path: walkData.pathForDb, // Zoptymalizowana ścieżka gotowa do zapisu
+                path: walkData.pathForDb, 
                 timestamp: fb.firestore.FieldValue.serverTimestamp()
             });
             
+            // +1 do dziennika paska postępu
             const today = new Date().toISOString().split('T')[0];
             await db.collection('users').doc(currentUid).collection('daily_care').doc(today).set({
                 walk: fb.firestore.FieldValue.increment(1),
                 lastUpdated: fb.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
-            // 🔥 Nowość: Zbieramy też totalWalkTime
+            // Zsumowanie dystansu i czasu całkowitego
             await db.collection('users').doc(currentUid).set({
                 walkCount: fb.firestore.FieldValue.increment(1),
                 totalDistance: fb.firestore.FieldValue.increment(finalDistance),
