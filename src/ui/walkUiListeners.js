@@ -23,6 +23,16 @@ export function initWalkUi() {
             document.getElementById('startWalkBtn').style.display = 'none'; 
             document.getElementById('stopWalkBtn').style.display = 'inline-block'; 
             if (statusInput) statusInput.style.display = 'none';
+            
+            // 🔥 NOWE: Pokaż panel z licznikami na mapie i wyzeruj wartości
+            const liveStats = document.getElementById('walk-live-stats');
+            if (liveStats) liveStats.style.display = 'block';
+            
+            const distCounter = document.getElementById('walk-distance-counter');
+            if (distCounter) distCounter.innerText = "0.00 km";
+            
+            const speedCounter = document.getElementById('walk-speed-counter');
+            if (speedCounter) speedCounter.innerText = "0.0";
 
             // 🔥 2. Kompletny ładunek danych wysyłany do bazy
             const payload = {
@@ -52,6 +62,10 @@ export function initWalkUi() {
                 statusInput.style.display = 'inline-block';
                 statusInput.value = "";
             }
+
+            // 🔥 NOWE: Ukryj panel z licznikami po zakończeniu spaceru
+            const liveStats = document.getElementById('walk-live-stats');
+            if (liveStats) liveStats.style.display = 'none';
 
             if (state.user) stopWalkInDb(state.user.uid); 
             window.Waggle.showToast("Spacer zakończony! 🏁");
