@@ -304,10 +304,19 @@
                     <button class="map-ctrl-btn danger" id="triggerAlertBtn">⚠️</button>
                 </div>
                 <div id="walk-setup-panel">
-                    <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
-                    <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER</button>
-                    <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ SPACER</button>
-                </div>
+    <input type="text" id="statusInput" placeholder="Co u Was?" style="margin-bottom: 10px;">
+    
+    <!-- 🔥 LICZNIKI SPACERU (Dystans i Prędkość ukryte przed startem) -->
+    <div id="walk-live-stats" style="display: none; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 900; color: var(--text-color);" id="walk-distance-counter">0.00 km</div>
+        <div style="font-size: 14px; color: var(--text-muted); font-weight: bold; margin-top: 5px;">
+            Prędkość: <span id="walk-speed-counter" style="color: var(--primary);">0.0</span> km/h
+        </div>
+    </div>
+
+    <button class="btn-main" id="startWalkBtn">WYJDŹ NA SPACER</button>
+    <button class="btn-main" id="stopWalkBtn" style="display:none; background:var(--text-color);">ZAKOŃCZ SPACER</button>
+</div>
             </div>
             <div id="map"></div>
         </section>
