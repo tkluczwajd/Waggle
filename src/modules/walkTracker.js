@@ -6,21 +6,22 @@ let watchId = null;
 let wakeLock = null; 
 let activePolyline = null; 
 
-// 🔥 KONFIGURACJA ZAAKCEPTOWANA PRZEZ AUDYT
-const MAX_WALK_SPEED = 25; // km/h (Pozwala na bieganie, rolki, canicross. Powyżej odrzucamy jako auto)
-const MIN_MOVE_KM = 0.003; // 3m (Minimalny ruch, by uznać, że nie stoimy w miejscu)
-const DB_SAVE_DIST = 0.01; // 10m (Co ile metrów zapisać punkt na stałe do bazy, optymalizacja trasy)
+// 🔥 KONFIGURACJA
+const MAX_WALK_SPEED = 45; // km/h (Rozwiązuje problem usypiania w tle, wchłania szum GPS)
+const MIN_MOVE_KM = 0.003; // 3m (Odrzuca "stanie w miejscu")
+const DB_SAVE_DIST = 0.01; // 10m (Oszczędzanie bazy danych, zapis co 10 metrów)
 
 let walkData = {
     positions: [],
     pathForDb: [], 
     lastSavedDbPos: null,
-    lastRawPos: null, // Zabezpieczenie przed "martwym punktem" GPS
+    lastRawPos: null, // Łamie "martwy punkt", niezależnie od odrzuceń algorytmu
     distanceKm: 0,
     startTime: null,
     isActive: false
 };
 
+// Formuła Haversine'a
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
@@ -65,15 +66,22 @@ export async function startWalkTracker() {
             const { latitude, longitude, accuracy } = position.coords;
             const now = Date.now();
             
-            // 1. ZAOSTRZONY RYGOR MIEJSKI: Odrzucamy zgadywanki satelity gorsze niż 25m
+            // 1. Odrzucamy zgadywanki satelity gorsze niż 25m (szum pod blokami)
             if (accuracy > 25) return;
 
-            // Zapisujemy obecny, surowy punkt GPS
             const currentRawPoint = { lat: latitude, lng: longitude, time: now };
 
+            // 🔥 RYSOWANIE LINII NA ŻYWO (Z kołem ratunkowym dla opóźnionej mapy)
+            if (activePolyline) {
+                activePolyline.addLatLng([latitude, longitude]);
+            } else if (state.map && state.map.instance && window.L) {
+                activePolyline = window.L.polyline([[latitude, longitude]], {
+                    color: '#ff5252', weight: 5, opacity: 0.85, dashArray: '10, 10', lineJoin: 'round'
+                }).addTo(state.map.instance);
+            }
+
             if (walkData.positions.length > 0) {
-                // 🔥 KRYTYCZNA ZMIANA: Mierzymy dystans i prędkość od ostatniego SUROWEGO punktu. 
-                // To rozwiązuje problem usypiania aplikacji w tle na plaży!
+                // Obliczamy względem najnowszego surowego punktu GPS
                 const lastPos = walkData.lastRawPos || walkData.positions[walkData.positions.length - 1];
                 const dist = getDistanceFromLatLonInKm(lastPos.lat, lastPos.lng, latitude, longitude);
                 
@@ -82,15 +90,11 @@ export async function startWalkTracker() {
                 if (timeDiffHours > 0) {
                     const speedKmH = dist / timeDiffHours;
                     
-                    // Akceptujemy punkt gdy ruch to minimum 3m i mniej niż 25 km/h
                     if (dist > MIN_MOVE_KM && speedKmH < MAX_WALK_SPEED) { 
                         walkData.distanceKm += dist;
                         walkData.positions.push(currentRawPoint);
                         
-                        // Rysowanie na żywo
-                        if (activePolyline) activePolyline.addLatLng([latitude, longitude]);
-                        
-                        // Uproszczenie trasy do zapisu (odrzucamy punkty bliższe niż 10m dla optymalizacji)
+                        // Uproszczenie trasy do zapisu DB
                         if (!walkData.lastSavedDbPos) {
                             walkData.pathForDb.push(currentRawPoint);
                             walkData.lastSavedDbPos = currentRawPoint;
@@ -102,20 +106,26 @@ export async function startWalkTracker() {
                             }
                         }
                         
-                        // Aktualizacja licznika na ekranie
+                        // 🔥 AKTUALIZACJA UI: Dystans i Prędkość
                         const distCounter = document.getElementById('walk-distance-counter');
                         if (distCounter) distCounter.innerText = walkData.distanceKm.toFixed(2) + " km";
+
+                        const speedCounter = document.getElementById('walk-speed-counter');
+                        if (speedCounter) speedCounter.innerText = speedKmH.toFixed(1);
+
+                        // 🔥 TOAST TESTOWY: Pokaże Ci na żywo, że punkt został zliczony
+                        if (window.Waggle && window.Waggle.showToast) {
+                            window.Waggle.showToast(`📍 Zliczono! Prędkość: ${speedKmH.toFixed(1)} km/h`);
+                        }
                     }
                 }
             } else {
-                // To jest pierwszy, startowy punkt po kliknięciu Start
                 walkData.positions.push(currentRawPoint);
                 walkData.pathForDb.push(currentRawPoint);
                 walkData.lastSavedDbPos = currentRawPoint;
-                if (activePolyline) activePolyline.addLatLng([latitude, longitude]);
             }
 
-            // Zawsze uaktualniamy ostatni surowy punkt
+            // Podtrzymanie stanu ucieczki z martwego punktu
             walkData.lastRawPos = currentRawPoint;
         },
         (error) => { console.warn("GPS wstrzymany lub zgubił zasięg:", error); },
@@ -131,7 +141,7 @@ export async function stopWalkTracker() {
     await releaseWakeLock(); 
     walkData.isActive = false;
     
-    // Zwijamy narysowaną linię z mapy
+    // Zwijamy linię z mapy po zakończeniu
     if (activePolyline && state.map && state.map.instance) {
         state.map.instance.removeLayer(activePolyline);
         activePolyline = null;
@@ -147,10 +157,8 @@ export async function stopWalkTracker() {
 
     const currentUid = localStorage.getItem('activeDogId') || (auth.currentUser ? auth.currentUser.uid : null);
     
-    // Zapisujemy w bazie wyłącznie spacery powyżej 50 metrów (0.05 km)
     if (currentUid && finalDistance > 0.05) { 
         try {
-            // Zapis historii trasy
             await db.collection('walks').add({
                 dogId: currentUid,
                 distanceKm: finalDistance,
@@ -159,14 +167,12 @@ export async function stopWalkTracker() {
                 timestamp: fb.firestore.FieldValue.serverTimestamp()
             });
             
-            // +1 do dziennika paska postępu
             const today = new Date().toISOString().split('T')[0];
             await db.collection('users').doc(currentUid).collection('daily_care').doc(today).set({
                 walk: fb.firestore.FieldValue.increment(1),
                 lastUpdated: fb.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
-            // Zsumowanie dystansu i czasu całkowitego
             await db.collection('users').doc(currentUid).set({
                 walkCount: fb.firestore.FieldValue.increment(1),
                 totalDistance: fb.firestore.FieldValue.increment(finalDistance),
