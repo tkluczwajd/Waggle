@@ -1,187 +1,179 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Waggle SAFE - Profil Psa</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --waggle-dark: #2d3436;
-            --text-muted: #879296;
-            --bg-color: #f8f9fa;
-            --primary-btn: #2ecc71;
-            --secondary-btn: #f1f2f6;
-        }
-        body { background: var(--bg-color); display: flex; flex-direction: column; align-items: center; padding: 40px 20px; font-family: 'Inter', sans-serif; margin: 0; min-height: 100vh; box-sizing: border-box; }
-        .header-title { color: var(--waggle-dark); font-weight: 900; font-size: 26px; margin: 0 0 4px 0; letter-spacing: -0.5px; }
-        .safe-card { background: white; border-radius: 32px; padding: 40px 24px 30px 24px; width: 100%; max-width: 380px; box-shadow: 0 15px 35px rgba(0,0,0,0.04); text-align: center; margin-top: 90px; position: relative; }
-        .safe-avatar { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 6px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin: -90px auto 20px auto; background: white; display: block; }
-        .action-buttons { display: flex; flex-direction: column; gap: 12px; }
-        .btn-primary { background: var(--primary-btn); text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; padding: 18px; box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3); border-radius: 100px; color: white; font-weight: 900; transition: transform 0.2s; }
-        .btn-secondary { background: var(--secondary-btn); text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 15px; padding: 16px; border-radius: 100px; color: var(--waggle-dark); font-weight: 800; transition: transform 0.2s; }
-        .btn-primary:active, .btn-secondary:active { transform: translateY(2px); }
-    </style>
-</head>
-<body>
-    <div style="text-align: center; margin-top: 10px;">
-        <h1 class="header-title">🐶 Waggle SAFE</h1>
-        <p style="color: var(--text-muted); font-weight: 800; margin: 0; font-size: 15px;">Pomóż mi wrócić do domu</p>
-    </div>
+// src/modules/walkTracker.js
+import { db, fb, auth } from '../core/firebase.js';
+import { appState as state } from '../core/state.js';
 
-    <div id="loading" style="margin-top: 80px; font-weight: 900; color: #b2bec3; font-size: 16px; text-align: center;">
-        <div style="font-size: 40px; margin-bottom: 15px; animation: pulse 1.5s infinite;">🐾</div>
-        Wczytuję dane psa...
-    </div>
+let watchId = null;
+let wakeLock = null; 
+let activePolyline = null; 
 
-    <div id="safe-content" class="safe-card" style="display: none;">
-        <img id="dogImage" class="safe-avatar" src="" alt="Pies">
-        <h2 id="dogName" style="font-size: 32px; font-weight: 900; margin: 0 0 5px 0; color: var(--waggle-dark); letter-spacing: -0.5px;">...</h2>
-        <p id="dogBreed" style="font-size: 15px; color: var(--text-muted); font-weight: 800; margin: 0 0 25px 0;">...</p>
+// 🔥 PODNIESIONY LIMIT, by wchłonąć ułamki sekund i "mikro dryfy" GPS-u. 
+// Odrzuci prawdziwe auto (60 km/h+), ale uratuje sekundowe drgania na plaży.
+const MAX_WALK_SPEED = 45; 
+const MIN_MOVE_KM = 0.003; 
+const DB_SAVE_DIST = 0.01; 
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;">
-            <div style="background: #e8f5e9; padding: 15px; border-radius: 16px; border: 1px solid #c8e6c9; text-align: left;">
-                <div style="font-size: 10px; color: #2e7d32; font-weight: 900; text-transform: uppercase;">Chip</div>
-                <div id="dogChip" style="font-size: 14px; font-weight: 800; color: var(--waggle-dark);">...</div>
-            </div>
-            <div style="background: #fff3e0; padding: 15px; border-radius: 16px; border: 1px solid #ffe0b2; text-align: left;">
-                <div style="font-size: 10px; color: #ef6c00; font-weight: 900; text-transform: uppercase;">Leki</div>
-                <div id="dogMeds" style="font-size: 14px; font-weight: 800; color: var(--waggle-dark);">...</div>
-            </div>
-            <div style="background: #ffebee; padding: 15px; border-radius: 16px; border: 1px solid #ffcdd2; text-align: left; grid-column: span 2;">
-                <div style="font-size: 10px; color: #c62828; font-weight: 900; text-transform: uppercase;">⚠️ Alergie / Uwagi</div>
-                <div id="dogNotes" style="font-size: 14px; font-weight: 800; color: var(--waggle-dark);">...</div>
-            </div>
-        </div>
+let walkData = {
+    positions: [],
+    pathForDb: [], 
+    lastSavedDbPos: null,
+    lastRawPos: null, 
+    distanceKm: 0,
+    startTime: null,
+    isActive: false
+};
 
-        <div class="action-buttons">
-            <a id="callBtn" class="btn-primary" href="#">📞 ZADZWOŃ DO OPIEKUNA</a>
-            <a id="smsBtn" class="btn-secondary" href="#">💬 NAPISZ WIADOMOŚĆ</a>
-            <button id="locationBtn" onclick="sendLocation()" style="background: transparent; border: 2px solid var(--waggle-dark); color: var(--waggle-dark); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 15px; padding: 14px; border-radius: 100px; font-weight: 800; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;">📍 WYŚLIJ LOKALIZACJĘ PSA</button>
-        </div>
-    </div>
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 
-    <div id="error-content" class="safe-card" style="display: none; border: 2px solid #ff5252;">
-        <div style="font-size: 50px; margin-bottom: 15px;">😢</div>
-        <h3 style="color: #ff5252; margin-top: 0; font-weight: 900; font-size: 20px;">Profil niedostępny</h3>
-    </div>
+function deg2rad(deg) { return deg * (Math.PI / 180); }
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch (err) { console.warn("Wake Lock niedostępny:", err); }
+}
 
-    <script>
-        // INICJALIZACJA BAZY DANYCH (BEZ AUTH)
-        const firebaseConfig = { 
-            apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", 
-            authDomain: "waggle-app-31ffa.firebaseapp.com", 
-            projectId: "waggle-app-31ffa", 
-            storageBucket: "waggle-app-31ffa.firebasestorage.app", 
-            messagingSenderId: "711707392068", 
-            appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+async function releaseWakeLock() {
+    if (wakeLock !== null) { await wakeLock.release(); wakeLock = null; }
+}
 
-        // POBIERANIE DANYCH Z KOLEKCJI "USERS"
-        async function loadSafeProfile() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const safeId = urlParams.get('id');
-            if (!safeId) { showError(); return; }
+// START SPACERU
+export async function startWalkTracker() {
+    if (walkData.isActive) return;
 
-            try {
-                const doc = await db.collection("users").doc(safeId).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('dogName').innerText = data.name || "Nieznane imię";
-                    document.getElementById('dogBreed').innerText = data.breed || "Brak danych o rasie";
-                    
-                    document.getElementById('dogChip').innerText = data.chip || "Brak";
-                    document.getElementById('dogMeds').innerText = data.meds || "Brak";
-                    
-                    let notesStr = "";
-                    if (data.allergies && data.allergies !== "-" && data.allergies !== "Brak") notesStr += "Alergie: " + data.allergies + "<br>";
-                    if (data.notes && data.notes !== "-") notesStr += data.notes;
-                    document.getElementById('dogNotes').innerHTML = notesStr || "Brak uwag";
-                    
-                    document.getElementById('dogImage').src = data.avatar || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300";
+    walkData = { positions: [], pathForDb: [], lastSavedDbPos: null, lastRawPos: null, distanceKm: 0, startTime: Date.now(), isActive: true };
+    await requestWakeLock(); 
+    
+    if (state.map && state.map.instance && window.L) {
+        activePolyline = window.L.polyline([], {
+            color: '#ff5252', weight: 5, opacity: 0.85, dashArray: '10, 10', lineJoin: 'round'
+        }).addTo(state.map.instance);
+    }
+    
+    if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("🐕 Spacer rozpoczęty! Ruszaj przed siebie.");
 
-                    const phone = data.phone || data.vet || "";
-                    if (phone) {
-                        const cleanPhone = phone.replace(/[^0-9+]/g, '');
-                        document.getElementById('callBtn').href = `tel:${cleanPhone}`; 
-                        document.getElementById('smsBtn').href = `sms:${cleanPhone}?body=Hej!%20Znalazłem%20Twojego%20psa.`;
-                    } else {
-                        document.getElementById('callBtn').style.display = 'none'; 
-                        document.getElementById('smsBtn').style.display = 'none'; 
-                    }
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('safe-content').style.display = 'block';
-                } else { showError(); }
-            } catch (error) { console.error(error); showError(); }
-        }
-
-        function showError() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error-content').style.display = 'block';
-        }
-
-        // FUNKCJA GPS DLA ZNALAZCY (BEZ APLIKACJI WAGGLE)
-        window.sendLocation = function() {
-            const btn = document.getElementById('locationBtn');
-            const urlParams = new URLSearchParams(window.location.search);
-            const safeId = urlParams.get('id');
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            const now = Date.now();
             
-            if (!safeId) return;
+            // 1. Odrzucamy zgadywanki satelity gorsze niż 25m
+            if (accuracy > 25) return;
 
-            btn.innerText = "POBIERAM SYGNAŁ GPS... ⏳";
-            btn.style.color = "#879296";
-            btn.style.borderColor = "#879296";
-            btn.disabled = true;
-            
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    try {
-                        const { latitude, longitude } = position.coords;
-                        
-                        await db.collection('safe_reports').add({
-                            ownerUid: safeId,
-                            lat: latitude,
-                            lng: longitude,
-                            status: 'NEW',
-                            source: 'QR_SCAN',
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
-                        btn.innerText = "✅ WYSŁANO LOKALIZACJĘ!";
-                        btn.style.color = "#2ecc71";
-                        btn.style.borderColor = "#2ecc71";
-                    } catch (err) {
-                        console.error("Szczegóły błędu Firebase:", err);
-                        btn.innerText = "❌ BŁĄD SERWERA"; 
-                        btn.disabled = false;
-                    }
-                },
-                (err) => {
-                    console.error("Błąd pobierania GPS:", err);
-                    btn.innerText = "❌ BRAK ZGODY NA GPS";
-                    btn.style.color = "#e74c3c";
-                    btn.style.borderColor = "#e74c3c";
-                    btn.disabled = false;
+            const currentRawPoint = { lat: latitude, lng: longitude, time: now };
+
+            // 🔥 RYSOWANIE LINII NA ŻYWO (Bezwarunkowe wizualne wsparcie)
+            if (activePolyline) {
+                activePolyline.addLatLng([latitude, longitude]);
+            } else if (state.map && state.map.instance && window.L) {
+                // Próba ratunkowa utworzenia linii, jeśli mapa "wstała" później
+                activePolyline = window.L.polyline([[latitude, longitude]], {
+                    color: '#ff5252', weight: 5, opacity: 0.85, dashArray: '10, 10', lineJoin: 'round'
+                }).addTo(state.map.instance);
+            }
+
+            if (walkData.positions.length > 0) {
+                const lastPos = walkData.lastRawPos || walkData.positions[walkData.positions.length - 1];
+                const dist = getDistanceFromLatLonInKm(lastPos.lat, lastPos.lng, latitude, longitude);
+                
+                const timeDiffHours = (now - lastPos.time) / 3600000; 
+                
+                if (timeDiffHours > 0) {
+                    const speedKmH = dist / timeDiffHours;
                     
-                    // Precyzyjna informacja, dlaczego GPS zawiódł
-                    if (err.code === 1) { // 1 = PERMISSION_DENIED
-                        alert("Odmówiono dostępu do lokalizacji! Jeśli otworzyłeś ten profil przez wbudowany skaner QR, kliknij ikonę opcji (np. trzy kropki) i wybierz 'Otwórz w przeglądarce' (Chrome/Safari), a następnie spróbuj ponownie.");
-                    } else {
-                        alert("Nie udało się złapać sygnału GPS. Spróbuj wyjść zza budynków na otwartą przestrzeń i kliknij jeszcze raz.");
+                    if (dist > MIN_MOVE_KM && speedKmH < MAX_WALK_SPEED) { 
+                        walkData.distanceKm += dist;
+                        walkData.positions.push(currentRawPoint);
+                        
+                        if (!walkData.lastSavedDbPos) {
+                            walkData.pathForDb.push(currentRawPoint);
+                            walkData.lastSavedDbPos = currentRawPoint;
+                        } else {
+                            const distFromLastSaved = getDistanceFromLatLonInKm(walkData.lastSavedDbPos.lat, walkData.lastSavedDbPos.lng, latitude, longitude);
+                            if (distFromLastSaved > DB_SAVE_DIST) {
+                                walkData.pathForDb.push(currentRawPoint);
+                                walkData.lastSavedDbPos = currentRawPoint;
+                            }
+                        }
+                        
+                        const distCounter = document.getElementById('walk-distance-counter');
+                        if (distCounter) distCounter.innerText = walkData.distanceKm.toFixed(2) + " km";
                     }
-                },
-                // Odświeżony silnik geolokalizacji
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-            );
-        };
+                }
+            } else {
+                walkData.positions.push(currentRawPoint);
+                walkData.pathForDb.push(currentRawPoint);
+                walkData.lastSavedDbPos = currentRawPoint;
+            }
 
-        loadSafeProfile();
-    </script>
-</body>
-</html>
+            walkData.lastRawPos = currentRawPoint;
+        },
+        (error) => { console.warn("GPS wstrzymany lub zgubił zasięg:", error); },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    );
+}
+
+// KONIEC SPACERU
+export async function stopWalkTracker() {
+    if (!walkData.isActive) return;
+    
+    navigator.geolocation.clearWatch(watchId);
+    await releaseWakeLock(); 
+    walkData.isActive = false;
+    
+    if (activePolyline && state.map && state.map.instance) {
+        state.map.instance.removeLayer(activePolyline);
+        activePolyline = null;
+    }
+    
+    const durationMs = Date.now() - walkData.startTime;
+    const durationMins = Math.round(durationMs / 60000);
+    const finalDistance = parseFloat(walkData.distanceKm.toFixed(2));
+    
+    if (window.Waggle && window.Waggle.showToast) {
+        window.Waggle.showToast(`🏁 Koniec spaceru! Dystans: ${finalDistance} km`);
+    }
+
+    const currentUid = localStorage.getItem('activeDogId') || (auth.currentUser ? auth.currentUser.uid : null);
+    
+    if (currentUid && finalDistance > 0.05) { 
+        try {
+            await db.collection('walks').add({
+                dogId: currentUid,
+                distanceKm: finalDistance,
+                durationMinutes: durationMins,
+                path: walkData.pathForDb, 
+                timestamp: fb.firestore.FieldValue.serverTimestamp()
+            });
+            
+            const today = new Date().toISOString().split('T')[0];
+            await db.collection('users').doc(currentUid).collection('daily_care').doc(today).set({
+                walk: fb.firestore.FieldValue.increment(1),
+                lastUpdated: fb.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            await db.collection('users').doc(currentUid).set({
+                walkCount: fb.firestore.FieldValue.increment(1),
+                totalDistance: fb.firestore.FieldValue.increment(finalDistance),
+                totalWalkTime: fb.firestore.FieldValue.increment(durationMins)
+            }, { merge: true });
+
+        } catch (err) {
+            console.error("Błąd zapisu spaceru:", err);
+            if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("❌ Błąd zapisu spaceru.");
+        }
+    } else if (currentUid && finalDistance <= 0.05) {
+        if (window.Waggle && window.Waggle.showToast) {
+            window.Waggle.showToast("Dystans poniżej 50 metrów. Trening nie został zapisany.");
+        }
+    }
+}
