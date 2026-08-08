@@ -2,6 +2,7 @@
 import { appState as state } from '../core/state.js';
 import { mapManager } from '../modules/map/mapManager.js';
 import { startWalkInDb, stopWalkInDb } from '../services/walkService.js'; // 🔥 Używamy w końcu gotowego serwisu!
+import { startWalkTracker, stopWalkTracker } from '../modules/walkTracker.js';
 
 export function initWalkUi() {
     document.addEventListener('click', (e) => {
@@ -48,6 +49,9 @@ export function initWalkUi() {
             // Przekazujemy ładunek do czystego serwisu
             startWalkInDb(state.user.uid, payload);
             window.Waggle.showToast("Spacer rozpoczęty! 🐾");
+
+            // Odpalenie silnika liczącego dystans i rysującego na mapie (Diagnostyka!)
+            await startWalkTracker();
         }
         
         // KONIEC SPACERU
@@ -69,6 +73,8 @@ export function initWalkUi() {
 
             if (state.user) stopWalkInDb(state.user.uid); 
             window.Waggle.showToast("Spacer zakończony! 🏁");
+
+            await stopWalkTracker();
         }
         
         // POGODA
