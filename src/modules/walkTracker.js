@@ -20,6 +20,24 @@ let walkData = {
     isActive: false
 };
 
+// 🔥 FUNKCJA DIAGNOSTYCZNA (Zapisuje logi do pamięci telefonu)
+function saveLogToPhone(type, data) {
+    const timeStr = new Date().toLocaleTimeString();
+    const logEntry = `[${timeStr}] ${type}: ${JSON.stringify(data)}\n`;
+    
+    // Zapisz do localStorage
+    let currentLogs = localStorage.getItem('waggle_gps_logs') || "";
+    // Ogranicznik, żeby nie zapchać telefonu (ucięcie starych logów)
+    if (currentLogs.length > 500000) currentLogs = currentLogs.substring(currentLogs.length - 200000);
+    
+    localStorage.setItem('waggle_gps_logs', currentLogs + logEntry);
+    
+    // Wypisz też do konsoli (dla formalności)
+    console.log(`${type}`, data);
+}
+
+// -----------------------------------------------------------
+
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
@@ -50,6 +68,9 @@ export async function startWalkTracker() {
     walkData = { positions: [], pathForDb: [], lastSavedDbPos: null, distanceKm: 0, startTime: Date.now(), isActive: true };
     await requestWakeLock(); 
     
+    // 🔥 CZYŚCIMY STARE LOGI PRZY STARCIE NOWEGO SPACERU
+    localStorage.removeItem('waggle_gps_logs');
+    
     if (state.map && state.map.instance && window.L) {
         activePolyline = window.L.polyline([], {
             color: '#ff5252', weight: 6, opacity: 0.9, dashArray: '10, 10', lineJoin: 'round'
@@ -63,11 +84,10 @@ export async function startWalkTracker() {
             const { latitude, longitude, accuracy } = position.coords;
             const now = Date.now();
             
-            // 🔥 DIAGNOSTYKA KONSULTANTA: Log każdego surowego odczytu
-            console.log('[WALK GPS RAW]', { lat: latitude, lng: longitude, accuracy: Math.round(accuracy), time: now });
+            saveLogToPhone('[WALK GPS RAW]', { lat: latitude, lng: longitude, accuracy: Math.round(accuracy) });
 
             if (accuracy > 30) {
-                console.log('[WALK GPS REJECTED]', { reason: 'Słaba dokładność (>30m)', accuracy: Math.round(accuracy) });
+                saveLogToPhone('[WALK GPS REJECTED]', { reason: 'Słaba dokładność (>30m)', accuracy: Math.round(accuracy) });
                 return;
             }
 
@@ -87,8 +107,7 @@ export async function startWalkTracker() {
                         walkData.distanceKm += dist;
                         walkData.positions.push(currentPoint);
                         
-                        // 🔥 DIAGNOSTYKA KONSULTANTA: ZAAKCEPTOWANY PUNKT
-                        console.log('[WALK GPS ACCEPTED]', { 
+                        saveLogToPhone('[WALK GPS ACCEPTED]', { 
                             accuracy: Math.round(accuracy), 
                             distance: dist, 
                             speed: speedKmH, 
@@ -125,8 +144,7 @@ export async function startWalkTracker() {
                         if (speedCounter) speedCounter.innerText = speedKmH.toFixed(1);
                         
                     } else {
-                        // 🔥 DIAGNOSTYKA KONSULTANTA: ODRZUCONY ZE WZGLĘDU NA RUCH/PRĘDKOŚĆ
-                        console.log('[WALK GPS REJECTED]', { 
+                        saveLogToPhone('[WALK GPS REJECTED]', { 
                             reason: 'Limity ruchu/prędkości',
                             distance_km: dist, 
                             speed_kmh: speedKmH,
@@ -139,7 +157,7 @@ export async function startWalkTracker() {
                 walkData.pathForDb.push(currentPoint);
                 walkData.lastSavedDbPos = currentPoint;
 
-                console.log('[WALK GPS INITIALIZED]', { lat: latitude, lng: longitude, accuracy: Math.round(accuracy) });
+                saveLogToPhone('[WALK GPS INITIALIZED]', { lat: latitude, lng: longitude, accuracy: Math.round(accuracy) });
 
                 if (currentMap && window.L) {
                     if (!activePolyline) {
@@ -204,6 +222,6 @@ export async function stopWalkTracker() {
             console.error("Błąd zapisu spaceru:", err);
         }
     } else {
-        console.log(`[WALK CANCELLED] Dystans zbyt krótki do zapisu (${finalDistance} km)`);
+        saveLogToPhone('[WALK CANCELLED]', `Dystans zbyt krótki do zapisu (${finalDistance} km)`);
     }
 }
