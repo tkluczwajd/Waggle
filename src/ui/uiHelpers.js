@@ -35,7 +35,7 @@ export function updateStatsUI() {
     
     const walksCount = p.walkCount || 0;
     // Pobieramy prawdziwy dystans z bazy (lub estymujemy dla starych kont)
-    const distTotal = p.totalDistance || (walksCount * 1.2); 
+    const distTotal = Number(p.totalDistance || 0); 
     
     const walksEl = document.getElementById('statWalks'); if(walksEl) walksEl.innerText = walksCount;
     const distEl = document.getElementById('statDist'); if(distEl) distEl.innerText = distTotal.toFixed(1);
