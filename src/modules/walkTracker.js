@@ -6,22 +6,19 @@ let watchId = null;
 let wakeLock = null; 
 let activePolyline = null; 
 
-// 🔥 KONFIGURACJA
-const MAX_WALK_SPEED = 45; // km/h (Rozwiązuje problem usypiania w tle, wchłania szum GPS)
-const MIN_MOVE_KM = 0.003; // 3m (Odrzuca "stanie w miejscu")
-const DB_SAVE_DIST = 0.01; // 10m (Oszczędzanie bazy danych, zapis co 10 metrów)
+const MAX_WALK_SPEED = 45; // km/h (Wchłania wybudzenia telefonu i bieg)
+const MIN_MOVE_KM = 0.003; // 3m (Czekamy, aż zbierze się 3 metry ruchu od ostatniego punktu)
+const DB_SAVE_DIST = 0.01; // 10m (Oszczędność bazy danych)
 
 let walkData = {
     positions: [],
     pathForDb: [], 
     lastSavedDbPos: null,
-    lastRawPos: null, // Łamie "martwy punkt", niezależnie od odrzuceń algorytmu
     distanceKm: 0,
     startTime: null,
     isActive: false
 };
 
-// Formuła Haversine'a
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
@@ -50,86 +47,91 @@ async function releaseWakeLock() {
 export async function startWalkTracker() {
     if (walkData.isActive) return;
 
-    walkData = { positions: [], pathForDb: [], lastSavedDbPos: null, lastRawPos: null, distanceKm: 0, startTime: Date.now(), isActive: true };
+    walkData = { positions: [], pathForDb: [], lastSavedDbPos: null, distanceKm: 0, startTime: Date.now(), isActive: true };
     await requestWakeLock(); 
     
     if (state.map && state.map.instance && window.L) {
         activePolyline = window.L.polyline([], {
-            color: '#ff5252', weight: 5, opacity: 0.85, dashArray: '10, 10', lineJoin: 'round'
+            color: '#ff5252', weight: 6, opacity: 0.9, dashArray: '10, 10', lineJoin: 'round'
         }).addTo(state.map.instance);
     }
     
-    if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("🐕 Spacer rozpoczęty! Ruszaj przed siebie.");
+    if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("🐕 Spacer rozpoczęty!");
 
     watchId = navigator.geolocation.watchPosition(
         (position) => {
             const { latitude, longitude, accuracy } = position.coords;
             const now = Date.now();
             
-            // 1. Odrzucamy zgadywanki satelity gorsze niż 25m (szum pod blokami)
-            if (accuracy > 25) return;
+            // Diagnostyka pierwszego punktu
+            if (window.Waggle && window.Waggle.showToast && walkData.positions.length === 0) {
+                window.Waggle.showToast(`📡 Namierzanie... Błąd: ${Math.round(accuracy)}m`);
+            }
 
-            const currentRawPoint = { lat: latitude, lng: longitude, time: now };
+            // Odrzucamy tylko całkowite bzdury (szum powyżej 80m)
+            if (accuracy > 80) return;
 
-            // 🔥 RYSOWANIE LINII NA ŻYWO (Z kołem ratunkowym dla opóźnionej mapy)
-            if (activePolyline) {
-                activePolyline.addLatLng([latitude, longitude]);
-            } else if (state.map && state.map.instance && window.L) {
-                activePolyline = window.L.polyline([[latitude, longitude]], {
-                    color: '#ff5252', weight: 5, opacity: 0.85, dashArray: '10, 10', lineJoin: 'round'
-                }).addTo(state.map.instance);
+            const currentPoint = { lat: latitude, lng: longitude, time: now };
+
+            // Rysowanie niezależne od warunków prędkości
+            const currentMap = (state.map && state.map.instance) || window.map || (window.Waggle && window.Waggle.map);
+
+            if (currentMap && window.L) {
+                if (!activePolyline) {
+                    const allLatLngs = walkData.positions.map(p => [p.lat, p.lng]);
+                    allLatLngs.push([latitude, longitude]);
+                    activePolyline = window.L.polyline(allLatLngs, {
+                        color: '#ff5252', weight: 6, opacity: 0.9, dashArray: '10, 10', lineJoin: 'round'
+                    }).addTo(currentMap);
+                } else {
+                    if (!currentMap.hasLayer(activePolyline)) activePolyline.addTo(currentMap);
+                    activePolyline.addLatLng([latitude, longitude]);
+                }
             }
 
             if (walkData.positions.length > 0) {
-                // Obliczamy względem najnowszego surowego punktu GPS
-                const lastPos = walkData.lastRawPos || walkData.positions[walkData.positions.length - 1];
+                // 🔥 NAPRAWA: ZAWSZE mierzymy od ostatnio ZAPISANEGO punktu, aby akumulować mikrokroki!
+                const lastPos = walkData.positions[walkData.positions.length - 1];
                 const dist = getDistanceFromLatLonInKm(lastPos.lat, lastPos.lng, latitude, longitude);
-                
                 const timeDiffHours = (now - lastPos.time) / 3600000; 
                 
                 if (timeDiffHours > 0) {
                     const speedKmH = dist / timeDiffHours;
                     
+                    // Akceptujemy punkt dopiero, gdy uzbiera się > 3 metry ruchu
                     if (dist > MIN_MOVE_KM && speedKmH < MAX_WALK_SPEED) { 
                         walkData.distanceKm += dist;
-                        walkData.positions.push(currentRawPoint);
+                        walkData.positions.push(currentPoint);
                         
-                        // Uproszczenie trasy do zapisu DB
                         if (!walkData.lastSavedDbPos) {
-                            walkData.pathForDb.push(currentRawPoint);
-                            walkData.lastSavedDbPos = currentRawPoint;
+                            walkData.pathForDb.push(currentPoint);
+                            walkData.lastSavedDbPos = currentPoint;
                         } else {
                             const distFromLastSaved = getDistanceFromLatLonInKm(walkData.lastSavedDbPos.lat, walkData.lastSavedDbPos.lng, latitude, longitude);
                             if (distFromLastSaved > DB_SAVE_DIST) {
-                                walkData.pathForDb.push(currentRawPoint);
-                                walkData.lastSavedDbPos = currentRawPoint;
+                                walkData.pathForDb.push(currentPoint);
+                                walkData.lastSavedDbPos = currentPoint;
                             }
                         }
                         
-                        // 🔥 AKTUALIZACJA UI: Dystans i Prędkość
                         const distCounter = document.getElementById('walk-distance-counter');
                         if (distCounter) distCounter.innerText = walkData.distanceKm.toFixed(2) + " km";
 
                         const speedCounter = document.getElementById('walk-speed-counter');
                         if (speedCounter) speedCounter.innerText = speedKmH.toFixed(1);
-
-                        // 🔥 TOAST TESTOWY: Pokaże Ci na żywo, że punkt został zliczony
-                        if (window.Waggle && window.Waggle.showToast) {
-                            window.Waggle.showToast(`📍 Zliczono! Prędkość: ${speedKmH.toFixed(1)} km/h`);
-                        }
                     }
                 }
             } else {
-                walkData.positions.push(currentRawPoint);
-                walkData.pathForDb.push(currentRawPoint);
-                walkData.lastSavedDbPos = currentRawPoint;
+                // Zapis pierwszego punktu startowego (0.00 km)
+                walkData.positions.push(currentPoint);
+                walkData.pathForDb.push(currentPoint);
+                walkData.lastSavedDbPos = currentPoint;
             }
-
-            // Podtrzymanie stanu ucieczki z martwego punktu
-            walkData.lastRawPos = currentRawPoint;
         },
-        (error) => { console.warn("GPS wstrzymany lub zgubił zasięg:", error); },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+        (error) => { 
+            console.warn("GPS wstrzymany:", error); 
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
 }
 
@@ -141,7 +143,6 @@ export async function stopWalkTracker() {
     await releaseWakeLock(); 
     walkData.isActive = false;
     
-    // Zwijamy linię z mapy po zakończeniu
     if (activePolyline && state.map && state.map.instance) {
         state.map.instance.removeLayer(activePolyline);
         activePolyline = null;
