@@ -6,9 +6,10 @@ let watchId = null;
 let wakeLock = null; 
 let activePolyline = null; 
 
-const MAX_WALK_SPEED = 45; // km/h (Wchłania wybudzenia telefonu i bieg)
-const MIN_MOVE_KM = 0.003; // 3m (Czekamy, aż zbierze się 3 metry ruchu od ostatniego punktu)
-const DB_SAVE_DIST = 0.01; // 10m (Oszczędność bazy danych)
+// 🔥 ZMIANY ZGODNE Z AUDYTEM (Restrykcyjna diagnostyka)
+const MAX_WALK_SPEED = 12; // km/h (Zmniejszone z 45, by wyciąć fałszywe skoki GPS)
+const MIN_MOVE_KM = 0.003; // 3m
+const DB_SAVE_DIST = 0.01; // 10m
 
 let walkData = {
     positions: [],
@@ -68,29 +69,13 @@ export async function startWalkTracker() {
                 window.Waggle.showToast(`📡 Namierzanie... Błąd: ${Math.round(accuracy)}m`);
             }
 
-            // Odrzucamy tylko całkowite bzdury (szum powyżej 80m)
-            if (accuracy > 80) return;
+            // 🔥 ZMIANA: Odrzucamy błędy powyżej 30m (zamiast 80m)
+            if (accuracy > 30) return;
 
             const currentPoint = { lat: latitude, lng: longitude, time: now };
-
-            // Rysowanie niezależne od warunków prędkości
             const currentMap = (state.map && state.map.instance) || window.map || (window.Waggle && window.Waggle.map);
 
-            if (currentMap && window.L) {
-                if (!activePolyline) {
-                    const allLatLngs = walkData.positions.map(p => [p.lat, p.lng]);
-                    allLatLngs.push([latitude, longitude]);
-                    activePolyline = window.L.polyline(allLatLngs, {
-                        color: '#ff5252', weight: 6, opacity: 0.9, dashArray: '10, 10', lineJoin: 'round'
-                    }).addTo(currentMap);
-                } else {
-                    if (!currentMap.hasLayer(activePolyline)) activePolyline.addTo(currentMap);
-                    activePolyline.addLatLng([latitude, longitude]);
-                }
-            }
-
             if (walkData.positions.length > 0) {
-                // 🔥 NAPRAWA: ZAWSZE mierzymy od ostatnio ZAPISANEGO punktu, aby akumulować mikrokroki!
                 const lastPos = walkData.positions[walkData.positions.length - 1];
                 const dist = getDistanceFromLatLonInKm(lastPos.lat, lastPos.lng, latitude, longitude);
                 const timeDiffHours = (now - lastPos.time) / 3600000; 
@@ -98,10 +83,24 @@ export async function startWalkTracker() {
                 if (timeDiffHours > 0) {
                     const speedKmH = dist / timeDiffHours;
                     
-                    // Akceptujemy punkt dopiero, gdy uzbiera się > 3 metry ruchu
+                    // 🔥 WALIDACJA PUNKTU: Akceptujemy punkt dopiero, gdy uzbiera się > 3 metry i sensowna prędkość
                     if (dist > MIN_MOVE_KM && speedKmH < MAX_WALK_SPEED) { 
+                        
                         walkData.distanceKm += dist;
                         walkData.positions.push(currentPoint);
+                        
+                        // 🔥 ZMIANA: Rysowanie śladu NARESZCIE odbywa się po walidacji (a nie przed!)
+                        if (currentMap && window.L) {
+                            if (!activePolyline) {
+                                const allLatLngs = walkData.positions.map(p => [p.lat, p.lng]);
+                                activePolyline = window.L.polyline(allLatLngs, {
+                                    color: '#ff5252', weight: 6, opacity: 0.9, dashArray: '10, 10', lineJoin: 'round'
+                                }).addTo(currentMap);
+                            } else {
+                                if (!currentMap.hasLayer(activePolyline)) activePolyline.addTo(currentMap);
+                                activePolyline.addLatLng([latitude, longitude]);
+                            }
+                        }
                         
                         if (!walkData.lastSavedDbPos) {
                             walkData.pathForDb.push(currentPoint);
@@ -126,6 +125,18 @@ export async function startWalkTracker() {
                 walkData.positions.push(currentPoint);
                 walkData.pathForDb.push(currentPoint);
                 walkData.lastSavedDbPos = currentPoint;
+
+                // Rysowanie pierwszego punktu na mapie
+                if (currentMap && window.L) {
+                    if (!activePolyline) {
+                        activePolyline = window.L.polyline([[latitude, longitude]], {
+                            color: '#ff5252', weight: 6, opacity: 0.9, dashArray: '10, 10', lineJoin: 'round'
+                        }).addTo(currentMap);
+                    } else {
+                        if (!currentMap.hasLayer(activePolyline)) activePolyline.addTo(currentMap);
+                        activePolyline.addLatLng([latitude, longitude]);
+                    }
+                }
             }
         },
         (error) => { 
