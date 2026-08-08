@@ -6,8 +6,8 @@ let watchId = null;
 let wakeLock = null; 
 let activePolyline = null; 
 
-// 🔥 ZMIANY ZGODNE Z AUDYTEM (Restrykcyjna diagnostyka)
-const MAX_WALK_SPEED = 12; // km/h (Zmniejszone z 45, by wyciąć fałszywe skoki GPS)
+// Konfiguracja do testów polowych
+const MAX_WALK_SPEED = 12; // km/h
 const MIN_MOVE_KM = 0.003; // 3m
 const DB_SAVE_DIST = 0.01; // 10m
 
@@ -44,7 +44,6 @@ async function releaseWakeLock() {
     if (wakeLock !== null) { await wakeLock.release(); wakeLock = null; }
 }
 
-// START SPACERU
 export async function startWalkTracker() {
     if (walkData.isActive) return;
 
@@ -64,13 +63,13 @@ export async function startWalkTracker() {
             const { latitude, longitude, accuracy } = position.coords;
             const now = Date.now();
             
-            // Diagnostyka pierwszego punktu
-            if (window.Waggle && window.Waggle.showToast && walkData.positions.length === 0) {
-                window.Waggle.showToast(`📡 Namierzanie... Błąd: ${Math.round(accuracy)}m`);
-            }
+            // 🔥 DIAGNOSTYKA KONSULTANTA: Log każdego surowego odczytu
+            console.log('[WALK GPS RAW]', { lat: latitude, lng: longitude, accuracy: Math.round(accuracy), time: now });
 
-            // 🔥 ZMIANA: Odrzucamy błędy powyżej 30m (zamiast 80m)
-            if (accuracy > 30) return;
+            if (accuracy > 30) {
+                console.log('[WALK GPS REJECTED]', { reason: 'Słaba dokładność (>30m)', accuracy: Math.round(accuracy) });
+                return;
+            }
 
             const currentPoint = { lat: latitude, lng: longitude, time: now };
             const currentMap = (state.map && state.map.instance) || window.map || (window.Waggle && window.Waggle.map);
@@ -83,13 +82,19 @@ export async function startWalkTracker() {
                 if (timeDiffHours > 0) {
                     const speedKmH = dist / timeDiffHours;
                     
-                    // 🔥 WALIDACJA PUNKTU: Akceptujemy punkt dopiero, gdy uzbiera się > 3 metry i sensowna prędkość
                     if (dist > MIN_MOVE_KM && speedKmH < MAX_WALK_SPEED) { 
                         
                         walkData.distanceKm += dist;
                         walkData.positions.push(currentPoint);
                         
-                        // 🔥 ZMIANA: Rysowanie śladu NARESZCIE odbywa się po walidacji (a nie przed!)
+                        // 🔥 DIAGNOSTYKA KONSULTANTA: ZAAKCEPTOWANY PUNKT
+                        console.log('[WALK GPS ACCEPTED]', { 
+                            accuracy: Math.round(accuracy), 
+                            distance: dist, 
+                            speed: speedKmH, 
+                            totalDistance: walkData.distanceKm 
+                        });
+
                         if (currentMap && window.L) {
                             if (!activePolyline) {
                                 const allLatLngs = walkData.positions.map(p => [p.lat, p.lng]);
@@ -118,15 +123,24 @@ export async function startWalkTracker() {
 
                         const speedCounter = document.getElementById('walk-speed-counter');
                         if (speedCounter) speedCounter.innerText = speedKmH.toFixed(1);
+                        
+                    } else {
+                        // 🔥 DIAGNOSTYKA KONSULTANTA: ODRZUCONY ZE WZGLĘDU NA RUCH/PRĘDKOŚĆ
+                        console.log('[WALK GPS REJECTED]', { 
+                            reason: 'Limity ruchu/prędkości',
+                            distance_km: dist, 
+                            speed_kmh: speedKmH,
+                            accuracy: Math.round(accuracy)
+                        });
                     }
                 }
             } else {
-                // Zapis pierwszego punktu startowego (0.00 km)
                 walkData.positions.push(currentPoint);
                 walkData.pathForDb.push(currentPoint);
                 walkData.lastSavedDbPos = currentPoint;
 
-                // Rysowanie pierwszego punktu na mapie
+                console.log('[WALK GPS INITIALIZED]', { lat: latitude, lng: longitude, accuracy: Math.round(accuracy) });
+
                 if (currentMap && window.L) {
                     if (!activePolyline) {
                         activePolyline = window.L.polyline([[latitude, longitude]], {
@@ -146,7 +160,6 @@ export async function startWalkTracker() {
     );
 }
 
-// KONIEC SPACERU
 export async function stopWalkTracker() {
     if (!walkData.isActive) return;
     
@@ -163,10 +176,6 @@ export async function stopWalkTracker() {
     const durationMins = Math.round(durationMs / 60000);
     const finalDistance = parseFloat(walkData.distanceKm.toFixed(2));
     
-    if (window.Waggle && window.Waggle.showToast) {
-        window.Waggle.showToast(`🏁 Koniec spaceru! Dystans: ${finalDistance} km`);
-    }
-
     const currentUid = localStorage.getItem('activeDogId') || (auth.currentUser ? auth.currentUser.uid : null);
     
     if (currentUid && finalDistance > 0.05) { 
@@ -193,11 +202,8 @@ export async function stopWalkTracker() {
 
         } catch (err) {
             console.error("Błąd zapisu spaceru:", err);
-            if (window.Waggle && window.Waggle.showToast) window.Waggle.showToast("❌ Błąd zapisu spaceru.");
         }
-    } else if (currentUid && finalDistance <= 0.05) {
-        if (window.Waggle && window.Waggle.showToast) {
-            window.Waggle.showToast("Dystans poniżej 50 metrów. Trening nie został zapisany.");
-        }
+    } else {
+        console.log(`[WALK CANCELLED] Dystans zbyt krótki do zapisu (${finalDistance} km)`);
     }
 }
