@@ -218,6 +218,16 @@ export async function stopWalkTracker() {
                 totalWalkTime: fb.firestore.FieldValue.increment(durationMins)
             }, { merge: true });
 
+            // 🔥 NOWOŚĆ: Wysyłamy sygnał do aplikacji o udanym zapisie!
+            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            window.dispatchEvent(new CustomEvent('WAGGLE_WALK_COMPLETED', {
+                detail: { 
+                    distanceKm: finalDistance, 
+                    durationMinutes: durationMins,
+                    time: timeStr
+                }
+            }));
+
         } catch (err) {
             console.error("Błąd zapisu spaceru:", err);
         }
