@@ -25,16 +25,18 @@ export function initProfileUi() {
     document.addEventListener('click', async (e) => {
         
         // OTWIERANIE MODALU KARTY S.A.F.E.
-        if (e.target.closest('#openSafeSetupBtn') || e.target.closest('#openEmptySafeBtn')) {
+        if (e.target.closest('#openSafeSetupBtn') || e.target.closest('#openEmptySafeBtn') || e.target.closest('#editSafeBtn')) {
             const safeModal = document.getElementById('safe-setup-modal');
             if (safeModal) {
-                // Ładujemy dane TYLKO dla karty medycznej
+                // Ładujemy dane TYLKO dla karty medycznej (wraz z wagą i notatkami)
                 if(document.getElementById('setupChip')) document.getElementById('setupChip').value = state.profile?.chip || "";
                 if(document.getElementById('setupAllergies')) document.getElementById('setupAllergies').value = state.profile?.allergies || "";
                 if(document.getElementById('setupMeds')) document.getElementById('setupMeds').value = state.profile?.meds || "";
                 if(document.getElementById('setupVet')) document.getElementById('setupVet').value = state.profile?.vet || state.profile?.phone || "";
+                if(document.getElementById('setupWeight')) document.getElementById('setupWeight').value = state.profile?.weight || "";
+                if(document.getElementById('setupNotes')) document.getElementById('setupNotes').value = state.profile?.notes || "";
                 
-                safeModal.style.display = 'flex';
+                safeModal.style.display = 'block';
             }
         }
 
@@ -121,18 +123,24 @@ export function initProfileUi() {
             const newAllergies = document.getElementById('setupAllergies')?.value || "";
             const newMeds = document.getElementById('setupMeds')?.value || "";
             const newVet = document.getElementById('setupVet')?.value || "";
+            
+            // 🔥 Pobieramy nowe pola: waga i notatki
+            const newWeight = document.getElementById('setupWeight')?.value || "";
+            const newNotes = document.getElementById('setupNotes')?.value || "";
 
             btn.innerText = "Zapisywanie... ⏳";
             btn.disabled = true;
 
             try {
-                // Pakiet TYLKO z danymi medycznymi (Nie ruszamy imienia i rasy!)
+                // Pakiet TYLKO z danymi medycznymi (z wagą i notatkami)
                 const safeData = {
                     chip: newChip,
                     allergies: newAllergies,
                     meds: newMeds,
                     vet: newVet,
-                    phone: newVet // Synchronizacja dla starszych widoków
+                    phone: newVet, // Synchronizacja dla starszych widoków
+                    weight: newWeight,
+                    notes: newNotes
                 };
 
                 await db.collection("users").doc(state.user.uid).set(safeData, { merge: true }); 
