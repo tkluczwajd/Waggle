@@ -1,4 +1,5 @@
 // src/modules/chat/messageRenderer.js
+import { appState as state } from '../../core/state.js'; // 🔥 DODANE: Pobieramy globalny stan (potrzebny do chatId)
 
 export function renderChatMessages(messages, currentUid, isGroupChat = false) {
     let html = "";
@@ -8,8 +9,27 @@ export function renderChatMessages(messages, currentUid, isGroupChat = false) {
         const isMine = msg.sender === currentUid;
         const time = msg.time ? new Date(msg.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : "";
         
-        let contentHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" style="width:100%; border-radius:12px; margin-bottom:6px; display:block; cursor:pointer;" onclick="window.Waggle.openLightbox('${msg.imageUrl}')">` : "";
-        if(msg.text) contentHtml += `<div style="word-break: break-word;">${msg.text}</div>`;
+        let contentHtml = "";
+
+        if (msg.isDeleted) {
+            // 🔥 LOGIKA DLA USUNIĘTEJ WIADOMOŚCI
+            // Jeśli to mój dymek (zazwyczaj tło z kolorem), dajemy lekko przezroczysty biały. U innych - szary (text-muted)
+            const textColor = isMine ? 'rgba(255, 255, 255, 0.8)' : 'var(--text-muted)';
+            contentHtml = `<div style="font-style: italic; color: ${textColor}; font-size: 13px;">🚫 Ta wiadomość została usunięta</div>`;
+        } else {
+            // 🔥 LOGIKA DLA NORMALNEJ WIADOMOŚCI
+            contentHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" style="width:100%; border-radius:12px; margin-bottom:6px; display:block; cursor:pointer;" onclick="window.Waggle.openLightbox('${msg.imageUrl}')">` : "";
+            if(msg.text) contentHtml += `<div style="word-break: break-word;">${msg.text}</div>`;
+            
+            // 🔥 KOSZ DO USUWANIA (Tylko dla moich wiadomości)
+            if (isMine) {
+                const chatId = state.currentChatId; // Pobieramy ID aktualnie otwartego czatu
+                contentHtml += `
+                <div style="text-align: right; margin-top: 4px;">
+                    <button onclick="window.Waggle.deleteChatMessage('${chatId}', '${msg.id}')" style="background: none; border: none; font-size: 13px; opacity: 0.6; cursor: pointer; padding: 0; color: inherit; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" title="Usuń wiadomość">🗑️</button>
+                </div>`;
+            }
+        }
         
         const checkmark = isMine ? `<span style="font-size:11px; margin-left:2px; opacity:0.8;">✓</span>` : "";
         const timeHtml = `<div class="chat-time">${time} ${checkmark}</div>`;
@@ -19,7 +39,6 @@ export function renderChatMessages(messages, currentUid, isGroupChat = false) {
             const senderName = msg.senderName || "Piesek";
             const senderAvatar = msg.senderAvatar && msg.senderAvatar.trim() !== "" ? msg.senderAvatar : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150";
             
-            // 🔥 POPRAWKA: Dodane zdarzenie onclick, które otwiera kartę profilu psa ze stada
             senderIdentityHtml = `
             <div onclick="window.Waggle.showUserActionModal('${msg.sender}', '${senderName.replace(/'/g, "\\'")}', '${senderAvatar}')" 
                  style="display:flex; align-items:center; gap:6px; margin-bottom:4px; margin-left:4px; cursor:pointer; transition: opacity 0.2s;"
