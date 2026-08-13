@@ -131,13 +131,13 @@ window.addEventListener('WAGGLE_WALK_COMPLETED', (e) => {
     }
 });
 
-// 🔥 ROZWIĄZANIE PROBLEMU 2: Funkcja do pobierania statystyk i historii spacerów
-window.openJournalHistory = async () => {
-    const modal = document.getElementById('journal-history-modal');
-    const content = document.getElementById('journal-history-content');
+// 🔥 NOWOŚĆ: Dedykowana funkcja TYLKO do historii spacerów GPS
+window.openWalkHistory = async () => {
+    const modal = document.getElementById('walk-history-modal');
+    const content = document.getElementById('walk-history-content');
     
     if (modal) modal.style.display = 'flex';
-    if (content) content.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700; margin-top: 20px;">Ładowanie tras... ⏳</p>';
+    if (content) content.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700; margin-top: 20px;">Ładowanie tras GPS... ⏳</p>';
 
     try {
         const uid = localStorage.getItem('activeDogId') || (state.user ? state.user.uid : null);
@@ -157,12 +157,12 @@ window.openJournalHistory = async () => {
                 <div style="font-size: 36px; font-weight: 900; margin: 5px 0;">${state.profile?.totalDistance ? Number(state.profile.totalDistance).toFixed(2) : "0.00"} <span style="font-size: 18px;">km</span></div>
                 <div style="font-size: 13px; font-weight: 800; opacity: 0.9;">Podczas ${state.profile?.walkCount || 0} spacerów! 🐾</div>
             </div>
-            <h4 style="margin: 0 0 12px 0; font-size: 15px; color: var(--text-color); font-weight: 900;">Dziennik tras</h4>
+            <h4 style="margin: 0 0 12px 0; font-size: 15px; color: var(--text-color); font-weight: 900;">Zapisane trasy</h4>
         `;
 
         // Generowanie listy pojedynczych spacerów
         if (snap.empty) {
-            html += `<div style="text-align:center; padding: 20px; color: var(--text-muted); font-weight: 800; font-size: 13px;">Brak zapisanych tras. Czas wyjść z domu! 🐕</div>`;
+            html += `<div style="text-align:center; padding: 20px; color: var(--text-muted); font-weight: 800; font-size: 13px;">Brak zapisanych tras z GPS. Czas wyjść z domu! 🐕</div>`;
         } else {
             html += `<div style="display: flex; flex-direction: column; gap: 12px;">`;
             
@@ -171,7 +171,6 @@ window.openJournalHistory = async () => {
                 const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString('pl-PL') : "Brak daty";
                 const dist = data.distanceKm ? data.distanceKm.toFixed(2) : "0.00";
                 const dur = data.durationMinutes || 0;
-                // Wyliczamy średnią prędkość
                 const speed = dur > 0 ? (data.distanceKm / (dur / 60)).toFixed(1) : "0.0";
 
                 html += `
