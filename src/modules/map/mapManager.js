@@ -33,19 +33,20 @@ class MapManager {
             walks: L.layerGroup().addTo(this.map),
             alerts: L.layerGroup().addTo(this.map),
             // 🔥 TRIK: Usuwamy .addTo(this.map) z warstwy parks. Choinki znikną!
-            parks: L.layerGroup() 
+            parks: L.layerGroup(),
+            // 🔥 NOWOŚĆ: Warstwa na wyrysowane, historyczne trasy
+            history: L.layerGroup().addTo(this.map) 
         };
 
        console.log("🗺️ Map ready", this.map);
         // 🔥 Emitujemy sygnał, że mapa wstała i można centrować
         eventBus.emit('MAP_READY', this.map);
-    } // koniec funkcji init
+    } 
 
-    // 🔥 NOWOŚĆ: Funkcja aktualizująca puls na żywo
+    // Funkcja aktualizująca puls na żywo
     updatePulse() {
         const pulseWidget = document.getElementById('mapPulsCount');
         if (pulseWidget && this.layers.walks) {
-            // Zlicza ile znaczników spacerów jest obecnie w warstwie
             const activeDogs = this.layers.walks.getLayers().length;
             pulseWidget.innerText = activeDogs;
         }
@@ -54,14 +55,14 @@ class MapManager {
     addMarkerToLayer(layerName, marker) {
         if (this.layers[layerName]) {
             marker.addTo(this.layers[layerName]);
-            if (layerName === 'walks') this.updatePulse(); // Aktualizuj po dodaniu
+            if (layerName === 'walks') this.updatePulse(); 
         }
     }
 
     removeMarkerFromLayer(layerName, marker) {
         if (this.layers[layerName]) {
             this.layers[layerName].removeLayer(marker);
-            if (layerName === 'walks') this.updatePulse(); // Aktualizuj po usunięciu
+            if (layerName === 'walks') this.updatePulse(); 
         }
     }
 
@@ -84,6 +85,38 @@ class MapManager {
         if (this.map) {
             this.map.invalidateSize(true);
             console.log("🗺️ Map resized");
+        }
+    }
+
+    // ==========================================
+    // 🔥 RYSOWANIE HISTORYCZNEJ TRASY (KONSULTANT ZADANIE 10)
+    // ==========================================
+    drawHistoricalPath(pathArray) {
+        if (!this.map || !window.L || !pathArray || pathArray.length === 0) return;
+
+        // Czyścimy poprzednią wyrysowaną trasę z mapy
+        if (this.layers.history) {
+            this.layers.history.clearLayers();
+        }
+
+        // Konwertujemy obiekty JSON {lat, lng} na format Leafleta [lat, lng]
+        const latLngs = pathArray.map(point => [point.lat, point.lng]);
+
+        // Rysujemy piękną linię (używamy jasnoniebieskiego koloru by odróżnić od "aktywnego" spaceru)
+        const polyline = window.L.polyline(latLngs, {
+            color: '#3498db', 
+            weight: 6,
+            opacity: 0.9,
+            lineJoin: 'round'
+        }).addTo(this.layers.history);
+
+        // Automatyczne dopasowanie kamery do granic trasy!
+        this.map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+    }
+
+    clearHistoricalPath() {
+        if (this.layers.history) {
+            this.layers.history.clearLayers();
         }
     }
 }
