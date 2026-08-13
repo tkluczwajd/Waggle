@@ -1,3 +1,4 @@
+// src/services/chatService.js
 import { db, fb } from '../core/firebase.js';
 
 export function subscribeToInbox(uid, callback) {
@@ -27,10 +28,10 @@ export function searchUsersInDb(query, callback) {
 }
 
 export function subscribeToMessages(chatId, callback) {
-    // 🔥 POPRAWKA (AUDYT): Limitujemy pobieranie tylko do 50 najnowszych wiadomości!
+    // 🔥 POPRAWKA (AUDYT): Limitujemy pobieranie tylko do 200 najnowszych wiadomości!
     return db.collection("chats").doc(chatId).collection("messages")
         .orderBy("time", "desc") // Sortujemy od najnowszych
-        .limit(200)               // Sztywny szlaban Firebase
+        .limit(200)              // Sztywny szlaban Firebase
         .onSnapshot(snap => {
             let messages = [];
             snap.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
@@ -85,12 +86,14 @@ export async function saveMessageInDb(chatId, msg, partnerUid, partnerName, curr
         }, { merge: true });
     }
 }
+
 // Funkcja zerująca nasz licznik po wejściu w czat
 export function markChatAsRead(chatId, myUid) {
     return db.collection("chats").doc(chatId).set({
         [`unreadCount.${myUid}`]: 0
     }, { merge: true });
 }
+
 // ==========================================
 // TWORZENIE GRUPY (STADA) W BAZIE FIREBASE
 // ==========================================
@@ -111,4 +114,29 @@ export function createGroupInDb(groupName, usersArray, namesMap, avatarsMap) {
     }).then(() => {
         return groupId;
     });
+}
+
+// ==========================================
+// USUWANIE WIADOMOŚCI (Styl WhatsApp)
+// ==========================================
+export async function deleteChatMessage(chatId, messageId) {
+    try {
+        const msgRef = db.collection('chats').doc(chatId).collection('messages').doc(messageId);
+        
+        // Nadpisujemy treść i dodajemy flagę, zamiast usuwać cały dokument
+        await msgRef.update({
+            text: "🚫 Ta wiadomość została usunięta",
+            imageUrl: null, // Jeśli było zdjęcie, bezpowrotnie je kasujemy
+            isDeleted: true
+        });
+        
+        if (window.Waggle && window.Waggle.showToast) {
+            window.Waggle.showToast("Wiadomość usunięta.");
+        }
+    } catch (error) {
+        console.error("Błąd podczas usuwania wiadomości:", error);
+        if (window.Waggle && window.Waggle.showToast) {
+            window.Waggle.showToast("Nie udało się usunąć wiadomości.");
+        }
+    }
 }
