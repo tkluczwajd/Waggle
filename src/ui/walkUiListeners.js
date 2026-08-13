@@ -4,7 +4,6 @@ import { mapManager } from '../modules/map/mapManager.js';
 import { startWalkInDb, stopWalkInDb } from '../services/walkService.js'; 
 import { startWalkTracker, stopWalkTracker } from '../modules/walkTracker.js';
 import { updateStatsUI } from './uiHelpers.js';
-// 🔥 NOWOŚĆ: Importujemy bazę danych, żeby móc pobrać historię spacerów!
 import { db } from '../core/firebase.js';
 
 export function initWalkUi() {
@@ -18,16 +17,13 @@ export function initWalkUi() {
             } 
         }
         
-        // 🔥 ROZWIĄZANIE PROBLEMU 1: Kliknięcie w zakładkę "Mapa" w dolnym menu
+        // ROZWIĄZANIE PROBLEMU: Kliknięcie w zakładkę "Mapa" w dolnym menu
         const mapTabBtn = e.target.closest('[data-view="local"]');
         if (mapTabBtn) {
-            // Dajemy przeglądarce 300 milisekund, żeby zdążyła pokazać mapę na ekranie
             setTimeout(() => {
-                // 1. Odświeżamy silnik mapy (naprawia "szare tło" po zmianie zakładki)
                 if (state.map && state.map.instance) {
                     state.map.instance.invalidateSize(); 
                 }
-                // 2. Jeśli jesteśmy w trakcie spaceru - automatycznie centrujemy na GPS!
                 if (state.isWalking && state.location.lat && state.location.lng) {
                     mapManager.flyTo(state.location.lat, state.location.lng, 17);
                 }
@@ -131,7 +127,7 @@ window.addEventListener('WAGGLE_WALK_COMPLETED', (e) => {
     }
 });
 
-// 🔥 NOWOŚĆ: Dedykowana funkcja TYLKO do historii spacerów GPS
+// 🔥 Dedykowana funkcja TYLKO do historii spacerów GPS
 window.openWalkHistory = async () => {
     const modal = document.getElementById('walk-history-modal');
     const content = document.getElementById('walk-history-content');
@@ -149,6 +145,10 @@ window.openWalkHistory = async () => {
             .orderBy('timestamp', 'desc')
             .limit(20)
             .get();
+
+        // 🔥 Globalny schowek na trasy (żeby mapa wiedziała, co rysować)
+        window.Waggle = window.Waggle || {};
+        window.Waggle.loadedWalkPaths = {};
 
         // Górny pasek ze statystykami łącznymi (Total)
         let html = `
@@ -168,23 +168,33 @@ window.openWalkHistory = async () => {
             
             snap.forEach(doc => {
                 const data = doc.data();
+                
+                // Zapisujemy trasę do schowka pod ID dokumentu
+                window.Waggle.loadedWalkPaths[doc.id] = data.path || [];
+
                 const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString('pl-PL') : "Brak daty";
                 const dist = data.distanceKm ? data.distanceKm.toFixed(2) : "0.00";
                 const dur = data.durationMinutes || 0;
                 const speed = dur > 0 ? (data.distanceKm / (dur / 60)).toFixed(1) : "0.0";
 
                 html += `
-                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="font-size: 24px; background: rgba(52, 172, 224, 0.1); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">🗺️</div>
-                            <div>
-                                <div style="font-weight: 900; color: var(--text-color); font-size: 16px; margin-bottom: 2px;">${dist} km</div>
-                                <div style="color: var(--text-muted); font-size: 12px; font-weight: 800;">⏱️ ${dur} min • ⚡ ${speed} km/h</div>
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div style="font-size: 24px; background: rgba(52, 172, 224, 0.1); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">🗺️</div>
+                                <div>
+                                    <div style="font-weight: 900; color: var(--text-color); font-size: 16px; margin-bottom: 2px;">${dist} km</div>
+                                    <div style="color: var(--text-muted); font-size: 12px; font-weight: 800;">⏱️ ${dur} min • ⚡ ${speed} km/h</div>
+                                </div>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 11px; font-weight: 900; background: #f8f9fa; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--border-color);">
+                                ${date}
                             </div>
                         </div>
-                        <div style="color: var(--text-muted); font-size: 11px; font-weight: 900; background: #f8f9fa; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--border-color);">
-                            ${date}
-                        </div>
+                        <!-- 🔥 NOWY PRZYCISK: Pokazuje trasę na mapie! -->
+                        <button onclick="window.Waggle.showWalkOnMap('${doc.id}')" style="width: 100%; background: var(--secondary); color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(52, 172, 224, 0.2);">
+                            ZOBACZ NA MAPIE 📍
+                        </button>
                     </div>
                 `;
             });
@@ -196,4 +206,28 @@ window.openWalkHistory = async () => {
         console.error("Błąd ładowania historii:", err);
         content.innerHTML = '<p style="text-align: center; color: var(--danger); font-size: 13px; font-weight: 800;">Nie udało się załadować tras.</p>';
     }
+};
+
+// 🔥 FUNKCJA WYWOŁUJĄCA RYSOWANIE TRASY NA MAPIE
+window.Waggle.showWalkOnMap = (walkId) => {
+    const path = window.Waggle.loadedWalkPaths[walkId];
+    if (!path || path.length === 0) {
+        if (window.Waggle.showToast) window.Waggle.showToast("Brak pełnych danych GPS dla tego spaceru.");
+        return;
+    }
+
+    // Zamknij okno historii
+    const modal = document.getElementById('walk-history-modal');
+    if (modal) modal.style.display = 'none';
+    
+    // Przełącz na zakładkę z mapą
+    const mapTab = document.querySelector('.bottom-nav [data-view="local"]');
+    if (mapTab) mapTab.click();
+
+    // Dajemy mapie chwilę na załadowanie na ekran, po czym każemy narysować trasę
+    setTimeout(() => {
+        if (mapManager && typeof mapManager.drawHistoricalPath === 'function') {
+            mapManager.drawHistoricalPath(path);
+        }
+    }, 350);
 };
