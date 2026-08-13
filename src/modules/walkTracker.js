@@ -7,7 +7,7 @@ let wakeLock = null;
 let activePolyline = null; 
 
 // Konfiguracja do testów polowych
-const MAX_WALK_SPEED = 12; // km/h
+const MAX_WALK_SPEED = 200; // km/h
 const MIN_MOVE_KM = 0.003; // 3m
 const DB_SAVE_DIST = 0.01; // 10m
 
