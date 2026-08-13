@@ -1,6 +1,9 @@
+// src/ui/chatUiListeners.js
 import { searchUsers, sendMessage, loadInbox, handleChatImageSelect } from '../modules/chat/chatListeners.js';
 import { appState as state } from '../core/state.js';
 import { mapManager } from '../modules/map/mapManager.js'; // 🔥 DODANY IMPORT MAPY
+// 🔥 DODANY IMPORT DO USUWANIA WIADOMOŚCI
+import { deleteChatMessage } from '../services/chatService.js';
 
 export function initChatUi() {
     // 1. Nasłuchiwacz wpisywania (wyszukiwanie użytkowników)
@@ -129,6 +132,13 @@ window.Waggle.openLightbox = (url) => {
 window.Waggle.openInbox = () => {
     const chatTab = document.querySelector('[data-view="chat"]');
     if (chatTab) chatTab.click();
+};
+
+// 🔥 NOWA FUNKCJA: Usuwanie wiadomości z czatu (zabezpieczone alertem)
+window.Waggle.deleteChatMessage = (chatId, msgId) => {
+    if (confirm("Czy na pewno chcesz usunąć tę wiadomość?")) {
+        deleteChatMessage(chatId, msgId);
+    }
 };
 
 // 🔥 NAPRAWIONA FUNKCJA Z PRAWIDŁOWYM ODLOTEM (flyTo) KAMERY
