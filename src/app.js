@@ -12,7 +12,6 @@ import { db } from './core/firebase.js';
 import { NotificationEngine } from './services/notificationEngine.js';
 import { UserRepository } from './data/userRepository.js';
 import { WalkRepository } from './data/walkRepository.js';
-import { App } from '@capacitor/app';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
