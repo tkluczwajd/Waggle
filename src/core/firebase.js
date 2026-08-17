@@ -14,20 +14,19 @@ if (!firebase.apps.length) {
 
 const db = firebase.firestore();
 
-// 🔥 NOWOCZESNE USTAWIENIA CACHE (Lekarstwo na Lie-Fi i czysta konsola)
-try {
-    db.settings({
-        // Wdrażamy nowy, agresywny system pamięci offline.
-        // Jeśli telefon ma 1 kreskę zasięgu (Lie-Fi), apka natychmiast pokaże dane z cache,
-        // a dopiero w tle spróbuje je zsynchronizować z serwerem.
-        cache: firebase.firestore.persistentLocalCache({
-            tabManager: firebase.firestore.persistentMultipleTabManager(),
-            cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-        })
+// 🔥 WŁĄCZENIE TRYBU OFFLINE (Lekarstwo na Lie-Fi dla API Compat)
+// Apka natychmiast pokaże dane z cache, a dopiero w tle spróbuje je 
+// zsynchronizować z serwerem, rozwiązując problem z "wiszącym" zasięgiem.
+db.enablePersistence({ synchronizeTabs: true })
+    .catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.warn("Offline: Wiele kart otwartych, działa tylko w jednej.");
+        } else if (err.code === 'unimplemented') {
+            console.warn("Offline: Przeglądarka nie wspiera persystencji bazy.");
+        } else {
+            console.warn("Offline: Błąd trybu offline: ", err);
+        }
     });
-} catch (e) {
-    console.warn("Firestore już skonfigurowany:", e.message);
-}
 
 export { db };
 export const auth = firebase.auth();
