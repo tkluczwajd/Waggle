@@ -9,6 +9,60 @@
     <link rel="stylesheet" href="style.css?v=premium">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2d3436">
+
+<style>
+    /* =========================================================
+       WAGGLE MOBILE / CAPACITOR SAFE AREA
+       Android Edge-to-Edge / Capacitor 8
+       ---------------------------------------------------------
+       Capacitor injects these variables at runtime:
+       --safe-area-inset-top
+       --safe-area-inset-right
+       --safe-area-inset-bottom
+       --safe-area-inset-left
+
+       Do NOT use hard-coded 35px / 20px / 75px values here.
+    ========================================================= */
+    :root {
+        --safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+        --safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+        --safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+        --safe-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+    }
+
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #ffffff !important;
+    }
+
+    /* Safe-area jest obsługiwane centralnie w style.css.
+       Nie dodajemy padding-top do całego kontenera. */
+
+    .sticky-header {
+        top: 0 !important;
+        background-color: #ffffff !important;
+        z-index: 1000;
+    }
+
+    /* =========================================================
+       MAPA
+       ========================================================= */
+    #view-local,
+    #view-map,
+    [data-view="local"] {
+        padding-bottom: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Panel startu spaceru pozostaje nad dolną krawędzią mapy.
+       Ponieważ #view-map kończy się przed bottom-nav, nie trzeba
+       już odejmować 75px / 85px ręcznie. */
+    #walk-setup-panel {
+        bottom: 20px !important;
+    }
+
+</style>
 </head>
 <body>
     <div id="loader" style="position:fixed; inset:0; z-index:30000; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:32px;">Waggle🐾</div>
@@ -322,7 +376,7 @@
             <div id="map"></div>
         </section>
 
-        <section id="view-places" class="view-section" style="height: 100%; background: #f8f9fa; overflow-y: auto;">
+        <section id="view-places" class="view-section">
             <div style="background: linear-gradient(rgba(44, 62, 80, 0.8), rgba(44, 62, 80, 0.8)), url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80') center/cover; padding: 40px 20px 20px 20px; color: white; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
                 <h2 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px;">Odkrywaj <span style="color: var(--secondary);">Miejsca</span></h2>
                 <p style="margin: 5px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.9;">Najlepsze psie miejscówki w Twojej okolicy.</p>
@@ -343,10 +397,10 @@
                     <div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 40px; font-weight: 700;">Ładowanie miejscówek... ⏳</div>
                 </div>
             </div>
-            <button onclick="alert('Wkrótce: Formularz dodawania nowej miejscówki!')" style="position: fixed; bottom: 85px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border: none; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4); cursor: pointer; z-index: 1000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
+            <button class="floating-action-btn floating-action-btn--places" onclick="alert('Wkrótce: Formularz dodawania nowej miejscówki!')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
         </section>
 
-        <section id="view-community" class="view-section" style="height: 100%; background: #f8f9fa; overflow-y: auto;">    
+        <section id="view-community" class="view-section">    
             <div class="sticky-header" style="background: white; padding: 20px 20px 10px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 10; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                     <div>
@@ -368,7 +422,7 @@
                 <div style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 700; margin-top: 20px;">Ładowanie tablicy... ⏳</div>
             </div>
 
-            <button onclick="document.getElementById('post-creator-modal').style.display='flex'" style="position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border: none; border-radius: 50%; font-size: 32px; font-weight: 300; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4); cursor: pointer; z-index: 1000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
+            <button class="floating-action-btn floating-action-btn--community" onclick="document.getElementById('post-creator-modal').style.display='flex'" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
         </section>
 
         <section id="view-chat" class="view-section">
@@ -412,7 +466,7 @@
         </nav>
 
         <div id="more-menu-modal" class="modal" onclick="if(event.target===this) this.style.display='none'">
-        <div class="card" style="padding: 0; overflow: hidden; background: var(--bg-color); width: 90%; max-width: 400px; border-radius: 24px; position: absolute; bottom: 100px;">
+        <div class="card" style="padding: 0; overflow: hidden; background: var(--bg-color); width: 90%; max-width: 400px; border-radius: 24px; position: absolute;">
             <div style="background: var(--panel-bg); padding: 20px; text-align: left; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin: 0; font-size: 18px; font-weight: 900; color: var(--text-color);">Eksploruj Waggle</h3>
                 <button class="close-modal-btn" onclick="document.getElementById('more-menu-modal').style.display='none'" style="position: relative; top: 0; right: 0;">✕</button>
@@ -524,7 +578,7 @@
         </div>
     </div>
 
-    <div id="group-creator-modal" class="modal" style="z-index: 10000;">
+    <div id="group-creator-modal" class="modal">
         <div class="card" style="display: flex; flex-direction: column; max-height: 80vh; background: var(--bg-color);">
             <button class="close-modal-btn" onclick="document.getElementById('group-creator-modal').style.display='none'">✕</button>
             <h3 style="margin-top: 0; font-size: 22px; color: var(--text-color);">Załóż nowe Stado</h3>
