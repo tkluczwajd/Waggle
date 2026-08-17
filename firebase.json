@@ -1,14 +1,25 @@
-{
-  "functions": {
-    "source": "functions"
-  },
-  "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**",
-      "functions/**"
-    ]
-  }
+// src/core/firebase.js
+const firebaseConfig = { 
+    apiKey: "AIzaSyA7CSlyOLzbz2LpO0C-KqaZQ0U_OrNqBcg", 
+    authDomain: "waggle-app-31ffa.firebaseapp.com", 
+    projectId: "waggle-app-31ffa", 
+    storageBucket: "waggle-app-31ffa.firebasestorage.app", 
+    messagingSenderId: "711707392068", 
+    appId: "1:711707392068:web:b81c7e0714cfe24dd1e411" 
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
 }
+
+const db = firebase.firestore();
+
+// Włączenie trybu offline (bez synchronizeTabs dla aplikacji mobilnej)
+db.enablePersistence()
+    .catch((err) => {
+        console.warn("Offline: Błąd trybu offline: ", err);
+    });
+
+export { db };
+export const auth = firebase.auth();
+export const fb = firebase;
