@@ -12,6 +12,7 @@ import { db } from './core/firebase.js';
 import { NotificationEngine } from './services/notificationEngine.js';
 import { UserRepository } from './data/userRepository.js';
 import { WalkRepository } from './data/walkRepository.js';
+import { App } from '@capacitor/app';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -734,3 +735,74 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 };
+function initWaggleAndroidUX() {
+    // ----------------------------------------------------
+    // ROZWIĄZANIE PROBLEMU A: KLAWIATURA (IME) VS BOTTOM-NAV
+    // ----------------------------------------------------
+    function updateKeyboardState() {
+        if (!window.visualViewport) return;
+        
+        const vv = window.visualViewport;
+        // Jeśli viewport skurczył się o ponad 150px, zakładamy otwarcie klawiatury.
+        // Dotyczy szczególnie urządzeń takich jak Samsung Galaxy S23 Ultra.
+        const isKeyboardVisible = (window.innerHeight - vv.height) > 150;
+        
+        document.body.classList.toggle('keyboard-open', isKeyboardVisible);
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateKeyboardState);
+        window.visualViewport.addEventListener('scroll', updateKeyboardState);
+    }
+    window.addEventListener('resize', updateKeyboardState);
+    
+    // Inicjalizacyjne sprawdzenie stanu
+    updateKeyboardState();
+
+    // ----------------------------------------------------
+    // ROZWIĄZANIE PROBLEMU B: HIERARCHIA ANDROID BACK
+    // ----------------------------------------------------
+    App.addListener('backButton', async () => {
+        // 1. Lightbox (powiększenie zdjęcia z tablicy)
+        const lightbox = document.getElementById('lightbox-modal');
+        if (lightbox && lightbox.style.display !== 'none') {
+            lightbox.style.display = 'none';
+            return;
+        }
+
+        // 2. Modale (Eksploruj Waggle, Załóż Stado itp.) - Zamykamy najwyższy widoczny
+        const openModals = Array.from(document.querySelectorAll('.modal'))
+            .filter(modal => window.getComputedStyle(modal).display !== 'none')
+            .sort((a, b) => {
+                const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
+                const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
+                return zB - zA; // Sortowanie malejące
+            });
+
+        if (openModals.length > 0) {
+            openModals[0].style.display = 'none';
+            return;
+        }
+
+        // 3. Klawiatura
+        if (document.body.classList.contains('keyboard-open')) {
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+            return;
+        }
+
+        // 4. Podwidoki - Jeśli nie jesteśmy na Home, wracamy do ekranu głównego
+        const homeBtn = document.querySelector('.nav-item[data-view="home"]');
+        if (homeBtn && !homeBtn.classList.contains('active')) {
+            homeBtn.click();
+            return;
+        }
+
+        // 5. Ostatnia deska ratunku - minimalizacja na Home (Zamiast ubijać jak S9+)
+        await App.minimizeApp();
+    });
+}
+
+// Inicjalizacja przy załadowaniu DOM
+document.addEventListener('DOMContentLoaded', initWaggleAndroidUX);
