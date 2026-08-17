@@ -804,3 +804,22 @@ function initWaggleAndroidUX() {
 
 // Inicjalizacja przy załadowaniu DOM
 document.addEventListener('DOMContentLoaded', initWaggleAndroidUX);
+
+// ============================================================================
+// 🚨 AWARYJNY FAIL-SAFE DLA EKRANU ŁADOWANIA
+// ============================================================================
+window.addEventListener('load', () => {
+    const loader = document.getElementById('loader');
+    if (loader) {
+        // Dajemy aplikacji 1.5 sekundy na naturalne załadowanie bazy danych.
+        // Jeśli po tym czasie ekran wciąż wisi, zdejmujemy go awaryjnie.
+        setTimeout(() => {
+            if (window.getComputedStyle(loader).display !== 'none') {
+                console.warn("[Waggle] Awaryjne ukrycie loadera.");
+                loader.style.transition = 'opacity 0.5s ease';
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }
+        }, 1500);
+    }
+});
