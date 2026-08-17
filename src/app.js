@@ -740,14 +740,15 @@ document.addEventListener("visibilitychange", () => {
 // ============================================================================
 // 📱 NATYWNA OBSŁUGA ANDROID UX & CAPACITOR (Klawiatura IME & Przycisk BACK)
 // ============================================================================
+/* TYMCZASOWO WYŁĄCZONE DO TESTÓW (Brak pakietu @capacitor/app)
 function initWaggleAndroidUX() {
     // 1. KLAWIATURA (IME) VS BOTTOM-NAV
     function updateKeyboardState() {
         if (!window.visualViewport) return;
-        
+
         const vv = window.visualViewport;
         const isKeyboardVisible = (window.innerHeight - vv.height) > 150;
-        
+
         document.body.classList.toggle('keyboard-open', isKeyboardVisible);
     }
 
@@ -803,6 +804,7 @@ function initWaggleAndroidUX() {
 
 // Inicjalizacja przy załadowaniu DOM
 document.addEventListener('DOMContentLoaded', initWaggleAndroidUX);
+*/
 
 // ============================================================================
 // 🚨 AWARYJNY FAIL-SAFE DLA EKRANU ŁADOWANIA
@@ -810,8 +812,6 @@ document.addEventListener('DOMContentLoaded', initWaggleAndroidUX);
 window.addEventListener('load', () => {
     const loader = document.getElementById('loader');
     if (loader) {
-        // Dajemy aplikacji 1.5 sekundy na naturalne załadowanie bazy danych.
-        // Jeśli po tym czasie ekran wciąż wisi, zdejmujemy go awaryjnie.
         setTimeout(() => {
             if (window.getComputedStyle(loader).display !== 'none') {
                 console.warn("[Waggle] Awaryjne ukrycie loadera.");
