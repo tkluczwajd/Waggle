@@ -1,5 +1,5 @@
 // service-worker.js
-const CACHE_NAME = 'waggle-capacitor-v1';
+const CACHE_NAME = 'waggle-capacitor-v3';
 
 // 1. INSTALACJA
 self.addEventListener('install', (event) => {
@@ -7,13 +7,12 @@ self.addEventListener('install', (event) => {
     console.log('[Service Worker] Zainstalowano wersję dla Capacitor APK');
 });
 
-// 2. AKTYWACJA - Czyścimy wszystkie stare, przeglądarkowe cache'e, które mogły zepsuć start
+// 2. AKTYWACJA - Czyścimy wszystkie stare cache
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cache) => {
-                    console.log('[Service Worker] Usuwam stary cache PWA:', cache);
                     return caches.delete(cache);
                 })
             );
@@ -25,15 +24,7 @@ self.addEventListener('activate', (event) => {
 
 // 3. POBIERANIE - Całkowity "Bypass" dla Capacitora
 self.addEventListener('fetch', (event) => {
-    // W środowisku Capacitor pliki serwowane są lokalnie (http://localhost).
-    // Nie robimy ŻADNEGO cache'owania plików HTML/JS/CSS, pozwalamy,
-    // aby silnik WebView ładował je prosto z dysku telefonu z prędkością światła.
-    
-    // Jeśli zapytanie idzie do zewnętrznego API (np. zdjęcia), puszczamy je normalnie.
-    event.respondWith(fetch(event.request).catch(() => {
-        console.warn("[SW] Brak sieci dla zapytania zewnętrznego:", event.request.url);
-        // Jeśli padnie sieć na np. pobieraniu awatara z zewnętrznego serwera, 
-        // apka się nie zawiesi, tylko wyświetli błąd w konsoli.
-        return new Response(null, { status: 404 });
-    }));
+    // Zwracamy "pustkę". Nie przechwytujemy zapytań.
+    // Dzięki temu Capacitor ładuje wszystkie pliki HTML/JS natywnie z dysku.
+    return;
 });
