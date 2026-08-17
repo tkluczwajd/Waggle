@@ -72,12 +72,19 @@ html, body {
     font-size: var(--base-font-size); overflow: hidden; color: var(--text-color);
 }
 
-.screen-container { 
-    width: 100%; max-width: 480px; margin: 0 auto;
-    background: var(--bg-color); position: fixed; inset: 0; 
-    overflow: hidden; display: none; flex-direction: column; 
-    box-shadow: 0 0 50px rgba(0,0,0,0.1); 
+.screen-container {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--bg-color);
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 0 50px rgba(0,0,0,0.1);
     z-index: 100;
+    box-sizing: border-box;
 }
 
 /* FIX: Zapewnienie, że widoczny ekran jest na wierzchu i reaguje na kliknięcia */
@@ -112,11 +119,29 @@ html, body {
 .auth-card { background: var(--panel-bg); border-radius: 30px; padding: 40px 30px; width: 85%; box-sizing: border-box; box-shadow: var(--soft-shadow); text-align: center; display: flex; flex-direction: column; pointer-events: auto; }
 .logo-title { font-size: 55px; color: var(--primary); font-weight: 900; margin: 0 0 5px 0; letter-spacing: -2px; }
 
-.view-section { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - var(--nav-height)); display: none; background: var(--bg-color); overflow-y: auto; z-index: 10; padding-bottom: 20px;}
+.view-section {
+    position: absolute;
+    top: var(--safe-top);
+    left: 0;
+    width: 100%;
+    height: calc(100% - var(--safe-top) - var(--nav-height) - var(--safe-bottom));
+    display: none;
+    background: var(--bg-color);
+    overflow-y: auto;
+    z-index: 10;
+    padding-bottom: 20px;
+    box-sizing: border-box;
+    overscroll-behavior: contain;
+}
 .view-section.active { display: block; z-index: 20; }
 .sticky-header { padding: 20px; background: var(--panel-bg); position: sticky; top: 0; z-index: 100; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
 
-#view-map { z-index: 5; background: transparent; overflow: hidden; padding-bottom: 0;}
+#view-map {
+    z-index: 5;
+    background: transparent;
+    overflow: hidden;
+    padding-bottom: 0 !important;
+}
 #view-map.active { display: flex !important; z-index: 25; }
 #map { position: absolute; inset: 0; z-index: 1; }
 #map-ui-layer { position: absolute; inset: 0; z-index: 1000; pointer-events: none; } 
@@ -137,7 +162,22 @@ html, body {
 .map-ctrl-btn.danger { background: var(--danger); color: white; }
 #walk-setup-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; background: var(--panel-bg); border-radius: 28px; padding: 18px; box-shadow: var(--soft-shadow); box-sizing: border-box;}
 
-.bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: var(--nav-height); background: var(--panel-bg); display: flex; justify-content: space-around; align-items: center; z-index: 999999; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); border-radius: 30px 30px 0 0; pointer-events: auto; }
+.bottom-nav {
+    position: absolute;
+    left: 0;
+    bottom: var(--safe-bottom);
+    width: 100%;
+    height: var(--nav-height);
+    background: var(--panel-bg);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 999999;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+    border-radius: 30px 30px 0 0;
+    pointer-events: auto;
+    box-sizing: border-box;
+}
 .nav-item { cursor: pointer; flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); font-size: 11px; font-weight: 800; transition: 0.2s; border: none; background: none;}
 .nav-item.active { color: var(--primary); transform: translateY(-3px); }
 
@@ -442,4 +482,127 @@ body {
     #chat-window {
         padding-bottom: 10px !important; /* Gdy klawiatura jest wysunięta, pasek nawigacji zwykle znika, więc zmniejszamy margines */
     }
+}
+
+
+/* =========================================================
+   WAGGLE MOBILE SAFE AREA / CAPACITOR OVERRIDES
+   Jedno źródło prawdy dla Android Edge-to-Edge.
+   Nie używać tutaj wartości 35/75/85px jako zamiennika safe-area.
+========================================================= */
+:root {
+    --safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+    --safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+    --safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+    --safe-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+}
+
+.floating-action-btn {
+    position: fixed !important;
+    right: 20px !important;
+    bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px) !important;
+    width: 60px;
+    height: 60px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 32px;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+    cursor: pointer;
+    z-index: 10000;
+    transition: transform 0.2s;
+}
+
+.floating-action-btn--places {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+}
+
+.floating-action-btn--community {
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+}
+
+/* Na mapie panel startu jest liczony względem obszaru mapy,
+   który już nie obejmuje dolnego menu. */
+#walk-setup-panel {
+    bottom: 20px !important;
+}
+
+/* Map view ma dokładnie ten sam obszar co pozostałe widoki,
+   ale bez scrollowania. */
+#view-map,
+#view-local {
+    top: var(--safe-top) !important;
+    height: calc(100% - var(--safe-top) - var(--nav-height) - var(--safe-bottom)) !important;
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+}
+
+@supports not (height: 100dvh) {
+    /* Capacitor dostarcza wartości safe-area; fallback pozostaje
+       na klasycznym 100% kontenera. */
+}
+
+
+/* =========================================================
+   WAGGLE — Android mobile UI final layout patch
+   ---------------------------------------------------------
+   Poprawione selektory i responsywność dla IME
+   ========================================================= */
+
+/* 1. Dolna nawigacja */
+.bottom-nav {
+    z-index: 99999 !important;
+}
+
+/* KLAWIATURA: Jeśli body dostanie flagę otwartej klawiatury, ukrywamy menu dolne */
+body.keyboard-open .bottom-nav {
+    display: none !important;
+}
+
+/* 2. Menu "Eksploruj Waggle" (POPRAWIONE ID: #more-menu-modal) */
+#more-menu-modal {
+    z-index: 100001 !important;
+}
+#more-menu-modal .card {
+    /* Automatycznie pozycjonuje się tuż nad paskiem nav, uwzględniając bezpieczne strefy */
+    bottom: calc(var(--nav-height, 80px) + var(--safe-bottom, 0px) + 12px) !important;
+    max-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - var(--nav-height, 80px) - 24px) !important;
+    overflow-y: auto;
+}
+
+/* 3. Modal "Załóż nowe Stado" (Musi być wyżej niż pasek i eksploruj) */
+#group-creator-modal {
+    z-index: 100002 !important;
+    padding-top: var(--safe-top, 0px);
+    padding-bottom: var(--safe-bottom, 0px);
+    box-sizing: border-box;
+}
+
+#group-creator-modal .card {
+    max-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 24px);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Lista członków wewnątrz stada musi przejmować scroll, aby nie ucięło przycisku */
+#groupUsersList {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Przycisk utwórz musi być zawsze na wierzchu i osiągalny na małych ekranach */
+#confirmCreateGroupBtn {
+    position: relative;
+    z-index: 100003 !important;
+    flex-shrink: 0;
+    margin-top: auto;
 }
