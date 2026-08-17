@@ -12,6 +12,7 @@ import { db } from './core/firebase.js';
 import { NotificationEngine } from './services/notificationEngine.js';
 import { UserRepository } from './data/userRepository.js';
 import { WalkRepository } from './data/walkRepository.js';
+import { App } from '@capacitor/app';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -740,7 +741,7 @@ document.addEventListener("visibilitychange", () => {
 // ============================================================================
 // 📱 NATYWNA OBSŁUGA ANDROID UX & CAPACITOR (Klawiatura IME & Przycisk BACK)
 // ============================================================================
-/* TYMCZASOWO WYŁĄCZONE DO TESTÓW (Brak pakietu @capacitor/app)
+// TYMCZASOWO WYŁĄCZONE DO TESTÓW (Brak pakietu @capacitor/app)
 function initWaggleAndroidUX() {
     // 1. KLAWIATURA (IME) VS BOTTOM-NAV
     function updateKeyboardState() {
@@ -804,7 +805,6 @@ function initWaggleAndroidUX() {
 
 // Inicjalizacja przy załadowaniu DOM
 document.addEventListener('DOMContentLoaded', initWaggleAndroidUX);
-*/
 
 // ============================================================================
 // 🚨 AWARYJNY FAIL-SAFE DLA EKRANU ŁADOWANIA
