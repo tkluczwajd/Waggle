@@ -1,10 +1,28 @@
 // service-worker.js
-const CACHE_NAME = 'waggle-cache-v1'; // Zmiana nazwy wymusi odświeżenie cache u użytkowników
+const CACHE_NAME = 'waggle-cache-v2'; // Wymuszamy aktualizację u użytkowników
 
-// 1. INSTALACJA - Od razu wymuszamy nową wersję
+// 0. APP SHELL - Pliki krytyczne, które MUSZĄ być dostępne natychmiast z pamięci urządzenia
+const APP_SHELL = [
+    '/',
+    '/index.html',
+    '/style.css?v=premium',
+    '/src/app.js?v=1009',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+];
+
+// 1. INSTALACJA - Wymuszamy pre-caching szkieletu aplikacji
 self.addEventListener('install', (event) => {
     self.skipWaiting(); 
     console.log('[Service Worker] Zainstalowano wersję:', CACHE_NAME);
+    
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            console.log('[Service Worker] Zapisywanie App Shell do pracy offline...');
+            // addAll wymusza pobranie i zapisanie plików z tablicy w cache
+            return cache.addAll(APP_SHELL); 
+        })
+    );
 });
 
 // 2. AKTYWACJA - Czyszczenie starego Cache'u
@@ -25,7 +43,7 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// 3. POBIERANIE - Strategia Stale-While-Revalidate
+// 3. POBIERANIE - Strategia Stale-While-Revalidate (Cache First, Network w tle)
 self.addEventListener('fetch', (event) => {
     
     // Ignorujemy zapytania inne niż GET oraz API Firebase/Google
@@ -36,23 +54,23 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.match(event.request).then((cachedResponse) => {
-                
-                // Tworzymy zapytanie sieciowe w tle (do odświeżenia cache)
-                const fetchPromise = fetch(event.request).then((networkResponse) => {
-                    if (networkResponse && networkResponse.status === 200) {
+        caches.match(event.request).then((cachedResponse) => {
+            
+            // Tworzymy zapytanie sieciowe w tle (do odświeżenia cache na przyszłość)
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
+                    caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, networkResponse.clone());
-                    }
-                    return networkResponse;
-                }).catch((e) => {
-                    console.warn("[SW] Background update failed (tryb offline):", e);
-                });
-
-                // Zwracamy odpowiedź z cache natychmiast (Stale), 
-                // lub czekamy na sieć jeśli w cache jeszcze nie ma pliku
-                return cachedResponse || fetchPromise;
+                    });
+                }
+                return networkResponse;
+            }).catch((e) => {
+                console.warn("[SW] Odrzucono request w tle (brak zasięgu). Praca na cache.");
             });
+
+            // ZWRACAMY CACHED RESPONSE NATYCHMIAST (Brak białego ekranu!)
+            // Jeśli z jakiegoś powodu go nie ma, dopiero wtedy czekamy na sieć
+            return cachedResponse || fetchPromise;
         })
     );
 });
