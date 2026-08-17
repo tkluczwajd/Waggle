@@ -12,7 +12,6 @@ import { db } from './core/firebase.js';
 import { NotificationEngine } from './services/notificationEngine.js';
 import { UserRepository } from './data/userRepository.js';
 import { WalkRepository } from './data/walkRepository.js';
-import { App } from '@capacitor/app';
 
 // Uruchomienie głównych systemów
 bootstrapApp();
@@ -741,7 +740,6 @@ document.addEventListener("visibilitychange", () => {
 // ============================================================================
 // 📱 NATYWNA OBSŁUGA ANDROID UX & CAPACITOR (Klawiatura IME & Przycisk BACK)
 // ============================================================================
-// TYMCZASOWO WYŁĄCZONE DO TESTÓW (Brak pakietu @capacitor/app)
 function initWaggleAndroidUX() {
     // 1. KLAWIATURA (IME) VS BOTTOM-NAV
     function updateKeyboardState() {
@@ -760,47 +758,53 @@ function initWaggleAndroidUX() {
     window.addEventListener('resize', updateKeyboardState);
     updateKeyboardState();
 
-    // 2. HIERARCHIA ANDROID BACK
-    App.addListener('backButton', async () => {
-        // A) Lightbox
-        const lightbox = document.getElementById('lightbox-modal');
-        if (lightbox && lightbox.style.display !== 'none') {
-            lightbox.style.display = 'none';
-            return;
-        }
-
-        // B) Modale - zamykamy najwyższy widoczny
-        const openModals = Array.from(document.querySelectorAll('.modal'))
-            .filter(modal => window.getComputedStyle(modal).display !== 'none')
-            .sort((a, b) => {
-                const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
-                const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
-                return zB - zA;
-            });
-
-        if (openModals.length > 0) {
-            openModals[0].style.display = 'none';
-            return;
-        }
-
-        // C) Klawiatura
-        if (document.body.classList.contains('keyboard-open')) {
-            if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                document.activeElement.blur();
+    // 2. HIERARCHIA ANDROID BACK (Bezpieczne wywołanie bez importu)
+    const CapApp = window.Capacitor ? window.Capacitor.Plugins.App : null;
+    
+    if (CapApp) {
+        CapApp.addListener('backButton', async () => {
+            // A) Lightbox
+            const lightbox = document.getElementById('lightbox-modal');
+            if (lightbox && lightbox.style.display !== 'none') {
+                lightbox.style.display = 'none';
+                return;
             }
-            return;
-        }
 
-        // D) Powrót do Home, jeśli jesteśmy na innym widoku
-        const homeBtn = document.querySelector('.nav-item[data-view="home"]');
-        if (homeBtn && !homeBtn.classList.contains('active')) {
-            homeBtn.click();
-            return;
-        }
+            // B) Modale - zamykamy najwyższy widoczny
+            const openModals = Array.from(document.querySelectorAll('.modal'))
+                .filter(modal => window.getComputedStyle(modal).display !== 'none')
+                .sort((a, b) => {
+                    const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
+                    const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
+                    return zB - zA;
+                });
 
-        // E) Minimalizacja aplikacji
-        await App.minimizeApp();
-    });
+            if (openModals.length > 0) {
+                openModals[0].style.display = 'none';
+                return;
+            }
+
+            // C) Klawiatura
+            if (document.body.classList.contains('keyboard-open')) {
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+                return;
+            }
+
+            // D) Powrót do Home, jeśli jesteśmy na innym widoku
+            const homeBtn = document.querySelector('.nav-item[data-view="home"]');
+            if (homeBtn && !homeBtn.classList.contains('active')) {
+                homeBtn.click();
+                return;
+            }
+
+            // E) Minimalizacja aplikacji
+            await CapApp.minimizeApp();
+        });
+    } else {
+        console.warn("Wtyczka Capacitor App nie została znaleziona w środowisku uruchomieniowym.");
+    }
 }
 
 // Inicjalizacja przy załadowaniu DOM
