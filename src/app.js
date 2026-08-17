@@ -651,43 +651,44 @@ window.addEventListener('load', () => {
     }
 });
 
+// ============================================================================
 // 🔥 ZOPTYMALIZOWANA FUNKCJA TOGGLE (Optimistic UI)
+// ============================================================================
 window.Waggle.toggleNotifications = async () => {
     const btn = document.getElementById('togglePushBtn');
     if (!btn) return;
 
-    // 1. Zidentyfikuj aktualny stan (zakładamy, że tekst przycisku jest "WŁĄCZ" lub "WYŁĄCZ")
+    // 1. Zidentyfikuj aktualny stan
     const isCurrentlyOn = btn.innerText.includes("WYŁĄCZ");
     const newState = !isCurrentlyOn;
 
-    // 2. OPTIMISTIC UI: Zmień wygląd przycisku NATYCHMIAST (0ms czekania)
+    // 2. OPTIMISTIC UI: Zmień wygląd przycisku natychmiast
     const originalText = btn.innerText;
     btn.innerText = newState ? "🔔 WYŁĄCZ POWIADOMIENIA" : "🔔 WŁĄCZ POWIADOMIENIA";
-    btn.style.opacity = "0.6"; // Lekkie przygaszenie informujące o pracy w tle
+    btn.style.opacity = "0.6";
     btn.disabled = true;
 
     try {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error("Nie jesteś zalogowany");
 
-        // 3. Wykonaj zapis w tle za pomocą Repozytorium
+        // 3. Zapis w tle
         await UserRepository.updatePushSettings(user.uid, newState);
         
         localStorage.setItem('pushEnabled', newState.toString());
         window.Waggle.showToast(newState ? "✅ Powiadomienia włączone!" : "✅ Powiadomienia wyłączone!");
         
     } catch (err) {
-        // 4. ROLLBACK: Jeśli coś pójdzie nie tak, cofnij zmiany wizualne
         console.error("Błąd przy zmianie powiadomień:", err);
         btn.innerText = originalText;
         window.Waggle.showToast("❌ Błąd! Sprawdź połączenie.");
     } finally {
-        // 5. Przywróć przycisk do stanu klikalnego
         btn.style.opacity = "1";
         btn.disabled = false;
     }
+}; // <-- POPRAWKA: Tutaj prawidłowo zamykamy toggleNotifications
 
-    // ============================================================================
+// ============================================================================
 // 🔥 PANCERNY SYSTEM S.A.F.E. (Niezależny od błędów Androida)
 // ============================================================================
 async function checkRecentSafeReports() {
@@ -722,29 +723,30 @@ async function checkRecentSafeReports() {
                 }
             }
         }
-    } catch(e) { console.error("Błąd pancernego skanowania S.A.F.E:", e); }
+    } catch(e) { 
+        console.error("Błąd pancernego skanowania S.A.F.E:", e); 
+    }
 }
 
 // Sprawdzaj po wejściu do aplikacji (zimny start)...
 window.addEventListener('load', () => setTimeout(checkRecentSafeReports, 2000));
 
-// ...oraz za każdym razem, gdy apka budzi się z tła po kliknięciu powiadomienia
+// ...oraz za każdym razem, gdy apka budzi się z tła
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'visible') {
         setTimeout(checkRecentSafeReports, 1000);
     }
 });
-};
+
+// ============================================================================
+// 📱 NATYWNA OBSŁUGA ANDROID UX & CAPACITOR (Klawiatura IME & Przycisk BACK)
+// ============================================================================
 function initWaggleAndroidUX() {
-    // ----------------------------------------------------
-    // ROZWIĄZANIE PROBLEMU A: KLAWIATURA (IME) VS BOTTOM-NAV
-    // ----------------------------------------------------
+    // 1. KLAWIATURA (IME) VS BOTTOM-NAV
     function updateKeyboardState() {
         if (!window.visualViewport) return;
         
         const vv = window.visualViewport;
-        // Jeśli viewport skurczył się o ponad 150px, zakładamy otwarcie klawiatury.
-        // Dotyczy szczególnie urządzeń takich jak Samsung Galaxy S23 Ultra.
         const isKeyboardVisible = (window.innerHeight - vv.height) > 150;
         
         document.body.classList.toggle('keyboard-open', isKeyboardVisible);
@@ -755,28 +757,24 @@ function initWaggleAndroidUX() {
         window.visualViewport.addEventListener('scroll', updateKeyboardState);
     }
     window.addEventListener('resize', updateKeyboardState);
-    
-    // Inicjalizacyjne sprawdzenie stanu
     updateKeyboardState();
 
-    // ----------------------------------------------------
-    // ROZWIĄZANIE PROBLEMU B: HIERARCHIA ANDROID BACK
-    // ----------------------------------------------------
+    // 2. HIERARCHIA ANDROID BACK
     App.addListener('backButton', async () => {
-        // 1. Lightbox (powiększenie zdjęcia z tablicy)
+        // A) Lightbox
         const lightbox = document.getElementById('lightbox-modal');
         if (lightbox && lightbox.style.display !== 'none') {
             lightbox.style.display = 'none';
             return;
         }
 
-        // 2. Modale (Eksploruj Waggle, Załóż Stado itp.) - Zamykamy najwyższy widoczny
+        // B) Modale - zamykamy najwyższy widoczny
         const openModals = Array.from(document.querySelectorAll('.modal'))
             .filter(modal => window.getComputedStyle(modal).display !== 'none')
             .sort((a, b) => {
                 const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
                 const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
-                return zB - zA; // Sortowanie malejące
+                return zB - zA;
             });
 
         if (openModals.length > 0) {
@@ -784,7 +782,7 @@ function initWaggleAndroidUX() {
             return;
         }
 
-        // 3. Klawiatura
+        // C) Klawiatura
         if (document.body.classList.contains('keyboard-open')) {
             if (document.activeElement && typeof document.activeElement.blur === 'function') {
                 document.activeElement.blur();
@@ -792,14 +790,14 @@ function initWaggleAndroidUX() {
             return;
         }
 
-        // 4. Podwidoki - Jeśli nie jesteśmy na Home, wracamy do ekranu głównego
+        // D) Powrót do Home, jeśli jesteśmy na innym widoku
         const homeBtn = document.querySelector('.nav-item[data-view="home"]');
         if (homeBtn && !homeBtn.classList.contains('active')) {
             homeBtn.click();
             return;
         }
 
-        // 5. Ostatnia deska ratunku - minimalizacja na Home (Zamiast ubijać jak S9+)
+        // E) Minimalizacja aplikacji
         await App.minimizeApp();
     });
 }
